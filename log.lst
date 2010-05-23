@@ -1,0 +1,12 @@
+In file included from main.cpp:4:
+./Scene.h:22: warning: extra ‘;’
+In file included from ./Scene.h:24,
+                 from main.cpp:4:
+./Scene.tcc: In member function ‘void SD::Scene::Process()’:
+./Scene.tcc:16: error: ‘glColor’ was not declared in this scope
+main.cpp: In function ‘int main()’:
+main.cpp:9: error: ‘SysSettings_t’ was not declared in this scope
+main.cpp:9: error: expected ‘;’ before ‘oSettings’
+main.cpp:11: error: ‘oSettings’ was not declared in this scope
+main.cpp:22: error: missing template arguments before ‘App’
+main.cpp:22: error: expected ‘;’ before ‘App’

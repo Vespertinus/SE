@@ -1,0 +1,57 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Application	./application.h	/^template <class TLoop > class Application {$/;"	c	namespace:SD
+CamSettings_t	./Camera.h	/^struct CamSettings_t {$/;"	s	namespace:SD
+Camera	./Camera.h	/^class Camera {$/;"	c	namespace:SD
+DrawStub	./main.cpp	/^void DrawStub() {$/;"	f
+FlyTransposer	./FlyTransposer.h	/^class FlyTransposer {$/;"	c	namespace:SD
+InputStub	./main.cpp	/^void InputStub(unsigned char key, const int x, const int y) {$/;"	f
+ResizeStub	./main.cpp	/^void ResizeStub(const int32_t new_width, const int32_t new_height) {$/;"	f
+SD	./Camera.h	/^namespace SD {$/;"	n
+SD	./FlyTransposer.h	/^namespace SD {$/;"	n
+SD	./Scene.h	/^namespace SD {$/;"	n
+SD	./application.h	/^namespace SD {$/;"	n
+Scene	./Scene.h	/^class Scene {$/;"	c	namespace:SD
+SysSettings_t	./application.h	/^struct SysSettings_t {$/;"	s	namespace:SD
+__APPLICATION_H__	./application.h	4;"	d
+__CAMERA_H__	./Camera.h	4;"	d
+__FLY_TRANSPOSER_H__	./FlyTransposer.h	3;"	d
+__Scene_H__	./Scene.h	4;"	d
+clear_flag	./application.h	/^	int				clear_flag;$/;"	m	struct:SD::SysSettings_t
+cursor_x	./FlyTransposer.h	/^	int32_t		cursor_x,$/;"	m	class:SD::FlyTransposer
+cursor_y	./FlyTransposer.h	/^						cursor_y;$/;"	m	class:SD::FlyTransposer
+far_clip	./application.h	/^	float			far_clip;$/;"	m	struct:SD::SysSettings_t
+fov	./Camera.h	/^	float 	fov;$/;"	m	struct:SD::CamSettings_t
+fullscreen	./application.h	/^	bool			fullscreen;$/;"	m	struct:SD::SysSettings_t
+height	./Camera.h	/^					height;$/;"	m	struct:SD::CamSettings_t
+height	./FlyTransposer.h	/^	int32_t	* height;$/;"	m	class:SD::FlyTransposer
+main	./main.cpp	/^int main(int argc, char **argv) {$/;"	f
+near_clip	./application.h	/^	float 		near_clip;$/;"	m	struct:SD::SysSettings_t
+oCamSettings	./application.h	/^	CamSettings_t oCamSettings;$/;"	m	struct:SD::SysSettings_t
+oCamera	./application.h	/^	Camera								 	oCamera;$/;"	m	class:SD::Application
+oLoop	./application.h	/^	TLoop									&	oLoop;$/;"	m	class:SD::Application
+oSettings	./Camera.h	/^	CamSettings_t oSettings;$/;"	m	class:SD::Camera
+oSettings	./application.h	/^	SysSettings_t						oSettings;$/;"	m	class:SD::Application
+oTranspose	./application.h	/^	FlyTransposer						oTranspose;$/;"	m	class:SD::Application
+pApp	./main.cpp	/^static SD::Application<SD::Scene> * pApp;$/;"	v	file:
+pos_x	./Camera.h	/^	float		pos_x,$/;"	m	class:SD::Camera
+pos_x	./FlyTransposer.h	/^	float   * pos_x,$/;"	m	class:SD::FlyTransposer
+pos_y	./Camera.h	/^					pos_y,$/;"	m	class:SD::Camera
+pos_y	./FlyTransposer.h	/^			 		* pos_y,$/;"	m	class:SD::FlyTransposer
+pos_z	./Camera.h	/^					pos_z,$/;"	m	class:SD::Camera
+pos_z	./FlyTransposer.h	/^			 		* pos_z,$/;"	m	class:SD::FlyTransposer
+rot_x	./Camera.h	/^					rot_x,$/;"	m	class:SD::Camera
+rot_x	./FlyTransposer.h	/^			 		* rot_x,$/;"	m	class:SD::FlyTransposer
+rot_y	./Camera.h	/^					rot_y,$/;"	m	class:SD::Camera
+rot_y	./FlyTransposer.h	/^			 		* rot_y,$/;"	m	class:SD::FlyTransposer
+rot_z	./Camera.h	/^					rot_z;$/;"	m	class:SD::Camera
+rot_z	./FlyTransposer.h	/^			 		* rot_z;$/;"	m	class:SD::FlyTransposer
+speed	./FlyTransposer.h	/^	float 		speed;$/;"	m	class:SD::FlyTransposer
+speed_mul	./FlyTransposer.h	/^	float			speed_mul;$/;"	m	class:SD::FlyTransposer
+width	./Camera.h	/^	int32_t width,$/;"	m	struct:SD::CamSettings_t
+width	./FlyTransposer.h	/^	int32_t	* width;$/;"	m	class:SD::FlyTransposer
+window_id	./application.h	/^	int											window_id;$/;"	m	class:SD::Application
