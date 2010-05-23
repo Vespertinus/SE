@@ -3,7 +3,7 @@
 #ifndef __CAMERA_H__
 #define __CAMERA_H__ 1
 
-namespace SD {
+namespace SE {
 
 struct CamSettings_t {
 
@@ -41,7 +41,7 @@ class Camera {
 
 };
 
-} //namespace SD
+} //namespace SE
 
 #include <Camera.tcc>
 

@@ -3,7 +3,7 @@
 
 
 
-namespace SD {
+namespace SE {
 
 FlyTransposer::FlyTransposer() : pos_x(0), pos_y(0), pos_z(0), rot_x(0), rot_y(0), rot_z(0), 
 															 cursor_x(0), cursor_y(0), 
@@ -98,4 +98,79 @@ void FlyTransposer::Operate(unsigned char key, const int x, const int y) {
 }
 
 
-} // namespace SD
+
+bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
+
+	switch (ev.key) {
+
+    case OIS::KC_W:
+			*pos_x += speed * 1.35 * sin (*rot_z / 180.0 * M_PI);
+			*pos_y += speed * 1.35 * cos (*rot_z / 180.0 * M_PI);
+			break;
+    case OIS::KC_S:	
+			*pos_x -= speed * 1.35 * sin (*rot_z / 180.0 * M_PI);
+			*pos_y -= speed * 1.35 * cos (*rot_z / 180.0 * M_PI);
+			break;
+    case OIS::KC_D:	
+			*pos_x += speed * 1.35 * sin ( (*rot_z + 90.0) / 180.0 * M_PI);
+			*pos_y += speed * 1.35 * cos ( (*rot_z + 90.0) / 180.0 * M_PI);
+			break;
+    case OIS::KC_A:
+			*pos_x += speed * 1.35 * sin ( (*rot_z - 90.0) / 180.0 * M_PI);
+			*pos_y += speed * 1.35 * cos ( (*rot_z - 90.0) / 180.0 * M_PI);
+			break;
+    case OIS::KC_R:
+			*pos_z	+=	speed;
+			break;
+    case OIS::KC_F:
+			*pos_z	-=	speed;
+			break;
+    default:
+      break;
+      
+	}
+  return true;
+}
+
+
+
+bool FlyTransposer::keyReleased( const OIS::KeyEvent &ev) {
+
+  return true;
+}
+
+
+
+bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
+
+
+  return true;
+}
+
+
+
+bool FlyTransposer::mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
+
+  return true;
+}
+
+
+
+bool FlyTransposer::mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
+
+	*rot_x += (cursor_y - ev.state.Y.abs) * 0.05;
+	*rot_z -= (cursor_x - ev.state.X.abs) * 0.05;
+
+	if (*rot_x < 0.0) 	*rot_x  = 0.0;
+	if (*rot_x > 180.0) *rot_x	= 180.0;
+
+	if (*rot_z < 0.0) 	*rot_z 	= 359.0;
+	if (*rot_z > 359.0) *rot_z 	= 0.0;
+
+	cursor_x = ev.state.X.abs;
+	cursor_y = ev.state.Y.abs;
+
+  return true;
+}
+
+} // namespace SE

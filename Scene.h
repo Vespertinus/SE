@@ -3,7 +3,7 @@
 #ifndef __Scene_H__
 #define __Scene_H__ 1
 
-namespace SD {
+namespace SE {
 
 class Scene {
 
@@ -19,7 +19,7 @@ class Scene {
 };
 
 
-} //namespace SD
+} //namespace SE
 
 #include <Scene.tcc>
 

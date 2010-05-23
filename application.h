@@ -3,15 +3,28 @@
 #ifndef __APPLICATION_H__
 #define __APPLICATION_H__ 1
 
+// OpenGL include
 #include <GL/glut.h>
 #include <GL/gl.h>	
 #include <GL/glu.h>	
+
+// C include
 #include <unistd.h> 
 
+// C++ include
+#include <map>
+
+// Loki include
+#include <Singleton.h>
+
+// Internal include
+#include <InputManager.h>
 #include <Camera.h>
 #include <FlyTransposer.h>
 
-namespace SD {
+
+
+namespace SE {
 
 struct SysSettings_t {
 
@@ -23,6 +36,10 @@ struct SysSettings_t {
 	bool			fullscreen;
 	int				clear_flag;
 
+  //TEMP ___Start___
+  uint32_t  window_id;
+  //TEMP ___End_____
+
 	CamSettings_t oCamSettings;
 
 };
@@ -31,11 +48,14 @@ struct SysSettings_t {
 
 template <class TLoop > class Application {
 
+  typedef Loki::SingletonHolder<InputManager> TInputManager;
+
 	SysSettings_t						oSettings;
 	TLoop									&	oLoop;
 	int											window_id;
 	FlyTransposer						oTranspose;
 	Camera								 	oCamera;
+  //TInputManager           oInputManager;
 
 	public:
 	Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop);
@@ -48,8 +68,6 @@ template <class TLoop > class Application {
 	//void UpdateSettings(const SysSettings_t & oNewSettings);
 	//void Resize(const SysSettings_t & settings, const uint32_t uViewportNum = 0);
 
-	private:
-
 	public:		//TEMP
 	void Init();
 	//private:	//TEMP
@@ -59,7 +77,7 @@ template <class TLoop > class Application {
 
 };
 
-} //namespace SD
+} //namespace SE
 
 #include <application.tcc>
 

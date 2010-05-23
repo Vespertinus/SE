@@ -1,11 +1,16 @@
 
 
-namespace SD {
+namespace SE {
 
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop):
 	oSettings(oNewSettings), 
 	oLoop(oNewLoop), 
 	oCamera(oTranspose,	oSettings.oCamSettings) {
+
+    TInputManager::Instance().Initialise(oSettings.window_id, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+
+    TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
+    TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
 
 /*
 		glutInit(0, NULL);
@@ -70,6 +75,8 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t new
 	oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
 
 	oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+
+  TInputManager::Instance().SetWindowExtents(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 	
 	glViewport(0, 0, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
@@ -99,6 +106,7 @@ template <class TLoop> void Application<TLoop>::Run() {
 
 	glPopMatrix();
 	glutSwapBuffers();
+  TInputManager::Instance().Capture();
 }
 
 
@@ -117,7 +125,6 @@ template <class TLoop> void Application<TLoop>::Input(unsigned char key, int x, 
 }
 
 
-
-} //namespace SD
+} //namespace SE
 
 

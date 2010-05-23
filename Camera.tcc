@@ -1,6 +1,6 @@
 
 
-namespace SD {
+namespace SE {
 
 
 template <class TTranspose> Camera::Camera(TTranspose & oTranspose, const CamSettings_t & oNewSettings) :
@@ -54,5 +54,5 @@ int32_t Camera::GetWidth() const { return oSettings.width; }
 
 int32_t Camera::GetHeight() const { return oSettings.height; }
 
-} //namespace SD
+} //namespace SE
 

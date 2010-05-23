@@ -2,3 +2,16 @@
 SimpleEngine
 
 
+===============================================================
+Dependency:
+
+name:       OIS - Object Oriented Input System
+URL:        http://sourceforge.net/projects/wgois/develop
+package:    Debian 1.2.0 - OK
+
+name:       Loki - library written by Andrei Alexandrescu as part of his book Modern C++ Design
+URL:        http://loki-lib.sourceforge.net/
+package:    Debian - OK
+
+
+
