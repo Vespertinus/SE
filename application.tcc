@@ -105,7 +105,7 @@ template <class TLoop> void Application<TLoop>::Run() {
 	oLoop.Process();
 
 	glPopMatrix();
-	glutSwapBuffers();
+	//glutSwapBuffers();
   TInputManager::Instance().Capture();
 }
 

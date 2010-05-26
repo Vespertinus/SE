@@ -21,6 +21,7 @@
 #include <InputManager.h>
 #include <Camera.h>
 #include <FlyTransposer.h>
+#include <X11Window.h>
 
 
 
