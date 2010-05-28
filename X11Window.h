@@ -17,7 +17,7 @@ namespace SE {
 
 struct WindowSettings {
 
-  uint32_t    width,
+  int32_t     width,
               height;
   int32_t     bpp;
   bool        fullscreen;

@@ -125,6 +125,13 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
     case OIS::KC_F:
 			*pos_z	-=	speed;
 			break;
+    case OIS::KC_ESCAPE:
+    case OIS::KC_Q:
+      fprintf(stderr, "FlyTransposer::keyPressed: stop program\n");
+      exit(0);
+      //return false;
+      //TODO write correct exit
+
     default:
       break;
       
@@ -136,6 +143,7 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
 
 bool FlyTransposer::keyReleased( const OIS::KeyEvent &ev) {
 
+
   return true;
 }
 
@@ -143,6 +151,17 @@ bool FlyTransposer::keyReleased( const OIS::KeyEvent &ev) {
 
 bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
 
+	*rot_x += (cursor_y - ev.state.Y.abs) * 0.05;
+	*rot_z -= (cursor_x - ev.state.X.abs) * 0.05;
+
+	if (*rot_x < 0.0) 	*rot_x  = 0.0;
+	if (*rot_x > 180.0) *rot_x	= 180.0;
+
+	if (*rot_z < 0.0) 	*rot_z 	= 359.0;
+	if (*rot_z > 359.0) *rot_z 	= 0.0;
+
+	cursor_x = ev.state.X.abs;
+	cursor_y = ev.state.Y.abs;
 
   return true;
 }
@@ -157,19 +176,7 @@ bool FlyTransposer::mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID 
 
 
 bool FlyTransposer::mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
-
-	*rot_x += (cursor_y - ev.state.Y.abs) * 0.05;
-	*rot_z -= (cursor_x - ev.state.X.abs) * 0.05;
-
-	if (*rot_x < 0.0) 	*rot_x  = 0.0;
-	if (*rot_x > 180.0) *rot_x	= 180.0;
-
-	if (*rot_z < 0.0) 	*rot_z 	= 359.0;
-	if (*rot_z > 359.0) *rot_z 	= 0.0;
-
-	cursor_x = ev.state.X.abs;
-	cursor_y = ev.state.Y.abs;
-
+  
   return true;
 }
 

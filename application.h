@@ -23,7 +23,7 @@
 #include <FlyTransposer.h>
 #include <X11Window.h>
 
-
+#include <stl_extension.h>
 
 namespace SE {
 
@@ -34,29 +34,42 @@ struct SysSettings_t {
 	//float			fov;
 	float 		near_clip;
 	float			far_clip;
-	bool			fullscreen;
+	//bool			fullscreen;
 	int				clear_flag;
 
-  //TEMP ___Start___
-  uint32_t  window_id;
-  //TEMP ___End_____
-
-	CamSettings_t oCamSettings;
-
+	CamSettings_t   oCamSettings;
+  WindowSettings  oWindowSettings;
 };
 
 
 
 template <class TLoop > class Application {
 
-  typedef Loki::SingletonHolder<InputManager> TInputManager;
+  typedef Loki::SingletonHolder<InputManager>                                 TInputManager;
+  //typedef std::mem_fun_t<void, Application<TLoop> >                           TRunFunctor;
+  //typedef STD_EXT::mem_fun2_t<void, Application<TLoop>, int32_t, int32_t>     TResizeFunctor;
+  typedef STD_EXT::GeneralFunctor<Application<TLoop>, void>                   TRunFunctor;
+  typedef STD_EXT::GeneralFunctor<Application<TLoop>, void, int32_t, int32_t> TResizeFunctor;
+//TODO write normal OS switch
+//#ifdef linux  
+  typedef X11Window<TResizeFunctor, TRunFunctor>                              TWindow;
+//#else  
+//# error "unsupported OS"
+//#endif
 
 	SysSettings_t						oSettings;
 	TLoop									&	oLoop;
 	int											window_id;
 	FlyTransposer						oTranspose;
 	Camera								 	oCamera;
-  //TInputManager           oInputManager;
+
+  TRunFunctor             oRunFunctor;
+  TResizeFunctor          oResizeFunctor;
+
+  TWindow                 oMainWindow;
+
+  
+
 
 	public:
 	Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop);
@@ -72,7 +85,7 @@ template <class TLoop > class Application {
 	public:		//TEMP
 	void Init();
 	//private:	//TEMP
-	void ResizeViewport(const int32_t new_width, const int32_t new_height);
+	void ResizeViewport(const int32_t & new_width, const int32_t & new_height);
 	void Input(unsigned char key, const int x, const int y);
 	void Run();
 

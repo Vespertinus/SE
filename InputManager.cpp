@@ -75,7 +75,15 @@ void InputManager::Initialise(const uint32_t window_id, const int32_t width, con
     //if( pInputSystem->nupKeyboards() > 0 ) 
     if (pInputSystem->getNumberOfDevices(OIS::OISKeyboard) > 0) {
       pKeyboard = static_cast<OIS::Keyboard*>( pInputSystem->createInputObject( OIS::OISKeyboard, true ) );
+      if (!pKeyboard) {
+        fprintf(stderr, "can't find Keyboard\n");
+        exit(-1);
+      }
       pKeyboard->setEventCallback( this );
+    }
+    else {
+      fprintf(stderr, "can't find Keyboard\n");
+      exit(-1);
     }
 
     // If possible create a buffered mouse
@@ -83,10 +91,18 @@ void InputManager::Initialise(const uint32_t window_id, const int32_t width, con
     //if( pInputSystem->numMice() > 0 ) 
     if (pInputSystem->getNumberOfDevices(OIS::OISMouse) > 0) {
       pMouse = static_cast<OIS::Mouse*>( pInputSystem->createInputObject( OIS::OISMouse, true ) );
+      if (!pMouse) {
+        fprintf(stderr, "can't find Mouse\n");
+        exit(-1);
+      }
       pMouse->setEventCallback( this );
 
       // Set mouse region
       SetWindowExtents(width, height);
+    }
+    else {
+      fprintf(stderr, "can't find Mouse\n");
+      exit(-1);
     }
 
     // If possible create all joysticks in buffered mode
@@ -251,6 +267,8 @@ void InputManager::RemoveAllJoystickListeners() {
 
 void InputManager::SetWindowExtents(const int32_t width, const int32_t height ) {
 
+  if (!pMouse) return;
+  
   // Set mouse region (if window resizes, we should alter this to reflect as well)
   const OIS::MouseState &mouseState = pMouse->getMouseState();
   mouseState.width  = width;

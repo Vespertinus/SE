@@ -42,7 +42,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 							GLX_DEPTH_SIZE, 16,
 							None};
 
-	int attr_list_doublel[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
+	int attr_list_double[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
 							GLX_RED_SIZE, 4,
 							GLX_GREEN_SIZE, 4,
 							GLX_BLUE_SIZE, 4,
@@ -62,10 +62,10 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 	}
   if (best_mode == -1) {
     fprintf(stderr, "target mode unsupported, width = %u, height = %u\n", oSettings.width, oSettings.height);
-    abort();  
+    exit(-1);  
   }
 
-	visual = glXChooseVisual(display, screen, attr_list_doublel);
+	visual = glXChooseVisual(display, screen, attr_list_double);
   if(!visual) {
 
     visual = glXChooseVisual(display, screen, attr_list_single);
@@ -95,7 +95,8 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 		XFree(modes);
 
 		wnd_attr.override_redirect = true;
-		wnd_attr.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | StructureNotifyMask;
+		//wnd_attr.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | StructureNotifyMask;
+		wnd_attr.event_mask = ExposureMask | StructureNotifyMask;
 
 		window = XCreateWindow( display, 
                             RootWindow(display, visual->screen),
@@ -118,7 +119,8 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
   }
   else {
 		
-    wnd_attr.event_mask = ExposureMask | KeyPressMask | ButtonPressMask |	StructureNotifyMask;
+    //wnd_attr.event_mask = ExposureMask | KeyPressMask | ButtonPressMask |	StructureNotifyMask;
+    wnd_attr.event_mask = ExposureMask | StructureNotifyMask;
 
     window = XCreateWindow( display, 
                             RootWindow(display, visual->screen),								  
@@ -140,7 +142,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 		XMapRaised(display, window);
   }
 
-  int bpp;
+  uint32_t bpp;
   uint32_t width;
   uint32_t height;
 

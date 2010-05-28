@@ -5,12 +5,27 @@ namespace SE {
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop):
 	oSettings(oNewSettings), 
 	oLoop(oNewLoop), 
-	oCamera(oTranspose,	oSettings.oCamSettings) {
+	oCamera(oTranspose,	oSettings.oCamSettings),
+  oRunFunctor   (*this, &Application<TLoop>::Run),
+  oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
+  oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings) {
 
-    TInputManager::Instance().Initialise(oSettings.window_id, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+    fprintf(stderr, "Application::Application: try to init OIS\n");
+
+    //ResizeViewport(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+
+    TInputManager::Instance().Initialise(oMainWindow.GetWindowID(), oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
     TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
     TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
+
+    
+    
+    fprintf(stderr, "Application::Application: Start Loop\n");
+
+    oMainWindow.Loop();
+    
+    fprintf(stderr, "Application::Application: Stop Loop\n");
 
 /*
 		glutInit(0, NULL);
@@ -69,16 +84,16 @@ template <class TLoop> void Application<TLoop>::Init() {
 
 
 
-template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t new_width, const int32_t new_height) { 
+template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & new_width, const int32_t & new_height) { 
 
 	oSettings.oCamSettings.width 	= new_width;
 	oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
 
 	oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-
-  TInputManager::Instance().SetWindowExtents(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 	
-	glViewport(0, 0, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+  glViewport(0, 0, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+  
+  TInputManager::Instance().SetWindowExtents(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
