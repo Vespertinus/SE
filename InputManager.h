@@ -7,12 +7,17 @@
 #ifndef __INPUT_MANAGER_H__
 #define __INPUT_MANAGER_H__ 1
 
+// OIS include
 #include <OISMouse.h>
 #include <OISKeyboard.h>
 #include <OISJoyStick.h>
 #include <OISInputManager.h>
 
+// C include
 #include <stdint.h>
+
+// Loki include
+#include <Singleton.h>
 
 namespace SE {
 
@@ -83,14 +88,18 @@ class InputManager : public OIS::KeyListener, public OIS::MouseListener, public 
 
   void SetWindowExtents(const int32_t width, const int32_t height);
 
-  OIS::Mouse*    GetMouse();
-  OIS::Keyboard* GetKeyboard();
-  OIS::JoyStick* GetJoystick( unsigned int index );
+  OIS::Mouse*    GetMouse() const;
+  OIS::Keyboard* GetKeyboard() const ;
+  OIS::JoyStick* GetJoystick( unsigned int index ) const;
 
-  int getNumOfJoysticks();
+  size_t GetNumOfJoysticks() const ;
 
   //static InputManager* getSingletonPtr();
 };
+
+
+
+typedef Loki::SingletonHolder<InputManager>                                 TInputManager;
 
 } // namespace SE
 

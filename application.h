@@ -15,7 +15,7 @@
 #include <map>
 
 // Loki include
-#include <Singleton.h>
+//#include <Singleton.h>
 
 // Internal include
 #include <InputManager.h>
@@ -45,7 +45,7 @@ struct SysSettings_t {
 
 template <class TLoop > class Application {
 
-  typedef Loki::SingletonHolder<InputManager>                                 TInputManager;
+  //typedef Loki::SingletonHolder<InputManager>                                 TInputManager;
   //typedef std::mem_fun_t<void, Application<TLoop> >                           TRunFunctor;
   //typedef STD_EXT::mem_fun2_t<void, Application<TLoop>, int32_t, int32_t>     TResizeFunctor;
   typedef STD_EXT::GeneralFunctor<Application<TLoop>, void>                   TRunFunctor;
@@ -86,7 +86,6 @@ template <class TLoop > class Application {
 	void Init();
 	//private:	//TEMP
 	void ResizeViewport(const int32_t & new_width, const int32_t & new_height);
-	void Input(unsigned char key, const int x, const int y);
 	void Run();
 
 };

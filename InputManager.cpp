@@ -1,6 +1,6 @@
 /*
-  InputManager from OGRE engine.
-  With a bit of changes.
+InputManager from OGRE engine.
+With a bit of changes.
 */
 
 #include <sstream>
@@ -12,9 +12,9 @@ namespace SE {
 //InputManager *InputManager::mInputManager;
 
 InputManager::InputManager() :
-  pMouse( 0 ),
-  pKeyboard( 0 ),
-  pInputSystem( 0 ) {
+pMouse( 0 ),
+pKeyboard( 0 ),
+pInputSystem( 0 ) {
 
 }
 
@@ -22,42 +22,42 @@ InputManager::InputManager( const InputManager& ) { ;; }
 
 InputManager::~InputManager() throw() {
 
-  if( pInputSystem ) {
-    if( pMouse ) {
-      pInputSystem->destroyInputObject( pMouse );
-      pMouse = 0;
-    }
-
-    if( pKeyboard ) {
-      pInputSystem->destroyInputObject( pKeyboard );
-      pKeyboard = 0;
-    }
-
-    if( mJoysticks.size() > 0 ) {
-      itJoystick    = mJoysticks.begin();
-      itJoystickEnd = mJoysticks.end();
-      for(; itJoystick != itJoystickEnd; ++itJoystick ) {
-        pInputSystem->destroyInputObject( *itJoystick );
-      }
-
-      mJoysticks.clear();
-    }
-
-    // If you use OIS1.0RC1 or above, uncomment this line
-    // and comment the line below it
-    pInputSystem->destroyInputSystem( pInputSystem );
-    //pInputSystem->destroyInputSystem();
-    pInputSystem = 0;
-
-    // Clear Listeners
-    oKeyListeners.clear();
-    oMouseListeners.clear();
-    oJoystickListeners.clear();
+if( pInputSystem ) {
+  if( pMouse ) {
+    pInputSystem->destroyInputObject( pMouse );
+    pMouse = 0;
   }
+
+  if( pKeyboard ) {
+    pInputSystem->destroyInputObject( pKeyboard );
+    pKeyboard = 0;
+  }
+
+  if( mJoysticks.size() > 0 ) {
+    itJoystick    = mJoysticks.begin();
+    itJoystickEnd = mJoysticks.end();
+    for(; itJoystick != itJoystickEnd; ++itJoystick ) {
+      pInputSystem->destroyInputObject( *itJoystick );
+    }
+
+    mJoysticks.clear();
+  }
+
+  // If you use OIS1.0RC1 or above, uncomment this line
+  // and comment the line below it
+  pInputSystem->destroyInputSystem( pInputSystem );
+  //pInputSystem->destroyInputSystem();
+  pInputSystem = 0;
+
+  // Clear Listeners
+  oKeyListeners.clear();
+  oMouseListeners.clear();
+  oJoystickListeners.clear();
+}
 }
 
 void InputManager::Initialise(const uint32_t window_id, const int32_t width, const int32_t height) {
-  
+
   if( !pInputSystem ) {
     // Setup basic variables
     OIS::ParamList paramList;    
@@ -275,15 +275,15 @@ void InputManager::SetWindowExtents(const int32_t width, const int32_t height ) 
   mouseState.height = height;
 }
 
-OIS::Mouse* InputManager::GetMouse() {
+OIS::Mouse* InputManager::GetMouse() const {
   return pMouse;
 }
 
-OIS::Keyboard* InputManager::GetKeyboard() {
+OIS::Keyboard* InputManager::GetKeyboard() const {
   return pKeyboard;
 }
 
-OIS::JoyStick* InputManager::GetJoystick( unsigned int index ) {
+OIS::JoyStick* InputManager::GetJoystick( unsigned int index ) const{
   // Make sure it's a valid index
   if( index < mJoysticks.size() ) {
     return mJoysticks[ index ];
@@ -292,9 +292,9 @@ OIS::JoyStick* InputManager::GetJoystick( unsigned int index ) {
   return 0;
 }
 
-int InputManager::getNumOfJoysticks() {
+size_t InputManager::GetNumOfJoysticks() const {
   // Cast to keep compiler happy ^^
-  return (int) mJoysticks.size();
+  return mJoysticks.size();
 }
 
 bool InputManager::keyPressed( const OIS::KeyEvent &e ) {

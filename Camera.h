@@ -21,6 +21,9 @@ class Camera {
 					rot_x,
 					rot_y,
 					rot_z;
+  float   delta_x,
+          delta_y,
+          delta_z;
 
 
 	CamSettings_t oSettings;
@@ -38,6 +41,7 @@ class Camera {
 	int32_t GetWidth() const;
 	int32_t GetHeight() const;
 	
+  void SetPos(const float new_x, const float new_y, const float new_z);
 
 };
 

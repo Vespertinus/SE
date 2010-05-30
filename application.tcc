@@ -19,7 +19,7 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
     TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
     TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
 
-    
+    oCamera.SetPos(5, 1, 1);
     
     fprintf(stderr, "Application::Application: Start Loop\n");
 
@@ -72,7 +72,7 @@ template <class TLoop> void Application<TLoop>::Init() {
 	glDepthFunc(GL_LESS);       
 	glEnable(GL_DEPTH_TEST);      
 	glShadeModel(GL_SMOOTH);  
-  glLineWidth(4);
+  //glLineWidth(4);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();       
@@ -124,21 +124,6 @@ template <class TLoop> void Application<TLoop>::Run() {
 	glPopMatrix();
 	//glutSwapBuffers();
   TInputManager::Instance().Capture();
-}
-
-
-
-template <class TLoop> void Application<TLoop>::Input(unsigned char key, int x, int y) {
-
-	//usleep(10);
-
-	if (key == 27 /*ESCAPE*/) {
-		//glutDestroyWindow(window_id);
-		exit(0);
-	}
-
-	oTranspose.Operate(key, x, y);
-
 }
 
 
