@@ -1,4 +1,7 @@
 
+#include <VisualHelpers.h>
+
+
 namespace SE {
 
 Scene::Scene() { ;; }
@@ -10,6 +13,8 @@ Scene::~Scene() throw() { ;; }
 
 
 void Scene::Process() {
+
+  DrawAxes(10);
 
 	glTranslatef(-1.5f,0.0f,-6.0f);   // Move Left 1.5 Units And Into The Screen 6.0
 

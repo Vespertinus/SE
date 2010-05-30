@@ -70,26 +70,26 @@ void FlyTransposer::Operate(unsigned char key, const int x, const int y) {
 			break;
 	}
 /*
-	if (x == ViewWidth - 1.0)
+	if (x == oSettings.width - 1.0)
 	{
-		ViewPoint.x = 1.0;
-		SetCursorPos(ViewPoint.x,ViewPoint.y);
+		ev.state.X.abs = 1.0;
+		SetCursorPos(ev.state.X.abs,ev.state.Y.abs);
 	}
-	if (ViewPoint.y == ViewHeight - 1.0)
+	if (ev.state.Y.abs == oSettings.height - 1.0)
 	{
-		ViewPoint.y = 1.0;
-		SetCursorPos (ViewPoint.x, ViewPoint.y);
+		ev.state.Y.abs = 1.0;
+		SetCursorPos (ev.state.X.abs, ev.state.Y.abs);
 	}
-	if (ViewPoint.x == 0.0)
+	if (ev.state.X.abs == 0.0)
 	{
-		ViewPoint.x = ViewWidth;
-		SetCursorPos (ViewPoint.x, ViewPoint.y);
+		ev.state.X.abs = oSettings.width;
+		SetCursorPos (ev.state.X.abs, ev.state.Y.abs);
 	}
 
-	if (ViewPoint.y == 0.0)
+	if (ev.state.Y.abs == 0.0)
 	{
-		ViewPoint.y = ViewHeight;
-		SetCursorPos(ViewPoint.x,ViewPoint.y);
+		ev.state.Y.abs = oSettings.height;
+		SetCursorPos(ev.state.X.abs,ev.state.Y.abs);
 	}
 */
 
@@ -159,6 +159,45 @@ bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
 
 	if (*rot_z < 0.0) 	*rot_z 	= 359.0;
 	if (*rot_z > 359.0) *rot_z 	= 0.0;
+
+
+
+  if (ev.state.X.abs == *width - 1.0)
+  {
+    //ev.state.X.abs = 1.0;
+    //SetCursorPos(ev.state.X.abs,ev.state.Y.abs);
+    OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(pMouse->getMouseState());
+    MutableMouseState.X.abs = 1;
+
+    //fprintf(stderr, "right\n");
+  }
+  if (ev.state.Y.abs == *height - 1.0)
+  {
+    //ev.state.Y.abs = 1.0;
+    //SetCursorPos (ev.state.X.abs, ev.state.Y.abs);
+    OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(pMouse->getMouseState());
+    MutableMouseState.X.abs = 1;
+    //fprintf(stderr, "down\n");
+  }
+  if (ev.state.X.abs == 0.0)
+  {
+    //ev.state.X.abs = *width;
+    //SetCursorPos (ev.state.X.abs, ev.state.Y.abs);
+    OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(pMouse->getMouseState());
+    MutableMouseState.X.abs = *width;
+    //fprintf(stderr, "left\n");
+  }
+
+  if (ev.state.Y.abs == 0.0)
+  {
+    //ev.state.Y.abs = *height;
+    //SetCursorPos(ev.state.X.abs,ev.state.Y.abs);
+    OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(pMouse->getMouseState());
+    MutableMouseState.Y.abs = *height;
+    //fprintf(stderr, "up\n");
+  }
+
+
 
 	cursor_x = ev.state.X.abs;
 	cursor_y = ev.state.Y.abs;

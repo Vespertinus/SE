@@ -71,7 +71,9 @@ template <class TLoop> void Application<TLoop>::Init() {
 	glClearDepth(1.0);        
 	glDepthFunc(GL_LESS);       
 	glEnable(GL_DEPTH_TEST);      
-	glShadeModel(GL_SMOOTH);     
+	glShadeModel(GL_SMOOTH);  
+  glLineWidth(4);
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();       
 	gluPerspective(oSettings.oCamSettings.fov, 

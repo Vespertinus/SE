@@ -4,7 +4,7 @@
 #define __APPLICATION_H__ 1
 
 // OpenGL include
-#include <GL/glut.h>
+//#include <GL/glut.h>
 #include <GL/gl.h>	
 #include <GL/glu.h>	
 
