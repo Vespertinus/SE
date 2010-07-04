@@ -17,8 +17,14 @@ void Scene::Process() {
   DrawAxes(10);
 
   //glPushMatrix();
-	glTranslatef(-1.5f,0.0f,-6.0f);   // Move Left 1.5 Units And Into The Screen 6.0
+	//glTranslatef(-1.5f,0.0f,-6.0f);   // Move Left 1.5 Units And Into The Screen 6.0
 
+	glColor3f(1, 1, 1);
+  glPointSize(15);
+  glBegin(GL_POINTS);
+  glVertex3f(0, 1, 1);
+  glEnd();
+/*
 	glColor4f(1.0f, 0.0f, 0.0f, 0.0f);
 	// draw a triangle
 	glBegin(GL_POLYGON);        // start drawing a polygon
@@ -39,7 +45,7 @@ void Scene::Process() {
 	glVertex3f(-1.0f,-1.0f, 0.0f);    // Bottom Left
 	glEnd();          // done with the polygon
   //glPopMatrix();
-
+*/
 }
 
 

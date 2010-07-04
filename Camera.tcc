@@ -1,4 +1,5 @@
 
+#include <math.h>
 
 namespace SE {
 
@@ -75,6 +76,45 @@ void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
   pos_x = new_x; 
   pos_y = new_x;
   pos_z = new_z;
+}
+
+void Camera::LookAt(const float x, const float y, const float z) {
+/*
+  float sx = sinf(rot_x);
+  float cx = cosf(rot_x);
+  float sy = sinf(rot_y);
+  float cy = cosf(rot_y);
+  
+  float sz = sinf(rot_z);
+  float cz = cosf(rot_z);
+
+  float res_x =  sy*cx;
+  float res_y = -sx;
+  float res_z =  cy*cx;
+*/
+  //directionVector.Set(x,y,z);
+
+  float res_x,
+        res_y,
+        res_z;
+
+  res_x = x - pos_x;
+  res_y = y - pos_y;
+  res_z = z - pos_z;
+  
+/*  
+  res_x = pos_x - x;
+  res_y = pos_y - y;
+  res_z = pos_z - z;
+*/  
+  fprintf(stderr, "Camera::LookAt: res_x = %f, res_y = %f, res_z = %f\n", res_x, res_y, res_z);
+
+  //rot_x = (float)atan2(-res_y, sqrt(res_x * res_x + res_z * res_z));
+  //rot_z = (float)atan2(res_x, res_z);
+  
+  rot_x += (float)atan2(-res_y, sqrt(res_x * res_x + res_z * res_z)) * 180 / M_PI;
+  rot_z += (float)atan2(res_x, res_z) * 180 / M_PI;
+  //rot_z = 0;
 }
 
 } //namespace SE

@@ -42,6 +42,7 @@ class Camera {
 	int32_t GetHeight() const;
 	
   void SetPos(const float new_x, const float new_y, const float new_z);
+  void LookAt(const float x, const float y, const float z);
 
 };
 

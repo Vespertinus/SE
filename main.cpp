@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	oSettings.oCamSettings.fov						= 45;
   
 	oSettings.near_clip										=	0.1;
-	oSettings.far_clip										= 100;
+	oSettings.far_clip										= 1000;
 	oSettings.clear_flag									= GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
   oSettings.oWindowSettings.width       = oSettings.oCamSettings.width;

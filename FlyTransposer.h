@@ -34,6 +34,8 @@ class FlyTransposer : public OIS::KeyListener, public OIS::MouseListener {
   float     d_x_delta;
   float     d_y_delta;
 
+  void RecalculateDirection();
+
 
 	public:
 

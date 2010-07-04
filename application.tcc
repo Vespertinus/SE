@@ -19,7 +19,8 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
     TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
     TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
 
-    oCamera.SetPos(5, 1, 1);
+    oCamera.SetPos(5, 1, 1);    
+    //oCamera.LookAt(0, 1, 1);
     
     fprintf(stderr, "Application::Application: Start Loop\n");
 

@@ -94,7 +94,12 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                fprintf(stderr, "checkpoint:\n"
                    "pos_x = %f, pos_y = %f, pos_z = %f\n"
                    "rot_x = %f, rot_y = %f, rot_z = %f\n"
-                   "last x = %u, last y = %u\n\n",
+                   "last x = %u, last y = %u\n"
+                   "delta_x = %f, delta_y = %f, delta_z = %f\n"
+                   "w_x_delta = %f w_y_delta = %f\n"
+                   "s_x_delta = %f, s_y_delta = %f\n"
+                   "a_x_delta = %f, a_y_delta = %f\n"
+                   "d_x_delta = %f, d_y_delta = %f\n\n",
                    *pos_x,
                    *pos_y,
                    *pos_z,
@@ -102,7 +107,12 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                    *rot_y,
                    *rot_z,
                    cursor_x,
-                   cursor_y);
+                   cursor_y,
+                   *delta_x, *delta_y, *delta_z,
+                   w_x_delta, w_y_delta,
+                   s_x_delta, s_y_delta,
+                   a_x_delta, a_y_delta,
+                   d_x_delta, d_y_delta);
              }
              break;
     default:
@@ -121,18 +131,26 @@ bool FlyTransposer::keyReleased( const OIS::KeyEvent &ev) {
     case OIS::KC_W:
 			*delta_x -= w_x_delta; 
 			*delta_y -= w_y_delta;
+      w_x_delta = 0;
+      w_y_delta = 0;
 			break;
     case OIS::KC_S:	
 			*delta_x += s_x_delta;
 			*delta_y += s_y_delta;
+      s_x_delta = 0;
+      s_y_delta = 0;
 			break;
     case OIS::KC_D:	
 			*delta_x -= d_x_delta;
 			*delta_y -= d_y_delta;
+      d_x_delta = 0;
+      d_y_delta = 0;
 			break;
     case OIS::KC_A:
 			*delta_x -= a_x_delta;
 			*delta_y -= a_y_delta;
+      a_x_delta = 0;
+      a_y_delta = 0;
 			break;
     case OIS::KC_R:
 			*delta_z	-=	speed;
@@ -168,8 +186,8 @@ bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
 	*rot_x += (cursor_y - ev.state.Y.abs) * 0.05;
 	*rot_z -= (cursor_x - ev.state.X.abs) * 0.05;
 
-	if (*rot_x < 0.0) 	*rot_x  = 0.0;
-	if (*rot_x > 180.0) *rot_x	= 180.0;
+	//if (*rot_x < 0.0) 	*rot_x  = 0.0;
+	//if (*rot_x > 180.0) *rot_x	= 180.0;
 
 	if (*rot_z < 0.0) 	*rot_z 	= 359.0;
 	if (*rot_z > 359.0) *rot_z 	= 0.0;
@@ -213,6 +231,8 @@ bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
     //fprintf(stderr, "up\n");
   }
 
+  RecalculateDirection();
+
   return true;
 }
 
@@ -229,5 +249,51 @@ bool FlyTransposer::mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID
   
   return true;
 }
+
+void FlyTransposer::RecalculateDirection() {
+
+
+    if (w_x_delta) {
+      *delta_x -= w_x_delta;
+      w_x_delta = speed * 1.35 * sin (*rot_z / 180.0 * M_PI);
+      *delta_x += w_x_delta;
+    }
+    if (w_y_delta) {
+      *delta_y -= w_y_delta;
+      w_y_delta = speed * 1.35 * cos (*rot_z / 180.0 * M_PI);
+      *delta_y += w_y_delta;
+    }
+    if(s_x_delta)	 {
+      *delta_x += s_x_delta;
+			s_x_delta = speed * 1.35 * sin (*rot_z / 180.0 * M_PI);
+      *delta_x -= s_x_delta;
+    }
+    if (s_y_delta) {
+      *delta_y += s_y_delta;
+			s_y_delta = speed * 1.35 * cos (*rot_z / 180.0 * M_PI);
+      *delta_y -= s_y_delta;
+    }
+    if (d_x_delta) {
+      *delta_x -= d_x_delta;
+			d_x_delta = speed * 1.35 * sin ( (*rot_z + 90.0) / 180.0 * M_PI);
+      *delta_x += d_x_delta;
+    }
+    if (d_y_delta) {
+      *delta_y -= d_y_delta;
+			d_y_delta = speed * 1.35 * cos ( (*rot_z + 90.0) / 180.0 * M_PI);
+      *delta_y += d_y_delta;
+    }
+    if (a_x_delta) {
+      *delta_x -= a_x_delta;
+      a_x_delta = speed * 1.35 * sin ( (*rot_z - 90.0) / 180.0 * M_PI);
+      *delta_x += a_x_delta;
+    }
+    if (a_y_delta) {
+      *delta_y -= a_y_delta;
+			a_y_delta = speed * 1.35 * cos ( (*rot_z - 90.0) / 180.0 * M_PI);
+      *delta_y += a_y_delta;
+    }
+}
+
 
 } // namespace SE
