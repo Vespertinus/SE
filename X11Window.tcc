@@ -1,4 +1,5 @@
 
+#include <string.h>
 
 namespace SE {
 
@@ -50,6 +51,11 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 							None};
 	
   display = XOpenDisplay(0);
+  if (!display) {
+    fprintf(stderr, "X11Window::CreateWindow: can't open Display, reason = %s\n", strerror(errno));
+    exit (-1);
+  }
+
   screen  = DefaultScreen(display);
 	XF86VidModeQueryVersion(display, &video_mode_major, &video_mode_minor);
 
