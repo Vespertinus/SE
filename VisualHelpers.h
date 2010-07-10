@@ -54,4 +54,9 @@ void DrawAxes(const float size) {
 }
 
 
+
+void DrawElipse(const float x_pos, const float y_pos, const float z_pos, const float radius) {
+
+}
+
 #endif

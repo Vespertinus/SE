@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
 
 	SE::SysSettings_t oSettings;
 
-	oSettings.oCamSettings.width 					= 800;
-	oSettings.oCamSettings.height					= 600;
+	oSettings.oCamSettings.width 					= 1024;
+	oSettings.oCamSettings.height					= 768;
 	oSettings.oCamSettings.fov						= 45;
   
 	oSettings.near_clip										=	0.1;

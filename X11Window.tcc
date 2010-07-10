@@ -52,7 +52,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 	
   display = XOpenDisplay(0);
   if (!display) {
-    fprintf(stderr, "X11Window::CreateWindow: can't open Display, reason = %s\n", strerror(errno));
+    fprintf(stderr, "X11Window::CreateWindow: can't open XDisplay\n");
     exit (-1);
   }
 
