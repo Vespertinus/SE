@@ -55,7 +55,24 @@ void DrawAxes(const float size) {
 
 
 
-void DrawElipse(const float x_pos, const float y_pos, const float z_pos, const float radius) {
+void DrawElipse(const float x_pos, const float y_pos, const float z_pos, const float radius, const uint32_t edge_count) {
+  float alpha = 0;
+  float delta = 360 / edge_count;
+  float x, 
+        y, 
+        z = 1;
+
+	glColor3f(1, 1, 1);
+  glPointSize(15);
+  glBegin(GL_POINTS);
+  for (uint32_t i = 0; i < edge_count; ++i) {
+    alpha = delta * i;
+    x = radius * cos(alpha);
+    y = radius * sin(alpha);
+    glVertex3f(x, y, z);
+  }
+
+  glEnd();
 
 }
 
