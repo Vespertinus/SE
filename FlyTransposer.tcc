@@ -115,6 +115,16 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                    d_x_delta, d_y_delta);
              }
              break;
+
+    case OIS::KC_Z:
+             speed *= 2;
+             break;
+    case OIS::KC_X:
+             speed /= 2;
+             if (speed < 0) { speed = 0.001; }
+
+             break;
+
     default:
       break;
       

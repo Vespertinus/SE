@@ -15,7 +15,7 @@ Scene::~Scene() throw() { ;; }
 void Scene::Process() {
 
   DrawAxes(10);
-  DrawElipse(0, 0, 0, 10, 8);
+  DrawElipse(0, 0, 2, 10, 18);
 
   //glPushMatrix();
 	//glTranslatef(-1.5f,0.0f,-6.0f);   // Move Left 1.5 Units And Into The Screen 6.0
