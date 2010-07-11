@@ -41,6 +41,6 @@ FPS
 
 [ResourceManager]
 разбито по видом, типы определяются на этапе компиляции списком типов и обработчиков.
-
+Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 
 

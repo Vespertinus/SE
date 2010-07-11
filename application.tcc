@@ -28,36 +28,6 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
     
     fprintf(stderr, "Application::Application: Stop Loop\n");
 
-/*
-		glutInit(0, NULL);
-
-		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-
-		glutInitWindowSize(oSettings.width, oSettings.height);
-
-		glutInitWindowPosition(0, 0);
-
-		window_id = glutCreateWindow("Simple Engine DEMO (2010.05.13)");
-
-		typedef void (Application<TLoop>::*Ptr_t)();
-
-		//glutDisplayFunc( ((this)->*(  &Application<TLoop>::*Run)) );
-
-		Ptr_t ptr = &Application<TLoop>::Run;
-
-		glutDisplayFunc( ((this)->*( ptr)) );
-
-		if (oSettings.fullscreen) { glutFullScreen(); }
-
-		glutIdleFunc(&Run);
-
-		glutReshapeFunc(&ResizeViewport);
-
-		glutKeyboardFunc(&Input);
-
-		Init();
-		*/
-
 }
 
 

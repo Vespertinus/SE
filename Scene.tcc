@@ -1,10 +1,9 @@
 
-#include <VisualHelpers.h>
 
 
 namespace SE {
 
-Scene::Scene() { ;; }
+Scene::Scene() : oElipse(0, 0, 2, 10, 36) { ;; }
 
 
 
@@ -14,8 +13,9 @@ Scene::~Scene() throw() { ;; }
 
 void Scene::Process() {
 
-  DrawAxes(10);
-  DrawElipse(0, 0, 2, 10, 18);
+  HELPERS::DrawAxes(10);
+  //DrawElipse(0, 0, 2, 10, 18);
+  oElipse.Draw();
 
   //glPushMatrix();
 	//glTranslatef(-1.5f,0.0f,-6.0f);   // Move Left 1.5 Units And Into The Screen 6.0
