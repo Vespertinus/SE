@@ -27,6 +27,8 @@ FPS
 работу с Quaternion'ами и векторами. (QuadQuaternions on GPU)
 преобразования из градусов в радианы.
 
+BaseMath -> vec, quat, matr, tables and conversions
+
 [GUI]
 
 Начать прикручивать CEGUI

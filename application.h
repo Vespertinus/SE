@@ -18,6 +18,8 @@
 //#include <Singleton.h>
 
 // Internal include
+#include <Global.h>
+
 #include <InputManager.h>
 #include <Camera.h>
 #include <FlyTransposer.h>
@@ -67,8 +69,6 @@ template <class TLoop > class Application {
   TResizeFunctor          oResizeFunctor;
 
   TWindow                 oMainWindow;
-
-  
 
 
 	public:

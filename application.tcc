@@ -95,6 +95,8 @@ template <class TLoop> void Application<TLoop>::Run() {
 	glPopMatrix();
 	//glutSwapBuffers();
   TInputManager::Instance().Capture();
+
+  TSimpleFPS::Instance().Update();
 }
 
 
