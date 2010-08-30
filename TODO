@@ -39,6 +39,19 @@ BaseMath -> vec, quat, matr, tables and conversions
 тип загружаемого файла (jpg, png, tga)
 тип хранимых данных (без сжатия, с сжатием, возможно добавить несколько форматов DXT1, DXT3?)
 
+Resource <StoreStrategyList, LoadStrategyList> ...
+            typedef StoreList;
+            typedef LoadStrategyList;
+            SettingsType <StoreStrategy::Settings, LoadStrategy::Settings> ConcreateSettings;
+              check StoreStrategy in StoreStrategyList;
+              check LoadStrategy  in LoadStrategyList;
+            fill settings
+            call Create<Resource>(name, oConcreateSettings)
+              check Resource in ResourceList
+              check ConcreateSettings with StoreStrategy in StoreStrategyList, LoadStrategy in LoadStrategyList
+              call Resource::Load(name, oConcreateSettings);
+
+              ::Load<StoreSettings & LoadStrategySettings>();
 
 
 [ResourceManager]

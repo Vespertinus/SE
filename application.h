@@ -24,6 +24,7 @@
 #include <Camera.h>
 #include <FlyTransposer.h>
 #include <X11Window.h>
+#include <ResourceManager.h>
 
 #include <stl_extension.h>
 
@@ -59,6 +60,8 @@ template <class TLoop > class Application {
 //# error "unsupported OS"
 //#endif
 
+  typedef ResourceManager<LOKI_TYPELIST_2(int, float)>                        TResourceManager;
+
 	SysSettings_t						oSettings;
 	TLoop									&	oLoop;
 	int											window_id;
@@ -70,6 +73,7 @@ template <class TLoop > class Application {
 
   TWindow                 oMainWindow;
 
+  TResourceManager        oResourceManager;
 
 	public:
 	Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop);
