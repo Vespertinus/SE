@@ -3,7 +3,17 @@
 
 namespace SE {
 
-Scene::Scene() : oElipse(0, 0, 2, 10, 36) { ;; }
+Scene::Scene() : oElipse(0, 0, 2, 10, 36)  { 
+  
+  
+  //typedef TTexture::TSettings<StoreTexture2D, TGALoader> TexConcreateSettings1;
+
+  //TexConcreateSettings1 oTexSettings1;
+  //TTexture::Settings<StoreTexture2D, TexConcreateSettings1>().
+  //pTex = TResourceManager::Instance().Create("", TTexture::DefaultSettings());
+
+
+}
 
 
 

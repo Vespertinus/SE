@@ -53,9 +53,12 @@ Resource <StoreStrategyList, LoadStrategyList> ...
 
               ::Load<StoreSettings & LoadStrategySettings>();
 
+сделать шаблончик облегчающий создание конкретного типа настроек текстуры, на основе ResourceHolder::SettingsType
 
 [ResourceManager]
 разбито по видом, типы определяются на этапе компиляции списком типов и обработчиков.
 Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 
+упростить инициализацию ресурсов. первые стратегии в списках, считаются стратегиями по умолчанию.
+Добавить авто построение настроек для конкретных ресурсов.
 

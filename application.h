@@ -18,13 +18,12 @@
 //#include <Singleton.h>
 
 // Internal include
-#include <Global.h>
+#include <GlobalTypes.h>
 
 #include <InputManager.h>
 #include <Camera.h>
 #include <FlyTransposer.h>
 #include <X11Window.h>
-#include <ResourceManager.h>
 
 #include <stl_extension.h>
 
@@ -42,6 +41,8 @@ struct SysSettings_t {
 
 	CamSettings_t   oCamSettings;
   WindowSettings  oWindowSettings;
+
+  std::string     sResourceDir;
 };
 
 
@@ -60,7 +61,6 @@ template <class TLoop > class Application {
 //# error "unsupported OS"
 //#endif
 
-  typedef ResourceManager<LOKI_TYPELIST_2(int, float)>                        TResourceManager;
 
 	SysSettings_t						oSettings;
 	TLoop									&	oLoop;
@@ -72,8 +72,6 @@ template <class TLoop > class Application {
   TResizeFunctor          oResizeFunctor;
 
   TWindow                 oMainWindow;
-
-  TResourceManager        oResourceManager;
 
 	public:
 	Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop);

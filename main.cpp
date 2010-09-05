@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
   oSettings.oWindowSettings.bpp         = 24;
 	oSettings.oWindowSettings.fullscreen  = 0;
   oSettings.oWindowSettings.title       = "Simple Engine DEMO (2010.05.13)";
+  oSettings.sResourceDir                = "resource/";
 
 
 

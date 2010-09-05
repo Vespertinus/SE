@@ -6,11 +6,11 @@
 #include <loki/HierarchyGenerators.h>
 #include <map>
 
+#include <ResourceHolder.h>
+#include <Util.h>
 
 namespace SE {
 
-/** resource id type */
-typedef uint64_t rid_t;
 
 /**
  LRU
@@ -22,7 +22,7 @@ template < class ResourceList > class ResourceManager {
 
   protected:
 
-  template < class R> struct Holder : public std::map <rid_t, R> { };
+  template < class R> struct Holder : public std::map <rid_t, R *> { };
   
   typedef Loki::GenScatterHierarchy<ResourceList, Holder> TResourceStorage;
 
@@ -38,10 +38,11 @@ template < class ResourceList > class ResourceManager {
   ResourceManager();
   virtual ~ResourceManager() throw();
 
-  rid_t Create (const std::string & oPath, );
-  //Destroy
-  //IsLoaded(r_id_t);
-  //<Resource type >Clear();
+  template <class Resource, class TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & oSettings);
+  template <class Resource> void Destroy(const rid_t key);
+  template <class Resource> bool IsLoaded(const rid_t key) const;
+  template <class Resource> bool IsLoaded(const std::string & sPath) const;
+  template <class Resource> void Clear();
 
 }; 
 

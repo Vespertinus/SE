@@ -15,6 +15,9 @@ class Scene {
   HELPERS::Elipse   oElipse;
   //DEBUG code ___End_____
 
+  TTexture        * pTex01;
+  TTexture        * pTexCopy;
+
 
 	public:
 	

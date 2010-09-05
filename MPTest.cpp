@@ -33,10 +33,14 @@ typedef LOKI_TYPELIST_3(A1, A2, A3) TestList1;
 
 int main() {
 
-  typedef MP::InnerSearch<TestList1, float>::Result TResult;
+  //typedef MP::InnerSearch<TestList1, float>::Result TResult;
+  typedef MP::InnerSearch<TestList1, double>::Result TResult;
 
   TResult obj;
   obj.Action();
+
+  //check TypeAt
+  typedef Loki::TL::TypeAt<TestList1, 0 >::Result TA1;
 
   return 0;
 }
