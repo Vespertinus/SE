@@ -3,15 +3,13 @@
 
 namespace SE {
 
-Scene::Scene() : oElipse(0, 0, 2, 10, 36)  { 
-  
-  
+Scene::Scene() : oSmallElipse(0, 0, 2, 10, 36), oBigElipse(0, 0, 2, 100, 36) { 
+
   //typedef TTexture::TSettings<StoreTexture2D, TGALoader> TexConcreateSettings1;
 
   //TexConcreateSettings1 oTexSettings1;
   //TTexture::Settings<StoreTexture2D, TexConcreateSettings1>().
   //pTex = TResourceManager::Instance().Create("", TTexture::DefaultSettings());
-
 
 }
 
@@ -25,7 +23,8 @@ void Scene::Process() {
 
   HELPERS::DrawAxes(10);
   //DrawElipse(0, 0, 2, 10, 18);
-  oElipse.Draw();
+  oSmallElipse.Draw();
+  oBigElipse.Draw();
 
   //glPushMatrix();
 	//glTranslatef(-1.5f,0.0f,-6.0f);   // Move Left 1.5 Units And Into The Screen 6.0

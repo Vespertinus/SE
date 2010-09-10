@@ -12,7 +12,8 @@ namespace SE {
 class Scene {
 
   //DEBUG code ___Start___
-  HELPERS::Elipse   oElipse;
+  HELPERS::Elipse   oSmallElipse;
+  HELPERS::Elipse   oBigElipse;
   //DEBUG code ___End_____
 
   TTexture        * pTex01;
