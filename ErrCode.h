@@ -4,6 +4,8 @@
 
 namespace SE {
 
+typedef uint32_t  ret_code_t;
+
 const ret_code_t  uSUCCESS                  = 0x0;
 const ret_code_t  uREAD_FILE_ERROR          = 0x00001001;
 const ret_code_t  uWRITE_FILE_ERROR         = 0x00001101;

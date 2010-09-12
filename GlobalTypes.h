@@ -12,8 +12,8 @@
 #include <HierarchyGenerators.h>
 #include <Typelist.h>
 
-#include <Util.h>
 #include <ErrCode.h>
+#include <Util.h>
 
 #include <SimpleFPS.h>
 
