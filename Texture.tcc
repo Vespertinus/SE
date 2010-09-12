@@ -1,28 +1,41 @@
 
 namespace SE  { 
 
-
-
-template <class StoreStrategyList, class LoadStrategyList> template <class TConcreateSettings> 
-  Texture<StoreStrategyList, LoadStrategyList>::Texture(
-      const std::string oName, TConcreateSettings & oSettings, const rid_t new_rid) :
-        ResourceHolder(new_rid), oDimensions(0, 0), id(0) {
+template <class StoreStrategyList, class LoadStrategyList> 
+  template <class TStoreStrategySettings,  class TLoadStrategySettings> 
+    Texture<StoreStrategyList, LoadStrategyList>::Texture(
+        const std::string oName, 
+        const rid_t new_rid,
+        const TStoreStrategySettings & oStoreStrategySettings, 
+        const TLoadStrategySettings & oLoadStrategySettings) :
+          ResourceHolder(new_rid), oDimensions(0, 0), id(0) {
           
-  //rid = new_rid;
-
-  Create(oName, oSettings);
+  Create(oName, oStoreStrategySettings, oLoadStrategySettings);
 }
 
+template <class StoreStrategyList, class LoadStrategyList> 
+    Texture<StoreStrategyList, LoadStrategyList>::Texture(
+        const std::string oName, 
+        const rid_t new_rid) : 
+          ResourceHolder(new_rid), oDimensions(0, 0), id(0) {
+  
+
+  Create(oName, typename TDefaultStoreStrategy::Settings(), typename TDefaultLoadStrategy::Settings());
+}
 
 
 template <class StoreStrategyList, class LoadStrategyList> Texture<StoreStrategyList, LoadStrategyList>::~Texture() throw() { ;; }
 
 
 
-template <class StoreStrategyList, class LoadStrategyList> template <class TConcreateSettings> void Texture<StoreStrategyList, LoadStrategyList>::Create(const std::string oName, TConcreateSettings & oSettings) {
+template <class StoreStrategyList, class LoadStrategyList> 
+  template <class TStoreStrategySettings,  class TLoadStrategySettings> void 
+    Texture<StoreStrategyList, LoadStrategyList>::Create(const std::string oName, 
+                                                  const TStoreStrategySettings & oStoreStrategySettings, 
+                                                  const TLoadStrategySettings & oLoadStrategySettings) {
  
-  typedef typename Loki::TL::TypeAt<typename TConcreateSettings::TSettingsList, 0 >::Result TStoreStrategySettings;
-  typedef typename Loki::TL::TypeAt<typename TConcreateSettings::TSettingsList, 1 >::Result TLoadStrategySettings;
+  //typedef typename Loki::TL::TypeAt<typename TConcreateSettings::TSettingsList, 0 >::Result TStoreStrategySettings;
+  //typedef typename Loki::TL::TypeAt<typename TConcreateSettings::TSettingsList, 1 >::Result TLoadStrategySettings;
 
   typedef typename MP::InnerSearch<StoreStrategyList, TStoreStrategySettings>::Result TStoreStrategy;
   typedef typename MP::InnerSearch<LoadStrategyList,  TLoadStrategySettings >::Result TLoadStrategy;
@@ -30,9 +43,11 @@ template <class StoreStrategyList, class LoadStrategyList> template <class TConc
   TextureStock    oTextureStock;
   ret_code_t      err_code;
 
-  TLoadStrategy   oLoadStrategy(Settings<TLoadStrategySettings, TConcreateSettings>(oSettings));
+  //TLoadStrategy   oLoadStrategy(Settings<TLoadStrategySettings, TConcreateSettings>(oSettings));
+  TLoadStrategy   oLoadStrategy(oLoadStrategySettings);
 
-  TStoreStrategy  oStoreStrategy(Settings<TStoreStrategySettings, TConcreateSettings>(oSettings));
+  //TStoreStrategy  oStoreStrategy(Settings<TStoreStrategySettings, TConcreateSettings>(oSettings));
+  TStoreStrategy  oStoreStrategy(oStoreStrategySettings);
 
   err_code = oLoadStrategy.Load(oName, oTextureStock);
   if (err_code) {

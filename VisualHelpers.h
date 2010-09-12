@@ -9,6 +9,10 @@ namespace HELPERS {
 
 void DrawAxes(const float size);
 
+void DrawPlane(const float width, const float height, 
+               const float x_pos, const float y_pos, const float z_pos,
+               const float x_dir, const float y_dir, const float z_dir,
+               const uint32_t texture_id);
 
 
 class Elipse {

@@ -3,13 +3,23 @@
 
 namespace SE {
 
-Scene::Scene() : oSmallElipse(0, 0, 2, 10, 36), oBigElipse(0, 0, 2, 100, 36) { 
+Scene::Scene() : 
+  oSmallElipse(0, 0, 2, 10, 36), 
+  oBigElipse(0, 0, 2, 100, 36),
+  pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/checker_01.tga")) {
 
-  //typedef TTexture::TSettings<StoreTexture2D, TGALoader> TexConcreateSettings1;
 
-  //TexConcreateSettings1 oTexSettings1;
-  //TTexture::Settings<StoreTexture2D, TexConcreateSettings1>().
-  //pTex = TResourceManager::Instance().Create("", TTexture::DefaultSettings());
+  /* Test Resource manager compilation
+  TGALoader::Settings       oLoadStrategySettings;
+  StoreTexture2D::Settings  oStoreStrategySettings;
+  //change preference
+
+  //create resource
+
+  TTexture * pTex01 = TResourceManager::Instance().Create<TTexture>("", oStoreStrategySettings, oLoadStrategySettings);
+  
+  TTexture * pTex02 = TResourceManager::Instance().Create<TTexture>("");
+  */
 
 }
 
@@ -26,6 +36,10 @@ void Scene::Process() {
   oSmallElipse.Draw();
   oBigElipse.Draw();
 
+  HELPERS::DrawPlane(4, 4, 
+                     -1, 2, 1,
+                     1, 1, 1,
+                     pTex01->GetID());
   //glPushMatrix();
 	//glTranslatef(-1.5f,0.0f,-6.0f);   // Move Left 1.5 Units And Into The Screen 6.0
 

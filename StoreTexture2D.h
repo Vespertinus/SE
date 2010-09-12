@@ -27,6 +27,8 @@ class StoreTexture2D {
   
   const Settings  & oSettings;
 
+  public:
+
   StoreTexture2D(const Settings & oNewSettings);
   ~StoreTexture2D() throw();
   ret_code_t Store(TextureStock & oTextureStock, uint32_t & id);

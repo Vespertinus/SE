@@ -119,6 +119,33 @@ void Elipse::Draw() const {
 }
 
 
+void DrawPlane(const float width, const float height, 
+               const float x_pos, const float y_pos, const float z_pos,
+               const float x_dir, const float y_dir, const float z_dir,
+               const uint32_t texture_id) {
+
+	
+  glBindTexture (GL_TEXTURE_2D, texture_id);
+
+  glColor3f(1, 1, 1);
+  glBegin(GL_QUADS);
+  
+  glTexCoord2i (0, 0);
+  glVertex3f(x_pos, y_pos, z_pos);
+  
+  glTexCoord2i (1, 0);
+  glVertex3f(x_dir * width + x_pos, y_pos, z_pos);
+  
+  glTexCoord2i (1, 1);
+  glVertex3f(x_dir * width + x_pos, y_dir * height + y_pos, z_pos);
+  
+  glTexCoord2i (0, 1);
+  glVertex3f(x_pos, y_dir * height + y_pos, z_pos);
+
+  glEnd();
+
+}
+
 } //namespace HELPERS
 
 } //namespace SE

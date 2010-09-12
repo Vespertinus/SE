@@ -31,14 +31,18 @@ template < class ResourceList > class ResourceManager {
 
 
 
-  template <class Resource> Resource & Storage();
+  template <class Resource> Holder<Resource> & Storage() {
+
+    return Loki::Field<Resource>(oResourceStorage);
+  }
 
   public:
 
   ResourceManager();
   virtual ~ResourceManager() throw();
 
-  template <class Resource, class TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & oSettings);
+  //template <class Resource, class TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & oSettings);
+  template <class Resource, class ... TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & ... oSettings);
   template <class Resource> void Destroy(const rid_t key);
   template <class Resource> bool IsLoaded(const rid_t key) const;
   template <class Resource> bool IsLoaded(const std::string & sPath) const;

@@ -87,12 +87,14 @@ template <class TLoop> void Application<TLoop>::Run() {
 	glClear(oSettings.clear_flag);
 	//gl clear texture buffer
 	glLoadIdentity();
+  glEnable(GL_TEXTURE_2D);
 	glPushMatrix();
 	oCamera.Adjust();
 
 	oLoop.Process();
 
 	glPopMatrix();
+  glDisable(GL_TEXTURE_2D);
 	//glutSwapBuffers();
   TInputManager::Instance().Capture();
 

@@ -17,7 +17,6 @@ class Scene {
   //DEBUG code ___End_____
 
   TTexture        * pTex01;
-  TTexture        * pTexCopy;
 
 
 	public:

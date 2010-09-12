@@ -19,7 +19,6 @@ typedef uint64_t rid_t;
 
   public:
   ResourceHolder(const rid_t new_rid) : rid(new_rid) { ;; }
-  //template <class StoreStrategy, class LoadStrategy> struct SettingsType : publ
   template <class SettingsList> struct SettingsType : public Loki::GenScatterHierarchy <SettingsList, Holder> {
     typedef SettingsList TSettingsList;
   };

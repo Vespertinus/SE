@@ -39,7 +39,7 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, oSettings.mag_filter);
   
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, oSettings.apply_method);
- 
+/* 
   if (oSettings.mipmap_level) {
 
     gluBuild2DMipmaps(GL_TEXTURE_2D, 
@@ -50,7 +50,7 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
                       GL_UNSIGNED_BYTE, 
                       oTextureStock.raw_image);
   }
-
+*/
   return ret_code;
 }
 
