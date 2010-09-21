@@ -20,8 +20,10 @@ class Scene {
 
 
 	public:
+  //empty settings
+  struct Settings {};
 	
-	Scene();
+	Scene(const Settings & oSettings);
 	~Scene() throw();
 	
 	void Process();

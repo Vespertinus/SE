@@ -23,7 +23,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
   FILE * oImageFile = fopen (sPath.c_str(), "rb");
 
   if (oImageFile == NULL)	{
-    fprintf(stderr, "TGALoader::Load: can't open file = '%s', reason = %s", sPath.c_str(), strerror(errno));
+    fprintf(stderr, "TGALoader::Load: can't open file = '%s', reason = %s\n", sPath.c_str(), strerror(errno));
     return uREAD_FILE_ERROR;
   }
 
@@ -32,7 +32,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
       (memcmp (targa_magic, file_magic, sizeof (targa_magic)) != 0 ) ||
       (fread (header, 1, sizeof (header), oImageFile) != sizeof (header) ))	{
 
-    fprintf(stderr, "TGALoader::Load: wrong data in file = '%s'", sPath.c_str());
+    fprintf(stderr, "TGALoader::Load: wrong data in file = '%s'\n", sPath.c_str());
     fclose (oImageFile);
     return uREAD_FILE_ERROR;
   }

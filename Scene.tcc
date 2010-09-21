@@ -3,10 +3,11 @@
 
 namespace SE {
 
-Scene::Scene() : 
+Scene::Scene(const Settings & oSettings) : 
   oSmallElipse(0, 0, 2, 10, 36), 
   oBigElipse(0, 0, 2, 100, 36),
-  pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/checker_01.tga")) {
+  //pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/checker_01.tga")) {
+  pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/tst_01.tga")) {
 
 
   /* Test Resource manager compilation
@@ -37,7 +38,7 @@ void Scene::Process() {
   oBigElipse.Draw();
 
   HELPERS::DrawPlane(4, 4, 
-                     -1, 2, 1,
+                     -1, 2, 0.25,
                      1, 1, 1,
                      pTex01->GetID());
   //glPushMatrix();

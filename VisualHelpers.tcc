@@ -125,24 +125,32 @@ void DrawPlane(const float width, const float height,
                const uint32_t texture_id) {
 
 	
-  glBindTexture (GL_TEXTURE_2D, texture_id);
+  
+  //fprintf(stderr, "DrawPlane: texture_id = %u\n", texture_id);
 
   glColor3f(1, 1, 1);
+  glBindTexture (GL_TEXTURE_2D, texture_id);
   glBegin(GL_QUADS);
   
-  glTexCoord2i (0, 0);
+  glTexCoord2f (0, 0);
+  //glNormal3f(0, 1, 0);
   glVertex3f(x_pos, y_pos, z_pos);
   
-  glTexCoord2i (1, 0);
+  glTexCoord2f (1, 0);
+  //glNormal3f(0, 1, 0);
   glVertex3f(x_dir * width + x_pos, y_pos, z_pos);
   
-  glTexCoord2i (1, 1);
+  glTexCoord2f (1, 1);
+  //glNormal3f(0, 1, 0);
   glVertex3f(x_dir * width + x_pos, y_dir * height + y_pos, z_pos);
   
-  glTexCoord2i (0, 1);
+  glTexCoord2f (0, 1);
+  //glNormal3f(0, 1, 0);
   glVertex3f(x_pos, y_dir * height + y_pos, z_pos);
 
   glEnd();
+  //glFlush();
+  
 
 }
 

@@ -63,7 +63,6 @@ template <class TLoop > class Application {
 
 
 	SysSettings_t						oSettings;
-	TLoop									&	oLoop;
 	int											window_id;
 	FlyTransposer						oTranspose;
 	Camera								 	oCamera;
@@ -72,9 +71,10 @@ template <class TLoop > class Application {
   TResizeFunctor          oResizeFunctor;
 
   TWindow                 oMainWindow;
+	TLoop										oLoop;
 
 	public:
-	Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop);
+	Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings & oLoopSettings);
 	~Application() throw();
 
 	//template <class T> Run(T & oLoop);

@@ -2,13 +2,13 @@
 
 namespace SE {
 
-template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, TLoop & oNewLoop):
+template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
 	oSettings(oNewSettings), 
-	oLoop(oNewLoop), 
 	oCamera(oTranspose,	oSettings.oCamSettings),
   oRunFunctor   (*this, &Application<TLoop>::Run),
   oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
-  oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings) {
+  oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
+	oLoop(oLoopSettings) { 
 
     fprintf(stderr, "Application::Application: try to init OIS\n");
 
@@ -21,6 +21,8 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
 
     oCamera.SetPos(5, 1, 1);    
     //oCamera.LookAt(0, 1, 1);
+
+    Init();
     
     fprintf(stderr, "Application::Application: Start Loop\n");
 
@@ -37,7 +39,9 @@ template <class TLoop> Application<TLoop>::~Application() throw() { ;; }
 
 
 template <class TLoop> void Application<TLoop>::Init() { 
-	
+
+  fprintf(stderr, "Application::Init: \n");
+
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);   
 	glClearDepth(1.0);        
 	glDepthFunc(GL_LESS);       
@@ -53,6 +57,10 @@ template <class TLoop> void Application<TLoop>::Init() {
 								oSettings.far_clip);
 
 	glMatrixMode(GL_MODELVIEW);
+
+  glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+  //glEnable(GL_LIGHTING);
 }
 
 

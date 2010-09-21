@@ -17,7 +17,10 @@ class StoreTexture2D {
     Settings() : 
       wrap(GL_REPEAT), 
       min_filter(GL_LINEAR_MIPMAP_NEAREST),
+      //min_filter(GL_LINEAR),
       mag_filter(GL_LINEAR),
+      apply_method(GL_MODULATE),
+      //apply_method(GL_REPLACE),
       mipmap_level(4) { ;; }
   };
   

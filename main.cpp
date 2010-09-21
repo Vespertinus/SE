@@ -34,10 +34,7 @@ int main(int argc, char **argv) {
 
   try {
 
-    SE::Scene oScene;
-
-    SE::Application<SE::Scene> App(oSettings, oScene);
-
+    SE::Application<SE::Scene> App(oSettings, SE::Scene::Settings());
   }
   catch (std::exception & ex) {
     fprintf(stderr, "main: exception catched = %s\n", ex.what());
