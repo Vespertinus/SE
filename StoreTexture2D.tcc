@@ -31,8 +31,7 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
     return uWRONG_INPUT_DATA;
   }
 
-  //uint32_t _id;
-  GLuint   _id;
+  uint32_t _id;
 
   glGenTextures(1, &_id);
   
@@ -42,18 +41,13 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
 
   fprintf(stderr, "StoreTexture2D::Store: id = %u\n", id);
 
-
-  //------>
-  //memset(oTextureStock.raw_image, 10, oTextureStock.raw_image_size);
-  //------>
-  
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, oSettings.wrap);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, oSettings.wrap);
   
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, oSettings.min_filter);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, oSettings.mag_filter);
   
-  //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, oSettings.apply_method);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, oSettings.apply_method);
 /*
   glTexImage2D(GL_TEXTURE_2D, 
                0, 
