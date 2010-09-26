@@ -34,15 +34,13 @@ struct SysSettings_t {
 	//int32_t 	width;
 	//int32_t 	height;
 	//float			fov;
-	float 		near_clip;
-	float			far_clip;
 	//bool			fullscreen;
-	int				clear_flag;
+	int				                clear_flag;
 
-	CamSettings_t   oCamSettings;
-  WindowSettings  oWindowSettings;
+  Camera::CamSettings_t     oCamSettings;
+  WindowSettings            oWindowSettings;
 
-  std::string     sResourceDir;
+  std::string               sResourceDir;
 };
 
 

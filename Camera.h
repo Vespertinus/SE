@@ -5,15 +5,26 @@
 
 namespace SE {
 
-struct CamSettings_t {
-
-	int32_t width,
-					height;
-	float 	fov;
-
-};
 
 class Camera {
+
+  public:
+
+  static const uint8_t uPERSPECTIVE   = 1;
+  static const uint8_t uORTHO         = 2;
+
+  struct CamSettings_t {
+
+    int32_t   width,
+              height;
+    float 	  fov;
+    float 		near_clip;
+    float			far_clip;
+    uint8_t   projection;
+
+  };
+
+  private:
 
 	float		pos_x,
 					pos_y,
@@ -43,6 +54,8 @@ class Camera {
 	
   void SetPos(const float new_x, const float new_y, const float new_z);
   void LookAt(const float x, const float y, const float z);
+
+  void UpdateProjection() const;
 
 };
 

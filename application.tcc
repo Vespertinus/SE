@@ -49,14 +49,7 @@ template <class TLoop> void Application<TLoop>::Init() {
 	glShadeModel(GL_SMOOTH);  
   //glLineWidth(4);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();       
-	gluPerspective(oSettings.oCamSettings.fov, 
-								(GLfloat)oSettings.oCamSettings.width / (GLfloat) oSettings.oCamSettings.height,
-								oSettings.near_clip,
-								oSettings.far_clip);
-
-	glMatrixMode(GL_MODELVIEW);
+  oCamera.UpdateProjection();
 
   glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
@@ -76,16 +69,7 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
   
   TInputManager::Instance().SetWindowExtents(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	
-	gluPerspective(oSettings.oCamSettings.fov, 
-								(GLfloat)oSettings.oCamSettings.width / (GLfloat) oSettings.oCamSettings.height,
-								oSettings.near_clip,
-								oSettings.far_clip);
-
-	glMatrixMode(GL_MODELVIEW);
+  oCamera.UpdateProjection();
 }
 
 

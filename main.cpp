@@ -18,10 +18,11 @@ int main(int argc, char **argv) {
 	oSettings.oCamSettings.width 					= 1024;
 	oSettings.oCamSettings.height					= 768;
 	oSettings.oCamSettings.fov						= 45;
-  
-	oSettings.near_clip										=	0.1;
-	oSettings.far_clip										= 1000;
-	oSettings.clear_flag									= GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+	oSettings.oCamSettings.near_clip			=	0.1;
+	oSettings.oCamSettings.far_clip				= 1000;
+  oSettings.oCamSettings.projection     = SE::Camera::uPERSPECTIVE;
+
+	oSettings.clear_flag			            = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
   oSettings.oWindowSettings.width       = oSettings.oCamSettings.width;
   oSettings.oWindowSettings.height      = oSettings.oCamSettings.height;

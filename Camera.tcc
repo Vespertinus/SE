@@ -66,9 +66,14 @@ void Camera::UpdateDimension(const int32_t new_width, const int32_t new_height) 
 	oSettings.height 	= new_height;
 }
 
+
+
 int32_t Camera::GetWidth() const { return oSettings.width; }
 
+
+
 int32_t Camera::GetHeight() const { return oSettings.height; }
+
 
 
 void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
@@ -77,6 +82,8 @@ void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
   pos_y = new_x;
   pos_z = new_z;
 }
+
+
 
 void Camera::LookAt(const float x, const float y, const float z) {
 /*
@@ -117,5 +124,37 @@ void Camera::LookAt(const float x, const float y, const float z) {
   //rot_z = 0;
 }
 
-} //namespace SE
+
+void Camera::UpdateProjection() const {
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+  
+  switch (oSettings.projection) {
+  
+    case uPERSPECTIVE:
+      gluPerspective(oSettings.fov, 
+                     (GLfloat)oSettings.width / (GLfloat) oSettings.height,
+                     oSettings.near_clip,
+                     oSettings.far_clip);
+
+      break;
+    
+    case uORTHO:
+      glOrtho (0, oSettings.width, 0, oSettings.height, oSettings.near_clip, oSettings.far_clip);
+    
+      break;
+
+    default:
+      fprintf(stderr, "Camera::UpdateProjection: wrong projection = %u\n", oSettings.projection);
+
+  }
+	
+  glMatrixMode(GL_MODELVIEW);
+
+}
+
+
+
+} //namhespace SE
 
