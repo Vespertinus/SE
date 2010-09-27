@@ -1,7 +1,7 @@
 
 
-#ifndef __Scene_H__
-#define __Scene_H__ 1
+#ifndef __SCENE_H__
+#define __SCENE_H__ 1
 
 #include <VisualHelpers.h>
 
