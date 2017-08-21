@@ -138,11 +138,11 @@ void DrawPlane(const float width, const float height,
   
   glTexCoord2f (1, 0);
   //glNormal3f(0, 1, 0);
-  glVertex3f(x_dir * width + x_pos, y_pos, z_pos);
+  glVertex3f(x_dir * width + x_pos, y_pos, z_dir * height + z_pos);
   
   glTexCoord2f (1, 1);
   //glNormal3f(0, 1, 0);
-  glVertex3f(x_dir * width + x_pos, y_dir * height + y_pos, z_pos);
+  glVertex3f(x_dir * width + x_pos, y_dir * height + y_pos, z_dir * height + z_pos);
   
   glTexCoord2f (0, 1);
   //glNormal3f(0, 1, 0);

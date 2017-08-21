@@ -7,6 +7,9 @@ OrthoScene::OrthoScene(const Settings & oSettings) :
   
 
 }
+
+
+
 OrthoScene::~OrthoScene() throw() { ;; }
 
 
@@ -16,8 +19,8 @@ void OrthoScene::Process() {
   SE::HELPERS::DrawAxes(10);
 
   SE::HELPERS::DrawPlane(4, 4, 
-                     -1, 2, 0.25,
-                     1, 1, 1,
+                     0, 1, 1,
+                     0, 1, 1,
                      pTex01->GetID());
 }
 

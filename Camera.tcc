@@ -138,10 +138,17 @@ void Camera::UpdateProjection() const {
                      oSettings.near_clip,
                      oSettings.far_clip);
 
+      //glFrustum(-0.05522847498307934, 0.05522847498307934, -0.041421356237309505, 0.041421356237309505, oSettings.near_clip, oSettings.far_clip);
+      //glFrustum(-512 / 100., 512/ 100., -384 / 100., 384 / 100., oSettings.near_clip, oSettings.far_clip);
+
       break;
     
     case uORTHO:
-      glOrtho (0, oSettings.width, 0, oSettings.height, oSettings.near_clip, oSettings.far_clip);
+      //glOrtho (0, oSettings.width, 0, oSettings.height, oSettings.near_clip, oSettings.far_clip);
+      //glOrtho (0, 1, 0, 1, oSettings.near_clip, oSettings.far_clip);
+      //glOrtho (-0.05522847498307934, 0.05522847498307934, -0.041421356237309505, 0.041421356237309505, oSettings.near_clip, oSettings.far_clip);
+      glOrtho (-512 / 100., 512 /100., -384 / 100., 384 / 100., oSettings.near_clip, oSettings.far_clip);
+      //glOrtho (0, oSettings.width, 0, oSettings.height, oSettings.near_clip, oSettings.far_clip);
     
       break;
 
@@ -151,6 +158,7 @@ void Camera::UpdateProjection() const {
   }
 	
   glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
 
 }
 
