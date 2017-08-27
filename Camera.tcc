@@ -11,16 +11,17 @@ template <class TTranspose> Camera::Camera(TTranspose & oTranspose, const CamSet
 	rot_x(100),
 	rot_y(0),
 	rot_z(270),
-  delta_x(0),
-  delta_y(0),
-  delta_z(0),
-	oSettings(oNewSettings) {
+        delta_x(0),
+        delta_y(0),
+        delta_z(0),        
+        oSettings((const BaseData &)oNewSettings),
+        oFrustum(oNewSettings.oVolume) {
 
-	oTranspose.ReInit(&pos_x, &pos_y, &pos_z, 
-                    &rot_x, &rot_y, &rot_z, 
-                    &delta_x, &delta_y, &delta_z, 
-                    &oSettings.width, 
-                    &oSettings.height);
+                oTranspose.ReInit(&pos_x, &pos_y, &pos_z, 
+                                &rot_x, &rot_y, &rot_z, 
+                                &delta_x, &delta_y, &delta_z, 
+                                &oSettings.width, 
+                                &oSettings.height);
 }
 
 
@@ -43,7 +44,10 @@ void Camera::Adjust() {
 
 
 
-void Camera::UpdateSettings(const CamSettings_t & oNewSettings) { oSettings = oNewSettings; }
+void Camera::UpdateSettings(const CamSettings_t & oNewSettings) { 
+        oSettings = (const BaseData &)oNewSettings;
+        oFrustum.SetVolume(oNewSettings.oVolume);
+}
 
 
 
@@ -64,15 +68,16 @@ void Camera::UpdateDimension(const int32_t new_width, const int32_t new_height) 
 	
 	oSettings.width 	= new_width;
 	oSettings.height 	= new_height;
+        oFrustum.SetAspect((float)new_width / (float)new_height);
 }
 
 
 
-int32_t Camera::GetWidth() const { return oSettings.width; }
+//int32_t Camera::GetWidth() const { return oSettings.width; }
 
 
 
-int32_t Camera::GetHeight() const { return oSettings.height; }
+//int32_t Camera::GetHeight() const { return oSettings.height; }
 
 
 
@@ -86,80 +91,47 @@ void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
 
 
 void Camera::LookAt(const float x, const float y, const float z) {
-/*
-  float sx = sinf(rot_x);
-  float cx = cosf(rot_x);
-  float sy = sinf(rot_y);
-  float cy = cosf(rot_y);
-  
-  float sz = sinf(rot_z);
-  float cz = cosf(rot_z);
 
-  float res_x =  sy*cx;
-  float res_y = -sx;
-  float res_z =  cy*cx;
-*/
-  //directionVector.Set(x,y,z);
-
-  float res_x,
-        res_y,
-        res_z;
-
-  res_x = x - pos_x;
-  res_y = y - pos_y;
-  res_z = z - pos_z;
-  
-/*  
-  res_x = pos_x - x;
-  res_y = pos_y - y;
-  res_z = pos_z - z;
-*/  
-  fprintf(stderr, "Camera::LookAt: res_x = %f, res_y = %f, res_z = %f\n", res_x, res_y, res_z);
-
-  //rot_x = (float)atan2(-res_y, sqrt(res_x * res_x + res_z * res_z));
-  //rot_z = (float)atan2(res_x, res_z);
-  
-  rot_x += (float)atan2(-res_y, sqrt(res_x * res_x + res_z * res_z)) * 180 / M_PI;
-  rot_z += (float)atan2(res_x, res_z) * 180 / M_PI;
-  //rot_z = 0;
+        gluLookAt(pos_x, pos_y, pos_z,
+                  x, y, z,
+                  oSettings.up[0], oSettings.up[1], oSettings.up[2]);
 }
 
 
 void Camera::UpdateProjection() const {
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-  
-  switch (oSettings.projection) {
-  
-    case uPERSPECTIVE:
-      gluPerspective(oSettings.fov, 
-                     (GLfloat)oSettings.width / (GLfloat) oSettings.height,
-                     oSettings.near_clip,
-                     oSettings.far_clip);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
 
-      //glFrustum(-0.05522847498307934, 0.05522847498307934, -0.041421356237309505, 0.041421356237309505, oSettings.near_clip, oSettings.far_clip);
-      //glFrustum(-512 / 100., 512/ 100., -384 / 100., 384 / 100., oSettings.near_clip, oSettings.far_clip);
+        const Frustum::Volume & oVolume = oFrustum.GetVolume();
 
-      break;
-    
-    case uORTHO:
-      //glOrtho (0, oSettings.width, 0, oSettings.height, oSettings.near_clip, oSettings.far_clip);
-      //glOrtho (0, 1, 0, 1, oSettings.near_clip, oSettings.far_clip);
-      //glOrtho (-0.05522847498307934, 0.05522847498307934, -0.041421356237309505, 0.041421356237309505, oSettings.near_clip, oSettings.far_clip);
-      glOrtho (-512 / 100., 512 /100., -384 / 100., 384 / 100., oSettings.near_clip, oSettings.far_clip);
-      //glOrtho (0, oSettings.width, 0, oSettings.height, oSettings.near_clip, oSettings.far_clip);
-    
-      break;
+        switch (oVolume.projection) {
 
-    default:
-      fprintf(stderr, "Camera::UpdateProjection: wrong projection = %u\n", oSettings.projection);
+                case Frustum::uPERSPECTIVE:
+                        /*
+                        gluPerspective(oVolume.fov, 
+                                       //(GLfloat)oSettings.width / (GLfloat) oSettings.height,
+                                       oVolume.aspect,
+                                       oVolume.near_clip,
+                                       oVolume.far_clip);
+                        */                                        
 
-  }
-	
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+                        glFrustum(oVolume.left, oVolume.right, oVolume.bottom, oVolume.top, oVolume.near_clip, oVolume.far_clip);
+                        break;
 
+                case Frustum::uORTHO:
+                        
+                        glOrtho(oVolume.left, oVolume.right, oVolume.bottom, oVolume.top, oVolume.near_clip, oVolume.far_clip);
+                        //glOrtho (0, oSettings.width, oSettings.height, 0, oVolume.near_clip, oVolume.far_clip);
+                        break;
+
+                default:
+                        fprintf(stderr, "Camera::UpdateProjection: wrong projection = %u\n", oVolume.projection);
+
+        }
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
 }
 
 

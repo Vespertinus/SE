@@ -10,18 +10,17 @@ namespace FUNNY_TEX {
 
 class OrthoScene {
 
-  SE::TTexture        * pTex01;
+        SE::TTexture        * pTex01;
 
 
 	public:
-  //empty settings
-  struct Settings {};
-	
-	OrthoScene(const Settings & oSettings);
-	~OrthoScene() throw();
-	
-	void Process();
+        //empty settings
+        struct Settings {};
 
+        OrthoScene(const Settings & oSettings);
+        ~OrthoScene() throw();
+
+        void Process();
 };
 
 

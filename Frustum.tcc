@@ -1,52 +1,59 @@
 
 namespace SE {
 
-Frustum::Frustum(const Settings & oNewSettings) {
+Frustum::Frustum(const Volume & oNewVolume) : oVolume(oNewVolume) {
 
-  projection = oNewSettings.projection;
-  switch (projection) {
-    
-    case uORTHO:
-
-
-    case uPERSPECTIVE:
-
-
-      break
-
-    default:
-        throw("unknown perspective type"); //TODO write project exception 
-  }
-
-
-
+        RecalcVolume();
 }
  
+Frustum::~Frustum() throw() { ;; }
 
 
-void Frustum::SetVolume(const & Volume oNewVolume) { 
+void Frustum::SetVolume(const Volume & oNewVolume) { 
 
-  oVolume  = oNewVolume; 
-  UpdateProjection();
+        oVolume  = oNewVolume; 
+        RecalcVolume();
 }
 
 
 
 void Frustum::RecalcVolume() {
 
-  top    = near_clip  * tan(fov * M_PI / 360.0); //TODO rewrite to internal math
-  bottom = -top;
-  left   = top * aspect;
-  right  = bottom * aspect;
+        //if (oVolume.projection != uPERSPECTIVE || (oVolume.fov == 0)) { return; }
+
+        oVolume.top    = oVolume.near_clip  * tan(oVolume.fov * M_PI / 360.0); //TODO rewrite to internal math
+        oVolume.bottom = - oVolume.top;
+        oVolume.right  = oVolume.top * oVolume.aspect;
+        oVolume.left   = oVolume.bottom * oVolume.aspect;
+
+ /* reverse:
+ * new_fov     = math.atan(top / near_clip) / (math.pi / 360.0)
+ * new_aspect  = left / top
+ * */
+        
 }
 
 
-
+/*
 void Frustum::RecalcPersp() {
 
 
 }
+*/
 
+const Frustum::Volume & Frustum::GetVolume() const { 
+        return oVolume;
+}
+
+void Frustum::SetFOV(const float new_fov) {
+        oVolume.fov = new_fov;
+        RecalcVolume();
+}
+
+void Frustum::SetAspect(const float new_aspect) {
+        oVolume.aspect = new_aspect;
+        RecalcVolume();
+}
 
 } // namespace SE
 
