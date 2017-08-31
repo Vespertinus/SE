@@ -3,26 +3,26 @@
 
 namespace SE {
 
-Scene::Scene(const Settings & oSettings) : 
+Scene::Scene(const Settings & oSettings, Camera & oCurCamera) :
   oSmallElipse(0, 0, 2, 10, 36), 
   oBigElipse(0, 0, 2, 100, 36),
   //pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/checker_01.tga")) {
-  pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/tst_01.tga")) {
+        pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/tst_01.tga")) {
 
 
-  /* Test Resource manager compilation
-  TGALoader::Settings       oLoadStrategySettings;
-  StoreTexture2D::Settings  oStoreStrategySettings;
-  //change preference
+                /* Test Resource manager compilation
+                   TGALoader::Settings       oLoadStrategySettings;
+                   StoreTexture2D::Settings  oStoreStrategySettings;
+                //change preference
 
-  //create resource
+                //create resource
 
-  TTexture * pTex01 = TResourceManager::Instance().Create<TTexture>("", oStoreStrategySettings, oLoadStrategySettings);
-  
-  TTexture * pTex02 = TResourceManager::Instance().Create<TTexture>("");
-  */
+                TTexture * pTex01 = TResourceManager::Instance().Create<TTexture>("", oStoreStrategySettings, oLoadStrategySettings);
 
-}
+                TTexture * pTex02 = TResourceManager::Instance().Create<TTexture>("");
+                */
+
+        }
 
 
 

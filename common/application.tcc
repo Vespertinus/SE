@@ -8,7 +8,7 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
         oRunFunctor   (*this, &Application<TLoop>::Run),
         oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
         oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
-        oLoop(oLoopSettings) { 
+        oLoop(oLoopSettings, oCamera) { 
 
                 fprintf(stderr, "Application::Application: try to init OIS\n");
 

@@ -37,6 +37,7 @@ void Camera::Adjust() {
   pos_z += delta_z;
 		
 	glRotated (-rot_x, 1.0, 0.0, 0.0);
+	glRotated ( rot_y, 0.0, 1.0, 0.0);
 	glRotated ( rot_z, 0.0, 0.0, 1.0);
 
 	glTranslatef (-pos_x, -pos_y, -pos_z);

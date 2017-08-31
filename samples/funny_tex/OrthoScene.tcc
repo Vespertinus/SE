@@ -2,7 +2,7 @@
 namespace FUNNY_TEX {
 
 
-OrthoScene::OrthoScene(const Settings & oSettings) : 
+OrthoScene::OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera) : 
         pTex01(SE::TResourceManager::Instance().Create<SE::TTexture>("resource/texture/tst_01.tga")) {
   
 

@@ -3,9 +3,9 @@
 #define __GLOBAL_H__ 1
 
 
-namespace SE {
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>	
+#include <GL/glu.h>
+#include <GL/glext.h>
 
-
-
-}
 #endif

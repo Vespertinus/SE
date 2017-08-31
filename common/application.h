@@ -5,8 +5,8 @@
 
 // OpenGL include
 //#include <GL/glut.h>
-#include <GL/gl.h>	
-#include <GL/glu.h>	
+//#include <GL/gl.h>	
+//#include <GL/glu.h>	
 
 // C include
 #include <unistd.h> 
@@ -18,6 +18,7 @@
 //#include <Singleton.h>
 
 // Internal include
+#include <Global.h> 
 #include <GlobalTypes.h>
 
 #include <InputManager.h>

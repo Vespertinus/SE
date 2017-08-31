@@ -23,7 +23,7 @@ class Scene {
   //empty settings
   struct Settings {};
 	
-	Scene(const Settings & oSettings);
+	Scene(const Settings & oSettings, Camera & oCurCamera);
 	~Scene() throw();
 	
 	void Process();

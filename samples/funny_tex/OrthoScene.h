@@ -17,7 +17,7 @@ class OrthoScene {
         //empty settings
         struct Settings {};
 
-        OrthoScene(const Settings & oSettings);
+        OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera);
         ~OrthoScene() throw();
 
         void Process();

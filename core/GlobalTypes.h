@@ -5,7 +5,7 @@
 // C include
 #include <string.h>
 
-#include <Global.h>
+//#include <Global.h>
 
 // Loki include
 #include <Singleton.h>
@@ -26,20 +26,33 @@
 #include <TGALoader.h>
 #include <StoreTexture2D.h>
 
+namespace SE {
+
+typedef LOKI_TYPELIST_1(TGALoader)                                      TextureLoadStrategyList;
+typedef LOKI_TYPELIST_1(StoreTexture2D)                                 TextureStoreStrategyList;
+typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture;
+
+}
+
+#include <MeshStock.h>
+#include <Mesh.h>
+#include <OBJLoader.h>
+#include <StoreMesh.h>
+
 #include <ResourceManager.h>
 
 
 namespace SE {
 
 typedef Loki::SingletonHolder< SimpleFPS >  TSimpleFPS;
+/*
+typedef LOKI_TYPELIST_1(OBJLoader)                                      MeshLoadStrategyList;
+typedef LOKI_TYPELIST_1(StoreMesh)                                      MeshStoreStrategyList;
+typedef Mesh<MeshStoreStrategyList, MeshLoadStrategyList>               TMesh;
+*/
 
-typedef LOKI_TYPELIST_1(TGALoader)          TextureLoadStrategyList;
-typedef LOKI_TYPELIST_1(StoreTexture2D)     TextureStoreStrategyList;
-
-typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>  TTexture;
-
-
-typedef LOKI_TYPELIST_1(TTexture)           TResourseList;
+//typedef LOKI_TYPELIST_2(TTexture, TMesh)                                TResourseList;
+typedef LOKI_TYPELIST_1(TTexture)                                TResourseList;
 
 typedef Loki::SingletonHolder < ResourceManager<TResourseList> >    TResourceManager;
 

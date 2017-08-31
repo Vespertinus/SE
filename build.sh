@@ -3,3 +3,6 @@ g++ -Wall -pedantic ./samples/simple_engine/main.cpp core/InputManager.cpp -I./c
 
 echo "build funny_tex:"
 g++ -Wall -pedantic ./samples/funny_tex/FunnyTex.cpp -I./core -I./common -I./X11 -I./units -I./samples/funny_tex -lGL -lGLU -lOIS -L/usr/local/lib  -o funny_tex -I/usr/include/OIS -I/usr/include/loki core/InputManager.cpp -std=c++0x -L/usr/X11R6/lib -lX11 -lXxf86vm -ggdb3 -O0 -lpthread
+
+echo "build offscreen rendering:"
+g++ -Wall -pedantic ./samples/offscreen_rendering/main.cpp -I./core -I./common -I./X11 -I./units -I./samples/offscreen_rendering -I../../open_source/tinyobjloader -lGL -lGLU -lOIS -L/usr/local/lib  -o offscreen_demo -I/usr/include/OIS -I/usr/include/loki core/InputManager.cpp -std=c++0x -L/usr/X11R6/lib -lX11 -lXxf86vm -ggdb3 -O0 -lpthread
