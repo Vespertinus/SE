@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 
-#include <application.h>
+#include <OffScreenApplication.h>
 #include "Scene.h"
 
 
@@ -25,17 +25,22 @@ int main(int argc, char **argv) {
         oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
 
         oSettings.clear_flag			        = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-
+/*
         oSettings.oWindowSettings.width       = oSettings.oCamSettings.width;
         oSettings.oWindowSettings.height      = oSettings.oCamSettings.height;
         oSettings.oWindowSettings.bpp         = 24;
         oSettings.oWindowSettings.fullscreen  = 0;
         oSettings.oWindowSettings.title       = "Off screen rendering test";
+*/        
         oSettings.sResourceDir                = "resource/";
+
+        std::vector<GLubyte> vRenderBuffer;
 
         try {
 
-                SE::Application<SAMPLES::Scene> App(oSettings, SAMPLES::Scene::Settings());
+                SE::OffScreenApplication<SAMPLES::Scene> App(oSettings, SAMPLES::Scene::Settings());
+                App.Run(vRenderBuffer);
+                //write to file
         }
         catch (std::exception & ex) {
                 fprintf(stderr, "main: exception catched = %s\n", ex.what());
