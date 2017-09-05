@@ -11,8 +11,10 @@
 
 
 int main(int argc, char **argv) {
+        
+        std::vector<GLubyte> vRenderBuffer;
 
-        SE::SysSettings_t oSettings;
+        SE::SysSettings_t oSettings(vRenderBuffer);
 
         oSettings.oCamSettings.width 			= 512;
         oSettings.oCamSettings.height			= 512;
@@ -34,12 +36,11 @@ int main(int argc, char **argv) {
 */        
         oSettings.sResourceDir                = "resource/";
 
-        std::vector<GLubyte> vRenderBuffer;
 
         try {
 
                 SE::OffScreenApplication<SAMPLES::Scene> App(oSettings, SAMPLES::Scene::Settings());
-                App.Run(vRenderBuffer);
+                App.Run();
                 //write to file
         }
         catch (std::exception & ex) {

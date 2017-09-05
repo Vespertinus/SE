@@ -3,14 +3,17 @@ namespace SE {
 
 template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
         oSettings(oNewSettings), 
-        oCamera(oTranspose,	oSettings.oCamSettings),
+        oCamera(oTranspose, oSettings.oCamSettings),
+        oRenderingCtx(WindowSettings { 
+                        OSMESA_BGRA, 
+                        16, 
+                        0, 
+                        0, 
+                        oSettings.oCamSettings.width, 
+                        oSettings.oCamSettings.height,
+                        oSettings.vRenderBuffer } ),
         oLoop(oLoopSettings, oCamera) { 
-
-                pMesaCtx = OSMesaCreateContextExt( OSMESA_RGBA, 16, 0, 0, NULL );
-                if (!pMesaCtx) {
-                        throw (std::runtime_error("OffScreenApplication::OffScreenApplication: OSMesaCreateContext failed"));
-                }
-
+                
                 oCamera.SetPos(5, 1, 1);    
 
                 Init();
@@ -23,7 +26,6 @@ template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const S
 
 template <class TLoop> OffScreenApplication<TLoop>::~OffScreenApplication() throw() { 
 
-        OSMesaDestroyContext( pMesaCtx );
 }
 
 
@@ -45,19 +47,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::Init() {
 
 
 
-template <class TLoop> void OffScreenApplication<TLoop>::Run(std::vector<GLubyte> & vRenderBuffer) { 
-
-        vRenderBuffer.reserve(oSettings.oCamSettings.width * oSettings.oCamSettings.height * 4 /*RGBA*/ * sizeof(GLubyte));
-
-        if (!OSMesaMakeCurrent( pMesaCtx, 
-                                &vRenderBuffer[0] , 
-                                GL_UNSIGNED_BYTE, 
-                                oSettings.oCamSettings.width, 
-                                oSettings.oCamSettings.height) ) {
-                throw(std::runtime_error("OffScreenApplication::Run: OSMesaMakeCurrent failed!\n"));
-                //TODO rewrite on err code handling
-        }
-
+template <class TLoop> void OffScreenApplication<TLoop>::Run() { 
 
         glClear(oSettings.clear_flag);
         //gl clear texture buffer
@@ -71,7 +61,6 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run(std::vector<GLubyte
         glPopMatrix();
         glDisable(GL_TEXTURE_2D);
 
-        //fill vRenderBuffer
 }
 
 

@@ -13,8 +13,7 @@
 #include <Global.h> 
 #include <GlobalTypes.h>
 
-#include <GL/osmesa.h>
-
+#include <OSMesa.h>
 #include <Camera.h>
 #include <DummyTransposer.h>
 
@@ -26,6 +25,9 @@ struct SysSettings_t {
 	int                     clear_flag;
         Camera::CamSettings_t   oCamSettings;
         std::string             sResourceDir;
+        std::vector<GLubyte>  & vRenderBuffer;
+
+        SysSettings_t(std::vector<GLubyte> & vNewRenderBuffer) : vRenderBuffer(vNewRenderBuffer) { ;; }
 };
 
 
@@ -35,9 +37,9 @@ template <class TLoop > class OffScreenApplication {
 
         SysSettings_t   oSettings;
         Camera          oCamera;
+        OSMesa          oRenderingCtx;
         TLoop		oLoop;
         DummyTransposer oTranspose;
-        OSMesaContext   pMesaCtx;
 
         void Init();
 
@@ -45,7 +47,7 @@ template <class TLoop > class OffScreenApplication {
         OffScreenApplication(const SysSettings_t & oNewSettings, const typename TLoop::Settings & oLoopSettings);
         ~OffScreenApplication() throw();
 
-        void Run(std::vector<GLubyte> & vRenderBuffer);
+        void Run();
 
 };
 
