@@ -5,6 +5,8 @@
 #include <sys/time.h>
 #include <stdio.h>
 
+#include <opencv2/opencv.hpp>
+
 
 #include <OffScreenApplication.h>
 #include "Scene.h"
@@ -41,7 +43,10 @@ int main(int argc, char **argv) {
 
                 SE::OffScreenApplication<SAMPLES::Scene> App(oSettings, SAMPLES::Scene::Settings());
                 App.Run();
-                //write to file
+
+                cv::Mat oMat(oSettings.oCamSettings.width, oSettings.oCamSettings.height, CV_8UC4);
+                oMat.data = &vRenderBuffer[0];
+                cv::imwrite("./output.png", oMat);
         }
         catch (std::exception & ex) {
                 fprintf(stderr, "main: exception catched = %s\n", ex.what());
