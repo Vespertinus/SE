@@ -14,7 +14,6 @@ template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const S
                         oSettings.vRenderBuffer } ),
         oLoop(oLoopSettings, oCamera) { 
                 
-                oCamera.SetPos(5, 1, 1);    
 
                 Init();
 

@@ -19,8 +19,6 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
                 TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
                 TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
 
-                oCamera.SetPos(5, 1, 1);    
-                //oCamera.LookAt(0, 1, 1);
 
                 Init();
 
@@ -79,14 +77,14 @@ template <class TLoop> void Application<TLoop>::Run() {
         glClear(oSettings.clear_flag);
         //gl clear texture buffer
         glLoadIdentity();
-        glEnable(GL_TEXTURE_2D);
+//        glEnable(GL_TEXTURE_2D);
         glPushMatrix();
         oCamera.Adjust();
 
         oLoop.Process();
 
         glPopMatrix();
-        glDisable(GL_TEXTURE_2D);
+//        glDisable(GL_TEXTURE_2D);
         //glutSwapBuffers();
         TInputManager::Instance().Capture();
 
