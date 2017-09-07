@@ -154,6 +154,108 @@ void DrawPlane(const float width, const float height,
 
 }
 
+
+void DrawBox(const float x_size, 
+             const float y_size,
+             const float z_size,
+             const float x_pos,
+             const float y_pos,
+             const float z_pos,
+             const uint32_t texture_id) {
+
+        glColor3f(1, 1, 1);
+        glBindTexture (GL_TEXTURE_2D, texture_id);
+
+        glBegin(GL_QUADS);
+        glTexCoord2f (0, 0);
+        glVertex3f(x_pos, y_pos, z_pos);
+
+        glTexCoord2f (1, 0);
+        glVertex3f(x_size + x_pos, y_pos, z_pos);
+
+        glTexCoord2f (1, 1);
+        glVertex3f(x_size + x_pos, y_size + y_pos, z_pos);
+
+        glTexCoord2f (0, 1);
+        glVertex3f(x_pos, y_size + y_pos, z_pos);
+        glEnd();
+        
+        glBegin(GL_QUADS);
+        glTexCoord2f (0, 0);
+        glVertex3f(x_pos, y_pos, z_pos + z_size);
+
+        glTexCoord2f (1, 0);
+        glVertex3f(x_size + x_pos, y_pos, z_pos + z_size);
+
+        glTexCoord2f (1, 1);
+        glVertex3f(x_size + x_pos, y_size + y_pos, z_pos + z_size);
+
+        glTexCoord2f (0, 1);
+        glVertex3f(x_pos, y_size + y_pos, z_pos + z_size);
+        glEnd();
+
+
+        glBegin(GL_QUADS);
+        glTexCoord2f (0, 0);
+        glVertex3f(x_pos, y_pos, z_pos);
+
+        glTexCoord2f (1, 0);
+        glVertex3f(x_pos , y_pos, z_pos + z_size);
+
+        glTexCoord2f (1, 1);
+        glVertex3f(x_pos, y_size + y_pos, z_pos + z_size);
+
+        glTexCoord2f (0, 1);
+        glVertex3f(x_pos, y_size + y_pos, z_pos);
+        glEnd();
+        
+
+        glBegin(GL_QUADS);
+        glTexCoord2f (0, 0);
+        glVertex3f(x_pos + x_size, y_pos, z_pos);
+
+        glTexCoord2f (1, 0);
+        glVertex3f(x_pos + x_size , y_pos, z_pos + z_size);
+
+        glTexCoord2f (1, 1);
+        glVertex3f(x_pos + x_size, y_size + y_pos, z_pos + z_size);
+
+        glTexCoord2f (0, 1);
+        glVertex3f(x_pos + x_size, y_size + y_pos, z_pos);
+        glEnd();
+        
+
+        glBegin(GL_QUADS);
+        glTexCoord2f (0, 0);
+        glVertex3f(x_pos, y_pos, z_pos);
+
+        glTexCoord2f (1, 0);
+        glVertex3f(x_pos , y_pos, z_pos + z_size);
+
+        glTexCoord2f (1, 1);
+        glVertex3f(x_pos + x_size, y_pos, z_pos + z_size);
+
+        glTexCoord2f (0, 1);
+        glVertex3f(x_pos + x_size, y_pos, z_pos);
+        glEnd();
+        
+        glBegin(GL_QUADS);
+        glTexCoord2f (0, 0);
+        glVertex3f(x_pos, y_pos + y_size, z_pos);
+
+        glTexCoord2f (1, 0);
+        glVertex3f(x_pos , y_pos + y_size, z_pos + z_size);
+
+        glTexCoord2f (1, 1);
+        glVertex3f(x_pos + x_size, y_pos + y_size, z_pos + z_size);
+
+        glTexCoord2f (0, 1);
+        glVertex3f(x_pos + x_size, y_pos + y_size, z_pos);
+        glEnd();
+        
+}
+
+
 } //namespace HELPERS
 
 } //namespace SE
