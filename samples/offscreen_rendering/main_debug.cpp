@@ -5,18 +5,14 @@
 #include <sys/time.h>
 #include <stdio.h>
 
-#include <opencv2/opencv.hpp>
-
-
-#include <OffScreenApplication.h>
+#include <application.h>
 #include "Scene.h"
 
 
 int main(int argc, char **argv) {
         
-        std::vector<GLubyte> vRenderBuffer;
 
-        SE::SysSettings_t oSettings(vRenderBuffer);
+        SE::SysSettings_t oSettings;
 
         oSettings.oCamSettings.width 			= 512;
         oSettings.oCamSettings.height			= 512;
@@ -31,24 +27,18 @@ int main(int argc, char **argv) {
         oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
 
         oSettings.clear_flag			        = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-/*
+
         oSettings.oWindowSettings.width       = oSettings.oCamSettings.width;
         oSettings.oWindowSettings.height      = oSettings.oCamSettings.height;
         oSettings.oWindowSettings.bpp         = 24;
         oSettings.oWindowSettings.fullscreen  = 0;
         oSettings.oWindowSettings.title       = "Off screen rendering test";
-*/        
         oSettings.sResourceDir                = "resource/";
 
 
         try {
 
-                SE::OffScreenApplication<SAMPLES::Scene> App(oSettings, SAMPLES::Scene::Settings());
-                App.Run();
-
-                cv::Mat oMat(oSettings.oCamSettings.width, oSettings.oCamSettings.height, CV_8UC4);
-                oMat.data = &vRenderBuffer[0];
-                cv::imwrite("./output.png", oMat);
+                SE::Application<SAMPLES::Scene> App(oSettings, SAMPLES::Scene::Settings());
         }
         catch (std::exception & ex) {
                 fprintf(stderr, "main: exception catched = %s\n", ex.what());
