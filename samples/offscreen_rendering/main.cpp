@@ -12,6 +12,7 @@
 #include "Scene.h"
 
 
+
 int main(int argc, char **argv) {
         
         std::vector<GLubyte> vRenderBuffer;
@@ -31,13 +32,6 @@ int main(int argc, char **argv) {
         oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
 
         oSettings.clear_flag			        = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-/*
-        oSettings.oWindowSettings.width       = oSettings.oCamSettings.width;
-        oSettings.oWindowSettings.height      = oSettings.oCamSettings.height;
-        oSettings.oWindowSettings.bpp         = 24;
-        oSettings.oWindowSettings.fullscreen  = 0;
-        oSettings.oWindowSettings.title       = "Off screen rendering test";
-*/        
         oSettings.sResourceDir                = "resource/";
 
 
@@ -48,7 +42,11 @@ int main(int argc, char **argv) {
 
                 cv::Mat oMat(oSettings.oCamSettings.width, oSettings.oCamSettings.height, CV_8UC4);
                 oMat.data = &vRenderBuffer[0];
-                cv::imwrite("./output.png", oMat);
+
+                cv::Mat oResMat(oSettings.oCamSettings.width, oSettings.oCamSettings.height, CV_8UC4);
+                cv::flip(oMat, oResMat, 0);
+
+                cv::imwrite("./output.png", oResMat);
         }
         catch (std::exception & ex) {
                 fprintf(stderr, "main: exception catched = %s\n", ex.what());
