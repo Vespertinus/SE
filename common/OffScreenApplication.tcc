@@ -49,17 +49,15 @@ template <class TLoop> void OffScreenApplication<TLoop>::Init() {
 template <class TLoop> void OffScreenApplication<TLoop>::Run() { 
 
         glClear(oSettings.clear_flag);
-        //gl clear texture buffer
         glLoadIdentity();
-        glEnable(GL_TEXTURE_2D);
         glPushMatrix();
+
         oCamera.Adjust();
 
         oLoop.Process();
 
         glPopMatrix();
-        glDisable(GL_TEXTURE_2D);
-
+        glFinish();
 }
 
 

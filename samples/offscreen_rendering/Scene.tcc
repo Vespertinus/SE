@@ -39,7 +39,6 @@ void Scene::Process() {
 
 
         glDisable(GL_TEXTURE_2D);
-        //oCamera.LookAt(5, 0, 0);
 }
 
 
