@@ -6,35 +6,38 @@ namespace SE {
 
 class StoreTexture2D {
 
-  public:
-  struct Settings {
-    int32_t wrap;
-    int32_t min_filter,
-            mag_filter;
-    int32_t apply_method;
-    uint8_t mipmap_level;
+        public:
+        struct Settings {
+                int32_t wrap;
+                int32_t min_filter,
+                        mag_filter;
+                int32_t apply_method;
+                //uint8_t mipmap_level;
+                bool    mipmap_enabled;
 
-    Settings() : 
-      wrap(GL_REPEAT), 
-      min_filter(GL_LINEAR_MIPMAP_NEAREST),
-      //min_filter(GL_LINEAR),
-      mag_filter(GL_LINEAR),
-      apply_method(GL_MODULATE),
-      //apply_method(GL_REPLACE),
-      mipmap_level(4) { ;; }
-  };
+                Settings() : 
+                        wrap(GL_REPEAT), 
+                        min_filter(GL_LINEAR_MIPMAP_NEAREST),
+                        //min_filter(GL_LINEAR),
+                        mag_filter(GL_LINEAR),
+                        apply_method(GL_MODULATE),
+                        //apply_method(GL_REPLACE),
+                        //mipmap_level(4) 
+                        mipmap_enabled(true)
+                { ;; }
+        };
+
+        typedef Settings  TChild;
+
+        private:
   
-  typedef Settings  TChild;
+        const Settings  & oSettings;
 
-  private:
-  
-  const Settings  & oSettings;
+        public:
 
-  public:
-
-  StoreTexture2D(const Settings & oNewSettings);
-  ~StoreTexture2D() throw();
-  ret_code_t Store(TextureStock & oTextureStock, uint32_t & id);
+        StoreTexture2D(const Settings & oNewSettings);
+        ~StoreTexture2D() throw();
+        ret_code_t Store(TextureStock & oTextureStock, uint32_t & id);
 
 };
 

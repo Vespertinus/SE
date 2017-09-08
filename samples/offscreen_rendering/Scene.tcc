@@ -9,6 +9,8 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
                 oCurCamera.SetPos(5, 1, 1);    
                 oCurCamera.LookAt(0.01, 0.01, 0.01);
 
+//                SE::TMesh * pTestMesh = SE::TResourceManager::Instance().Create<SE::TMesh>("resource/mesh/pony-cartoon/source/Pony_cartoon.obj");
+//                printf("Scene::Scene: pTestMesh: shape cnt = %u, tringles cnt = %u\n", pTestMesh->GetShapesCnt(), pTestMesh->GetTrianglesCnt());
 }
 
 

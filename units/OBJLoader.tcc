@@ -5,15 +5,12 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-#include <Global.h> 
-#include <GlobalTypes.h>
-
 
 namespace SE {
 
 static std::string GetBaseDir(const std::string & filepath) {
         if (filepath.find_last_of("/\\") != std::string::npos)
-                return filepath.substr(0, filepath.find_last_of("/\\"));
+                return filepath.substr(0, filepath.find_last_of("/\\")) + '/';
         return "";
 }
 
@@ -93,12 +90,15 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                 
                 if (pMat->diffuse_texname.length() == 0) { continue; }
 
-                SE::TTexture * pTex = SE::TResourceManager::Instance().Create<SE::TTexture>(pMat->diffuse_texname);
+                SE::TTexture * pTex = SE::TResourceManager::Instance().Create<SE::TTexture>(sBaseDir + pMat->diffuse_texname);
                 if (pTex) {
                         vTextures.emplace_back(pTex);
                 }
                 else {
-                      fprintf(stderr, "OBJLoader::Load: failed to load texture: '%s'\n", pMat->diffuse_texname.c_str());
+                      char buf[256];
+                      snprintf(buf, sizeof(buf), "OBJLoader::Load: failed to load texture: '%s'\n", pMat->diffuse_texname.c_str());
+                      fprintf(stderr, "%s", buf);
+                      throw (std::runtime_error(buf));
                 }
         }
         
@@ -126,9 +126,9 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
 
                         float tex_coord[3][2];
                         if (oAttrib.texcoords.size() > 0) {
-                                assert(oAttrib.texcoords.size() > 2 * idx0.texcoord_index + 1);
-                                assert(oAttrib.texcoords.size() > 2 * idx1.texcoord_index + 1);
-                                assert(oAttrib.texcoords.size() > 2 * idx2.texcoord_index + 1);
+                                assert(oAttrib.texcoords.size() > (size_t)(2 * idx0.texcoord_index + 1));
+                                assert(oAttrib.texcoords.size() > (size_t)(2 * idx1.texcoord_index + 1));
+                                assert(oAttrib.texcoords.size() > (size_t)(2 * idx2.texcoord_index + 1));
 
                                 // Flip Y coord.
                                 tex_coord[0][0] = oAttrib.texcoords[2 * idx0.texcoord_index];

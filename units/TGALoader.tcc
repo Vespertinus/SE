@@ -50,6 +50,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
   }
 
   oTextureStock.bpp             = header [4] / 8;
+  oTextureStock.color_order     = (oTextureStock.bpp == 4) ? GL_RGBA : GL_RGB;
 
   oTextureStock.raw_image_size  = oTextureStock.width * oTextureStock.height * oTextureStock.bpp;
 
