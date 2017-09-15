@@ -86,9 +86,12 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
 
         for (size_t i = 0; i < vMaterials.size(); i++) {
                 tinyobj::material_t * pMat = & vMaterials[i];
-                printf("OBJLoader::Load: material[%d].diffuse_texname = %s\n", int(i), pMat->diffuse_texname.c_str());
+                printf("OBJLoader::Load: material[%d], name = '%s', diffuse_texname = '%s'\n", int(i), pMat->name.c_str(), pMat->diffuse_texname.c_str());
                 
-                if (pMat->diffuse_texname.length() == 0) { continue; }
+                if (pMat->diffuse_texname.length() == 0) { 
+                        vTextures.emplace_back(nullptr);
+                        continue; 
+                }
 
                 SE::TTexture * pTex = SE::TResourceManager::Instance().Create<SE::TTexture>(sBaseDir + pMat->diffuse_texname);
                 if (pTex) {
@@ -129,7 +132,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 assert(oAttrib.texcoords.size() > (size_t)(2 * idx0.texcoord_index + 1));
                                 assert(oAttrib.texcoords.size() > (size_t)(2 * idx1.texcoord_index + 1));
                                 assert(oAttrib.texcoords.size() > (size_t)(2 * idx2.texcoord_index + 1));
-
+/*
                                 // Flip Y coord.
                                 tex_coord[0][0] = oAttrib.texcoords[2 * idx0.texcoord_index];
                                 tex_coord[0][1] = 1.0f - oAttrib.texcoords[2 * idx0.texcoord_index + 1];
@@ -137,6 +140,13 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 tex_coord[1][1] = 1.0f - oAttrib.texcoords[2 * idx1.texcoord_index + 1];
                                 tex_coord[2][0] = oAttrib.texcoords[2 * idx2.texcoord_index];
                                 tex_coord[2][1] = 1.0f - oAttrib.texcoords[2 * idx2.texcoord_index + 1];
+*/
+                                tex_coord[0][0] = oAttrib.texcoords[2 * idx0.texcoord_index];
+                                tex_coord[0][1] = oAttrib.texcoords[2 * idx0.texcoord_index + 1];
+                                tex_coord[1][0] = oAttrib.texcoords[2 * idx1.texcoord_index];
+                                tex_coord[1][1] = oAttrib.texcoords[2 * idx1.texcoord_index + 1];
+                                tex_coord[2][0] = oAttrib.texcoords[2 * idx2.texcoord_index];
+                                tex_coord[2][1] = oAttrib.texcoords[2 * idx2.texcoord_index + 1];
                         } else {
                                 tex_coord[0][0] = 0.0f;
                                 tex_coord[0][1] = 0.0f;
@@ -147,6 +157,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         }
                         
                         float vert[3][3];
+                        /*
                         for (int k = 0; k < 3; k++) {
                                 int f0 = idx0.vertex_index;
                                 int f1 = idx1.vertex_index;
@@ -155,10 +166,30 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 assert(f1 >= 0);
                                 assert(f2 >= 0);
 
+                                //vert[0][k] = oAttrib.vertices[3 * f0 + k];
+                                //vert[1][k] = oAttrib.vertices[3 * f1 + k];
+                                //vert[2][k] = oAttrib.vertices[3 * f2 + k];
+                                
                                 vert[0][k] = oAttrib.vertices[3 * f0 + k];
                                 vert[1][k] = oAttrib.vertices[3 * f1 + k];
                                 vert[2][k] = oAttrib.vertices[3 * f2 + k];
-                        }
+                                
+                        }*/
+                        int f0 = idx0.vertex_index;
+                        int f1 = idx1.vertex_index;
+                        int f2 = idx2.vertex_index;
+
+                        vert[0][0] = oAttrib.vertices[3 * f0 + 0];
+                        vert[1][0] = oAttrib.vertices[3 * f1 + 0];
+                        vert[2][0] = oAttrib.vertices[3 * f2 + 0];
+                        
+                        vert[0][1] = - oAttrib.vertices[3 * f0 + 2];
+                        vert[1][1] = - oAttrib.vertices[3 * f1 + 2];
+                        vert[2][1] = - oAttrib.vertices[3 * f2 + 2];
+                        
+                        vert[0][2] = oAttrib.vertices[3 * f0 + 1];
+                        vert[1][2] = oAttrib.vertices[3 * f1 + 1];
+                        vert[2][2] = oAttrib.vertices[3 * f2 + 1];
 
                         float normals[3][3];
                         if (oAttrib.normals.size() > 0) {
@@ -193,12 +224,18 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
 
                                 //CHECK ... --> turn off
                                 // Combine normal and diffuse to get color.
-                                float normal_factor = 0.2;
-                                float diffuse_factor = 1 - normal_factor;
+                                //TODO remove color data for each vertice, move to material settings
+//                                float normal_factor = 0.2;
+//                                float diffuse_factor = 1 - normal_factor;
                                 float c[3] = {
+                                        /*
                                         normals[k][0] * normal_factor + diffuse[0] * diffuse_factor,
                                         normals[k][1] * normal_factor + diffuse[1] * diffuse_factor,
                                         normals[k][2] * normal_factor + diffuse[2] * diffuse_factor
+*/
+                                        diffuse[0],
+                                        diffuse[1],
+                                        diffuse[2]
                                 };
                                 float len2 = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
                                 if (len2 > 0.0f) {
@@ -210,9 +247,9 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 }
                                 //CHECK ... --> turn off
 
-                                vMeshData.push_back(c[0] * 0.5 + 0.5);
-                                vMeshData.push_back(c[1] * 0.5 + 0.5);
-                                vMeshData.push_back(c[2] * 0.5 + 0.5);
+                                vMeshData.push_back(c[0] /* * 0.5 + 0.5*/);
+                                vMeshData.push_back(c[1] /* * 0.5 + 0.5*/);
+                                vMeshData.push_back(c[2] /* * 0.5 + 0.5*/);
 
                                 vMeshData.push_back(tex_coord[k][0]);
                                 vMeshData.push_back(tex_coord[k][1]);
@@ -224,12 +261,12 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         continue;
                 }
 
-                if (vShapes[s].mesh.material_ids.size() > 0 && vShapes[s].mesh.material_ids.size() > s) {
+                if (vShapes[s].mesh.material_ids.size() > 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
                         oStock.vTextures.emplace_back(vTextures[vShapes[s].mesh.material_ids[0] ]);
-                        printf("OBJLoader::Load: shape[%zu] material id = %d\n", s, vShapes[s].mesh.material_ids[0] );
+                        printf("OBJLoader::Load: shape[%zu] name = '%s', material ind id = %d\n", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );
                 } else {
                         oStock.vTextures.emplace_back(nullptr);
-                        printf("OBJLoader::Load: shape[%zu] empty material\n", s);
+                        printf("OBJLoader::Load: shape[%zu] name = '%s' empty material\n", s, vShapes[s].name.c_str());
                 }
                 
 /*
@@ -244,7 +281,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                         o.numTriangles);
                 }
 */
-                oStock.vShapes.emplace_back(std::move(vMeshData));
+                oStock.vShapes.emplace_back(std::make_tuple(std::move(vMeshData), vShapes[s].name));
         } 
 
         return uSUCCESS;
