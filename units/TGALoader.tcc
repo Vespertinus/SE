@@ -13,78 +13,91 @@ TGALoader::~TGALoader() throw() { ;; }
 
 ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock) {
 
-  ret_code_t  ret_code = uSUCCESS;
+        ret_code_t  ret_code = uSUCCESS;
 
-  static uint8_t	targa_magic[12] = {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  uint8_t         file_magic[12];
-  uint8_t         header[6];
-  uint32_t	      swap;
-  
-  FILE * oImageFile = fopen (sPath.c_str(), "rb");
+        static uint8_t	targa_magic[12] = {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint8_t         file_magic[12];
+        uint8_t         header[6];
+        uint32_t	swap;
+        std::vector <uint8_t> vImageData;
 
-  if (oImageFile == NULL)	{
-    fprintf(stderr, "TGALoader::Load: can't open file = '%s', reason = %s\n", sPath.c_str(), strerror(errno));
-    return uREAD_FILE_ERROR;
-  }
+        FILE * oImageFile = fopen (sPath.c_str(), "rb");
 
-  if (
-      (fread (file_magic, 1, sizeof (file_magic), oImageFile) != sizeof (file_magic) ) ||
-      (memcmp (targa_magic, file_magic, sizeof (targa_magic)) != 0 ) ||
-      (fread (header, 1, sizeof (header), oImageFile) != sizeof (header) ))	{
+        if (oImageFile == NULL)	{
+                fprintf(stderr, "TGALoader::Load: can't open file = '%s', reason = %s\n", sPath.c_str(), strerror(errno));
+                return uREAD_FILE_ERROR;
+        }
 
-    fprintf(stderr, "TGALoader::Load: wrong data in file = '%s'\n", sPath.c_str());
-    fclose (oImageFile);
-    return uREAD_FILE_ERROR;
-  }
+        if (
+                        (fread (file_magic, 1, sizeof (file_magic), oImageFile) != sizeof (file_magic) ) ||
+                        (memcmp (targa_magic, file_magic, sizeof (targa_magic)) != 0 ) ||
+                        (fread (header, 1, sizeof (header), oImageFile) != sizeof (header) ))	{
 
-  oTextureStock.width   = header [1] * 256 + header [0];
-  oTextureStock.height  = header [3] * 256 + header [2];
+                fprintf(stderr, "TGALoader::Load: wrong data in file = '%s'\n", sPath.c_str());
+                fclose (oImageFile);
+                return uREAD_FILE_ERROR;
+        }
 
-  if (oTextureStock.width <= 0 || oTextureStock.height <= 0 || (header [4] != 24 && header [4] != 32)) {
-    fclose (oImageFile);
-    fprintf(stderr, "TGALoader::Load: wromg header, width = %u, height = %u, bpp = %u\n",
-        oTextureStock.width,
-        oTextureStock.height,
-        header[4]);
-    return uREAD_FILE_ERROR;
-  }
+        oTextureStock.width   = header [1] * 256 + header [0];
+        oTextureStock.height  = header [3] * 256 + header [2];
 
-  oTextureStock.bpp             = header [4] / 8;
-  oTextureStock.color_order     = (oTextureStock.bpp == 4) ? GL_RGBA : GL_RGB;
+        if (oTextureStock.width <= 0 || oTextureStock.height <= 0 || (header [4] != 24 && header [4] != 32)) {
+                fclose (oImageFile);
+                fprintf(stderr, "TGALoader::Load: wrong header, width = %u, height = %u, bpp = %u\n",
+                                oTextureStock.width,
+                                oTextureStock.height,
+                                header[4]);
+                return uREAD_FILE_ERROR;
+        }
 
-  oTextureStock.raw_image_size  = oTextureStock.width * oTextureStock.height * oTextureStock.bpp;
+        oTextureStock.bpp             = header [4] / 8;
+        oTextureStock.color_order     = (oTextureStock.bpp == 4) ? GL_RGBA : GL_RGB;
+        oTextureStock.raw_image       = 0;
+        oTextureStock.raw_image_size  = oTextureStock.width * oTextureStock.height * oTextureStock.bpp;
 
-  oTextureStock.raw_image = new uint8_t [oTextureStock.raw_image_size];
-  if (oTextureStock.raw_image == 0 || (uint32_t) fread (oTextureStock.raw_image, 1, oTextureStock.raw_image_size, oImageFile) != oTextureStock.raw_image_size) {
+        try {
+                vImageData.resize(oTextureStock.raw_image_size);
+        }
+        catch (std::exception & ex) {
+                fprintf(stderr, "TGALoader::Load: failed to allocate %u bytes for image (%s) data, reason: '%s'\n",
+                                oTextureStock.raw_image_size,
+                                sPath.c_str(),
+                                ex.what());
+                fclose (oImageFile);
+                return uMEMORY_ALLOCATION_ERROR;
+        
+        }
+        catch(...) {
+                fprintf(stderr, "TGALoader::Load: failed to allocate %u bytes for image (%s) data\n",
+                                oTextureStock.raw_image_size,
+                                sPath.c_str() );
+                fclose (oImageFile);
+                return uMEMORY_ALLOCATION_ERROR;
+        }
+        
 
-    if (oTextureStock.raw_image != NULL)	{
-      delete[] (oTextureStock.raw_image);
-      oTextureStock.raw_image = 0;
+        if (fread (&vImageData[0], 1, oTextureStock.raw_image_size, oImageFile) != oTextureStock.raw_image_size) {
 
-      fprintf(stderr, "TGALoader::Load: can't read %u bytes, reason = %s\n", oTextureStock.raw_image_size, strerror(errno));
-      ret_code = uREAD_FILE_ERROR;
-    }
-    else {
-      
-      fprintf(stderr, "TGALoader::Load: can't allocate %u bytes\n", oTextureStock.raw_image_size);
-      ret_code = uMEMORY_ALLOCATION_ERROR;
-    }
-    fclose (oImageFile);
 
-    return ret_code;
-  }
+                fprintf(stderr, "TGALoader::Load: can't read %u bytes, reason = %s\n", oTextureStock.raw_image_size, strerror(errno));
+                fclose (oImageFile);
+                return uREAD_FILE_ERROR;
+        }
 
-  for (uint32_t index = 0; index < oTextureStock.raw_image_size; index += oTextureStock.bpp)	{ 
-    swap                                = oTextureStock.raw_image [index];
-    oTextureStock.raw_image [index]     = oTextureStock.raw_image [index + 2];
-    oTextureStock.raw_image [index + 2] = swap;
-  }
+        for (uint32_t index = 0; index < oTextureStock.raw_image_size; index += oTextureStock.bpp)	{ 
+                swap                    = vImageData [index];
+                vImageData [index]      = vImageData [index + 2];
+                vImageData [index + 2]  = swap;
+        }
 
-  oTextureStock.compressed = uUNCOMPRESSED_TEXTURE;
-  
-  fclose (oImageFile);
+        oTextureStock.compressed = uUNCOMPRESSED_TEXTURE;        
+        oTextureStock.raw_image  = &vImageData[0];
+        
+        fclose (oImageFile);
 
-  return ret_code;
+        vImagesData.emplace_back(std::move(vImageData));
+
+        return ret_code;
 } 
 
 

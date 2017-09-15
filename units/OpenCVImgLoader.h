@@ -8,7 +8,7 @@ namespace SE {
 
 class OpenCVImgLoader {
 
-        cv::Mat oResImg;
+        std::vector <cv::Mat> vImagesData;
         
         public:
         //empty settings for this loader

@@ -11,21 +11,23 @@ OpenCVImgLoader::~OpenCVImgLoader() throw() { ;; }
 
 ret_code_t OpenCVImgLoader::Load(const std::string sPath, TextureStock & oTextureStock) {
 
-        cv::Mat oImg = cv::imread(sPath);
+        cv::Mat oImg = cv::imread(sPath, cv::IMREAD_UNCHANGED);
+        cv::Mat oResImg;
         
         if (oImg.empty()) {        
                 fprintf(stderr, "OpenCVImgLoader::Load: OpenCV failed to load image = '%s'\n", sPath.c_str());
                 return uREAD_FILE_ERROR;
         }
-        
-        cv::flip(oResImg, oImg, 0);
 
+        
+        cv::flip(oImg, oResImg, 0);
+
+        oTextureStock.bpp               = oImg.channels();
         oTextureStock.width             = oResImg.cols;
         oTextureStock.height            = oResImg.rows;
-        oTextureStock.bpp               = oResImg.channels();
 
         if (oTextureStock.bpp != 3 && oTextureStock.bpp != 4) {
-                fprintf(stderr, "OpenCVImgLoader::Load: wrong channels cnt = %u in file '%s'\n", oTextureStock.bpp, sPath.c_str());
+                fprintf(stderr, "OpenCVImgLoader::Load: wrong channels cnt = %u, in file '%s'\n", oTextureStock.bpp, sPath.c_str());
                 return uWRONG_INPUT_DATA;
         }
 
@@ -33,6 +35,8 @@ ret_code_t OpenCVImgLoader::Load(const std::string sPath, TextureStock & oTextur
         oTextureStock.raw_image         = oResImg.ptr();
         oTextureStock.raw_image_size    = oResImg.total() * oResImg.elemSize();
         oTextureStock.compressed        = uUNCOMPRESSED_TEXTURE;
+
+        vImagesData.emplace_back(std::move(oResImg));
 
         return uSUCCESS;
 }
