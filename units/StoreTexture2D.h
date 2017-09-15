@@ -16,12 +16,15 @@ class StoreTexture2D {
                 bool    mipmap_enabled;
 
                 Settings() : 
-                        wrap(GL_REPEAT), 
+                        //wrap(GL_REPEAT), 
+                        wrap(GL_CLAMP),
                         min_filter(GL_LINEAR_MIPMAP_NEAREST),
+                        //min_filter(GL_NEAREST),
                         //min_filter(GL_LINEAR),
                         mag_filter(GL_LINEAR),
-                        apply_method(GL_MODULATE),
-                        //apply_method(GL_REPLACE),
+                        //apply_method(GL_MODULATE),
+                        apply_method(GL_REPLACE),
+                        //apply_method(GL_BLEND),
                         //mipmap_level(4) 
                         mipmap_enabled(true)
                 { ;; }

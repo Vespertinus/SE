@@ -86,6 +86,22 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
 
         fprintf(stderr, "StoreTexture2D::Store: is tex = %u\n", glIsTexture(_id));
 
+        //Calc stat
+        /*
+        uint8_t min_alpha = std::numeric_limits<uint8_t>::max();
+        uint8_t max_alpha = std::numeric_limits<uint8_t>::min();
+        if (oTextureStock.bpp == 4) {
+                for (uint32_t i = 3; i < oTextureStock.raw_image_size; i += 4) {
+                        min_alpha = std::min(min_alpha, oTextureStock.raw_image[i]);
+                        max_alpha = std::max(max_alpha, oTextureStock.raw_image[i]);
+                }
+                printf("StoreTexture2D::Store: tex id = %u, min_alpha = %u, max_alpha = %u\n",
+                                _id,
+                                min_alpha,
+                                max_alpha);
+        }
+        */
+
         return ret_code;
 }
 
