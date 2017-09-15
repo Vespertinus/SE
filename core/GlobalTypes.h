@@ -16,21 +16,21 @@
 #include <Util.h>
 
 #include <SimpleFPS.h>
-
 #include <MPUtil.h>
+#include <VisualHelpers.h>
 
 #include <ResourceHolder.h>
 
 #include <TextureStock.h>
-#include <Texture.h>
 #include <TGALoader.h>
 #include <OpenCVImgLoader.h>
+#include <Texture.h>
 #include <StoreTexture2D.h>
 
 namespace SE {
 
-//typedef LOKI_TYPELIST_2(TGALoader, OpenCVImgLoader)                     TextureLoadStrategyList;
-typedef LOKI_TYPELIST_1(OpenCVImgLoader)                                TextureLoadStrategyList;
+typedef LOKI_TYPELIST_2(TGALoader, OpenCVImgLoader)                     TextureLoadStrategyList;
+//typedef LOKI_TYPELIST_1(OpenCVImgLoader)                                TextureLoadStrategyList;
 typedef LOKI_TYPELIST_1(StoreTexture2D)                                 TextureStoreStrategyList;
 typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture;
 

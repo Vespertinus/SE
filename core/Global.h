@@ -3,6 +3,8 @@
 #define __GLOBAL_H__ 1
 
 #include <math.h>
+#include <algorithm>
+#include <tuple>
 
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>	
@@ -15,5 +17,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/trigonometric.hpp>
 #include <glm/ext.hpp>
+
+#include "boost/filesystem.hpp"
 
 #endif
