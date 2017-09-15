@@ -27,9 +27,7 @@ struct TextureStock {
         //GL_RGB, GL_BGRA and so on
         int        color_order;
 
-        ~TextureStock() throw() {
-                if (raw_image) { delete[] raw_image; }
-        }
+        ~TextureStock() throw() { }
 };
 
 } //namespace SE
