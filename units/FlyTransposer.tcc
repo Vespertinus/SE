@@ -128,7 +128,6 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                 case OIS::KC_K:
                         fprintf(stderr, "current FPS = %f\n", TSimpleFPS::Instance().GetFPS() );
                         break;
-
                 default:
                         break;
 

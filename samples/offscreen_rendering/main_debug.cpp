@@ -22,9 +22,9 @@ int main(int argc, char **argv) {
         oSettings.oCamSettings.oVolume.fov		= 90;
         oSettings.oCamSettings.oVolume.aspect           = (float)oSettings.oCamSettings.width / (float)oSettings.oCamSettings.height;
         oSettings.oCamSettings.oVolume.near_clip	= 0.1;
-        oSettings.oCamSettings.oVolume.far_clip         = 100;
-        //oSettings.oCamSettings.oVolume.projection     = SE::Frustum::uORTHO;
-        oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
+        oSettings.oCamSettings.oVolume.far_clip         = 1000;
+        oSettings.oCamSettings.oVolume.projection     = SE::Frustum::uORTHO;
+        //oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
 
         oSettings.clear_flag			        = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
