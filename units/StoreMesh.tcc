@@ -25,10 +25,14 @@ ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMes
         }
 
         for (size_t i = 0; i < oMeshStock.vShapes.size(); ++i) {
-                std::vector <float> & vShape = oMeshStock.vShapes[i];
+                std::vector <float> & vShape = std::get<0>(oMeshStock.vShapes[i]);
+                std::string & sName = std::get<1>(oMeshStock.vShapes[i]);
+
+                glm::vec3 min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+                glm::vec3 max(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
 
                 uint32_t buf_id         = 0;
-                uint32_t triangles_cnt      = 0;
+                uint32_t triangles_cnt  = 0;
         
                 glGenBuffers(1, &buf_id);
                 glBindBuffer(GL_ARRAY_BUFFER, buf_id);
@@ -38,12 +42,28 @@ ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMes
                              GL_STATIC_DRAW);
                 triangles_cnt = vShape.size() / (3 + 3 + 3 + 2) / 3; // 3:vtx, 3:normal, 3:col, 2:texcoord
 
-                printf("shape[%zu] triangles cnt = %u, texture id = %u\n", i, triangles_cnt, (oMeshStock.vTextures[i]) ? oMeshStock.vTextures[i]->GetID() : 0);
+                for (uint32_t i = 0; i < vShape.size(); i += (3 + 3 + 3 + 2)) {
+                        min.x = std::min(vShape[i    ], min.x);
+                        min.y = std::min(vShape[i + 1], min.y);
+                        min.z = std::min(vShape[i + 2], min.z);
+                        
+                        max.x = std::max(vShape[i    ], max.x);
+                        max.y = std::max(vShape[i + 1], max.y);
+                        max.z = std::max(vShape[i + 2], max.z);
+                }
 
-                vMeshData.emplace_back(MeshData{ buf_id, triangles_cnt, oMeshStock.vTextures[i] } );
+                printf("shape[%zu] name = '%s', triangles cnt = %u, texture id = %u, min x = %f, y = %f, z = %f, max x = %f, y = %f, z = %f\n", 
+                                i, 
+                                sName.c_str(), 
+                                triangles_cnt, 
+                                (oMeshStock.vTextures[i]) ? oMeshStock.vTextures[i]->GetID() : 0,
+                                min.x, min.y, min.z,
+                                max.x, max.y, max.z);
+
+                vMeshData.emplace_back(MeshData{ buf_id, triangles_cnt, oMeshStock.vTextures[i], std::get<1>(oMeshStock.vShapes[i]), min, max } );
         }
 
-        return uSUCCESS; 
+        return uSUCCESS;
 }
 
 
