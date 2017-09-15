@@ -44,6 +44,7 @@ class Elipse {
 };
 
 
+void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max);
 
 
 } // HELPERS

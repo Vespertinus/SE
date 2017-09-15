@@ -60,7 +60,7 @@ Elipse::Elipse(const float x_pos, const float y_pos, const float z_pos, const fl
 
   delta = (360 * (M_PI / 180.0)) / edge_count;
   
-  ChangePos(x_pos, y_pos, z_pos); 
+  ChangePos(x_pos, y_pos, z_pos);
   Resize(new_radius, new_edge_count);
 }
 
@@ -253,6 +253,78 @@ void DrawBox(const float x_size,
         glVertex3f(x_pos + x_size, y_pos + y_size, z_pos);
         glEnd();
         
+}
+
+
+void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max) {
+
+        glColor3f(1, 0, 0);
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_min.y, cur_min.z);
+        glVertex3f(cur_max.x, cur_min.y, cur_min.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_max.y, cur_min.z);
+        glVertex3f(cur_max.x, cur_max.y, cur_min.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_min.y, cur_max.z);
+        glVertex3f(cur_max.x, cur_min.y, cur_max.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_max.y, cur_max.z);
+        glVertex3f(cur_max.x, cur_max.y, cur_max.z);
+        glEnd();
+
+
+        glColor3f(0, 1, 0);
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_min.y, cur_min.z);
+        glVertex3f(cur_min.x, cur_max.y, cur_min.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_max.x, cur_min.y, cur_min.z);
+        glVertex3f(cur_max.x, cur_max.y, cur_min.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_min.y, cur_max.z);
+        glVertex3f(cur_min.x, cur_max.y, cur_max.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_max.x, cur_min.y, cur_max.z);
+        glVertex3f(cur_max.x, cur_max.y, cur_max.z);
+        glEnd();
+        
+
+        glColor3f(0, 0, 1);
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_min.y, cur_min.z);
+        glVertex3f(cur_min.x, cur_min.y, cur_max.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_min.x, cur_max.y, cur_min.z);
+        glVertex3f(cur_min.x, cur_max.y, cur_max.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_max.x, cur_min.y, cur_min.z);
+        glVertex3f(cur_max.x, cur_min.y, cur_max.z);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3f(cur_max.x, cur_max.y, cur_min.z);
+        glVertex3f(cur_max.x, cur_max.y, cur_max.z);
+        glEnd();
 }
 
 
