@@ -13,7 +13,9 @@ template <class TTranspose> Camera::Camera(TTranspose & oTranspose, const CamSet
 	rot_z(270),
         delta_x(0),
         delta_y(0),
-        delta_z(0),        
+        delta_z(0),
+        zoom(1),
+        target_length(0),
         oSettings((const BaseData &)oNewSettings),
         oFrustum(oNewSettings.oVolume) {
 
@@ -118,6 +120,8 @@ void Camera::UpdateDimension(const int32_t new_width, const int32_t new_height) 
 	oSettings.width 	= new_width;
 	oSettings.height 	= new_height;
         oFrustum.SetAspect((float)new_width / (float)new_height);
+
+        UpdateZoom();
 }
 
 
@@ -133,7 +137,7 @@ void Camera::UpdateDimension(const int32_t new_width, const int32_t new_height) 
 void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
 
   pos_x = new_x; 
-  pos_y = new_x;
+  pos_y = new_y;
   pos_z = new_z;
 }
 
@@ -141,9 +145,15 @@ void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
 
 void Camera::LookAt(const float x, const float y, const float z) {
 
+        LookAt(glm::vec3(x, y, z));
+}
+
+
+void Camera::LookAt(const glm::vec3 & center) {
+
         glm::mat4 mModel = glm::lookAt(
                         glm::vec3(pos_x, pos_y, pos_z),
-                        glm::vec3(x, y, z),
+                        center,
                         glm::vec3(oSettings.up[0], oSettings.up[1], oSettings.up[2]) );
 
         float angle_x,
@@ -159,7 +169,9 @@ void Camera::LookAt(const float x, const float y, const float z) {
                 rot_z = 360 + rot_z;
         }
 
-        printf("Camera::LookAt: new angles: rot_x = %f, rot_y = %f, rot_z = %f\n", rot_x, rot_y, rot_z);
+        printf("Camera::LookAt: new angles: rot_x = %f, rot_y = %f, rot_z = %f, center x = %f, y = %f, z = %f\n", 
+                        rot_x, rot_y, rot_z, 
+                        center.x, center.y, center.z);
 }
 
 
@@ -187,7 +199,12 @@ void Camera::UpdateProjection() const {
                 case Frustum::uORTHO:
                         //TODO calc zoom
                         //glOrtho(oVolume.left /* * scale */, oVolume.right /* * scale */, oVolume.bottom /* * scale*/, oVolume.top /* * scale */, oVolume.near_clip, oVolume.far_clip);
-                        glOrtho (- oSettings.width / 2, oSettings.width / 2, - oSettings.height / 2 , oSettings.height / 2, oVolume.near_clip, oVolume.far_clip);
+                        glOrtho ((- oSettings.width / 2) / zoom, 
+                                 (oSettings.width / 2) / zoom, 
+                                 (- oSettings.height / 2) / zoom, 
+                                 (oSettings.height / 2) / zoom, 
+                                 oVolume.near_clip, 
+                                 oVolume.far_clip);
                         //glOrtho (0, oSettings.width, oSettings.height, 0, oVolume.near_clip, oVolume.far_clip);
                         break;
 
@@ -200,6 +217,46 @@ void Camera::UpdateProjection() const {
         glLoadIdentity();
 }
 
+
+void Camera::SetZoom(const float new_zoom) {
+        zoom = new_zoom;
+}
+
+
+void Camera::Zoom(const float factor) {
+        zoom *= factor;
+}
+
+
+void Camera::UpdateZoom() {
+
+        if (target_length <= 0) { return; }
+
+        float min_dim = std::min(oSettings.width, oSettings.height);
+        zoom = min_dim / target_length;
+
+        printf("Camera::UpdateZoom: min_dim = %f, target_len = %f, zoom = %f\n", min_dim, target_length, zoom);
+
+}
+
+void Camera::ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox) {
+
+        glm::vec3 len = std::get<1>(bbox) - std::get<0>(bbox);
+///*
+        const glm::vec3 & min = std::get<0>(bbox);
+        const glm::vec3 & max = std::get<1>(bbox);
+
+        printf("Camera::ZoomTo: min x = %f, y = %f, z = %f, max x = %f, y = %f, z = %f\n",
+                        min.x, min.y, min.z,
+                        max.x, max.y, max.z);
+
+        printf("Camera::ZoomTo: bbox len = %f\n", glm::distance(max, min) );
+//*/
+        
+        target_length = std::max({ std::abs(len.x), std::abs(len.y), std::abs(len.z) });
+        
+        UpdateZoom();
+}
 
 
 } //namhespace SE
