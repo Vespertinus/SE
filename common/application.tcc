@@ -44,8 +44,10 @@ template <class TLoop> void Application<TLoop>::Init() {
         glClearDepth(1.0);        
         glDepthFunc(GL_LESS);       
         glEnable(GL_DEPTH_TEST);      
-        glShadeModel(GL_SMOOTH);  
+        //glShadeModel(GL_SMOOTH);  
         //glLineWidth(4);
+        glEnable(GL_ALPHA_TEST);
+        glAlphaFunc (GL_GREATER, 0.7);
 
         oCamera.UpdateProjection();
 
