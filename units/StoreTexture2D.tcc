@@ -51,38 +51,20 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, oSettings.min_filter);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, oSettings.mag_filter);
 
-//        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, oSettings.mipmap_enabled); 
-
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, oSettings.apply_method);
         
-/*        glTexImage2D(GL_TEXTURE_2D, 
+        glTexImage2D(GL_TEXTURE_2D, 
                         0, 
                         GL_RGBA8,//oTextureStock.color_order, 
                         oTextureStock.width, 
                         oTextureStock.height,
                         0, 
-                        GL_RGB8,//oTextureStock.color_order,
+                        oTextureStock.color_order,
                         GL_UNSIGNED_BYTE, 
                         oTextureStock.raw_image);
-*/        
-/*
         if (oSettings.mipmap_enabled) {
                 glGenerateMipmap(GL_TEXTURE_2D);
         }
-*/
-        ///* 
-           //if (oSettings.mipmap_level) {
-
-           gluBuild2DMipmaps(GL_TEXTURE_2D, 
-           4, //oSettings.mipmap_level, 
-           oTextureStock.width, 
-           oTextureStock.height,
-           oTextureStock.color_order,
-           //(oTextureStock.bpp == 3) ? GL_RGB : GL_RGBA, 
-           GL_UNSIGNED_BYTE, 
-           oTextureStock.raw_image);
-           //}
-        //*/
 
         fprintf(stderr, "StoreTexture2D::Store: is tex = %u\n", glIsTexture(_id));
 

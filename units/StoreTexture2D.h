@@ -18,10 +18,12 @@ class StoreTexture2D {
                 Settings() : 
                         //wrap(GL_REPEAT), 
                         wrap(GL_CLAMP),
-                        min_filter(GL_LINEAR_MIPMAP_NEAREST),
+                        //min_filter(GL_LINEAR_MIPMAP_NEAREST),
                         //min_filter(GL_NEAREST),
+                        min_filter(GL_LINEAR_MIPMAP_LINEAR),
                         //min_filter(GL_LINEAR),
                         mag_filter(GL_LINEAR),
+                        //mag_filter(GL_LINEAR_MIPMAP_LINEAR),
                         //apply_method(GL_MODULATE),
                         apply_method(GL_REPLACE),
                         //apply_method(GL_BLEND),
