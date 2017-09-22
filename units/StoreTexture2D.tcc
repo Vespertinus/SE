@@ -1,8 +1,20 @@
 
 namespace SE {
 
+float StoreTexture2D::max_anisotropic_filter = -1;
 
-StoreTexture2D::StoreTexture2D(const Settings & oNewSettings) : oSettings(oNewSettings) { ;; }
+StoreTexture2D::StoreTexture2D(const Settings & oNewSettings) : oSettings(oNewSettings) {
+
+        if (max_anisotropic_filter != -1) {
+                return;
+        }
+
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropic_filter);
+        printf("StoreTexture2D::StoreTexture2D: max anisotropic filtering = %f\n", max_anisotropic_filter);
+        if (max_anisotropic_filter == -1) {
+                max_anisotropic_filter = 0;
+        }
+}
 
 
 
@@ -52,7 +64,9 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, oSettings.mag_filter);
 
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, oSettings.apply_method);
-        
+
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropic_filter);
+
         glTexImage2D(GL_TEXTURE_2D, 
                         0, 
                         GL_RGBA8,//oTextureStock.color_order, 

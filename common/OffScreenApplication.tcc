@@ -39,6 +39,9 @@ template <class TLoop> void OffScreenApplication<TLoop>::Init() {
         glEnable(GL_DEPTH_TEST);      
         glShadeModel(GL_SMOOTH);  
 
+        glEnable(GL_ALPHA_TEST);
+        glAlphaFunc (GL_GREATER, 0.7);
+
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
         
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -51,7 +54,9 @@ template <class TLoop> void OffScreenApplication<TLoop>::Init() {
 
 
 
-template <class TLoop> void OffScreenApplication<TLoop>::Run() { 
+template <class TLoop> void OffScreenApplication<TLoop>::Run() {
+
+        auto start = std::chrono::system_clock::now();
 
         glClear(oSettings.clear_flag);
         glLoadIdentity();
@@ -63,6 +68,10 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
         glPopMatrix();
         glFinish();
+
+        auto end = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        printf("OffScreenApplication::Run: duration = %zu ms\n", elapsed.count());
 }
 
 

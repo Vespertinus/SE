@@ -17,7 +17,7 @@ class StoreTexture2D {
 
                 Settings() : 
                         //wrap(GL_REPEAT), 
-                        wrap(GL_CLAMP),
+                        wrap(GL_CLAMP_TO_EDGE),
                         //min_filter(GL_LINEAR_MIPMAP_NEAREST),
                         //min_filter(GL_NEAREST),
                         min_filter(GL_LINEAR_MIPMAP_LINEAR),
@@ -37,6 +37,7 @@ class StoreTexture2D {
         private:
   
         const Settings  & oSettings;
+        static float max_anisotropic_filter;
 
         public:
 

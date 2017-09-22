@@ -5,6 +5,7 @@
 #include <math.h>
 #include <algorithm>
 #include <tuple>
+#include <chrono>
 
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>	
