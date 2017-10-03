@@ -6,6 +6,7 @@ With a bit of changes.
 #include <sstream>
 
 #include <InputManager.h>
+#include <Logging.h>
 
 namespace SE {
 

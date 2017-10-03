@@ -7,13 +7,10 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <spdlog/spdlog.h>
-
-std::shared_ptr<spdlog::logger> gLogger;
-
 #include <OffScreenApplication.h>
 #include "Scene.h"
 
+std::shared_ptr<spdlog::logger> gLogger;
 
 
 int main(int argc, char **argv) {

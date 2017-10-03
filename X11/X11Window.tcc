@@ -77,7 +77,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                 }
                 log_d("set X11 single buffered window");
         }
-        else { log_d("set X11 double buffered window");
+        else { log_d("set X11 double buffered window"); }
 
         glx_context           = glXCreateContext(display, visual, 0, true);
 

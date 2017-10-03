@@ -4,12 +4,10 @@
 #include <sys/time.h>
 #include <stdio.h>
 
-#include <spdlog/spdlog.h>
-
-std::shared_ptr<spdlog::logger> gLogger;
-
 #include <application.h>
 #include <OrthoScene.h>
+
+std::shared_ptr<spdlog::logger> gLogger;
 
 
 int main(int argc, char **argv) {

@@ -15,6 +15,8 @@
 #include <ErrCode.h>
 #include <Util.h>
 
+#include <Logging.h>
+
 #include <SimpleFPS.h>
 #include <MPUtil.h>
 #include <VisualHelpers.h>
