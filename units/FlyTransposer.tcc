@@ -83,7 +83,7 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                         break;
                 case OIS::KC_ESCAPE:
                 case OIS::KC_Q:
-                        fprintf(stderr, "FlyTransposer::keyPressed: stop program\n");
+                        log_i("stop program");
                         exit(0);
                         //return false;
                         //TODO write correct exit
@@ -91,15 +91,15 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                 case OIS::KC_C:
                         {
 
-                                fprintf(stderr, "checkpoint:\n"
-                                                "pos_x = %f, pos_y = %f, pos_z = %f\n"
-                                                "rot_x = %f, rot_y = %f, rot_z = %f\n"
-                                                "last x = %u, last y = %u\n"
-                                                "delta_x = %f, delta_y = %f, delta_z = %f\n"
-                                                "w_x_delta = %f w_y_delta = %f\n"
-                                                "s_x_delta = %f, s_y_delta = %f\n"
-                                                "a_x_delta = %f, a_y_delta = %f\n"
-                                                "d_x_delta = %f, d_y_delta = %f\n\n",
+                                log_d("checkpoint:\n"
+                                                "pos_x = {}, pos_y = {}, pos_z = {}\n"
+                                                "rot_x = {}, rot_y = {}, rot_z = {}\n"
+                                                "last x = {}, last y = {}\n"
+                                                "delta_x = {}, delta_y = {}, delta_z = {}\n"
+                                                "w_x_delta = {} w_y_delta = {}\n"
+                                                "s_x_delta = {}, s_y_delta = {}\n"
+                                                "a_x_delta = {}, a_y_delta = {}\n"
+                                                "d_x_delta = {}, d_y_delta = {}\n",
                                                 *pos_x,
                                                 *pos_y,
                                                 *pos_z,
@@ -126,7 +126,7 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                         break;
 
                 case OIS::KC_K:
-                        fprintf(stderr, "current FPS = %f\n", TSimpleFPS::Instance().GetFPS() );
+                        log_d("current FPS = {}", TSimpleFPS::Instance().GetFPS() );
                         break;
                 default:
                         break;
@@ -184,10 +184,10 @@ bool FlyTransposer::keyReleased( const OIS::KeyEvent &ev) {
 
 bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
 /*
-  fprintf(stderr, "FlyTransposer::mouseMoved:\n"
-                  "rot_x = %f, rot_y = %f, rot_z = %f\n"
-                  "mouse x = %u, mouse y = %u\n"
-                  "last x = %u, last y = %u\n\n",
+  log_d("FlyTransposer::mouseMoved:\n"
+                  "rot_x = {}, rot_y = {}, rot_z = {}\n"
+                  "mouse x = {}, mouse y = {}\n"
+                  "last x = {}, last y = {}\n",
       *rot_x,
       *rot_y,
       *rot_z,
@@ -215,7 +215,6 @@ bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
     OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(TInputManager::Instance().GetMouse()->getMouseState());
     MutableMouseState.X.abs = 1;
     cursor_x                = 1;
-    //fprintf(stderr, "right\n");
   }
 
   if (ev.state.Y.abs >= *height - 1.0) {
@@ -224,7 +223,6 @@ bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
     OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(TInputManager::Instance().GetMouse()->getMouseState());
     MutableMouseState.Y.abs = 1;
     cursor_y                = 1;
-    //fprintf(stderr, "down\n");
   }
   if (ev.state.X.abs == 0.0) {
     //ev.state.X.abs = *width;
@@ -232,7 +230,6 @@ bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
     OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(TInputManager::Instance().GetMouse()->getMouseState());
     MutableMouseState.X.abs = *width;
     cursor_x                = *width;
-    //fprintf(stderr, "left\n");
   }
 
   if (ev.state.Y.abs == 0.0) {
@@ -241,7 +238,6 @@ bool FlyTransposer::mouseMoved( const OIS::MouseEvent &ev) {
     OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(TInputManager::Instance().GetMouse()->getMouseState());
     MutableMouseState.Y.abs = *height;
     cursor_y                = *height;
-    //fprintf(stderr, "up\n");
   }
 
   RecalculateDirection();

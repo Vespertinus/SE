@@ -15,7 +15,7 @@ ret_code_t OpenCVImgLoader::Load(const std::string sPath, TextureStock & oTextur
         cv::Mat oResImg;
         
         if (oImg.empty()) {        
-                fprintf(stderr, "OpenCVImgLoader::Load: OpenCV failed to load image = '%s'\n", sPath.c_str());
+                log_e("OpenCV failed to load image = '{}'", sPath.c_str());
                 return uREAD_FILE_ERROR;
         }
 
@@ -27,7 +27,7 @@ ret_code_t OpenCVImgLoader::Load(const std::string sPath, TextureStock & oTextur
         oTextureStock.height            = oResImg.rows;
 
         if (oTextureStock.bpp != 3 && oTextureStock.bpp != 4) {
-                fprintf(stderr, "OpenCVImgLoader::Load: wrong channels cnt = %u, in file '%s'\n", oTextureStock.bpp, sPath.c_str());
+                log_e("wrong channels cnt = {}, in file '{}'", oTextureStock.bpp, sPath.c_str());
                 return uWRONG_INPUT_DATA;
         }
 

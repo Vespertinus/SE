@@ -10,7 +10,7 @@ StoreTexture2D::StoreTexture2D(const Settings & oNewSettings) : oSettings(oNewSe
         }
 
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropic_filter);
-        printf("StoreTexture2D::StoreTexture2D: max anisotropic filtering = %f\n", max_anisotropic_filter);
+        log_d("max anisotropic filtering = {}", max_anisotropic_filter);
         if (max_anisotropic_filter == -1) {
                 max_anisotropic_filter = 0;
         }
@@ -31,13 +31,13 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
 
         if (!oTextureStock.raw_image || !oTextureStock.raw_image_size) {
 
-                fprintf(stderr, "StoreTexture2D::Store: empty image data\n");
+                log_e("empty image data");
                 return uWRONG_INPUT_DATA;
         }
 
         if (!oTextureStock.width || !oTextureStock.height) {
 
-                fprintf(stderr, "StoreTexture2D::Store: wrong image dimensions, width = %u, height = %u\n", 
+                log_e("wrong image dimensions, width = {}, height = {}", 
                                 oTextureStock.width,
                                 oTextureStock.height);
                 return uWRONG_INPUT_DATA;
@@ -51,7 +51,7 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
 
         id = _id;
 
-        fprintf(stderr, "StoreTexture2D::Store: id = %u, width = %u, height = %u, bpp = %u\n",
+        log_d("id = {}, width = {}, height = {}, bpp = {}",
                         id,
                         oTextureStock.width,
                         oTextureStock.height,
@@ -80,7 +80,7 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
                 glGenerateMipmap(GL_TEXTURE_2D);
         }
 
-        fprintf(stderr, "StoreTexture2D::Store: is tex = %u\n", glIsTexture(_id));
+        log_d("is tex = {}", glIsTexture(_id));
 
         //Calc stat
         /*
@@ -91,7 +91,7 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
                         min_alpha = std::min(min_alpha, oTextureStock.raw_image[i]);
                         max_alpha = std::max(max_alpha, oTextureStock.raw_image[i]);
                 }
-                printf("StoreTexture2D::Store: tex id = %u, min_alpha = %u, max_alpha = %u\n",
+                log_d("tex id = {}, min_alpha = {}, max_alpha = {}",
                                 _id,
                                 min_alpha,
                                 max_alpha);

@@ -5,12 +5,18 @@
 #include <sys/time.h>
 #include <stdio.h>
 
+#include <spdlog/spdlog.h>
+
+std::shared_ptr<spdlog::logger> gLogger;
+
 #include <application.h>
 #include "Scene.h"
 
 
 int main(int argc, char **argv) {
         
+        gLogger = spdlog::stdout_logger_mt("G");
+        gLogger->set_level(spdlog::level::debug);
 
         SE::SysSettings_t oSettings;
 
@@ -41,10 +47,10 @@ int main(int argc, char **argv) {
                 SE::Application<SAMPLES::Scene> App(oSettings, SAMPLES::Scene::Settings());
         }
         catch (std::exception & ex) {
-                fprintf(stderr, "main: exception catched = %s\n", ex.what());
+                log_e("exception catched = {}", ex.what());
         }
         catch(...) {
-                fprintf(stderr, "main: unknown exception catched\n");
+                log_e("unknown exception catched");
         }
 
         return 0;

@@ -10,7 +10,7 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
         oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
         oLoop(oLoopSettings, oCamera) { 
 
-                fprintf(stderr, "Application::Application: try to init OIS\n");
+                log_d("try to init OIS");
 
                 //ResizeViewport(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
@@ -22,11 +22,11 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
 
                 Init();
 
-                fprintf(stderr, "Application::Application: Start Loop\n");
+                log_i("Start Loop");
 
                 oMainWindow.Loop();
 
-                fprintf(stderr, "Application::Application: Stop Loop\n");
+                log_i("Stop Loop");
 
 }
 
@@ -38,7 +38,7 @@ template <class TLoop> Application<TLoop>::~Application() throw() { ;; }
 
 template <class TLoop> void Application<TLoop>::Init() { 
 
-        fprintf(stderr, "Application::Init: \n");
+        log_d("basic OpenGL options");
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);   
         glClearDepth(1.0);        

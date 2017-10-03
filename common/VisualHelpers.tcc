@@ -84,7 +84,7 @@ void Elipse::Resize(const float new_radius, const uint32_t new_edge_count) {
     oColorArray[i].first    = (oVertArray[i].first  > 0) ? oVertArray[i].first  / radius : fabs(oVertArray[i].first) / (radius *  2);
     oColorArray[i].second   = (oVertArray[i].second > 0) ? oVertArray[i].second / radius : fabs(oVertArray[i].second) / (radius * 2);
 
-    //fprintf(stderr, "oColorArray: x = %f, y = %f\n", oColorArray[i].first, oColorArray[i].second);
+    //log_d("oColorArray: x = {}, y = {}", oColorArray[i].first, oColorArray[i].second);
   }
   
 }
@@ -126,8 +126,6 @@ void DrawPlane(const float width, const float height,
 
 	
   
-  //fprintf(stderr, "DrawPlane: texture_id = %u\n", texture_id);
-
   glColor3f(1, 1, 1);
   glBindTexture (GL_TEXTURE_2D, texture_id);
   glBegin(GL_QUADS);
@@ -149,9 +147,6 @@ void DrawPlane(const float width, const float height,
   glVertex3f(x_pos, y_dir * height + y_pos, z_pos);
 
   glEnd();
-  //glFlush();
-  
-
 }
 
 

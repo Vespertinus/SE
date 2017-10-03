@@ -76,13 +76,13 @@ void InputManager::Initialise(const uint32_t window_id, const int32_t width, con
     if (pInputSystem->getNumberOfDevices(OIS::OISKeyboard) > 0) {
       pKeyboard = static_cast<OIS::Keyboard*>( pInputSystem->createInputObject( OIS::OISKeyboard, true ) );
       if (!pKeyboard) {
-        fprintf(stderr, "can't find Keyboard\n");
+        log_e("can't find Keyboard");
         exit(-1);
       }
       pKeyboard->setEventCallback( this );
     }
     else {
-      fprintf(stderr, "can't find Keyboard\n");
+      log_e("can't find Keyboard");
       exit(-1);
     }
 
@@ -92,7 +92,7 @@ void InputManager::Initialise(const uint32_t window_id, const int32_t width, con
     if (pInputSystem->getNumberOfDevices(OIS::OISMouse) > 0) {
       pMouse = static_cast<OIS::Mouse*>( pInputSystem->createInputObject( OIS::OISMouse, true ) );
       if (!pMouse) {
-        fprintf(stderr, "can't find Mouse\n");
+        log_e("can't find Mouse");
         exit(-1);
       }
       pMouse->setEventCallback( this );
@@ -101,7 +101,7 @@ void InputManager::Initialise(const uint32_t window_id, const int32_t width, con
       SetWindowExtents(width, height);
     }
     else {
-      fprintf(stderr, "can't find Mouse\n");
+      log_e("can't find Mouse");
       exit(-1);
     }
 

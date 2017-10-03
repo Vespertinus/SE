@@ -17,7 +17,7 @@ template <class ResizeHandler,  class DrawHandler> X11Window<ResizeHandler, Draw
 
                 CreateWindow();
 
-                fprintf(stderr, "X11Window::X11Window: Created\n");
+                log_d("Created");
 }
 
 
@@ -55,7 +55,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
         display = XOpenDisplay(0);
         if (!display) {
-                fprintf(stderr, "X11Window::CreateWindow: can't open XDisplay\n");
+                log_e("can't open XDisplay");
                 exit (-1);
         }
 
@@ -72,12 +72,12 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
                 visual = glXChooseVisual(display, screen, attr_list_single);
                 if (!visual) {
-                        fprintf(stderr, "error: can't choose visual\n");
+                        log_e("error: can't choose visual");
                         abort();
                 }
-                printf("set X11 single buffered window\n");
+                log_d("set X11 single buffered window");
         }
-        else { printf("set X11 double buffered window\n"); }
+        else { log_d("set X11 double buffered window");
 
         glx_context           = glXCreateContext(display, visual, 0, true);
 
@@ -87,13 +87,13 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
         if (oSettings.fullscreen) {
 
-                fprintf(stderr, "try to set fullscreen mode\n");
+                log_d("try to set fullscreen mode");
 
                 for (int i = 0; i < mode_num; ++i) {
                         if ((modes[i]->hdisplay == oSettings.width) && (modes[i]->vdisplay == oSettings.height)) { best_mode = i; break; }
                 }
                 if (best_mode == -1) {
-                        fprintf(stderr, "target mode unsupported, width = %u, height = %u\n", oSettings.width, oSettings.height);
+                        log_e("target mode unsupported, width = {}, height = {}", oSettings.width, oSettings.height);
                         exit(-1);  
                 }
 
@@ -159,14 +159,14 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
         glXMakeCurrent(display, window, glx_context);
         XGetGeometry(display, window, &wnd_dummy, &x, &y, &width, &height, &border_dummy, &bpp);
 
-        //fprintf get options
+        //log get options
 
         bool direct_render = glXIsDirect(display, glx_context);
 
-        fprintf(stderr, "Direct Rendering: %s\n", direct_render ? "Yes" : "No");
+        log_i("Direct Rendering: {}", direct_render ? "Yes" : "No");
         if (!direct_render) { abort(); }
 
-        fprintf(stderr, "Running in %s mode\n", oSettings.fullscreen ? "fullscreen" : "window");
+        log_i("Running in {} mode", oSettings.fullscreen ? "fullscreen" : "window");
 
         oResizeHandler(oSettings.width, oSettings.height);
 }
@@ -196,7 +196,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
                                                 oSettings.width   = event.xconfigure.width;
                                                 oSettings.height  = event.xconfigure.height;
-                                                fprintf(stderr, "X11Window::StartLoop: resize event\n");
+                                                log_d("resize event");
                                                 oResizeHandler(oSettings.width, oSettings.height);
                                         }
                                         break;
@@ -245,7 +245,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
         if(glx_context) {
                 if(!glXMakeCurrent(display, None, NULL)) {
-                        fprintf(stderr, "X11Window::DestroyWindow: error releasing drawing context\n");
+                        log_e("error releasing drawing context");
                 }
                 glXDestroyContext(display, glx_context);
                 glx_context = 0;

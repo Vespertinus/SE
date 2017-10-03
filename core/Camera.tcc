@@ -169,7 +169,7 @@ void Camera::LookAt(const glm::vec3 & center) {
                 rot_z = 360 + rot_z;
         }
 
-        printf("Camera::LookAt: new angles: rot_x = %f, rot_y = %f, rot_z = %f, center x = %f, y = %f, z = %f\n", 
+        log_d("new angles: rot_x = {}, rot_y = {}, rot_z = {}, center x = {}, y = {}, z = {}", 
                         rot_x, rot_y, rot_z, 
                         center.x, center.y, center.z);
 }
@@ -209,7 +209,7 @@ void Camera::UpdateProjection() const {
                         break;
 
                 default:
-                        fprintf(stderr, "Camera::UpdateProjection: wrong projection = %u\n", oVolume.projection);
+                        log_e("wrong projection = {}", oVolume.projection);
 
         }
 
@@ -235,7 +235,7 @@ void Camera::UpdateZoom() {
         float min_dim = std::min(oSettings.width, oSettings.height);
         zoom = min_dim / target_length;
 
-        printf("Camera::UpdateZoom: min_dim = %f, target_len = %f, zoom = %f\n", min_dim, target_length, zoom);
+        log_d("min_dim = {}, target_len = {}, zoom = {}", min_dim, target_length, zoom);
 
 }
 
@@ -246,11 +246,11 @@ void Camera::ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox)
         const glm::vec3 & min = std::get<0>(bbox);
         const glm::vec3 & max = std::get<1>(bbox);
 
-        printf("Camera::ZoomTo: min x = %f, y = %f, z = %f, max x = %f, y = %f, z = %f\n",
+        log_d("min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
                         min.x, min.y, min.z,
                         max.x, max.y, max.z);
 
-        printf("Camera::ZoomTo: bbox len = %f\n", glm::distance(max, min) );
+        log_d("bbox len = {}", glm::distance(max, min) );
 //*/
         
         target_length = std::max({ std::abs(len.x), std::abs(len.y), std::abs(len.z) });

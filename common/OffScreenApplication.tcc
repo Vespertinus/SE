@@ -17,7 +17,7 @@ template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const S
 
                 Init();
 
-                fprintf(stderr, "OffScreenApplication::OffScreenApplication: Inited\n");
+                log_i("Inited");
 
 }
 
@@ -31,7 +31,7 @@ template <class TLoop> OffScreenApplication<TLoop>::~OffScreenApplication() thro
 
 template <class TLoop> void OffScreenApplication<TLoop>::Init() { 
 
-        fprintf(stderr, "OffScreenApplication::Init: \n");
+        log_i("app init");
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);   
         glClearDepth(1.0);        
@@ -71,7 +71,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
         auto end = std::chrono::system_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        printf("OffScreenApplication::Run: duration = %zu ms\n", elapsed.count());
+        log_i("duration = {} ms", elapsed.count());
 }
 
 

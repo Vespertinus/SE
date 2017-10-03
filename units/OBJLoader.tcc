@@ -66,27 +66,27 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                     sPath.c_str(), 
                                     sBaseDir.c_str());
         if (!err.empty()) {
-                fprintf(stderr, "OBJLoader::Load: failed to load obj file '%s', reason: '%s'\n", sPath.c_str(), err.c_str());
+                log_e("failed to load obj file '{}', reason: '{}'", sPath, err);
                 return uREAD_FILE_ERROR;
         }
         if (!ret) {
-                fprintf(stderr, "OBJLoader::Load: failed to load obj file '%s'\n", sPath.c_str());
+                log_e("failed to load obj file '{}'", sPath);
                 return uREAD_FILE_ERROR;
         }
 
         //TODO rewrite to debug log
-        printf("OBJLoader::Load: file: '%s'\n", sPath.c_str());
-        printf("OBJLoader::Load: vertices  = %d\n", (int)(oAttrib.vertices.size()) / 3);
-        printf("OBJLoader::Load: normals   = %d\n", (int)(oAttrib.normals.size()) / 3);
-        printf("OBJLoader::Load: texcoords = %d\n", (int)(oAttrib.texcoords.size()) / 2);
-        printf("OBJLoader::Load: materials = %d\n", (int)vMaterials.size());
-        printf("OBJLoader::Load: shapes    = %d\n", (int)vShapes.size());
+        log_d("file: '{}'", sPath.c_str());
+        log_d("vertices  = {}", (int)(oAttrib.vertices.size()) / 3);
+        log_d("normals   = {}", (int)(oAttrib.normals.size()) / 3);
+        log_d("texcoords = {}", (int)(oAttrib.texcoords.size()) / 2);
+        log_d("materials = {}", (int)vMaterials.size());
+        log_d("shapes    = {}", (int)vShapes.size());
 
         vMaterials.push_back(tinyobj::material_t());
 
         for (size_t i = 0; i < vMaterials.size(); i++) {
                 tinyobj::material_t * pMat = & vMaterials[i];
-                printf("OBJLoader::Load: material[%d], name = '%s', diffuse_texname = '%s'\n", int(i), pMat->name.c_str(), pMat->diffuse_texname.c_str());
+                log_d("material[{}], name = '{}', diffuse_texname = '{}'\n", i, pMat->name, pMat->diffuse_texname);
                 
                 if (pMat->diffuse_texname.length() == 0) { 
                         vTextures.emplace_back(nullptr);
@@ -99,8 +99,8 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                 }
                 else {
                       char buf[256];
-                      snprintf(buf, sizeof(buf), "OBJLoader::Load: failed to load texture: '%s'\n", pMat->diffuse_texname.c_str());
-                      fprintf(stderr, "%s", buf);
+                      snprintf(buf, sizeof(buf), "OBJLoader::Load: failed to load texture: '%s'", pMat->diffuse_texname.c_str());
+                      log_e("{}", buf);
                       throw (std::runtime_error(buf));
                 }
         }
@@ -257,16 +257,16 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                 }
 
                 if (vMeshData.size() == 0) {
-                        fprintf(stderr, "OBJLoader::Load: empty shape, ind = %zu\n", s);
+                        log_e("empty shape, ind = {}", s);
                         continue;
                 }
 
                 if (vShapes[s].mesh.material_ids.size() > 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
                         oStock.vTextures.emplace_back(vTextures[vShapes[s].mesh.material_ids[0] ]);
-                        printf("OBJLoader::Load: shape[%zu] name = '%s', material ind id = %d\n", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );
+                        log_d("shape[{}u] name = '{}', material ind id = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );
                 } else {
                         oStock.vTextures.emplace_back(nullptr);
-                        printf("OBJLoader::Load: shape[%zu] name = '%s' empty material\n", s, vShapes[s].name.c_str());
+                        log_d("shape[{}] name = '{}' empty material", s, vShapes[s].name.c_str());
                 }
                 
 /*
@@ -277,8 +277,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                         GL_STATIC_DRAW);
                         o.numTriangles = vMeshData.size() / (3 + 3 + 3 + 2) / 3; // 3:vtx, 3:normal, 3:col, 2:texcoord
 
-                        printf("shape[%d] # of triangles = %d\n", static_cast<int>(s),
-                                        o.numTriangles);
+                        log_d("shape[{}] # of triangles = {}", static_cast<int>(s), o.numTriangles);
                 }
 */
                 oStock.vShapes.emplace_back(std::make_tuple(std::move(vMeshData), vShapes[s].name));

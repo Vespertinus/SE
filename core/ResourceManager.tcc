@@ -43,14 +43,14 @@ template < class ResourceList > template <class Resource, class ... TConcreateSe
       oStorage.insert(std::pair<rid_t, Resource *>(key, pResource));
     }
     catch(std::exception & ex) {
-      fprintf(stderr, "ResourceManager::Create: got exception, description = '%s'\n", ex.what()); 
+      log_e("got exception, description = '{}'", ex.what());
       if (pResource != 0) { 
         delete pResource;
         pResource = 0;
       }
     }
     catch(...) {
-      fprintf(stderr, "ResourceManager::Create: got unknown exception\n");
+      log_e("got unknown exception");
       if (pResource != 0) { 
         delete pResource;
         pResource = 0;

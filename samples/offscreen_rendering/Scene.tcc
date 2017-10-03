@@ -1,4 +1,4 @@
-
+#include <experimental/string_view>
 namespace SAMPLES {
 
 
@@ -9,7 +9,7 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
   
 
                 pTestMesh = SE::TResourceManager::Instance().Create<SE::TMesh>("resource/Maya/proto_full_body.obj");
-                printf("Scene::Scene: pTestMesh: shape cnt = %u, tringles cnt = %u\n", pTestMesh->GetShapesCnt(), pTestMesh->GetTrianglesCnt());
+                log_d("pTestMesh: shape cnt = {}, tringles cnt = {}", pTestMesh->GetShapesCnt(), pTestMesh->GetTrianglesCnt());
                 
                 pTestMesh2 = SE::TResourceManager::Instance().Create<SE::TMesh>("resource/mesh/tests/test_ship01.obj");
 
@@ -74,7 +74,6 @@ void Scene::Setup() {
 
         for (auto item : vInfo) {
                 const std::string & sName = std::get<1>(item);
-                //printf("shape: ind = %u, name = '%s'\n", std::get<0>(item), std::get<1>(item).c_str());
                 pos = sName.find("sticker_body");
                 if (pos != std::string::npos) {
                         vBodyIndexes.emplace_back(std::get<0>(item));
@@ -84,7 +83,7 @@ void Scene::Setup() {
                 }
 
         }
-        printf("Scene::Setup: got %zu body shapes, and %zu other shapes\n", vBodyIndexes.size(), vOtherIndexes.size());
+        log_i("got {} body shapes, and {} other shapes", vBodyIndexes.size(), vOtherIndexes.size());
 }
 
 

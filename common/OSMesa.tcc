@@ -20,16 +20,16 @@ OSMesa::OSMesa(const WindowSettings & oNewSettings) : oSettings(oNewSettings) {
                                 GL_UNSIGNED_BYTE,
                                 oSettings.width,
                                 oSettings.height) ) {
-                throw(std::runtime_error("OSMesa::OSMesa: OSMesaMakeCurrent failed!\n"));
+                throw(std::runtime_error("OSMesa::OSMesa: OSMesaMakeCurrent failed!"));
         }
-        printf("OSMesa::OSMesa: initialized\n");
+        log_d("initialized");
 }
 
 
 OSMesa::~OSMesa() throw() { 
 
         OSMesaDestroyContext( pMesaCtx );
-        printf("OSMesa::~OSMesa: destroyed\n");
+        log_d("destroyed");
 }
 
 void OSMesa::MakeCurrent(std::vector<GLubyte> & vRenderBuffer) {
@@ -41,7 +41,7 @@ void OSMesa::MakeCurrent(std::vector<GLubyte> & vRenderBuffer) {
                                 GL_UNSIGNED_BYTE, 
                                 oSettings.width, 
                                 oSettings.height) ) {
-                throw(std::runtime_error("OSMesa::MakeCurrent OSMesaMakeCurrent failed!\n"));
+                throw(std::runtime_error("OSMesa::MakeCurrent OSMesaMakeCurrent failed!"));
                 //TODO rewrite on err code handling
         }
 }

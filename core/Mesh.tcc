@@ -47,8 +47,8 @@ template <class StoreStrategyList, class LoadStrategyList>
         err_code = oLoadStrategy.Load(oName, oMeshStock);
         if (err_code) {
                 char buf[256];
-                snprintf(buf, sizeof(buf), "Mesh::Create: Loading failed, err_code = %u\n", err_code);
-                fprintf(stderr, "%s", buf);
+                snprintf(buf, sizeof(buf), "Mesh::Create: Loading failed, err_code = %u", err_code);
+                log_e("{}", buf);
                 throw (std::runtime_error(buf));
         }
 
@@ -56,7 +56,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         if (err_code) {
                 char buf[256];
                 snprintf(buf, sizeof(buf), "Mesh::Create: Storing failed, err_code = %u\n", err_code);
-                fprintf(stderr, "%s", buf);
+                log_e("{}", buf);
                 throw (std::runtime_error(buf));
         }
 
@@ -190,7 +190,7 @@ template <class StoreStrategyList, class LoadStrategyList>
                 GetCenter(const size_t shape_ind) const {
         
         if (shape_ind >= vMeshData.size()) {
-                printf("Mesh::GetShapeCenter: wrong shape ind = %zu\n, mesh rid = %zu", shape_ind, rid);
+                log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return glm::vec3();
         }
 
@@ -215,7 +215,7 @@ template <class StoreStrategyList, class LoadStrategyList>
                 DrawBBox(const size_t shape_ind) const {
 
         if (shape_ind >= vMeshData.size()) {
-                printf("Mesh::DrawBBox: wrong shape ind = %zu\n, mesh rid = %zu", shape_ind, rid);
+                log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return;
         }
 
@@ -239,7 +239,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         std::tuple<const glm::vec3 &, const glm::vec3 &> Mesh<StoreStrategyList, LoadStrategyList>::
                 GetBBox() const {
 /*
-        printf("Mesh::GetBBox: min x = %f, y = %f, z = %f, max x = %f, y = %f, z = %f\n",
+        log_d("min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
                         min.x, min.y, min.z,
                         max.x, max.y, max.z);
         */

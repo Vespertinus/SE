@@ -7,6 +7,9 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <spdlog/spdlog.h>
+
+std::shared_ptr<spdlog::logger> gLogger;
 
 #include <OffScreenApplication.h>
 #include "Scene.h"
@@ -14,6 +17,9 @@
 
 
 int main(int argc, char **argv) {
+
+        gLogger = spdlog::stdout_logger_mt("G");
+        gLogger->set_level(spdlog::level::debug);
         
         std::vector<GLubyte> vRenderBuffer;
 
@@ -28,12 +34,18 @@ int main(int argc, char **argv) {
         oSettings.oCamSettings.oVolume.aspect           = (float)oSettings.oCamSettings.width / (float)oSettings.oCamSettings.height;
         oSettings.oCamSettings.oVolume.near_clip	= 0.1;
         oSettings.oCamSettings.oVolume.far_clip         = 100;
-        oSettings.oCamSettings.oVolume.projection     = SE::Frustum::uORTHO;
+        oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uORTHO;
         //oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
 
         oSettings.clear_flag			        = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-        oSettings.sResourceDir                = "resource/";
+        oSettings.sResourceDir                          = "resource/";
 
+        log_d("{}: settings: output width = {}, height = {}, clip near = {}, far = {}",
+                        argv[0],
+                        oSettings.oCamSettings.width,
+                        oSettings.oCamSettings.height,
+                        oSettings.oCamSettings.oVolume.near_clip,
+                        oSettings.oCamSettings.oVolume.far_clip);
 
         try {
 
@@ -49,10 +61,10 @@ int main(int argc, char **argv) {
                 cv::imwrite("./output.png", oResMat);
         }
         catch (std::exception & ex) {
-                fprintf(stderr, "main: exception catched = %s\n", ex.what());
+                log_e("main: exception catched, reason: '{}'", ex.what());
         }
         catch(...) {
-                fprintf(stderr, "main: unknown exception catched\n");
+                log_e("main: unknown exception catched");
         }
 
         return 0;

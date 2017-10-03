@@ -13,12 +13,12 @@ ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMes
 
         if (!oMeshStock.vShapes.size() || !oMeshStock.vTextures.size()) {
 
-                fprintf(stderr, "StoreMesh::Store: empty mesh data\n");
+                log_e("empty mesh data");
                 return uWRONG_INPUT_DATA;
         }
 
         if (oMeshStock.vShapes.size() != oMeshStock.vTextures.size()) {
-                fprintf(stderr, "StoreMesh::Store: wrong input data, mesh cnt = %zu, textures cnt = %zu\n",
+                log_e("wrong input data, mesh cnt = {}, textures cnt = {}",
                                 oMeshStock.vShapes.size(),
                                 oMeshStock.vTextures.size());
                 return uWRONG_INPUT_DATA;
@@ -52,7 +52,7 @@ ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMes
                         max.z = std::max(vShape[i + 2], max.z);
                 }
 
-                printf("shape[%zu] name = '%s', triangles cnt = %u, texture id = %u, min x = %f, y = %f, z = %f, max x = %f, y = %f, z = %f\n", 
+                log_d("shape[{}u] name = '{}', triangles cnt = {}, texture id = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
                                 i, 
                                 sName.c_str(), 
                                 triangles_cnt, 

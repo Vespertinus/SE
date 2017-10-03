@@ -25,17 +25,17 @@ template <class StoreStrategyList, class LoadStrategyList>
         std::transform(sExt.begin(), sExt.end(), sExt.begin(), ::tolower);
 
         if (sExt == ".tga") {
-                printf("file '%s' ext '%s', call TGALoader\n", oName.c_str(), sExt.c_str());
+                log_d("file '{}' ext '{}', call TGALoader", oName.c_str(), sExt.c_str());
                 Create(oName, typename TDefaultStoreStrategy::Settings(), typename TGALoader::Settings());
         }
         else if (sExt == ".jpg" || sExt == ".jpeg" || sExt == ".png") {
-                printf("file '%s' ext '%s', call OpenCVImgLoader\n", oName.c_str(), sExt.c_str());
+                log_d("file '{}' ext '{}', call OpenCVImgLoader", oName.c_str(), sExt.c_str());
                 Create(oName, typename TDefaultStoreStrategy::Settings(), typename OpenCVImgLoader::Settings());
         }
         else {
                 char buf[256];
-                snprintf(buf, sizeof(buf), "Texture::Texture: unsupported image extension: '%s'\n", oName.c_str());
-                fprintf(stderr, "%s", buf);
+                snprintf(buf, sizeof(buf), "Texture::Texture: unsupported image extension: '%s'", oName.c_str());
+                log_e("{}", buf);
                 throw (std::runtime_error(buf));
         }
 }
@@ -64,8 +64,8 @@ template <class StoreStrategyList, class LoadStrategyList>
         err_code = oLoadStrategy.Load(oName, oTextureStock);
         if (err_code) {
                 char buf[256];
-                snprintf(buf, sizeof(buf), "Texture::Create: Loading failed, err_code = %u\n", err_code);
-                fprintf(stderr, "%s", buf);
+                snprintf(buf, sizeof(buf), "Texture::Create: Loading failed, err_code = %u", err_code);
+                log_e("{}", buf);
                 throw (std::runtime_error(buf));
         }
 
@@ -73,7 +73,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         if (err_code) {
                 char buf[256];
                 snprintf(buf, sizeof(buf), "Texture::Create: Storing failed, err_code = %u\n", err_code);
-                fprintf(stderr, "%s", buf);
+                log_e("{}", buf);
                 throw (std::runtime_error(buf));
         }
 

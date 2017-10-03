@@ -24,7 +24,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
         FILE * oImageFile = fopen (sPath.c_str(), "rb");
 
         if (oImageFile == NULL)	{
-                fprintf(stderr, "TGALoader::Load: can't open file = '%s', reason = %s\n", sPath.c_str(), strerror(errno));
+                log_e("can't open file = '{}', reason = {}", sPath.c_str(), strerror(errno));
                 return uREAD_FILE_ERROR;
         }
 
@@ -33,7 +33,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
                         (memcmp (targa_magic, file_magic, sizeof (targa_magic)) != 0 ) ||
                         (fread (header, 1, sizeof (header), oImageFile) != sizeof (header) ))	{
 
-                fprintf(stderr, "TGALoader::Load: wrong data in file = '%s'\n", sPath.c_str());
+                log_e("wrong data in file = '{}'", sPath.c_str());
                 fclose (oImageFile);
                 return uREAD_FILE_ERROR;
         }
@@ -43,7 +43,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
 
         if (oTextureStock.width <= 0 || oTextureStock.height <= 0 || (header [4] != 24 && header [4] != 32)) {
                 fclose (oImageFile);
-                fprintf(stderr, "TGALoader::Load: wrong header, width = %u, height = %u, bpp = %u\n",
+                log_e("wrong header, width = {}, height = {}, bpp = {}",
                                 oTextureStock.width,
                                 oTextureStock.height,
                                 header[4]);
@@ -59,7 +59,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
                 vImageData.resize(oTextureStock.raw_image_size);
         }
         catch (std::exception & ex) {
-                fprintf(stderr, "TGALoader::Load: failed to allocate %u bytes for image (%s) data, reason: '%s'\n",
+                log_e("failed to allocate {} bytes for image ({}) data, reason: '{}'",
                                 oTextureStock.raw_image_size,
                                 sPath.c_str(),
                                 ex.what());
@@ -68,7 +68,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
         
         }
         catch(...) {
-                fprintf(stderr, "TGALoader::Load: failed to allocate %u bytes for image (%s) data\n",
+                log_e("failed to allocate {} bytes for image ({}) data",
                                 oTextureStock.raw_image_size,
                                 sPath.c_str() );
                 fclose (oImageFile);
@@ -79,7 +79,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
         if (fread (&vImageData[0], 1, oTextureStock.raw_image_size, oImageFile) != oTextureStock.raw_image_size) {
 
 
-                fprintf(stderr, "TGALoader::Load: can't read %u bytes, reason = %s\n", oTextureStock.raw_image_size, strerror(errno));
+                log_e("can't read {} bytes, reason = {}", oTextureStock.raw_image_size, strerror(errno));
                 fclose (oImageFile);
                 return uREAD_FILE_ERROR;
         }
