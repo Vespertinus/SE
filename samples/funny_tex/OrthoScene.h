@@ -26,6 +26,6 @@ class OrthoScene {
 
 } //namespace FUNNY_TEX
 
-#include <OrthoScene.tcc>
+#include "OrthoScene.tcc"
 
 #endif

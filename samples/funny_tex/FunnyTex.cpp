@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include <application.h>
-#include <OrthoScene.h>
+#include "OrthoScene.h"
 
 std::shared_ptr<spdlog::logger> gLogger;
 

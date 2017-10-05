@@ -13,7 +13,7 @@ template <class T> void Swap(T & oLeft, T & oRight) {
 
 
 
-uint64_t Hash64(const uint64_t & key) {
+inline uint64_t Hash64(const uint64_t & key) {
 
   uint64_t  result    = 5381;
 
@@ -27,7 +27,7 @@ uint64_t Hash64(const uint64_t & key) {
   return result;
 }
 
-uint64_t Hash64(char const * data, const uint32_t size) {
+inline uint64_t Hash64(char const * data, const uint32_t size) {
 
 	uint64_t        result  = 5381;
 	

@@ -111,7 +111,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-void DrawShape(const MeshData & oMeshData) {
+inline void DrawShape(const MeshData & oMeshData) {
                 
         static const GLsizei stride = (3 + 3 + 3 + 2) * sizeof(float);
 

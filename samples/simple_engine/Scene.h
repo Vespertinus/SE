@@ -34,6 +34,6 @@ class Scene {
 
 } //namespace SE
 
-#include <Scene.tcc>
+#include "Scene.tcc"
 
 #endif
