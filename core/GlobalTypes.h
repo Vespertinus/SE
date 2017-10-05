@@ -8,9 +8,9 @@
 //#include <Global.h>
 
 // Loki include
-#include <Singleton.h>
-#include <HierarchyGenerators.h>
-#include <Typelist.h>
+#include <loki/Singleton.h>
+#include <loki/HierarchyGenerators.h>
+#include <loki/Typelist.h>
 
 #include <ErrCode.h>
 #include <Util.h>

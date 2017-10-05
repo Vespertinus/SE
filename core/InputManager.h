@@ -8,16 +8,16 @@
 #define __INPUT_MANAGER_H__ 1
 
 // OIS include
-#include <OISMouse.h>
-#include <OISKeyboard.h>
-#include <OISJoyStick.h>
-#include <OISInputManager.h>
+#include <ois/OISMouse.h>
+#include <ois/OISKeyboard.h>
+#include <ois/OISJoyStick.h>
+#include <ois/OISInputManager.h>
 
 // C include
 #include <stdint.h>
 
 // Loki include
-#include <Singleton.h>
+#include <loki/Singleton.h>
 
 namespace SE {
 
