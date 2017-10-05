@@ -5,6 +5,7 @@ project(SimpleEngine C CXX)
 
 option(GPU                      "Compile with direct rendering support"  ON)
 option(ASAN                     "Compile with address sanitizer"         OFF)
+option(OLD_ABI                  "Compile with old CXX ABI"               OFF)
 
 
 include_directories(            "${CMAKE_SOURCE_DIR}/core"
@@ -49,6 +50,9 @@ set(C_WARNING_FLAGS             "-Wignored-qualifiers -Wwrite-strings")
 set(CXX_WARNING_FLAGS           "-Wmissing-declarations -Winvalid-pch")
 
 add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64)
+if (OLD_ABI)
+        add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+endif()
 
 
 set(CMAKE_C_FLAGS               "${COMMON_FLAGS} ${COMMON_C_FLAGS} ${C_WARNING_FLAGS}")
