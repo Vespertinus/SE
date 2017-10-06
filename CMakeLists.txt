@@ -77,6 +77,8 @@ endif()
 
 set(EXECUTABLE_OUTPUT_PATH      "${CMAKE_SOURCE_DIR}")
 
+set (COMMON_SOURCES             "${CMAKE_SOURCE_DIR}/common/Chrono.cpp")
+
 add_subdirectory("samples")
 
 

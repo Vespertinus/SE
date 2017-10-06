@@ -17,6 +17,7 @@
 
 #include <Logging.h>
 
+#include <Chrono.h>
 #include <SimpleFPS.h>
 #include <MPUtil.h>
 #include <VisualHelpers.h>

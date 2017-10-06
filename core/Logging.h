@@ -2,6 +2,7 @@
 #define __LOGGING_H__ 1
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 extern std::shared_ptr<spdlog::logger> gLogger;
 

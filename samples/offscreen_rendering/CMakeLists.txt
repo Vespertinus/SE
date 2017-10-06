@@ -8,6 +8,9 @@ else()
 
 endif()
 
+set(SOURCES             ${SOURCES}
+                        ${COMMON_SOURCES})
+
 add_executable(         offscreen_rendering
                         ${SOURCES})
 
