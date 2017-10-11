@@ -7,7 +7,7 @@ function(find_header_library LIB_NAME HEADER_FILE SEARCH_PATH)
 
         if (INC_DIR_${LIB_NAME})
                 message(STATUS "Found ${LIB_NAME} at ${INC_DIR_${LIB_NAME}}")
-                list(APPEND EXTERN_INC_DIRS ${INC_DIR_${LIB_NAME}})
+                set(EXTERN_INC_DIRS ${EXTERN_INC_DIRS} ${INC_DIR_${LIB_NAME}} PARENT_SCOPE)
         else()
                 message(FATAL_ERROR "Failed to locate header '${HEADER_FILE}', check ${LIB_NAME} installation path")
         endif()
