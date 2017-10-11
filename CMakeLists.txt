@@ -2,35 +2,35 @@
 cmake_minimum_required(VERSION 3.0.0)
 
 project(SimpleEngine C CXX)
+project(SimpleEngine VERSION 0.1.0)
 
 option(GPU                      "Compile with direct rendering support"  ON)
 option(ASAN                     "Compile with address sanitizer"         OFF)
 option(OLD_ABI                  "Compile with old CXX ABI"               OFF)
 
 
-include_directories(            "${CMAKE_SOURCE_DIR}/core"
-                                "${CMAKE_SOURCE_DIR}/common"
-                                "${CMAKE_SOURCE_DIR}/units"
-                                )
+set(LOCAL_INC_DIRS              core common units)
+set(EXTERN_INC_DIRS)
+set(LIBRARIES_LIST              "")
 
 list(APPEND CMAKE_PREFIX_PATH "~/usr" "/usr/local")
-                
+
 link_directories(               /usr/lib
                                 /usr/lib64
                                 ~/usr/lib
                                 )
 
 set(CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/cmake_mods"
-                                "${CMAKE_MODULE_PATH}"
-                                )
+                                "${CMAKE_MODULE_PATH}" )
 
+include("Util")
 include("ChooseCompiler")
 include("IncDependency")
 include("LibDependency")
 
 if (UNIX AND NOT APPLE)
         if (GPU)
-                include_directories(    "${CMAKE_SOURCE_DIR}/X11")
+                list(APPEND LOCAL_INC_DIRS X11)
                 link_X11()
         endif()
 else()
@@ -71,14 +71,31 @@ set(CMAKE_C_FLAGS_DEBUG         "${DEBUG_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG       "${DEBUG_FLAGS}")
 
 if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE Debug CACHE STRING
-                "Build types: Debug(default) Release" FORCE)
+        set(CMAKE_BUILD_TYPE    Debug CACHE STRING
+                                "Build types: Debug(default) Release"
+                                FORCE
+                                )
 endif()
 
 set(EXECUTABLE_OUTPUT_PATH      "${CMAKE_SOURCE_DIR}")
 
 set (COMMON_SOURCES             "${CMAKE_SOURCE_DIR}/common/Chrono.cpp")
+if(GPU)
+list(APPEND                     COMMON_SOURCES
+                                "${CMAKE_SOURCE_DIR}/core/InputManager.cpp")
+endif()
 
+prepend_path(                   LOCAL_INC_DIRS
+                                REL_LOCAL_INC_DIR
+                                ${CMAKE_SOURCE_DIR})
+
+include_directories(${REL_LOCAL_INC_DIR} ${EXTERN_INC_DIRS})
+link_libraries(${LIBRARIES_LIST})
+
+include("ConfigureExport")
+
+
+#default target with some samples
 add_subdirectory("samples")
 
 
