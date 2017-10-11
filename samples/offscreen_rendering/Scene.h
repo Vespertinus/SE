@@ -11,13 +11,6 @@ class Scene {
         SE::TTexture    * pTex01;
         SE::TTexture    * pTex02;
         SE::TMesh       * pTestMesh;
-        SE::TMesh       * pTestMesh2;
-
-        std::vector<uint32_t> vBodyIndexes;
-        std::vector<uint32_t> vOtherIndexes;
-
-        /** build shape indexes */
-        void Setup();
 
         public:
         //empty settings

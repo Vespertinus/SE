@@ -52,7 +52,7 @@ ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMes
                         max.z = std::max(vShape[i + 2], max.z);
                 }
 
-                log_d("shape[{}u] name = '{}', triangles cnt = {}, texture id = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
+                log_d("shape[{}] name = '{}', triangles cnt = {}, texture id = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
                                 i, 
                                 sName.c_str(), 
                                 triangles_cnt, 

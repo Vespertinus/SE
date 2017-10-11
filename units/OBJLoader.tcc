@@ -263,7 +263,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
 
                 if (vShapes[s].mesh.material_ids.size() > 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
                         oStock.vTextures.emplace_back(vTextures[vShapes[s].mesh.material_ids[0] ]);
-                        log_d("shape[{}u] name = '{}', material ind id = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );
+                        log_d("shape[{}] name = '{}', material ind id = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );
                 } else {
                         oStock.vTextures.emplace_back(nullptr);
                         log_d("shape[{}] name = '{}' empty material", s, vShapes[s].name.c_str());
