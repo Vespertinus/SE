@@ -12,7 +12,6 @@ class StoreTexture2D {
                 int32_t min_filter,
                         mag_filter;
                 int32_t apply_method;
-                //uint8_t mipmap_level;
                 bool    mipmap_enabled;
 
                 Settings() : 
@@ -24,8 +23,8 @@ class StoreTexture2D {
                         //min_filter(GL_LINEAR),
                         mag_filter(GL_LINEAR),
                         //mag_filter(GL_LINEAR_MIPMAP_LINEAR),
-                        //apply_method(GL_MODULATE),
-                        apply_method(GL_REPLACE),
+                        apply_method(GL_MODULATE),
+                        //apply_method(GL_REPLACE),
                         //apply_method(GL_BLEND),
                         //mipmap_level(4) 
                         mipmap_enabled(true)

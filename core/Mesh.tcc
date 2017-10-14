@@ -128,9 +128,10 @@ inline void DrawShape(const MeshData & oMeshData) {
                 glBindTexture(GL_TEXTURE_2D, 0);//-->???
         }
 
+        glColor3f(1, 1, 1);
         glVertexPointer(3, GL_FLOAT,   stride, (const void*)0);
         glNormalPointer(GL_FLOAT,      stride, (const void*)(sizeof(float) * 3));
-        glColorPointer(3, GL_FLOAT,    stride, (const void*)(sizeof(float) * 6));
+        //ColorPointer(3, GL_FLOAT,    stride, (const void*)(sizeof(float) * 6));
         glTexCoordPointer(2, GL_FLOAT, stride, (const void*)(sizeof(float) * 9));
 
         glDrawArrays(GL_TRIANGLES, 0, 3 * oMeshData.triangles_cnt);
@@ -144,7 +145,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_NORMAL_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
+        //glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
                 
         for (auto oMeshData : vMeshData) {
@@ -163,7 +164,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_NORMAL_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
+        //glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
         DrawShape(vMeshData[shape_ind]);
