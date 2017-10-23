@@ -20,7 +20,6 @@ struct MeshData {
         std::string     sName;
         glm::vec3       min;
         glm::vec3       max;
-        //glm::vec3       center;
 };
 
 } //namespace SE
