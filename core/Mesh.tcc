@@ -7,8 +7,10 @@ template <class StoreStrategyList, class LoadStrategyList>
                         const std::string oName, 
                         const rid_t new_rid,
                         const TStoreStrategySettings & oStoreStrategySettings, 
-                        const TLoadStrategySettings & oLoadStrategySettings) :
-                ResourceHolder(new_rid) {
+                        const TLoadStrategySettings & oLoadStrategySettings,
+                        const bool ext_mat) :
+                ResourceHolder(new_rid),
+                ext_material(ext_mat) {
 
         Create(oName, oStoreStrategySettings, oLoadStrategySettings);
 }
@@ -16,8 +18,10 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList> 
         Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
                 const std::string oName, 
-                const rid_t new_rid) : 
-                ResourceHolder(new_rid) {
+                const rid_t new_rid,
+                const bool ext_mat) : 
+        ResourceHolder(new_rid),
+        ext_material(ext_mat) {
 
 
         Create(oName, typename TDefaultStoreStrategy::Settings(), typename TDefaultLoadStrategy::Settings());
@@ -111,7 +115,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-inline void DrawShape(const MeshData & oMeshData) {
+inline void DrawShape(const MeshData & oMeshData, const bool ext_material) {
                 
         static const GLsizei stride = (3 + 3 + 3 + 2) * sizeof(float);
 
@@ -121,14 +125,19 @@ inline void DrawShape(const MeshData & oMeshData) {
 
         glBindBuffer(GL_ARRAY_BUFFER, oMeshData.buf_id);
 
-        if (oMeshData.pTex) {
-                glBindTexture(GL_TEXTURE_2D, oMeshData.pTex->GetID());
-        }
-        else {
-                glBindTexture(GL_TEXTURE_2D, 0);//-->???
-        }
+        if (!ext_material) {
 
-        glColor3f(1, 1, 1);
+                if (oMeshData.pTex) {
+                        glBindTexture(GL_TEXTURE_2D, oMeshData.pTex->GetID());
+                }
+
+                else {
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                }
+
+                glColor3f(1, 1, 1);
+
+        }
         glVertexPointer(3, GL_FLOAT,   stride, (const void*)0);
         glNormalPointer(GL_FLOAT,      stride, (const void*)(sizeof(float) * 3));
         //ColorPointer(3, GL_FLOAT,    stride, (const void*)(sizeof(float) * 6));
@@ -149,7 +158,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
                 
         for (auto oMeshData : vMeshData) {
-                DrawShape(oMeshData);
+                DrawShape(oMeshData, ext_material);
         }
 }
 
@@ -167,7 +176,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         //glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        DrawShape(vMeshData[shape_ind]);
+        DrawShape(vMeshData[shape_ind], ext_material);
 }
 
 

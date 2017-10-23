@@ -19,6 +19,8 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         glm::vec3 min;
         glm::vec3 max;
 
+        bool ext_material;
+
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void Create(
                         const std::string oName, 
                         const TStoreStrategySettings & oStoreStrategySettings,
@@ -37,9 +39,10 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
                 Mesh(const std::string oName, 
                      const rid_t new_rid,
                      const TStoreStrategySettings & oStoreStrategySettings, 
-                     const TLoadStrategySettings & oLoadStrategySettings);
+                     const TLoadStrategySettings & oLoadStrategySettings,
+                     const bool ext_mat = false);
   
-        Mesh(const std::string oName, const rid_t new_rid);
+        Mesh(const std::string oName, const rid_t new_rid, const bool ext_mat = false);
         ~Mesh() throw();
 
         uint32_t GetShapesCnt() const;
