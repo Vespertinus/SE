@@ -36,7 +36,7 @@ template < class ResourceList > template <class Resource, class ... TConcreateSe
 
         if (itCheck != oStorage.end()) { return itCheck->second; }
 
-        Resource                    * pResource = 0;
+        Resource                    * pResource = nullptr;
 
         try {
                 CalcDuration oLoadDuration;
@@ -49,17 +49,19 @@ template < class ResourceList > template <class Resource, class ... TConcreateSe
         }
         catch(std::exception & ex) {
                 log_e("got exception, description = '{}'", ex.what());
-                if (pResource != 0) {
+                if (pResource != nullptr) {
                         delete pResource;
-                        pResource = 0;
+                        //pResource = nullptr;
                 }
+                throw;
         }
         catch(...) {
                 log_e("got unknown exception");
-                if (pResource != 0) {
+                if (pResource != nullptr) {
                         delete pResource;
-                        pResource = 0;
+                        //pResource = nullptr;
                 }
+                throw;
         }
 
         return pResource;
