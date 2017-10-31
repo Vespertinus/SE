@@ -74,7 +74,6 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                 return uREAD_FILE_ERROR;
         }
 
-        //TODO rewrite to debug log
         log_d("file: '{}'", sPath.c_str());
         log_d("vertices  = {}", (int)(oAttrib.vertices.size()) / 3);
         log_d("normals   = {}", (int)(oAttrib.normals.size()) / 3);
@@ -86,7 +85,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
 
         for (size_t i = 0; i < vMaterials.size(); i++) {
                 tinyobj::material_t * pMat = & vMaterials[i];
-                log_d("material[{}], name = '{}', diffuse_texname = '{}'\n", i, pMat->name, pMat->diffuse_texname);
+                log_d("material[{}], name = '{}', diffuse_texname = '{}'", i, pMat->name, pMat->diffuse_texname);
                 
                 if (pMat->diffuse_texname.length() == 0) { 
                         vTextures.emplace_back(nullptr);
@@ -261,7 +260,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         continue;
                 }
 
-                if (vShapes[s].mesh.material_ids.size() > 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
+                if (vShapes[s].mesh.material_ids.size() > 0 && vShapes[s].mesh.material_ids[0] >= 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
                         oStock.vTextures.emplace_back(vTextures[vShapes[s].mesh.material_ids[0] ]);
                         log_d("shape[{}] name = '{}', material ind id = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );
                 } else {
@@ -269,17 +268,6 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         log_d("shape[{}] name = '{}' empty material", s, vShapes[s].name.c_str());
                 }
                 
-/*
-                if (vMeshData.size() > 0) {
-                        glGenBuffers(1, &o.vb_id);
-                        glBindBuffer(GL_ARRAY_BUFFER, o.vb_id);
-                        glBufferData(GL_ARRAY_BUFFER, vMeshData.size() * sizeof(float), &vMeshData.at(0),
-                                        GL_STATIC_DRAW);
-                        o.numTriangles = vMeshData.size() / (3 + 3 + 3 + 2) / 3; // 3:vtx, 3:normal, 3:col, 2:texcoord
-
-                        log_d("shape[{}] # of triangles = {}", static_cast<int>(s), o.numTriangles);
-                }
-*/
                 oStock.vShapes.emplace_back(std::make_tuple(std::move(vMeshData), vShapes[s].name));
         } 
 
