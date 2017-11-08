@@ -22,6 +22,8 @@ class OpenCVImgLoader {
 
 } //namespace SE
 
+#ifdef SE_IMPL
 #include <OpenCVImgLoader.tcc>
+#endif
 
 #endif

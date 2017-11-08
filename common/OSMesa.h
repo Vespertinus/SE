@@ -36,7 +36,9 @@ class OSMesa {
 
 } // namespace SE
 
+#ifdef SE_IMPL
 #include <OSMesa.tcc>
+#endif
 
 #endif
 

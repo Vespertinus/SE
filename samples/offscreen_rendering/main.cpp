@@ -7,6 +7,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#define SE_IMPL
 #include <OffScreenApplication.h>
 #include "Scene.h"
 

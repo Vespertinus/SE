@@ -25,7 +25,5 @@ class Scene {
 
 } //namespace SAMPLES
 
-#include "Scene.tcc"
-
 #endif
 

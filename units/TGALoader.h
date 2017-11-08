@@ -23,6 +23,8 @@ class TGALoader {
 
 } //namespace SE
 
+#ifdef SE_IMPL
 #include <TGALoader.tcc>
+#endif
 
 #endif

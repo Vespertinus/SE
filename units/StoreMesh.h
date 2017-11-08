@@ -25,6 +25,8 @@ class StoreMesh {
 
 } //namespace SE
 
+#ifdef SE_IMPL
 #include <StoreMesh.tcc>
+#endif
 
 #endif

@@ -51,7 +51,8 @@ void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max);
 
 } // SE
 
-
+#ifdef SE_IMPL
 #include <VisualHelpers.tcc>
+#endif
 
 #endif

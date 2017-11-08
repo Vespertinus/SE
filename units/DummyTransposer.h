@@ -20,7 +20,9 @@ class DummyTransposer {
 
 } // namespace SE
 
+#ifdef SE_IMPL
 #include <DummyTransposer.tcc>
+#endif
 
 #endif
 

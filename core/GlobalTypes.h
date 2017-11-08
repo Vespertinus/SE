@@ -64,6 +64,8 @@ typedef Loki::SingletonHolder < ResourceManager<TResourseList> >    TResourceMan
 } //namespace SE
 
 //FIXME...
+#ifdef SE_IMPL
 #include <OBJLoader.tcc>
+#endif
 
 #endif

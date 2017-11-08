@@ -1,10 +1,9 @@
 
-
-
 #include <stdint.h>
 #include <sys/time.h>
 #include <stdio.h>
 
+#define SE_IMPL
 #include <application.h>
 #include "Scene.h"
 

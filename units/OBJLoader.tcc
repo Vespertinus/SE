@@ -260,6 +260,10 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         continue;
                 }
 
+                /*for (auto group : vShapes[s].groups) {
+                        log_d("shape[{}] group = '{}'", s, group);
+                }*/
+
                 if (vShapes[s].mesh.material_ids.size() > 0 && vShapes[s].mesh.material_ids[0] >= 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
                         oStock.vTextures.emplace_back(vTextures[vShapes[s].mesh.material_ids[0] ]);
                         log_d("shape[{}] name = '{}', material ind id = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );

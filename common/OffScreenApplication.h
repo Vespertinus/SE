@@ -53,7 +53,9 @@ template <class TLoop > class OffScreenApplication {
 
 } //namespace SE
 
+#ifdef SE_IMPL
 #include <OffScreenApplication.tcc>
+#endif
 
 #endif
 

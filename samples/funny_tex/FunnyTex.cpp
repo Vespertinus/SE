@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 
+#define SE_IMPL
 #include <application.h>
 #include "OrthoScene.h"
 

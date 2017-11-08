@@ -77,6 +77,8 @@ class Camera {
 
 } //namespace SE
 
+#ifdef SE_IMPL
 #include <Camera.tcc>
+#endif
 
 #endif

@@ -28,6 +28,8 @@ class SimpleFPS {
 
 } // namespace SE
 
+#ifdef SE_IMPL
 #include <SimpleFPS.tcc>
+#endif
 
 #endif

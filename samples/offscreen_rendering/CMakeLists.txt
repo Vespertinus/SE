@@ -2,7 +2,9 @@
 if(GPU)
         set(SOURCES     "main_debug.cpp")
 else()
-        set(SOURCES     "main.cpp")
+        set(SOURCES     "main.cpp"
+                        "Scene.cpp"
+                        )
 
 endif()
 

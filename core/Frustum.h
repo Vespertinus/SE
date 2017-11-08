@@ -69,6 +69,8 @@ class Frustum {
 
 } //namespace SE
 
+#ifdef SE_IMPL
 #include <Frustum.tcc>
+#endif
 
 #endif

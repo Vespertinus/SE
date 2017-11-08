@@ -1,4 +1,9 @@
 #include <experimental/string_view>
+
+#include <OffScreenApplication.h>
+#include "Scene.h"
+
+
 namespace SAMPLES {
 
 
