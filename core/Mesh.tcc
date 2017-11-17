@@ -4,27 +4,28 @@ namespace SE  {
 template <class StoreStrategyList, class LoadStrategyList> 
         template <class TStoreStrategySettings,  class TLoadStrategySettings> 
                 Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                        const std::string oName, 
+                        const std::string & oName,
                         const rid_t new_rid,
-                        const TStoreStrategySettings & oStoreStrategySettings, 
+                        const TStoreStrategySettings & oStoreStrategySettings,
                         const TLoadStrategySettings & oLoadStrategySettings,
-                        const bool ext_mat) :
+                        const MeshSettings & oNewMeshSettings) :
                 ResourceHolder(new_rid),
-                ext_material(ext_mat) {
+                oMeshSettings(oNewMeshSettings),
+                stride ((oMeshSettings.skip_normals) ? (3 + 2) * sizeof(float) : (3 + 3 + 2) * sizeof(float) ) {
 
         Create(oName, oStoreStrategySettings, oLoadStrategySettings);
 }
 
 template <class StoreStrategyList, class LoadStrategyList> 
         Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                const std::string oName, 
+                const std::string & oName,
                 const rid_t new_rid,
-                const bool ext_mat) : 
-        ResourceHolder(new_rid),
-        ext_material(ext_mat) {
-
-
-        Create(oName, typename TDefaultStoreStrategy::Settings(), typename TDefaultLoadStrategy::Settings());
+                const MeshSettings & oNewMeshSettings) :
+                        Mesh(oName,
+                             rid,
+                             typename TDefaultStoreStrategy::Settings(),
+                             typename TDefaultLoadStrategy::Settings(),
+                             oNewMeshSettings) {
 }
 
 
@@ -42,11 +43,13 @@ template <class StoreStrategyList, class LoadStrategyList>
         typedef typename MP::InnerSearch<StoreStrategyList, TStoreStrategySettings>::Result TStoreStrategy;
         typedef typename MP::InnerSearch<LoadStrategyList,  TLoadStrategySettings >::Result TLoadStrategy;
 
-        MeshStock    oMeshStock;
+        MeshStock    oMeshStock(oMeshSettings);
         ret_code_t   err_code;
 
         TLoadStrategy   oLoadStrategy(oLoadStrategySettings);
         TStoreStrategy  oStoreStrategy(oStoreStrategySettings);
+
+        log_d("skip_normals = {}, ext_material = {}", oMeshSettings.skip_normals, oMeshSettings.ext_material);
 
         err_code = oLoadStrategy.Load(oName, oMeshStock);
         if (err_code) {
@@ -115,19 +118,19 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-inline void DrawShape(const MeshData & oMeshData, const bool ext_material) {
+template <class StoreStrategyList, class LoadStrategyList>
+        void Mesh<StoreStrategyList, LoadStrategyList>::
+                DrawShape(const MeshData & oMeshData) const {
                 
-        static const GLsizei stride = (3 + 3 + 3 + 2) * sizeof(float);
-
         if (oMeshData.buf_id < 1) {
                return; 
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, oMeshData.buf_id);
 
-        if (!ext_material) {
+        if (!oMeshSettings.ext_material) {
 
-                if (oMeshData.pTex) {
+                if (oMeshData.pTex != nullptr) {
                         glBindTexture(GL_TEXTURE_2D, oMeshData.pTex->GetID());
                 }
 
@@ -138,10 +141,15 @@ inline void DrawShape(const MeshData & oMeshData, const bool ext_material) {
                 glColor3f(1, 1, 1);
 
         }
+
         glVertexPointer(3, GL_FLOAT,   stride, (const void*)0);
-        glNormalPointer(GL_FLOAT,      stride, (const void*)(sizeof(float) * 3));
-        //ColorPointer(3, GL_FLOAT,    stride, (const void*)(sizeof(float) * 6));
-        glTexCoordPointer(2, GL_FLOAT, stride, (const void*)(sizeof(float) * 9));
+        if (!oMeshSettings.skip_normals) {
+                glNormalPointer(GL_FLOAT,      stride, (const void*)(sizeof(float) * 3));
+                glTexCoordPointer(2, GL_FLOAT, stride, (const void*)(sizeof(float) * 6));
+        }
+        else {
+                glTexCoordPointer(2, GL_FLOAT, stride, (const void*)(sizeof(float) * 3));
+        }
 
         glDrawArrays(GL_TRIANGLES, 0, 3 * oMeshData.triangles_cnt);
 }
@@ -153,12 +161,13 @@ template <class StoreStrategyList, class LoadStrategyList>
         
         
         glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_NORMAL_ARRAY);
-        //glEnableClientState(GL_COLOR_ARRAY);
+        if (!oMeshSettings.skip_normals) {
+                glEnableClientState(GL_NORMAL_ARRAY);
+        }
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
                 
         for (auto oMeshData : vMeshData) {
-                DrawShape(oMeshData, ext_material);
+                DrawShape(oMeshData);
         }
 }
 
@@ -172,11 +181,12 @@ template <class StoreStrategyList, class LoadStrategyList>
         }
         
         glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_NORMAL_ARRAY);
-        //glEnableClientState(GL_COLOR_ARRAY);
+        if (!oMeshSettings.skip_normals) {
+                glEnableClientState(GL_NORMAL_ARRAY);
+        }
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        DrawShape(vMeshData[shape_ind], ext_material);
+        DrawShape(vMeshData[shape_ind]);
 }
 
 

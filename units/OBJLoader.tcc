@@ -41,7 +41,7 @@ static void CalcNormal(float normals[3], float v0[3], float v1[3], float v2[3]) 
 
 
 
-OBJLoader::OBJLoader(const Settings & oSettings) { ;; }
+OBJLoader::OBJLoader(const Settings & oNewSettings) : oSettings(std::move(oNewSettings)) { ;; }
 
 
 OBJLoader::~OBJLoader() throw() { ;; }
@@ -106,8 +106,14 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
         
         
         for (size_t s = 0; s < vShapes.size(); s++) {
-                std::vector<float> vMeshData;  // pos(3float), normal(3float), color(3float)
-                vMeshData.reserve((vShapes[s].mesh.indices.size() / 3) * (3 * 3 + 3 * 3 + 3 * 2 )); //CHECK
+                std::vector<float> vMeshData;  // pos(3float), normal(3float), tex(2float)
+                vMeshData.reserve((vShapes[s].mesh.indices.size() / 3) * (3 * 3 + 3 * 3 + 3 * 2 ));
+
+                Settings::ShapeSettings * pCurShapeSettings = nullptr;
+                auto itShapeSettings = oSettings.mShapesOptions.find(vShapes[s].name);
+                if (itShapeSettings != oSettings.mShapesOptions.end()) {
+                        pCurShapeSettings = &itShapeSettings->second;
+                }
                 
                 for (size_t f = 0; f < vShapes[s].mesh.indices.size() / 3; f++) {
                         tinyobj::index_t idx0 = vShapes[s].mesh.indices[3 * f + 0];
@@ -121,11 +127,6 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 current_material_id = vMaterials.size() - 1; // Default material is added to the last item in `vMaterials`.
                         }
                         
-                        float diffuse[3];
-                        for (size_t i = 0; i < 3; i++) {
-                                diffuse[i] = vMaterials[current_material_id].diffuse[i];
-                        }
-
                         float tex_coord[3][2];
                         if (oAttrib.texcoords.size() > 0) {
                                 assert(oAttrib.texcoords.size() > (size_t)(2 * idx0.texcoord_index + 1));
@@ -140,12 +141,32 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 tex_coord[2][0] = oAttrib.texcoords[2 * idx2.texcoord_index];
                                 tex_coord[2][1] = 1.0f - oAttrib.texcoords[2 * idx2.texcoord_index + 1];
 */
-                                tex_coord[0][0] = oAttrib.texcoords[2 * idx0.texcoord_index];
-                                tex_coord[0][1] = oAttrib.texcoords[2 * idx0.texcoord_index + 1];
-                                tex_coord[1][0] = oAttrib.texcoords[2 * idx1.texcoord_index];
-                                tex_coord[1][1] = oAttrib.texcoords[2 * idx1.texcoord_index + 1];
-                                tex_coord[2][0] = oAttrib.texcoords[2 * idx2.texcoord_index];
-                                tex_coord[2][1] = oAttrib.texcoords[2 * idx2.texcoord_index + 1];
+                                if (pCurShapeSettings && (pCurShapeSettings->flip_tex_coords == 1 /*U*/)) {
+                                        tex_coord[0][0] = 1.0 - oAttrib.texcoords[2 * idx0.texcoord_index];
+                                        tex_coord[0][1] = oAttrib.texcoords[2 * idx0.texcoord_index + 1];
+                                        tex_coord[1][0] = 1.0 - oAttrib.texcoords[2 * idx1.texcoord_index];
+                                        tex_coord[1][1] = oAttrib.texcoords[2 * idx1.texcoord_index + 1];
+                                        tex_coord[2][0] = 1.0 - oAttrib.texcoords[2 * idx2.texcoord_index];
+                                        tex_coord[2][1] = oAttrib.texcoords[2 * idx2.texcoord_index + 1];
+
+                                }
+                                else if (pCurShapeSettings && (pCurShapeSettings->flip_tex_coords == 2 /*V*/)) {
+                                        tex_coord[0][0] = oAttrib.texcoords[2 * idx0.texcoord_index];
+                                        tex_coord[0][1] = 1.0 - oAttrib.texcoords[2 * idx0.texcoord_index + 1];
+                                        tex_coord[1][0] = oAttrib.texcoords[2 * idx1.texcoord_index];
+                                        tex_coord[1][1] = 1.0 - oAttrib.texcoords[2 * idx1.texcoord_index + 1];
+                                        tex_coord[2][0] = oAttrib.texcoords[2 * idx2.texcoord_index];
+                                        tex_coord[2][1] = 1.0 - oAttrib.texcoords[2 * idx2.texcoord_index + 1];
+                                }
+                                else {
+                                        tex_coord[0][0] = oAttrib.texcoords[2 * idx0.texcoord_index];
+                                        tex_coord[0][1] = oAttrib.texcoords[2 * idx0.texcoord_index + 1];
+                                        tex_coord[1][0] = oAttrib.texcoords[2 * idx1.texcoord_index];
+                                        tex_coord[1][1] = oAttrib.texcoords[2 * idx1.texcoord_index + 1];
+                                        tex_coord[2][0] = oAttrib.texcoords[2 * idx2.texcoord_index];
+                                        tex_coord[2][1] = oAttrib.texcoords[2 * idx2.texcoord_index + 1];
+                                }
+
                         } else {
                                 tex_coord[0][0] = 0.0f;
                                 tex_coord[0][1] = 0.0f;
@@ -156,24 +177,6 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         }
                         
                         float vert[3][3];
-                        /*
-                        for (int k = 0; k < 3; k++) {
-                                int f0 = idx0.vertex_index;
-                                int f1 = idx1.vertex_index;
-                                int f2 = idx2.vertex_index;
-                                assert(f0 >= 0);
-                                assert(f1 >= 0);
-                                assert(f2 >= 0);
-
-                                //vert[0][k] = oAttrib.vertices[3 * f0 + k];
-                                //vert[1][k] = oAttrib.vertices[3 * f1 + k];
-                                //vert[2][k] = oAttrib.vertices[3 * f2 + k];
-                                
-                                vert[0][k] = oAttrib.vertices[3 * f0 + k];
-                                vert[1][k] = oAttrib.vertices[3 * f1 + k];
-                                vert[2][k] = oAttrib.vertices[3 * f2 + k];
-                                
-                        }*/
                         int f0 = idx0.vertex_index;
                         int f1 = idx1.vertex_index;
                         int f2 = idx2.vertex_index;
@@ -191,64 +194,41 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         vert[2][2] = oAttrib.vertices[3 * f2 + 1];
 
                         float normals[3][3];
-                        if (oAttrib.normals.size() > 0) {
-                                int f0 = idx0.normal_index;
-                                int f1 = idx1.normal_index;
-                                int f2 = idx2.normal_index;
-                                assert(f0 >= 0);
-                                assert(f1 >= 0);
-                                assert(f2 >= 0);
-                                for (int k = 0; k < 3; k++) {
-                                        normals[0][k] = oAttrib.normals[3 * f0 + k];
-                                        normals[1][k] = oAttrib.normals[3 * f1 + k];
-                                        normals[2][k] = oAttrib.normals[3 * f2 + k];
+                        if (!oStock.oMeshSettings.skip_normals) {
+                                if (oAttrib.normals.size() > 0) {
+                                        int f0 = idx0.normal_index;
+                                        int f1 = idx1.normal_index;
+                                        int f2 = idx2.normal_index;
+                                        assert(f0 >= 0);
+                                        assert(f1 >= 0);
+                                        assert(f2 >= 0);
+                                        for (int k = 0; k < 3; k++) {
+                                                normals[0][k] = oAttrib.normals[3 * f0 + k];
+                                                normals[1][k] = oAttrib.normals[3 * f1 + k];
+                                                normals[2][k] = oAttrib.normals[3 * f2 + k];
+                                        }
+                                } else {
+                                        // compute geometric normal
+                                        CalcNormal(normals[0], vert[0], vert[1], vert[2]);
+                                        normals[1][0] = normals[0][0];
+                                        normals[1][1] = normals[0][1];
+                                        normals[1][2] = normals[0][2];
+                                        normals[2][0] = normals[0][0];
+                                        normals[2][1] = normals[0][1];
+                                        normals[2][2] = normals[0][2];
                                 }
-                        } else {
-                                // compute geometric normal
-                                CalcNormal(normals[0], vert[0], vert[1], vert[2]);
-                                normals[1][0] = normals[0][0];
-                                normals[1][1] = normals[0][1];
-                                normals[1][2] = normals[0][2];
-                                normals[2][0] = normals[0][0];
-                                normals[2][1] = normals[0][1];
-                                normals[2][2] = normals[0][2];
                         }
+
                         for (int k = 0; k < 3; k++) {
                                 vMeshData.push_back(vert[k][0]);
                                 vMeshData.push_back(vert[k][1]);
                                 vMeshData.push_back(vert[k][2]);
-                                vMeshData.push_back(normals[k][0]);
-                                vMeshData.push_back(normals[k][1]);
-                                vMeshData.push_back(normals[k][2]);
 
-                                //CHECK ... --> turn off
-                                // Combine normal and diffuse to get color.
-                                //TODO remove color data for each vertice, move to material settings
-//                                float normal_factor = 0.2;
-//                                float diffuse_factor = 1 - normal_factor;
-                                float c[3] = {
-                                        /*
-                                        normals[k][0] * normal_factor + diffuse[0] * diffuse_factor,
-                                        normals[k][1] * normal_factor + diffuse[1] * diffuse_factor,
-                                        normals[k][2] * normal_factor + diffuse[2] * diffuse_factor
-*/
-                                        diffuse[0],
-                                        diffuse[1],
-                                        diffuse[2]
-                                };
-                                float len2 = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
-                                if (len2 > 0.0f) {
-                                        float len = sqrtf(len2);
-
-                                        c[0] /= len;
-                                        c[1] /= len;
-                                        c[2] /= len;
+                                if (!oStock.oMeshSettings.skip_normals) {
+                                        vMeshData.push_back(normals[k][0]);
+                                        vMeshData.push_back(normals[k][1]);
+                                        vMeshData.push_back(normals[k][2]);
                                 }
-                                //CHECK ... --> turn off
-
-                                vMeshData.push_back(c[0] /* * 0.5 + 0.5*/);
-                                vMeshData.push_back(c[1] /* * 0.5 + 0.5*/);
-                                vMeshData.push_back(c[2] /* * 0.5 + 0.5*/);
 
                                 vMeshData.push_back(tex_coord[k][0]);
                                 vMeshData.push_back(tex_coord[k][1]);
@@ -260,16 +240,12 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         continue;
                 }
 
-                /*for (auto group : vShapes[s].groups) {
-                        log_d("shape[{}] group = '{}'", s, group);
-                }*/
-
                 if (vShapes[s].mesh.material_ids.size() > 0 && vShapes[s].mesh.material_ids[0] >= 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
                         oStock.vTextures.emplace_back(vTextures[vShapes[s].mesh.material_ids[0] ]);
-                        log_d("shape[{}] name = '{}', material ind id = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0] );
+                        log_d("shape[{}] name = '{}', material ind id = {}, geometry cnt = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0], vMeshData.size() );
                 } else {
                         oStock.vTextures.emplace_back(nullptr);
-                        log_d("shape[{}] name = '{}' empty material", s, vShapes[s].name.c_str());
+                        log_d("shape[{}] name = '{}' empty material, geometry cnt = {}", s, vShapes[s].name.c_str(), vMeshData.size());
                 }
                 
                 oStock.vShapes.emplace_back(std::make_tuple(std::move(vMeshData), vShapes[s].name));

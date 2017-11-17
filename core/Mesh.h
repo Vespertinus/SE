@@ -19,14 +19,18 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         glm::vec3 min;
         glm::vec3 max;
 
-        bool ext_material;
+        MeshSettings oMeshSettings;
+        const uint32_t stride;
 
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void Create(
                         const std::string oName, 
                         const TStoreStrategySettings & oStoreStrategySettings,
                         const TLoadStrategySettings & oLoadStrategySettings);
 
+        void DrawShape(const MeshData & oMeshData) const;
+
         public:
+
         typedef std::tuple<uint32_t, const std::string &> TShapeInfo;
         typedef std::vector<TShapeInfo> TShapesInfo;
         typedef std::tuple<const glm::vec3 &, const glm::vec3 &> TBBoxDim;
@@ -36,13 +40,13 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
                                                      typename LoadStrategy::Settings) > {  };
 
         template <class TStoreStrategySettings,  class TLoadStrategySettings> 
-                Mesh(const std::string oName, 
+                Mesh(const std::string & oName,
                      const rid_t new_rid,
                      const TStoreStrategySettings & oStoreStrategySettings, 
                      const TLoadStrategySettings & oLoadStrategySettings,
-                     const bool ext_mat = false);
+                     const MeshSettings & oNewMeshSettings);
   
-        Mesh(const std::string oName, const rid_t new_rid, const bool ext_mat = false);
+        Mesh(const std::string & oName, const rid_t new_rid, const MeshSettings & oNewMeshSettings = MeshSettings());
         ~Mesh() throw();
 
         uint32_t GetShapesCnt() const;

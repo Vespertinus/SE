@@ -42,13 +42,6 @@ template <class TLoop> void OffScreenApplication<TLoop>::Init() {
         glEnable(GL_ALPHA_TEST);
         glAlphaFunc (GL_GREATER, 0.7);
 
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-        
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_NORMAL_ARRAY);
-//        glEnableClientState(GL_COLOR_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
         oCamera.UpdateProjection();
 }
 

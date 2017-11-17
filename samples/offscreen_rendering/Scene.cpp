@@ -13,7 +13,18 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
         pTex02(SE::TResourceManager::Instance().Create<SE::TTexture>("resource/texture/tst_01.png")) {
   
 
-                pTestMesh = SE::TResourceManager::Instance().Create<SE::TMesh>("resource/mesh/tests/test_ship01.obj");
+                //external material: false
+                //skip normals loading: true
+                SE::MeshSettings oMeshSettings {0, 1};
+                SE::OBJLoader::Settings oLoaderSettings;
+
+                //flip texture coordinates: 0 original, 1 u flip, 2 v flip
+                oLoaderSettings.mShapesOptions.emplace("ship_Cube", SE::OBJLoader::Settings::ShapeSettings{0});
+
+                pTestMesh = SE::TResourceManager::Instance().Create<SE::TMesh>("resource/mesh/tests/test_ship01.obj",
+                                                                               SE::StoreMesh::Settings(),
+                                                                               oLoaderSettings,
+                                                                               oMeshSettings);
                 log_d("pTestMesh: shape cnt = {}, tringles cnt = {}", pTestMesh->GetShapesCnt(), pTestMesh->GetTrianglesCnt());
                 
                 const glm::vec3 & center = pTestMesh->GetCenter();

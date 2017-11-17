@@ -24,6 +24,12 @@ ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMes
                 return uWRONG_INPUT_DATA;
         }
 
+        // 3:vtx, 3:normal, 3:col, 2:texcoord
+        size_t elem_size = 3 + 2;
+        if (!oMeshStock.oMeshSettings.skip_normals) {
+                elem_size += 3;
+        }
+
         for (size_t i = 0; i < oMeshStock.vShapes.size(); ++i) {
                 std::vector <float> & vShape = std::get<0>(oMeshStock.vShapes[i]);
                 std::string & sName = std::get<1>(oMeshStock.vShapes[i]);
@@ -40,9 +46,9 @@ ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMes
                              vShape.size() * sizeof(float), 
                              &vShape.at(0),
                              GL_STATIC_DRAW);
-                triangles_cnt = vShape.size() / (3 + 3 + 3 + 2) / 3; // 3:vtx, 3:normal, 3:col, 2:texcoord
+                triangles_cnt = vShape.size() / elem_size / 3;
 
-                for (uint32_t i = 0; i < vShape.size(); i += (3 + 3 + 3 + 2)) {
+                for (uint32_t i = 0; i < vShape.size(); i += elem_size) {
                         min.x = std::min(vShape[i    ], min.x);
                         min.y = std::min(vShape[i + 1], min.y);
                         min.z = std::min(vShape[i + 2], min.z);

@@ -37,7 +37,7 @@ else()
         message(FATAL_ERROR "OS unsupported yet")
 endif()
 
-set (COMMON_FLAGS               "-fno-strict-aliasing -pthread -ffast-math -mfpmath=sse -ggdb3 -Wall") # -Wextra
+set (COMMON_FLAGS               "-fno-strict-aliasing -pthread -ffast-math -mfpmath=sse -ggdb3 -Wall -Wno-deprecated-declarations") # -Wextra
 
 if (ASAN)
         set(COMMON_FLAGS        "${COMMON_FLAGS} -fsanitize=address")

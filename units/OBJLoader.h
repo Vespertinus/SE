@@ -8,10 +8,24 @@ class OBJLoader {
 
         public:
         //empty settings for this loader
-        struct Settings { };
+        struct Settings {
+
+                struct ShapeSettings {
+                        /** 0 none, 1 flip h, 2 flip v */
+                        uint8_t flip_tex_coords : 2;
+               };
+
+                std::map <std::string, ShapeSettings> mShapesOptions;
+        };
         typedef Settings TChild;
 
-        OBJLoader(const Settings & oSettings);
+        private:
+
+        Settings oSettings;
+
+        public:
+
+        OBJLoader(const Settings & oNewSettings);
         ~OBJLoader() throw();
         ret_code_t Load(const std::string sPath, MeshStock & oMeshStock);
 

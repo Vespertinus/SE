@@ -4,12 +4,25 @@
 
 namespace SE {
 
+struct MeshSettings {
+
+        uint8_t ext_material    : 1,
+                skip_normals    : 1;
+};
+
 struct MeshStock {
 
-        std::vector < std::tuple<std::vector<float>, std::string> > vShapes;
-        std::vector < SE::TTexture * >     vTextures;
+        std::vector <
+                std::tuple<
+                        std::vector<float>,
+                        std::string>
+                          >             vShapes;
+        std::vector < SE::TTexture * >  vTextures;
+        const MeshSettings & oMeshSettings;
 
         ~MeshStock() throw() { ;; }
+        MeshStock(const MeshSettings & oNewMeshSettings) :
+                oMeshSettings(oNewMeshSettings) { ;; }
 };
 
 struct MeshData {
@@ -21,6 +34,7 @@ struct MeshData {
         glm::vec3       min;
         glm::vec3       max;
 };
+
 
 } //namespace SE
 
