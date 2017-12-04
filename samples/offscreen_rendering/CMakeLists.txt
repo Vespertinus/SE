@@ -2,11 +2,9 @@
 if(GPU)
         set(SOURCES     "main_debug.cpp")
 else()
-        set(SOURCES     "main.cpp"
-                        "Scene.cpp"
-                        )
-
+        set(SOURCES     "main.cpp")
 endif()
+list(APPEND             SOURCES "Scene.cpp")
 
 add_executable(         offscreen_rendering
                         ${SOURCES})

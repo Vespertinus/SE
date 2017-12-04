@@ -7,7 +7,7 @@ template < class ResourceList > ResourceManager<ResourceList>::ResourceManager()
 
 
 
-template < class ResourceList > ResourceManager<ResourceList>::~ResourceManager() throw() {
+template < class ResourceList > ResourceManager<ResourceList>::~ResourceManager() noexcept {
 
   //TODO clean all items in all storages
 }

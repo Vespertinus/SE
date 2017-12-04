@@ -33,6 +33,7 @@ template <class T> struct IsEqual<T, T> {
 };
 
 
+
 template <class TList, class T, bool Equal> struct SearchByChildType;
 
 template <class Head, class Tail, class T, bool Equal> struct SearchByChildType <Loki::Typelist <Head, Tail>, T, Equal> {
@@ -51,6 +52,19 @@ template < class Head, class Tail, class T> struct InnerSearch <Loki::Typelist<H
 
   typedef typename SearchByChildType<Loki::Typelist<Head, Tail>, T, IsEqual<T, typename Head::TChild >::value >::Result Result;
 };
+
+
+//TEMP remove after switching from loki to hana
+template <typename ... T> struct MakeTL;
+template <typename H, typename ... T> struct MakeTL<H, T...> {
+
+                typedef Loki::Typelist<H, typename MakeTL<T...>::TL > TL;
+};
+template <typename H> struct MakeTL<H> {
+
+                typedef Loki::Typelist<H, Loki::NullType> TL;
+};
+
 
 } //namespace MP
 

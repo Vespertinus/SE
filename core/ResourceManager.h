@@ -4,7 +4,7 @@
 #define __RESOURCE_MANAGER_H_ 1
 
 #include <loki/HierarchyGenerators.h>
-#include <map>
+#include <unordered_map>
 
 #include <ResourceHolder.h>
 #include <Util.h>
@@ -22,7 +22,7 @@ template < class ResourceList > class ResourceManager {
 
   protected:
 
-  template < class R> struct Holder : public std::map <rid_t, R *> { };
+  template < class R> struct Holder : public std::unordered_map <rid_t, R *> { };
   
   typedef Loki::GenScatterHierarchy<ResourceList, Holder> TResourceStorage;
 
@@ -39,7 +39,7 @@ template < class ResourceList > class ResourceManager {
   public:
 
   ResourceManager();
-  virtual ~ResourceManager() throw();
+  virtual ~ResourceManager() noexcept;
 
   //template <class Resource, class TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & oSettings);
   template <class Resource, class ... TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & ... oSettings);
