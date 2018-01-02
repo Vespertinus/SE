@@ -10,7 +10,8 @@ namespace FUNNY_TEX {
 
 class OrthoScene {
 
-        SE::TTexture        * pTex01;
+        SE::TTexture    * pTex01;
+        SE::Camera      & oCamera;
 
 
 	public:

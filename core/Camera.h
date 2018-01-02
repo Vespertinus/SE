@@ -58,6 +58,8 @@ class Camera {
 	~Camera() throw();
 
 	void UpdateSettings(const CamSettings_t & oNewSettings);
+        const Frustum::Volume & GetVolume() const;
+        const BaseData & GetSettings() const;
 	void Adjust();
 	template <class TTranspose> void UpdateTransposer(TTranspose & oTranspose);
 	void UpdateDimension(const int32_t new_width, const int32_t new_height);

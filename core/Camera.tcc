@@ -100,6 +100,14 @@ void Camera::UpdateSettings(const CamSettings_t & oNewSettings) {
         oFrustum.SetVolume(oNewSettings.oVolume);
 }
 
+const Camera::BaseData & Camera::GetSettings() const {
+        return oSettings;
+}
+
+const Frustum::Volume & Camera::GetVolume() const {
+        return oFrustum.GetVolume();
+}
+
 
 
 template <class TTranspose> void Camera::UpdateTransposer(TTranspose & oTranspose) {
