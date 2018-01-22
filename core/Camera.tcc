@@ -136,9 +136,16 @@ void Camera::UpdateDimension(const int32_t new_width, const int32_t new_height) 
 
 void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
 
-  pos_x = new_x; 
-  pos_y = new_y;
-  pos_z = new_z;
+        pos_x = new_x; 
+        pos_y = new_y;
+        pos_z = new_z;
+}
+
+void Camera::SetRotation(const float new_x, const float new_y, const float new_z) {
+
+        rot_x = new_x;
+        rot_y = new_y;
+        rot_z = new_z;
 }
 
 
@@ -258,6 +265,11 @@ void Camera::ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox)
         UpdateZoom();
 }
 
+void Camera::ZoomTo(const float width) {
+
+        target_length = width;
+        UpdateZoom();
+}
 
 } //namhespace SE
 

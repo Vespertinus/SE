@@ -67,11 +67,13 @@ class Camera {
 	
         void UpdateProjection() const;
         void SetPos(const float new_x, const float new_y, const float new_z);
+        void SetRotation(const float new_x, const float new_y, const float new_z);
         void LookAt(const float x, const float y, const float z);
         void LookAt(const glm::vec3 & center);
         void SetZoom(const float new_zoom);
         void Zoom(const float factor);
         void ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox);
+        void ZoomTo(const float width);
 
 };
 
