@@ -21,7 +21,7 @@ template < class ResourceList > template <class Resource> Holder<Resource> & Res
 */
 
 
-template < class ResourceList > template <class Resource, class ... TConcreateSettings> 
+template < class ResourceList > template <class Resource, class ... TConcreateSettings>
         Resource * ResourceManager<ResourceList>::
                 Create (
                         const std::string        & oPath,
@@ -105,7 +105,7 @@ template < class ResourceList > template <class Resource> bool ResourceManager<R
 
         return IsLoaded<Resource>(key);
 }
-  
+
 
 
 template < class ResourceList > template <class Resource> void ResourceManager<ResourceList>::Clear() {
