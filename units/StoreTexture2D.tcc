@@ -18,9 +18,9 @@ StoreTexture2D::StoreTexture2D(const Settings & oNewSettings) : oSettings(oNewSe
 
 
 
-StoreTexture2D::~StoreTexture2D() throw() { 
-  
-        //gl free tex id 
+StoreTexture2D::~StoreTexture2D() throw() {
+
+        //gl free tex id
 }
 
 
@@ -37,7 +37,7 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
 
         if (!oTextureStock.width || !oTextureStock.height) {
 
-                log_e("wrong image dimensions, width = {}, height = {}", 
+                log_e("wrong image dimensions, width = {}, height = {}",
                                 oTextureStock.width,
                                 oTextureStock.height);
                 return uWRONG_INPUT_DATA;
@@ -67,14 +67,14 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
 
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropic_filter);
 
-        glTexImage2D(GL_TEXTURE_2D, 
-                        0, 
-                        GL_RGBA8,//oTextureStock.color_order, 
-                        oTextureStock.width, 
+        glTexImage2D(GL_TEXTURE_2D,
+                        0,
+                        GL_RGBA8,//oTextureStock.color_order,
+                        oTextureStock.width,
                         oTextureStock.height,
-                        0, 
+                        0,
                         oTextureStock.color_order,
-                        GL_UNSIGNED_BYTE, 
+                        GL_UNSIGNED_BYTE,
                         oTextureStock.raw_image);
         if (oSettings.mipmap_enabled) {
                 glGenerateMipmap(GL_TEXTURE_2D);

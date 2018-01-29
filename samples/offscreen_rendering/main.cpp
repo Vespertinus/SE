@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 
         gLogger = spdlog::stdout_logger_mt("G");
         gLogger->set_level(spdlog::level::debug);
-        
+
         std::vector<GLubyte> vRenderBuffer;
 
         SE::SysSettings_t oSettings(vRenderBuffer);

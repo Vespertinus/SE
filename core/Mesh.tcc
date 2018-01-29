@@ -1,8 +1,8 @@
 
 namespace SE  {
 
-template <class StoreStrategyList, class LoadStrategyList> 
-        template <class TStoreStrategySettings,  class TLoadStrategySettings> 
+template <class StoreStrategyList, class LoadStrategyList>
+        template <class TStoreStrategySettings,  class TLoadStrategySettings>
                 Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
                         const std::string & oName,
                         const rid_t new_rid,
@@ -16,7 +16,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         Create(oName, oStoreStrategySettings, oLoadStrategySettings);
 }
 
-template <class StoreStrategyList, class LoadStrategyList> 
+template <class StoreStrategyList, class LoadStrategyList>
         Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
                 const std::string & oName,
                 const rid_t new_rid,
@@ -25,21 +25,49 @@ template <class StoreStrategyList, class LoadStrategyList>
                              rid,
                              typename TDefaultStoreStrategy::Settings(),
                              typename TDefaultLoadStrategy::Settings(),
-                             oNewMeshSettings) {
+                             oNewMeshSettings
+                             ) {
 }
 
+template <class StoreStrategyList, class LoadStrategyList>
+        template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<StoreStrategyList, TConcreateSettings>::value, TConcreateSettings> * >
+                Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
+                        const std::string & oName,
+                        const rid_t new_rid,
+                        const TConcreateSettings & oSettings,
+                        const MeshSettings & oNewMeshSettings) :
+                                Mesh(oName,
+                                     rid,
+                                     oSettings,
+                                     typename TDefaultLoadStrategy::Settings(),
+                                     oNewMeshSettings) {
+}
+
+template <class StoreStrategyList, class LoadStrategyList>
+        template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<LoadStrategyList, TConcreateSettings>::value, TConcreateSettings> * >
+                Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
+                        const std::string & oName,
+                        const rid_t new_rid,
+                        const TConcreateSettings & oSettings,
+                        const MeshSettings & oNewMeshSettings) :
+                                Mesh(oName,
+                                     rid,
+                                     typename TDefaultStoreStrategy::Settings(),
+                                     oSettings,
+                                     oNewMeshSettings) {
+}
 
 template <class StoreStrategyList, class LoadStrategyList> Mesh<StoreStrategyList, LoadStrategyList>::~Mesh() throw() { ;; }
 
 
 
-template <class StoreStrategyList, class LoadStrategyList> 
-        template <class TStoreStrategySettings,  class TLoadStrategySettings> void 
+template <class StoreStrategyList, class LoadStrategyList>
+        template <class TStoreStrategySettings,  class TLoadStrategySettings> void
                 Mesh<StoreStrategyList, LoadStrategyList>::Create(
-                                const std::string oName, 
-                                const TStoreStrategySettings & oStoreStrategySettings, 
+                                const std::string oName,
+                                const TStoreStrategySettings & oStoreStrategySettings,
                                 const TLoadStrategySettings & oLoadStrategySettings) {
- 
+
         typedef typename MP::InnerSearch<StoreStrategyList, TStoreStrategySettings>::Result TStoreStrategy;
         typedef typename MP::InnerSearch<LoadStrategyList,  TLoadStrategySettings >::Result TLoadStrategy;
 
@@ -74,7 +102,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         else if (vMeshData.size() > 1) {
                 min = glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
                 max = glm::vec3(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
-                
+
                 for (auto oMeshData : vMeshData) {
                         min.x = std::min(oMeshData.min.x, min.x);
                         min.y = std::min(oMeshData.min.y, min.y);
@@ -100,7 +128,7 @@ template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreSt
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList> 
+template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 SetPos(const float x, const float y, const float z) {
         pos[0] = x;
@@ -109,7 +137,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList> 
+template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 SetRotation(const float x, const float y, const float z) {
         rot[0] = x;
@@ -121,9 +149,9 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 DrawShape(const MeshData & oMeshData) const {
-                
+
         if (oMeshData.buf_id < 1) {
-               return; 
+               return;
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, oMeshData.buf_id);
@@ -133,7 +161,6 @@ template <class StoreStrategyList, class LoadStrategyList>
                 if (oMeshData.pTex != nullptr) {
                         glBindTexture(GL_TEXTURE_2D, oMeshData.pTex->GetID());
                 }
-
                 else {
                         glBindTexture(GL_TEXTURE_2D, 0);
                 }
@@ -158,14 +185,13 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 Draw() const {
-        
-        
+
         glEnableClientState(GL_VERTEX_ARRAY);
         if (!oMeshSettings.skip_normals) {
                 glEnableClientState(GL_NORMAL_ARRAY);
         }
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-                
+
         for (auto oMeshData : vMeshData) {
                 DrawShape(oMeshData);
         }
@@ -179,7 +205,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         if (shape_ind >= vMeshData.size()) {
                 return;
         }
-        
+
         glEnableClientState(GL_VERTEX_ARRAY);
         if (!oMeshSettings.skip_normals) {
                 glEnableClientState(GL_NORMAL_ARRAY);
@@ -208,7 +234,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         glm::vec3 Mesh<StoreStrategyList, LoadStrategyList>::
                 GetCenter(const size_t shape_ind) const {
-        
+
         if (shape_ind >= vMeshData.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return glm::vec3();
@@ -230,7 +256,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList> 
+template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 DrawBBox(const size_t shape_ind) const {
 

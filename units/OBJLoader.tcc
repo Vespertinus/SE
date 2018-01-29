@@ -59,11 +59,11 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                 sBaseDir = "./";
         }
 
-        bool ret = tinyobj::LoadObj(&oAttrib, 
-                                    &vShapes, 
-                                    &vMaterials, 
-                                    &err, 
-                                    sPath.c_str(), 
+        bool ret = tinyobj::LoadObj(&oAttrib,
+                                    &vShapes,
+                                    &vMaterials,
+                                    &err,
+                                    sPath.c_str(),
                                     sBaseDir.c_str());
         if (!err.empty()) {
                 log_e("failed to load obj file '{}', reason: '{}'", sPath, err);
@@ -86,13 +86,13 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
         for (size_t i = 0; i < vMaterials.size(); i++) {
                 tinyobj::material_t * pMat = & vMaterials[i];
                 log_d("material[{}], name = '{}', diffuse_texname = '{}'", i, pMat->name, pMat->diffuse_texname);
-                
-                if (pMat->diffuse_texname.length() == 0) { 
+
+                if (pMat->diffuse_texname.length() == 0) {
                         vTextures.emplace_back(nullptr);
-                        continue; 
+                        continue;
                 }
 
-                SE::TTexture * pTex = SE::TResourceManager::Instance().Create<SE::TTexture>(sBaseDir + pMat->diffuse_texname);
+                SE::TTexture * pTex = SE::TResourceManager::Instance().Create<SE::TTexture>(sBaseDir + pMat->diffuse_texname, oSettings.oTex2DSettings);
                 if (pTex) {
                         vTextures.emplace_back(pTex);
                 }
@@ -103,8 +103,8 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                       throw (std::runtime_error(buf));
                 }
         }
-        
-        
+
+
         for (size_t s = 0; s < vShapes.size(); s++) {
                 std::vector<float> vMeshData;  // pos(3float), normal(3float), tex(2float)
                 vMeshData.reserve((vShapes[s].mesh.indices.size() / 3) * (3 * 3 + 3 * 3 + 3 * 2 ));
@@ -114,7 +114,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                 if (itShapeSettings != oSettings.mShapesOptions.end()) {
                         pCurShapeSettings = &itShapeSettings->second;
                 }
-                
+
                 for (size_t f = 0; f < vShapes[s].mesh.indices.size() / 3; f++) {
                         tinyobj::index_t idx0 = vShapes[s].mesh.indices[3 * f + 0];
                         tinyobj::index_t idx1 = vShapes[s].mesh.indices[3 * f + 1];
@@ -126,7 +126,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 // Invaid material ID. Use default material.
                                 current_material_id = vMaterials.size() - 1; // Default material is added to the last item in `vMaterials`.
                         }
-                        
+
                         float tex_coord[3][2];
                         if (oAttrib.texcoords.size() > 0) {
                                 assert(oAttrib.texcoords.size() > (size_t)(2 * idx0.texcoord_index + 1));
@@ -175,7 +175,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                                 tex_coord[2][0] = 0.0f;
                                 tex_coord[2][1] = 0.0f;
                         }
-                        
+
                         float vert[3][3];
                         int f0 = idx0.vertex_index;
                         int f1 = idx1.vertex_index;
@@ -184,11 +184,11 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         vert[0][0] = oAttrib.vertices[3 * f0 + 0];
                         vert[1][0] = oAttrib.vertices[3 * f1 + 0];
                         vert[2][0] = oAttrib.vertices[3 * f2 + 0];
-                        
+
                         vert[0][1] = - oAttrib.vertices[3 * f0 + 2];
                         vert[1][1] = - oAttrib.vertices[3 * f1 + 2];
                         vert[2][1] = - oAttrib.vertices[3 * f2 + 2];
-                        
+
                         vert[0][2] = oAttrib.vertices[3 * f0 + 1];
                         vert[1][2] = oAttrib.vertices[3 * f1 + 1];
                         vert[2][2] = oAttrib.vertices[3 * f2 + 1];
@@ -247,9 +247,9 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         oStock.vTextures.emplace_back(nullptr);
                         log_d("shape[{}] name = '{}' empty material, geometry cnt = {}", s, vShapes[s].name.c_str(), vMeshData.size());
                 }
-                
+
                 oStock.vShapes.emplace_back(std::make_tuple(std::move(vMeshData), vShapes[s].name));
-        } 
+        }
 
         return uSUCCESS;
 }
