@@ -1,6 +1,8 @@
 #include <experimental/string_view>
 
-#include <OffScreenApplication.h>
+#include <Global.h>
+#include <GlobalTypes.h>
+#include <Camera.h>
 #include "Scene.h"
 
 
