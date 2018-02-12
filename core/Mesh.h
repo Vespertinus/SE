@@ -2,6 +2,8 @@
 #ifndef __MESH_H__
 #define __MESH_H__ 1
 
+#include <Transform.h>
+
 namespace SE {
 
 
@@ -10,17 +12,14 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         typedef typename  StoreStrategyList::Head TDefaultStoreStrategy;
         typedef typename  LoadStrategyList::Head  TDefaultLoadStrategy;
 
-        std::vector<MeshData> vMeshData;
+        std::vector<MeshData>   vMeshData;
+        Transform       const * pTransform; //TODO into iface struct
 
-        //TODO move pos and rot to separate class
-        float pos[3];
-        float rot[3];
+        glm::vec3               min;
+        glm::vec3               max;
 
-        glm::vec3 min;
-        glm::vec3 max;
-
-        MeshSettings oMeshSettings;
-        const uint32_t stride;
+        MeshSettings            oMeshSettings;
+        const uint32_t          stride;
 
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void Create(
                         const std::string oName,
@@ -65,8 +64,7 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         uint32_t GetTrianglesCnt() const;
         void     Draw() const;
         void     Draw(const size_t shape_ind) const;
-        void     SetPos(const float x, const float y, const float z);
-        void     SetRotation(const float x, const float y, const float z);
+        void     SetTransform(Transform const * const pNewTransform);
         TShapesInfo GetShapesInfo() const;
         glm::vec3 GetCenter() const;
         glm::vec3 GetCenter(const size_t shape_ind) const;

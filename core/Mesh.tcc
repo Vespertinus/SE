@@ -130,21 +130,10 @@ template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreSt
 
 template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
-                SetPos(const float x, const float y, const float z) {
-        pos[0] = x;
-        pos[1] = y;
-        pos[2] = z;
+                SetTransform(Transform const * const pNewTransform) {
+
+        pTransform = pNewTransform;
 }
-
-
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                SetRotation(const float x, const float y, const float z) {
-        rot[0] = x;
-        rot[1] = y;
-        rot[2] = z;
-}
-
 
 template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
@@ -192,9 +181,24 @@ template <class StoreStrategyList, class LoadStrategyList>
         }
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
+        if (pTransform) {
+                log_d("prepare to push");
+                const auto & world_mat = pTransform->GetWorld();
+                glPushMatrix();
+                glMultMatrixf(glm::value_ptr(world_mat));
+                log_d("mult matrix done");
+        }
+
         for (auto oMeshData : vMeshData) {
                 DrawShape(oMeshData);
         }
+
+        if (pTransform) {
+                log_d("prepare to pop");
+                glPopMatrix();
+                log_d("pop done");
+        }
+
 }
 
 
@@ -234,7 +238,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         glm::vec3 Mesh<StoreStrategyList, LoadStrategyList>::
                 GetCenter(const size_t shape_ind) const {
-
+//TODO use transform
         if (shape_ind >= vMeshData.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return glm::vec3();
@@ -249,7 +253,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         glm::vec3 Mesh<StoreStrategyList, LoadStrategyList>::
                 GetCenter() const {
-
+//TODO use transform
         return glm::vec3((max.x + min.x) / 2,
                          (max.y + min.y) / 2,
                          (max.z + min.z) / 2);

@@ -10,7 +10,6 @@
 
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>	
-#include <GL/glu.h>
 #include <GL/glext.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -22,10 +21,4 @@
 
 #include <boost/filesystem.hpp>
 
-namespace SE {
-
-//TODO remove after switching on gcc7
-typedef std::experimental::string_view string_view;
-
-}
 #endif

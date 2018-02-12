@@ -34,6 +34,15 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
                 oCurCamera.SetPos(center.x, center.y - 50, center.z);
                 oCurCamera.LookAt(center);
                 oCurCamera.ZoomTo(pTestMesh->GetBBox());
+
+
+                auto pTestNode = oSceneTree.Create("test");
+                //pTestNode->SetPos(glm::vec3(0, 0, 0));
+                //pTestNode->SetScale(0.75);
+                //pTestNode->SetRotation(glm::vec3(0, 0, 90));
+                pTestNode->AddRenderEntity(pTestMesh);
+
+                oSceneTree.Print();
 }
 
 

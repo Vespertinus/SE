@@ -41,12 +41,17 @@ template < class ResourceList > class ResourceManager {
   ResourceManager();
   virtual ~ResourceManager() noexcept;
 
-  //template <class Resource, class TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & oSettings);
   template <class Resource, class ... TConcreateSettings> Resource * Create (const std::string & oPath, const TConcreateSettings & ... oSettings);
   template <class Resource> void Destroy(const rid_t key);
   template <class Resource> bool IsLoaded(const rid_t key) const;
   template <class Resource> bool IsLoaded(const std::string & sPath) const;
   template <class Resource> void Clear();
+  /*TODO
+                нужен Clone в ResourceManager
+                Create empty и указание у Resource может ли он быть создан как empty
+                автогенерация rid для empty Resource
+                instance id помимо rid для instance'ов
+  */
 
 };
 
