@@ -44,7 +44,7 @@ if (ASAN)
 endif()
 
 set(COMMON_C_FLAGS              "-std=gnu11 -fgnu89-inline")
-set(COMMON_CXX_FLAGS            "-std=gnu++14")
+set(COMMON_CXX_FLAGS            "-std=gnu++17")
 
 set(C_WARNING_FLAGS             "-Wignored-qualifiers -Wwrite-strings")
 set(CXX_WARNING_FLAGS           "-Wmissing-declarations -Winvalid-pch")
