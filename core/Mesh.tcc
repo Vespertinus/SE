@@ -182,11 +182,9 @@ template <class StoreStrategyList, class LoadStrategyList>
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
         if (pTransform) {
-                log_d("prepare to push");
                 const auto & world_mat = pTransform->GetWorld();
                 glPushMatrix();
                 glMultMatrixf(glm::value_ptr(world_mat));
-                log_d("mult matrix done");
         }
 
         for (auto oMeshData : vMeshData) {
@@ -194,9 +192,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         }
 
         if (pTransform) {
-                log_d("prepare to pop");
                 glPopMatrix();
-                log_d("pop done");
         }
 
 }

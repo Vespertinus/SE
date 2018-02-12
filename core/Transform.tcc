@@ -36,7 +36,6 @@ void Transform::RecalcWorld() const {
         if (!local_dirty && !world_dirty) { return; }
 
         Recalc();
-        log_d("parent = {:p}", (void *)pParent);
 
         if (!pParent) {
                 mWorldTransform = mTransform;
@@ -75,6 +74,7 @@ void Transform::SetScale(const float new_scale) {
 const glm::mat4 & Transform::Get() const {
 
         Recalc();
+        /*
         log_d("pos x = {}, y = {}, z = {}, rot x = {}, y = {}, z = {}, scale = {}",
                         vTranslation.x,
                         vTranslation.y,
@@ -83,12 +83,11 @@ const glm::mat4 & Transform::Get() const {
                         vRotation.y,
                         vRotation.z,
                         scale);
+        */
         return mTransform;
 }
 
 const glm::mat4 & Transform::GetWorld() const {
-        log_d("enter");
-        //log_d("parent = {:p}, pos = ({}, {}, {})", (void *)pParent, vTranslation.x, vTranslation.y, vTranslation.z);
 
         RecalcWorld();
         return mWorldTransform;
