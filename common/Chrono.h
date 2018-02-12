@@ -17,7 +17,7 @@ class CalcDuration {
 
         public:
         CalcDuration();
-        void Log(string_view msg) const;
+        void Log(std::string_view msg) const;
         uint32_t Get() const;
 };
 
