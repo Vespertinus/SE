@@ -9,4 +9,5 @@ list(APPEND             SOURCES "Scene.cpp")
 add_executable(         offscreen_rendering
                         ${SOURCES})
 target_link_libraries(  offscreen_rendering
+                        SE
                         SECommon)

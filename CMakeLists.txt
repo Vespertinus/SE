@@ -7,9 +7,10 @@ project(SimpleEngine VERSION 0.1.0)
 option(GPU                      "Compile with direct rendering support"  ON)
 option(ASAN                     "Compile with address sanitizer"         OFF)
 option(OLD_ABI                  "Compile with old CXX ABI"               OFF)
+option(TOOLS                    "Compile tools with their dependencies"  ON)
 
 
-set(LOCAL_INC_DIRS              core common units)
+set(LOCAL_INC_DIRS              core common units generated)
 set(EXTERN_INC_DIRS)
 set(LIBRARIES_LIST              "")
 
@@ -90,12 +91,14 @@ prepend_path(                   LOCAL_INC_DIRS
                                 ${CMAKE_SOURCE_DIR})
 
 include_directories(${REL_LOCAL_INC_DIR} ${EXTERN_INC_DIRS})
-link_libraries(${LIBRARIES_LIST})
+#link_libraries(${LIBRARIES_LIST})
 
 include("ConfigureExport")
 
 
 #default target with some samples
 add_subdirectory("samples")
+
+add_subdirectory("tools")
 
 
