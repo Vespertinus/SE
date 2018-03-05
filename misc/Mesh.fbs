@@ -1,0 +1,44 @@
+
+namespace SE.FlatBuffers;
+
+struct Vec3 {
+        x:float;
+        y:float;
+        z:float;
+}
+
+struct Vec2 {
+        u:float;
+        v:float;
+}
+
+struct ColorARGB {
+        a:float;
+        r:float;
+        g:float;
+        b:float;
+}
+
+table Shape {
+        name:string;
+        ///pos 3 float, normal 3 float, uv 2 float, or pos and uv
+        vertices:[float] (required);
+        triangles_cnt:uint32;
+        //TODO rewrite on material usage
+        texture:string;
+        min:Vec3 (required);
+        max:Vec3 (required);
+}
+
+table Mesh {
+        shapes:[Shape] (required);
+        min:Vec3 (required);
+        max:Vec3 (required);
+        skip_normals:bool = false;
+}
+
+root_type Mesh;
+
+file_identifier "SEMS";
+file_extension "sems";
+
