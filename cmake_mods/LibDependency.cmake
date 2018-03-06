@@ -5,12 +5,6 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS system filesystem)
 list(APPEND EXTERN_INC_DIRS ${Boost_INCLUDE_DIRS})
 list(APPEND LIBRARIES_LIST ${Boost_LIBRARIES})
 
-#check OpenCV
-find_package(OpenCV REQUIRED COMPONENTS core highgui)
-message(STATUS "Found OpenCV libraries: ${OpenCV_LIBRARIES}")
-list(APPEND EXTERN_INC_DIRS ${OpenCV_INCLUDE_DIRS})
-list(APPEND LIBRARIES_LIST ${OpenCV_LIBRARIES})
-
 if (GPU)
         #check OpenGL
         find_package(OpenGL)
@@ -48,7 +42,11 @@ else()
         endif()
 endif()
 
-
+#check OpenCV
+find_package(OpenCV REQUIRED COMPONENTS core highgui)
+message(STATUS "Found OpenCV libraries: ${OpenCV_LIBRARIES}")
+list(APPEND EXTERN_INC_DIRS ${OpenCV_INCLUDE_DIRS})
+list(APPEND LIBRARIES_LIST ${OpenCV_LIBRARIES})
 
 function(link_X11)
         find_package(X11 REQUIRED COMPONENTS X11 Xxf86vm)
