@@ -4,6 +4,7 @@
 #include <tiny_obj_loader.h>
 
 #include <Logging.h>
+#include <GeometryUtil.h>
 #include "OBJReader.h"
 
 namespace SE {

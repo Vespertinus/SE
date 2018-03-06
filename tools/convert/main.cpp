@@ -10,6 +10,9 @@
 #include "FBXReader.h"
 #include "FlatBuffersSceneTreeWriter.h"
 
+#define SE_IMPL
+#include <GeometryUtil.h>
+
 
 std::shared_ptr<spdlog::logger> gLogger;
 

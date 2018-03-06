@@ -6,6 +6,7 @@
 #include "FBXReader.h"
 
 #include <Logging.h>
+#include <GeometryUtil.h>
 
 /**
 
