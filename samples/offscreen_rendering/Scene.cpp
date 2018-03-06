@@ -16,9 +16,10 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
 
 
                 //external material: false
-                //skip normals loading: true
-                SE::MeshSettings        oMeshSettings {0, 1};
+                SE::MeshSettings        oMeshSettings {0};
                 SE::OBJLoader::Settings oLoaderSettings;
+                //skip normals loading:
+                oLoaderSettings.skip_normals   = false;
                 oLoaderSettings.oTex2DSettings = SE::StoreTexture2D::Settings(false);
 
                 //flip texture coordinates: 0 original, 1 u flip, 2 v flip

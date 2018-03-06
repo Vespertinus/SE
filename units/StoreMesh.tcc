@@ -1,3 +1,6 @@
+
+#include <GeometryUtil.h>
+
 namespace SE {
 
 
@@ -9,64 +12,51 @@ StoreMesh::~StoreMesh() throw() { }
 
 
 
-ret_code_t StoreMesh::Store(MeshStock & oMeshStock, std::vector<MeshData> & vMeshData) {
+ret_code_t StoreMesh::Store(MeshStock & oMeshStock, MeshCtx & oMeshCtx) {
 
-        if (!oMeshStock.vShapes.size() || !oMeshStock.vTextures.size()) {
+        if (!oMeshStock.oMeshState.vShapes.size() ) {
 
                 log_e("empty mesh data");
                 return uWRONG_INPUT_DATA;
         }
 
-        if (oMeshStock.vShapes.size() != oMeshStock.vTextures.size()) {
-                log_e("wrong input data, mesh cnt = {}, textures cnt = {}",
-                                oMeshStock.vShapes.size(),
-                                oMeshStock.vTextures.size());
-                return uWRONG_INPUT_DATA;
-        }
+        oMeshCtx.stride         = ((oMeshStock.oMeshState.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
+        oMeshCtx.min            = oMeshStock.oMeshState.min;
+        oMeshCtx.max            = oMeshStock.oMeshState.max;
+        oMeshCtx.skip_normals   = oMeshStock.oMeshState.skip_normals;
 
-        // 3:vtx, 3:normal, 3:col, 2:texcoord
-        size_t elem_size = 3 + 2;
-        if (!oMeshStock.oMeshSettings.skip_normals) {
-                elem_size += 3;
-        }
+        log_d("mesh: shape cnt = {}, stride = {}, skip_normals = {}, min ({}, {}, {}), max({}, {}, {})",
+                        oMeshStock.oMeshState.vShapes.size(),
+                        oMeshCtx.stride,
+                        oMeshCtx.skip_normals,
+                        oMeshCtx.min.x,
+                        oMeshCtx.min.y,
+                        oMeshCtx.min.z,
+                        oMeshCtx.max.x,
+                        oMeshCtx.max.y,
+                        oMeshCtx.max.z);
 
-        for (size_t i = 0; i < oMeshStock.vShapes.size(); ++i) {
-                std::vector <float> & vShape = std::get<0>(oMeshStock.vShapes[i]);
-                std::string & sName = std::get<1>(oMeshStock.vShapes[i]);
-
-                glm::vec3 min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
-                glm::vec3 max(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
+        for (auto & oItem : oMeshStock.oMeshState.vShapes) {
 
                 uint32_t buf_id         = 0;
-                uint32_t triangles_cnt  = 0;
-        
+
                 glGenBuffers(1, &buf_id);
                 glBindBuffer(GL_ARRAY_BUFFER, buf_id);
-                glBufferData(GL_ARRAY_BUFFER, 
-                             vShape.size() * sizeof(float), 
-                             &vShape.at(0),
+                glBufferData(GL_ARRAY_BUFFER,
+                             oItem.vVertices.size() * sizeof(float),
+                             &oItem.vVertices.at(0),
                              GL_STATIC_DRAW);
-                triangles_cnt = vShape.size() / elem_size / 3;
 
-                for (uint32_t i = 0; i < vShape.size(); i += elem_size) {
-                        min.x = std::min(vShape[i    ], min.x);
-                        min.y = std::min(vShape[i + 1], min.y);
-                        min.z = std::min(vShape[i + 2], min.z);
-                        
-                        max.x = std::max(vShape[i    ], max.x);
-                        max.y = std::max(vShape[i + 1], max.y);
-                        max.z = std::max(vShape[i + 2], max.z);
-                }
+                log_d("shape[{}] name = '{}', triangles cnt = {}, buf_id = {}, texture id = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
+                                &oItem - &oMeshStock.oMeshState.vShapes[0],
+                                oItem.sName,
+                                oItem.triangles_cnt,
+                                buf_id,
+                                (oItem.pTexture) ? oItem.pTexture->GetID() : 0,
+                                oItem.min.x, oItem.min.y, oItem.min.z,
+                                oItem.max.x, oItem.max.y, oItem.max.z);
 
-                log_d("shape[{}] name = '{}', triangles cnt = {}, texture id = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
-                                i, 
-                                sName.c_str(), 
-                                triangles_cnt, 
-                                (oMeshStock.vTextures[i]) ? oMeshStock.vTextures[i]->GetID() : 0,
-                                min.x, min.y, min.z,
-                                max.x, max.y, max.z);
-
-                vMeshData.emplace_back(MeshData{ buf_id, triangles_cnt, oMeshStock.vTextures[i], std::get<1>(oMeshStock.vShapes[i]), min, max } );
+                oMeshCtx.vShapes.emplace_back(ShapeCtx{ buf_id, oItem.triangles_cnt, oItem.pTexture, oItem.sName, oItem.min, oItem.max } );
         }
 
         return uSUCCESS;

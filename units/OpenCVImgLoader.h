@@ -9,7 +9,7 @@ namespace SE {
 class OpenCVImgLoader {
 
         std::vector <cv::Mat> vImagesData;
-        
+
         public:
         //empty settings for this loader
         struct Settings { };

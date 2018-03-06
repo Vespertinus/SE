@@ -19,7 +19,7 @@ class StoreMesh {
 
         StoreMesh(const Settings & oNewSettings);
         ~StoreMesh() throw();
-        ret_code_t Store(MeshStock & oMeshStock, std::vector<MeshData> & vMeshData);
+        ret_code_t Store(MeshStock & oMeshStock, MeshCtx & oMeshCtx);
 
 };
 

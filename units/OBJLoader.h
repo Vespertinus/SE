@@ -1,6 +1,6 @@
 
 #ifndef __OBJ_LOADER_H__
-#define __TOBJLOADER_H__ 1
+#define __OBJ_LOADER_H__ 1
 
 namespace SE {
 
@@ -13,7 +13,9 @@ class OBJLoader {
                 struct ShapeSettings {
                         /** 0 none, 1 flip h, 2 flip v */
                         uint8_t flip_tex_coords : 2;
-               };
+                };
+
+                bool skip_normals;
 
                 std::map <std::string, ShapeSettings> mShapesOptions;
                 StoreTexture2D::Settings oTex2DSettings;

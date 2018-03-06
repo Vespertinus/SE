@@ -13,13 +13,13 @@ ret_code_t OpenCVImgLoader::Load(const std::string sPath, TextureStock & oTextur
 
         cv::Mat oImg = cv::imread(sPath, cv::IMREAD_UNCHANGED);
         cv::Mat oResImg;
-        
-        if (oImg.empty()) {        
+
+        if (oImg.empty()) {
                 log_e("OpenCV failed to load image = '{}'", sPath.c_str());
                 return uREAD_FILE_ERROR;
         }
 
-        
+
         cv::flip(oImg, oResImg, 0);
 
         oTextureStock.bpp               = oImg.channels();

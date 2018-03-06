@@ -25,6 +25,7 @@ template <class ... TGeom> class SceneNode {
 
         //SceneNode(); //THINK ???
         SceneNode(TSceneNode * pParentNode, const std::string_view sNewName);
+        //~SceneNode() noexcept TODO
 
         void                    SetParent(TSceneNode * pNewParent);
         void                    InvalidateChildren();

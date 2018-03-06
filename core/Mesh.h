@@ -12,21 +12,17 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         typedef typename  StoreStrategyList::Head TDefaultStoreStrategy;
         typedef typename  LoadStrategyList::Head  TDefaultLoadStrategy;
 
-        std::vector<MeshData>   vMeshData;
+        MeshCtx                 oMeshCtx;
         Transform       const * pTransform; //TODO into iface struct
 
-        glm::vec3               min;
-        glm::vec3               max;
-
         MeshSettings            oMeshSettings;
-        const uint32_t          stride;
+        //const uint32_t          stride;
 
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void Create(
-                        const std::string oName,
                         const TStoreStrategySettings & oStoreStrategySettings,
                         const TLoadStrategySettings & oLoadStrategySettings);
 
-        void DrawShape(const MeshData & oMeshData) const;
+        void DrawShape(const ShapeCtx & oShapeCtx) const;
 
         public:
 
@@ -39,25 +35,25 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
                                                      typename LoadStrategy::Settings) > {  };
 
         template <class TStoreStrategySettings,  class TLoadStrategySettings>
-                Mesh(const std::string & oName,
+                Mesh(const std::string & sName,
                      const rid_t new_rid,
                      const TStoreStrategySettings & oStoreStrategySettings,
                      const TLoadStrategySettings & oLoadStrategySettings,
                      const MeshSettings & oNewMeshSettings);
 
         template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<StoreStrategyList, TConcreateSettings>::value, TConcreateSettings> * = nullptr>
-                Mesh(const std::string & oName,
+                Mesh(const std::string & sName,
                      const rid_t new_rid,
                      const TConcreateSettings & oSettings,
                      const MeshSettings & oNewMeshSettings);
 
         template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<LoadStrategyList, TConcreateSettings>::value, TConcreateSettings> * = nullptr>
-                Mesh(const std::string & oName,
+                Mesh(const std::string & sName,
                      const rid_t new_rid,
                      const TConcreateSettings & oSettings,
                      const MeshSettings & oNewMeshSettings);
 
-        Mesh(const std::string & oName, const rid_t new_rid, const MeshSettings & oNewMeshSettings = MeshSettings());
+        Mesh(const std::string & sName, const rid_t new_rid, const MeshSettings & oNewMeshSettings = MeshSettings());
         ~Mesh() noexcept;
 
         uint32_t GetShapesCnt() const;

@@ -29,6 +29,11 @@ template < class ResourceList > template <class Resource, class ... TConcreateSe
 
         typedef Holder <Resource> TConcreateStorage;
 
+        if (oPath.empty()) {
+                log_e("empty resource name");
+                return nullptr;
+        }
+
         rid_t                         key       = Hash64(oPath.c_str(), oPath.length());
         TConcreateStorage           & oStorage  = Storage<Resource>();
 

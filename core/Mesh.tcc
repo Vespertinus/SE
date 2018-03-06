@@ -4,24 +4,25 @@ namespace SE  {
 template <class StoreStrategyList, class LoadStrategyList>
         template <class TStoreStrategySettings,  class TLoadStrategySettings>
                 Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                        const std::string & oName,
+                        const std::string & sName,
                         const rid_t new_rid,
                         const TStoreStrategySettings & oStoreStrategySettings,
                         const TLoadStrategySettings & oLoadStrategySettings,
                         const MeshSettings & oNewMeshSettings) :
-                ResourceHolder(new_rid),
-                oMeshSettings(oNewMeshSettings),
-                stride ((oMeshSettings.skip_normals) ? (3 + 2) * sizeof(float) : (3 + 3 + 2) * sizeof(float) ) {
+                ResourceHolder(new_rid, sName),
+                oMeshCtx{},
+                pTransform(nullptr),
+                oMeshSettings(oNewMeshSettings) {
 
-        Create(oName, oStoreStrategySettings, oLoadStrategySettings);
+        Create(oStoreStrategySettings, oLoadStrategySettings);
 }
 
 template <class StoreStrategyList, class LoadStrategyList>
         Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                const std::string & oName,
+                const std::string & sName,
                 const rid_t new_rid,
                 const MeshSettings & oNewMeshSettings) :
-                        Mesh(oName,
+                        Mesh(sName,
                              rid,
                              typename TDefaultStoreStrategy::Settings(),
                              typename TDefaultLoadStrategy::Settings(),
@@ -32,11 +33,11 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<StoreStrategyList, TConcreateSettings>::value, TConcreateSettings> * >
                 Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                        const std::string & oName,
+                        const std::string & sName,
                         const rid_t new_rid,
                         const TConcreateSettings & oSettings,
                         const MeshSettings & oNewMeshSettings) :
-                                Mesh(oName,
+                                Mesh(sName,
                                      rid,
                                      oSettings,
                                      typename TDefaultLoadStrategy::Settings(),
@@ -46,11 +47,11 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<LoadStrategyList, TConcreateSettings>::value, TConcreateSettings> * >
                 Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                        const std::string & oName,
+                        const std::string & sName,
                         const rid_t new_rid,
                         const TConcreateSettings & oSettings,
                         const MeshSettings & oNewMeshSettings) :
-                                Mesh(oName,
+                                Mesh(sName,
                                      rid,
                                      typename TDefaultStoreStrategy::Settings(),
                                      oSettings,
@@ -64,7 +65,6 @@ template <class StoreStrategyList, class LoadStrategyList> Mesh<StoreStrategyLis
 template <class StoreStrategyList, class LoadStrategyList>
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void
                 Mesh<StoreStrategyList, LoadStrategyList>::Create(
-                                const std::string oName,
                                 const TStoreStrategySettings & oStoreStrategySettings,
                                 const TLoadStrategySettings & oLoadStrategySettings) {
 
@@ -77,9 +77,9 @@ template <class StoreStrategyList, class LoadStrategyList>
         TLoadStrategy   oLoadStrategy(oLoadStrategySettings);
         TStoreStrategy  oStoreStrategy(oStoreStrategySettings);
 
-        log_d("skip_normals = {}, ext_material = {}", oMeshSettings.skip_normals, oMeshSettings.ext_material);
+        log_d("ext_material = {}", oMeshSettings.ext_material);
 
-        err_code = oLoadStrategy.Load(oName, oMeshStock);
+        err_code = oLoadStrategy.Load(sName, oMeshStock);
         if (err_code) {
                 char buf[256];
                 snprintf(buf, sizeof(buf), "Mesh::Create: Loading failed, err_code = %u", err_code);
@@ -87,7 +87,7 @@ template <class StoreStrategyList, class LoadStrategyList>
                 throw (std::runtime_error(buf));
         }
 
-        err_code = oStoreStrategy.Store(oMeshStock, vMeshData);
+        err_code = oStoreStrategy.Store(oMeshStock, oMeshCtx);
         if (err_code) {
                 char buf[256];
                 snprintf(buf, sizeof(buf), "Mesh::Create: Storing failed, err_code = %u\n", err_code);
@@ -95,33 +95,15 @@ template <class StoreStrategyList, class LoadStrategyList>
                 throw (std::runtime_error(buf));
         }
 
-        if (vMeshData.size() == 1) {
-                min = vMeshData[0].min;
-                max = vMeshData[0].max;
-        }
-        else if (vMeshData.size() > 1) {
-                min = glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
-                max = glm::vec3(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
-
-                for (auto oMeshData : vMeshData) {
-                        min.x = std::min(oMeshData.min.x, min.x);
-                        min.y = std::min(oMeshData.min.y, min.y);
-                        min.z = std::min(oMeshData.min.z, min.z);
-
-                        max.x = std::max(oMeshData.max.x, max.x);
-                        max.y = std::max(oMeshData.max.y, max.y);
-                        max.z = std::max(oMeshData.max.z, max.z);
-                }
-        }
 }
 
 template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreStrategyList, LoadStrategyList>::GetShapesCnt() const {
-        return vMeshData.size();
+        return oMeshCtx.vShapes.size();
 }
 
 template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreStrategyList, LoadStrategyList>::GetTrianglesCnt() const {
         uint32_t total_triangles_cnt = 0;
-        for (auto item : vMeshData) {
+        for (auto item : oMeshCtx.vShapes) {
                 total_triangles_cnt += item.triangles_cnt;
         }
         return total_triangles_cnt;
@@ -137,18 +119,18 @@ template <class StoreStrategyList, class LoadStrategyList>
 
 template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
-                DrawShape(const MeshData & oMeshData) const {
+                DrawShape(const ShapeCtx & oShapeCtx) const {
 
-        if (oMeshData.buf_id < 1) {
+        if (oShapeCtx.buf_id < 1) {
                return;
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, oMeshData.buf_id);
+        glBindBuffer(GL_ARRAY_BUFFER, oShapeCtx.buf_id);
 
         if (!oMeshSettings.ext_material) {
 
-                if (oMeshData.pTex != nullptr) {
-                        glBindTexture(GL_TEXTURE_2D, oMeshData.pTex->GetID());
+                if (oShapeCtx.pTex != nullptr) {
+                        glBindTexture(GL_TEXTURE_2D, oShapeCtx.pTex->GetID());
                 }
                 else {
                         glBindTexture(GL_TEXTURE_2D, 0);
@@ -158,16 +140,16 @@ template <class StoreStrategyList, class LoadStrategyList>
 
         }
 
-        glVertexPointer(3, GL_FLOAT,   stride, (const void*)0);
-        if (!oMeshSettings.skip_normals) {
-                glNormalPointer(GL_FLOAT,      stride, (const void*)(sizeof(float) * 3));
-                glTexCoordPointer(2, GL_FLOAT, stride, (const void*)(sizeof(float) * 6));
+        glVertexPointer(3, GL_FLOAT,   oMeshCtx.stride, (const void*)0);
+        if (!oMeshCtx.skip_normals) {
+                glNormalPointer(GL_FLOAT,      oMeshCtx.stride, (const void*)(sizeof(float) * 3));
+                glTexCoordPointer(2, GL_FLOAT, oMeshCtx.stride, (const void*)(sizeof(float) * 6));
         }
         else {
-                glTexCoordPointer(2, GL_FLOAT, stride, (const void*)(sizeof(float) * 3));
+                glTexCoordPointer(2, GL_FLOAT, oMeshCtx.stride, (const void*)(sizeof(float) * 3));
         }
 
-        glDrawArrays(GL_TRIANGLES, 0, 3 * oMeshData.triangles_cnt);
+        glDrawArrays(GL_TRIANGLES, 0, 3 * oShapeCtx.triangles_cnt);
 }
 
 
@@ -176,7 +158,7 @@ template <class StoreStrategyList, class LoadStrategyList>
                 Draw() const {
 
         glEnableClientState(GL_VERTEX_ARRAY);
-        if (!oMeshSettings.skip_normals) {
+        if (!oMeshCtx.skip_normals) {
                 glEnableClientState(GL_NORMAL_ARRAY);
         }
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -187,8 +169,8 @@ template <class StoreStrategyList, class LoadStrategyList>
                 glMultMatrixf(glm::value_ptr(world_mat));
         }
 
-        for (auto oMeshData : vMeshData) {
-                DrawShape(oMeshData);
+        for (auto & oShapeCtx : oMeshCtx.vShapes) {
+                DrawShape(oShapeCtx);
         }
 
         if (pTransform) {
@@ -202,17 +184,17 @@ template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 Draw(const size_t shape_ind) const {
 
-        if (shape_ind >= vMeshData.size()) {
+        if (shape_ind >= oMeshCtx.vShapes.size()) {
                 return;
         }
 
         glEnableClientState(GL_VERTEX_ARRAY);
-        if (!oMeshSettings.skip_normals) {
+        if (!oMeshCtx.skip_normals) {
                 glEnableClientState(GL_NORMAL_ARRAY);
         }
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        DrawShape(vMeshData[shape_ind]);
+        DrawShape(oMeshCtx.vShapes[shape_ind]);
 }
 
 
@@ -221,9 +203,9 @@ template <class StoreStrategyList, class LoadStrategyList>
                 GetShapesInfo() const {
 
         TShapesInfo vInfo;
-        vInfo.reserve(vMeshData.size());
-        for (uint32_t i = 0; i < vMeshData.size(); ++i) {
-                vInfo.emplace_back(i, vMeshData[i].sName);
+        vInfo.reserve(oMeshCtx.vShapes.size());
+        for (uint32_t i = 0; i < oMeshCtx.vShapes.size(); ++i) {
+                vInfo.emplace_back(i, oMeshCtx.vShapes[i].sName);
         }
 
         return vInfo;
@@ -235,14 +217,14 @@ template <class StoreStrategyList, class LoadStrategyList>
         glm::vec3 Mesh<StoreStrategyList, LoadStrategyList>::
                 GetCenter(const size_t shape_ind) const {
 //TODO use transform
-        if (shape_ind >= vMeshData.size()) {
+        if (shape_ind >= oMeshCtx.vShapes.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return glm::vec3();
         }
 
-        return glm::vec3((vMeshData[shape_ind].max.x + vMeshData[shape_ind].min.x) / 2,
-                         (vMeshData[shape_ind].max.y + vMeshData[shape_ind].min.y) / 2,
-                         (vMeshData[shape_ind].max.z + vMeshData[shape_ind].min.z) / 2);
+        return glm::vec3((oMeshCtx.vShapes[shape_ind].max.x + oMeshCtx.vShapes[shape_ind].min.x) / 2,
+                         (oMeshCtx.vShapes[shape_ind].max.y + oMeshCtx.vShapes[shape_ind].min.y) / 2,
+                         (oMeshCtx.vShapes[shape_ind].max.z + oMeshCtx.vShapes[shape_ind].min.z) / 2);
 }
 
 
@@ -250,9 +232,9 @@ template <class StoreStrategyList, class LoadStrategyList>
         glm::vec3 Mesh<StoreStrategyList, LoadStrategyList>::
                 GetCenter() const {
 //TODO use transform
-        return glm::vec3((max.x + min.x) / 2,
-                         (max.y + min.y) / 2,
-                         (max.z + min.z) / 2);
+        return glm::vec3((oMeshCtx.max.x + oMeshCtx.min.x) / 2,
+                         (oMeshCtx.max.y + oMeshCtx.min.y) / 2,
+                         (oMeshCtx.max.z + oMeshCtx.min.z) / 2);
 }
 
 
@@ -260,13 +242,13 @@ template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 DrawBBox(const size_t shape_ind) const {
 
-        if (shape_ind >= vMeshData.size()) {
+        if (shape_ind >= oMeshCtx.vShapes.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return;
         }
 
-        const glm::vec3 & cur_min = vMeshData[shape_ind].min;
-        const glm::vec3 & cur_max = vMeshData[shape_ind].max;
+        const glm::vec3 & cur_min = oMeshCtx.vShapes[shape_ind].min;
+        const glm::vec3 & cur_max = oMeshCtx.vShapes[shape_ind].max;
 
         HELPERS::DrawBBox(cur_min, cur_max);
 }
@@ -276,7 +258,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 DrawBBox() const {
 
-        HELPERS::DrawBBox(min, max);
+        HELPERS::DrawBBox(oMeshCtx.min, oMeshCtx.max);
 }
 
 
@@ -284,15 +266,8 @@ template <class StoreStrategyList, class LoadStrategyList>
 template <class StoreStrategyList, class LoadStrategyList>
         std::tuple<const glm::vec3 &, const glm::vec3 &> Mesh<StoreStrategyList, LoadStrategyList>::
                 GetBBox() const {
-/*
-        log_d("min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
-                        min.x, min.y, min.z,
-                        max.x, max.y, max.z);
-        */
-        //return std::make_tuple(std::cref(min), std::cref(max));
-        //return std::tie(min, max);
-        //return std::forward_as_tuple(min, max);
-        return {min, max};
+
+        return { oMeshCtx.min, oMeshCtx.max };
 }
 
 

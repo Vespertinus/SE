@@ -5,6 +5,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
+#include <GeometryUtil.h>
 
 namespace SE {
 
@@ -12,31 +13,6 @@ static std::string GetBaseDir(const std::string & filepath) {
         if (filepath.find_last_of("/\\") != std::string::npos)
                 return filepath.substr(0, filepath.find_last_of("/\\")) + '/';
         return "";
-}
-
-
-static void CalcNormal(float normals[3], float v0[3], float v1[3], float v2[3]) {
-        float v10[3];
-        v10[0] = v1[0] - v0[0];
-        v10[1] = v1[1] - v0[1];
-        v10[2] = v1[2] - v0[2];
-
-        float v20[3];
-        v20[0] = v2[0] - v0[0];
-        v20[1] = v2[1] - v0[1];
-        v20[2] = v2[2] - v0[2];
-
-        normals[0] = v20[1] * v10[2] - v20[2] * v10[1];
-        normals[1] = v20[2] * v10[0] - v20[0] * v10[2];
-        normals[2] = v20[0] * v10[1] - v20[1] * v10[0];
-
-        float len2 = normals[0] * normals[0] + normals[1] * normals[1] + normals[2] * normals[2];
-        if (len2 > 0.0f) {
-                float len = sqrtf(len2);
-
-                normals[0] /= len;
-                normals[1] /= len;
-        }
 }
 
 
@@ -58,6 +34,9 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
         if (sBaseDir.empty()) {
                 sBaseDir = "./";
         }
+
+        oStock.oMeshState.skip_normals = oSettings.skip_normals;
+        uint8_t elem_size = (oSettings.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE;
 
         bool ret = tinyobj::LoadObj(&oAttrib,
                                     &vShapes,
@@ -106,8 +85,9 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
 
 
         for (size_t s = 0; s < vShapes.size(); s++) {
-                std::vector<float> vMeshData;  // pos(3float), normal(3float), tex(2float)
-                vMeshData.reserve((vShapes[s].mesh.indices.size() / 3) * (3 * 3 + 3 * 3 + 3 * 2 ));
+
+                ShapeState oShapeState{};
+                oShapeState.vVertices.reserve((vShapes[s].mesh.indices.size() / 3) * (3 * 3 + 3 * 3 + 3 * 2 ));
 
                 Settings::ShapeSettings * pCurShapeSettings = nullptr;
                 auto itShapeSettings = oSettings.mShapesOptions.find(vShapes[s].name);
@@ -194,7 +174,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         vert[2][2] = oAttrib.vertices[3 * f2 + 1];
 
                         float normals[3][3];
-                        if (!oStock.oMeshSettings.skip_normals) {
+                        if (!oStock.oMeshState.skip_normals) {
                                 if (oAttrib.normals.size() > 0) {
                                         int f0 = idx0.normal_index;
                                         int f1 = idx1.normal_index;
@@ -220,36 +200,41 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         }
 
                         for (int k = 0; k < 3; k++) {
-                                vMeshData.push_back(vert[k][0]);
-                                vMeshData.push_back(vert[k][1]);
-                                vMeshData.push_back(vert[k][2]);
+                                oShapeState.vVertices.push_back(vert[k][0]);
+                                oShapeState.vVertices.push_back(vert[k][1]);
+                                oShapeState.vVertices.push_back(vert[k][2]);
 
-                                if (!oStock.oMeshSettings.skip_normals) {
-                                        vMeshData.push_back(normals[k][0]);
-                                        vMeshData.push_back(normals[k][1]);
-                                        vMeshData.push_back(normals[k][2]);
+                                if (!oStock.oMeshState.skip_normals) {
+                                        oShapeState.vVertices.push_back(normals[k][0]);
+                                        oShapeState.vVertices.push_back(normals[k][1]);
+                                        oShapeState.vVertices.push_back(normals[k][2]);
                                 }
 
-                                vMeshData.push_back(tex_coord[k][0]);
-                                vMeshData.push_back(tex_coord[k][1]);
+                                oShapeState.vVertices.push_back(tex_coord[k][0]);
+                                oShapeState.vVertices.push_back(tex_coord[k][1]);
                         }
                 }
 
-                if (vMeshData.size() == 0) {
+                if (oShapeState.vVertices.size() == 0) {
                         log_e("empty shape, ind = {}", s);
                         continue;
                 }
 
                 if (vShapes[s].mesh.material_ids.size() > 0 && vShapes[s].mesh.material_ids[0] >= 0 /*&& vShapes[s].mesh.material_ids.size() > s*/) {
-                        oStock.vTextures.emplace_back(vTextures[vShapes[s].mesh.material_ids[0] ]);
-                        log_d("shape[{}] name = '{}', material ind id = {}, geometry cnt = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0], vMeshData.size() );
+                        oShapeState.pTexture = vTextures[vShapes[s].mesh.material_ids[0] ];
+                        log_d("shape[{}] name = '{}', material ind id = {}, vertices cnt = {}", s, vShapes[s].name.c_str(), vShapes[s].mesh.material_ids[0], oShapeState.vVertices.size() );
                 } else {
-                        oStock.vTextures.emplace_back(nullptr);
-                        log_d("shape[{}] name = '{}' empty material, geometry cnt = {}", s, vShapes[s].name.c_str(), vMeshData.size());
+                        oShapeState.pTexture = nullptr;
+                        log_d("shape[{}] name = '{}' empty material, vertices cnt = {}", s, vShapes[s].name.c_str(), oShapeState.vVertices.size());
                 }
 
-                oStock.vShapes.emplace_back(std::make_tuple(std::move(vMeshData), vShapes[s].name));
+                oShapeState.sName = vShapes[s].name;
+                oShapeState.triangles_cnt = oShapeState.vVertices.size() / elem_size / 3;
+                CalcBasicBBox(oShapeState.vVertices, elem_size, oShapeState.min, oShapeState.max);
+
+                oStock.oMeshState.vShapes.emplace_back(std::move(oShapeState));
         }
+        CalcCompositeBBox(oStock.oMeshState.vShapes, oStock.oMeshState.min, oStock.oMeshState.max);
 
         return uSUCCESS;
 }
