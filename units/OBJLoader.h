@@ -36,4 +36,8 @@ class OBJLoader {
 
 } //namespace SE
 
+#ifdef SE_IMPL
+#include <OBJLoader.tcc>
+#endif
+
 #endif

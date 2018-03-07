@@ -71,7 +71,7 @@ ret_code_t OBJLoader::Load(const std::string sPath, MeshStock & oStock) {
                         continue;
                 }
 
-                SE::TTexture * pTex = SE::TResourceManager::Instance().Create<SE::TTexture>(sBaseDir + pMat->diffuse_texname, oSettings.oTex2DSettings);
+                auto * pTex = CreateResource<SE::TTexture>(sBaseDir + pMat->diffuse_texname, oSettings.oTex2DSettings);
                 if (pTex) {
                         vTextures.emplace_back(pTex);
                 }
