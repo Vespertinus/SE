@@ -3,6 +3,7 @@
 #define __MESH_H__ 1
 
 #include <Transform.h>
+#include <Mesh_generated.h>
 
 namespace SE {
 
@@ -16,11 +17,13 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         Transform       const * pTransform; //TODO into iface struct
 
         MeshSettings            oMeshSettings;
-        //const uint32_t          stride;
 
-        template <class TStoreStrategySettings,  class TLoadStrategySettings> void Create(
+        template <class TStoreStrategySettings,  class TLoadStrategySettings> void Import(
                         const TStoreStrategySettings & oStoreStrategySettings,
                         const TLoadStrategySettings & oLoadStrategySettings);
+
+        void Load();
+        void Load(const SE::FlatBuffers::Mesh * pMesh);
 
         void DrawShape(const ShapeCtx & oShapeCtx) const;
 

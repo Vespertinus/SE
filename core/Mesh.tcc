@@ -1,4 +1,7 @@
 
+#include <fstream>
+#include <GeometryUtil.h>
+
 namespace SE  {
 
 template <class StoreStrategyList, class LoadStrategyList>
@@ -14,7 +17,7 @@ template <class StoreStrategyList, class LoadStrategyList>
                 pTransform(nullptr),
                 oMeshSettings(oNewMeshSettings) {
 
-        Create(oStoreStrategySettings, oLoadStrategySettings);
+        Import(oStoreStrategySettings, oLoadStrategySettings);
 }
 
 template <class StoreStrategyList, class LoadStrategyList>
@@ -22,12 +25,22 @@ template <class StoreStrategyList, class LoadStrategyList>
                 const std::string & sName,
                 const rid_t new_rid,
                 const MeshSettings & oNewMeshSettings) :
-                        Mesh(sName,
-                             rid,
-                             typename TDefaultStoreStrategy::Settings(),
-                             typename TDefaultLoadStrategy::Settings(),
-                             oNewMeshSettings
-                             ) {
+        ResourceHolder(new_rid, sName),
+        oMeshCtx{},
+        pTransform(nullptr),
+        oMeshSettings(oNewMeshSettings) {
+
+        boost::filesystem::path oPath(sName);
+        std::string sExt = oPath.extension().string();
+        std::transform(sExt.begin(), sExt.end(), sExt.begin(), ::tolower);
+
+        if (sExt == ".sems") {
+                log_d("file '{}' ext '{}', call FBLoader", sName, sExt);
+                Load();
+        }
+        else {
+                Import(typename TDefaultStoreStrategy::Settings(), typename TDefaultLoadStrategy::Settings());
+        }
 }
 
 template <class StoreStrategyList, class LoadStrategyList>
@@ -64,7 +77,7 @@ template <class StoreStrategyList, class LoadStrategyList> Mesh<StoreStrategyLis
 
 template <class StoreStrategyList, class LoadStrategyList>
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void
-                Mesh<StoreStrategyList, LoadStrategyList>::Create(
+                Mesh<StoreStrategyList, LoadStrategyList>::Import(
                                 const TStoreStrategySettings & oStoreStrategySettings,
                                 const TLoadStrategySettings & oLoadStrategySettings) {
 
@@ -81,20 +94,13 @@ template <class StoreStrategyList, class LoadStrategyList>
 
         err_code = oLoadStrategy.Load(sName, oMeshStock);
         if (err_code) {
-                char buf[256];
-                snprintf(buf, sizeof(buf), "Mesh::Create: Loading failed, err_code = %u", err_code);
-                log_e("{}", buf);
-                throw (std::runtime_error(buf));
+                throw (std::runtime_error( "Mesh::Import: Loading failed, err_code = " + std::to_string(err_code)));
         }
 
         err_code = oStoreStrategy.Store(oMeshStock, oMeshCtx);
         if (err_code) {
-                char buf[256];
-                snprintf(buf, sizeof(buf), "Mesh::Create: Storing failed, err_code = %u\n", err_code);
-                log_e("{}", buf);
-                throw (std::runtime_error(buf));
+                throw (std::runtime_error( "Mesh::Import: Storing failed, err_code = " + std::to_string(err_code)));
         }
-
 }
 
 template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreStrategyList, LoadStrategyList>::GetShapesCnt() const {
@@ -270,6 +276,110 @@ template <class StoreStrategyList, class LoadStrategyList>
         return { oMeshCtx.min, oMeshCtx.max };
 }
 
+
+template <class StoreStrategyList, class LoadStrategyList>
+        void Mesh<StoreStrategyList, LoadStrategyList>::
+                Load() {
+
+        static const size_t max_file_size = 1024 * 1024 * 10;
+
+        auto file_size = boost::filesystem::file_size(sName);
+        if (file_size > max_file_size) {
+                throw(std::runtime_error(
+                                        "too big file size, allowed max = " +
+                                        std::to_string(max_file_size) +
+                                        ", got " +
+                                        std::to_string(file_size) +
+                                        " bytes"));
+        }
+
+        std::vector<char> vBuffer(file_size);
+        log_d("buffer size: {}", vBuffer.size());
+
+        //TODO rewrite on os wrappers that in linux case call mmap
+        {
+                std::ifstream oInput(sName, std::ios::binary | std::ios::in);
+                if(!oInput.is_open()) {
+                        throw(std::runtime_error("failed to open file: " + sName));
+                }
+                oInput.read(&vBuffer[0], file_size);
+        }
+        flatbuffers::Verifier oVerifier(reinterpret_cast<uint8_t *>(&vBuffer[0]), file_size);
+        if (SE::FlatBuffers::VerifyMeshBuffer(oVerifier) != true) {
+                throw(std::runtime_error("failed to verify data in: " + sName));
+        }
+
+        Load(SE::FlatBuffers::GetMesh(&vBuffer[0]));
+}
+
+template <class StoreStrategyList, class LoadStrategyList>
+        void Mesh<StoreStrategyList, LoadStrategyList>::
+                Load(const SE::FlatBuffers::Mesh * pMesh) {
+
+        auto * pShapesFB        = pMesh->shapes();
+        size_t shapes_cnt       = pShapesFB->Length();
+        auto * pMin             = pMesh->min();
+        auto * pMax             = pMesh->max();
+
+
+        oMeshCtx.stride         = ((pMesh->skip_normals()) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
+        oMeshCtx.min            = glm::vec3(pMin->x(), pMin->y(), pMin->z());
+        oMeshCtx.max            = glm::vec3(pMax->x(), pMax->y(), pMax->z());
+        oMeshCtx.skip_normals   = pMesh->skip_normals();
+
+        log_d("mesh: shape cnt = {}, stride = {}, skip_normals = {}, min ({}, {}, {}), max({}, {}, {})",
+                        shapes_cnt,
+                        oMeshCtx.stride,
+                        oMeshCtx.skip_normals,
+                        oMeshCtx.min.x,
+                        oMeshCtx.min.y,
+                        oMeshCtx.min.z,
+                        oMeshCtx.max.x,
+                        oMeshCtx.max.y,
+                        oMeshCtx.max.z);
+        log_d("ext_material = {}", oMeshSettings.ext_material);
+
+        for (size_t i = 0; i < shapes_cnt; ++i) {
+
+                ShapeCtx oShape{};
+                auto pCurShape          = pShapesFB->Get(i);
+
+                oShape.triangles_cnt    = pCurShape->triangles_cnt();
+                oShape.sName            = pCurShape->name()->c_str();
+                auto * pMin             = pCurShape->min();
+                oShape.min              = glm::vec3(pMin->x(), pMin->y(), pMin->z());
+                auto * pMax             = pCurShape->max();
+                oShape.max              = glm::vec3(pMax->x(), pMax->y(), pMax->z());
+
+                std::string sTexPath    = pCurShape->texture()->c_str();
+                if (!sTexPath.empty() && !oMeshSettings.ext_material) {
+                        //TODO tex settings ?
+                        oShape.pTex     = CreateResource<SE::TTexture>(sTexPath);
+                }
+
+
+                auto * pVertices        = pCurShape->vertices();
+
+                glGenBuffers(1, &oShape.buf_id);
+                glBindBuffer(GL_ARRAY_BUFFER, oShape.buf_id);
+                glBufferData(GL_ARRAY_BUFFER,
+                             pVertices->Length() * sizeof(float),
+                             pVertices->Data(),
+                             GL_STATIC_DRAW);
+
+                log_d("shape[{}] name = '{}', triangles cnt = {}, buf_id = {}, texture id = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
+                                i,
+                                oShape.sName,
+                                oShape.triangles_cnt,
+                                oShape.buf_id,
+                                (oShape.pTex) ? oShape.pTex->GetID() : 0,
+                                oShape.min.x, oShape.min.y, oShape.min.z,
+                                oShape.max.x, oShape.max.y, oShape.max.z);
+
+                oMeshCtx.vShapes.emplace_back(std::move(oShape));
+        }
+
+}
 
 }
 
