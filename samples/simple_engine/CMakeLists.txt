@@ -5,5 +5,6 @@ add_executable(         simple_engine
                         ${SOURCES})
 
 target_link_libraries(  simple_engine
-                        SECommon)
+                        SECommon
+                        SE)
 
