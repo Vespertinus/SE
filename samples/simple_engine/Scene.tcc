@@ -4,10 +4,12 @@
 namespace SE {
 
 Scene::Scene(const Settings & oSettings, Camera & oCurCamera) :
-        oSmallElipse(0, 0, 2, 10, 36), 
+        oSmallElipse(0, 0, 2, 10, 36),
         oBigElipse(0, 0, 2, 100, 36),
-        pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/tst_01.tga")) {
+        pTex01(TResourceManager::Instance().Create<TTexture>("resource/texture/tst_01.tga")),
+        pSceneTree(CreateResource<TSceneTree>("resource/scene/test.sesc")) {
 
+        pSceneTree->Print();
 }
 
 
@@ -24,7 +26,7 @@ void Scene::Process() {
 
         glEnable(GL_TEXTURE_2D);
 
-        HELPERS::DrawPlane(4, 4, 
+        HELPERS::DrawPlane(4, 4,
                           -1, 2, 0.25,
                            1, 1, 1,
                            pTex01->GetID());

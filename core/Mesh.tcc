@@ -24,6 +24,20 @@ template <class StoreStrategyList, class LoadStrategyList>
         Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
                 const std::string & sName,
                 const rid_t new_rid,
+                const SE::FlatBuffers::Mesh * pMesh,
+                const MeshSettings & oNewMeshSettings) :
+        ResourceHolder(new_rid, sName),
+        oMeshCtx{},
+        pTransform(nullptr),
+        oMeshSettings(oNewMeshSettings) {
+
+        Load(pMesh);
+}
+
+template <class StoreStrategyList, class LoadStrategyList>
+        Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
+                const std::string & sName,
+                const rid_t new_rid,
                 const MeshSettings & oNewMeshSettings) :
         ResourceHolder(new_rid, sName),
         oMeshCtx{},
@@ -343,9 +357,10 @@ template <class StoreStrategyList, class LoadStrategyList>
 
                 ShapeCtx oShape{};
                 auto pCurShape          = pShapesFB->Get(i);
+                auto * pNameFB          = pCurShape->name();
 
+                oShape.sName            = (pNameFB != nullptr) ? pNameFB->c_str() : "";
                 oShape.triangles_cnt    = pCurShape->triangles_cnt();
-                oShape.sName            = pCurShape->name()->c_str();
                 auto * pMin             = pCurShape->min();
                 oShape.min              = glm::vec3(pMin->x(), pMin->y(), pMin->z());
                 auto * pMax             = pCurShape->max();

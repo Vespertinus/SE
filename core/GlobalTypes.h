@@ -46,8 +46,6 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 #include <OBJLoader.h>
 #include <StoreMesh.h>
 
-
-
 namespace SE {
 
 typedef Loki::SingletonHolder< SimpleFPS >                              TSimpleFPS;
@@ -56,8 +54,22 @@ typedef LOKI_TYPELIST_1(OBJLoader)                                      MeshLoad
 typedef LOKI_TYPELIST_1(StoreMesh)                                      MeshStoreStrategyList;
 typedef Mesh<MeshStoreStrategyList, MeshLoadStrategyList>               TMesh;
 
-typedef LOKI_TYPELIST_2(TTexture, TMesh)                                TResourseList;
+}
 
+#include <SceneTree.h>
+
+namespace SE {
+
+typedef SceneTree<TMesh *> TSceneTree;
+
+
+}
+
+
+
+namespace SE {
+
+typedef LOKI_TYPELIST_3(TTexture, TMesh, TSceneTree)                    TResourseList;
 typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourceManager;
 
 

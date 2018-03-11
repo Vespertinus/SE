@@ -13,7 +13,7 @@ class Scene {
         SE::TTexture    * pTex02;
         SE::TMesh       * pTestMesh;
 
-        SE::SceneTree<SE::TMesh * > oSceneTree;
+        SE::SceneTree<SE::TMesh * > * pSceneTree;
 
         public:
         //empty settings

@@ -4,9 +4,10 @@ namespace SE  {
 
 //template <class ... TGeom > SceneNode<TGeom ...>::SceneNode() : SceneNode(nullptr, "") {;;}
 
-template <class ... TGeom > SceneNode<TGeom ...>::SceneNode(TSceneNode * pParentNode, const std::string_view sNewName) :
+template <class ... TGeom > SceneNode<TGeom ...>::SceneNode(TSceneNode * pParentNode, const std::string_view sNewName, TSceneTree * pNewScene) :
         pParent(nullptr),
-        sName(sNewName) {
+        sName(sNewName),
+        pScene(pNewScene) {
 
         SetParent(pParentNode);
 }
@@ -26,7 +27,7 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 }
 
 template <class ... TGeom > void SceneNode<TGeom ...>::
-        SetScale(const float new_scale) {
+        SetScale(const glm::vec3 & new_scale) {
 
         oTransform.SetScale(new_scale);
         InvalidateChildren();
@@ -115,6 +116,18 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         for (auto * item : vChildren) {
                 item->Print(indent + 4);
         }
+}
+
+template <class ... TGeom > bool SceneNode<TGeom ...>::
+        SetName(std::string_view sNewName) {
+
+        return pScene->UpdateNodeName(this, sName, sNewName);
+}
+
+template <class ... TGeom > SceneTree<TGeom...> * SceneNode<TGeom ...>::
+        GetScene() const {
+
+        return pScene;
 }
 
 

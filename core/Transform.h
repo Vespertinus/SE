@@ -10,7 +10,7 @@ class Transform {
         mutable glm::mat4       mWorldTransform;
         glm::vec3               vTranslation;
         glm::vec3               vRotation;
-        float                   scale;
+        glm::vec3               vScale;
         mutable uint8_t         local_dirty : 1,
                                 world_dirty : 1;
 
@@ -20,12 +20,12 @@ class Transform {
         public:
 
         Transform();
-        Transform(const glm::vec3 pos, const glm::vec3 rotation, const float new_scale);
+        Transform(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale);
 
-        void              Set(const glm::vec3 pos, const glm::vec3 rotation, const float new_scale);
+        void              Set(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale);
         void              SetPos(const glm::vec3 & vPos);
         void              SetRotation(const glm::vec3 & vDegreeAngles);
-        void              SetScale(const float new_scale);
+        void              SetScale(const glm::vec3 & new_scale);
         const glm::mat4 & Get() const;
         const glm::mat4 & GetWorld() const;
         void              Invalidate();

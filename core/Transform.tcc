@@ -1,14 +1,14 @@
 namespace SE  {
 
 Transform::Transform() :
-        Transform(glm::vec3(0), glm::vec3(0), 1) {
+        Transform(glm::vec3(0), glm::vec3(0), glm::vec3(1)) {
 }
 
-Transform::Transform(const glm::vec3 pos, const glm::vec3 rotation, const float new_scale) :
+Transform::Transform(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale) :
         pParent(nullptr),
         vTranslation(pos),
         vRotation(rotation),
-        scale(new_scale),
+        vScale(new_scale),
         local_dirty(1),
         world_dirty(0) {
 
@@ -23,7 +23,7 @@ void Transform::Recalc() const {
         //TODO rewrite
 
         mTransform  = glm::translate(glm::mat4(1.0), vTranslation);
-        mTransform  = glm::scale (mTransform, glm::vec3(scale));
+        mTransform  = glm::scale (mTransform, vScale);
         mTransform  = glm::rotate(mTransform, glm::radians(vRotation.x), glm::vec3( 1, 0, 0) );
         mTransform  = glm::rotate(mTransform, glm::radians(vRotation.y), glm::vec3( 0, 1, 0) );
         mTransform  = glm::rotate(mTransform, glm::radians(vRotation.z), glm::vec3( 0, 0, 1) );
@@ -46,11 +46,11 @@ void Transform::RecalcWorld() const {
         world_dirty = 0;
 }
 
-void Transform::Set(const glm::vec3 pos, const glm::vec3 rotation, const float new_scale) {
+void Transform::Set(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale) {
 
         vTranslation    = pos;
         vRotation       = rotation;
-        scale           = new_scale;
+        vScale          = new_scale;
         local_dirty     = 1;
 }
 
@@ -65,9 +65,9 @@ void Transform::SetRotation(const glm::vec3 & vDegreeAngles) {
         local_dirty = 1;
 }
 
-void Transform::SetScale(const float new_scale) {
+void Transform::SetScale(const glm::vec3 & new_scale) {
 
-        scale = new_scale;
+        vScale = new_scale;
         local_dirty = 1;
 }
 
@@ -105,7 +105,7 @@ void Transform::Invalidate() {
 
 void Transform::Print(const size_t indent) {
 
-        log_d("{:>{}} pos ({}, {}, {}), rot ({}, {}, {}), scale = {}, parent = {:p}",
+        log_d("{:>{}} pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}",
                         ">",
                         indent,
                         vTranslation.x,
@@ -114,7 +114,9 @@ void Transform::Print(const size_t indent) {
                         vRotation.x,
                         vRotation.y,
                         vRotation.z,
-                        scale,
+                        vScale.x,
+                        vScale.y,
+                        vScale.z,
                         (void *)pParent);
 }
 

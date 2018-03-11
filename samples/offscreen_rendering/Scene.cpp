@@ -37,13 +37,13 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
                 oCurCamera.ZoomTo(pTestMesh->GetBBox());
 
 
-                auto pTestNode = oSceneTree.Create("test");
+                auto pTestNode = pSceneTree->Create("test");
                 //pTestNode->SetPos(glm::vec3(0, 0, 0));
                 //pTestNode->SetScale(0.75);
                 //pTestNode->SetRotation(glm::vec3(0, 0, 90));
                 pTestNode->AddRenderEntity(pTestMesh);
 
-                oSceneTree.Print();
+                pSceneTree->Print();
 }
 
 

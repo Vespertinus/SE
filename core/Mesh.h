@@ -57,6 +57,7 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
                      const MeshSettings & oNewMeshSettings);
 
         Mesh(const std::string & sName, const rid_t new_rid, const MeshSettings & oNewMeshSettings = MeshSettings());
+        Mesh(const std::string & sName, const rid_t new_rid, const SE::FlatBuffers::Mesh * pMesh, const MeshSettings & oNewMeshSettings = MeshSettings());
         ~Mesh() noexcept;
 
         uint32_t GetShapesCnt() const;

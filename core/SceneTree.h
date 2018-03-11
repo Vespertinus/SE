@@ -2,11 +2,12 @@
 #define __SCENE_TREE_H__ 1
 
 #include <SceneNode.h>
+#include <SceneTree_generated.h>
 
 namespace SE {
 
 //TODO as resource.. load from file
-template <class ... TGeom > class SceneTree {
+template <class ... TGeom > class SceneTree : public ResourceHolder {
 
         using TSceneNode = SceneNode<TGeom...>;
 
@@ -14,9 +15,14 @@ template <class ... TGeom > class SceneTree {
 
         std::unordered_map<std::string_view, TSceneNode *> mNamedNodes;
 
+        void Load();
+        void Load(const SE::FlatBuffers::Node * pRoot);
+        ret_code_t LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode * pDstNode);
+
 
         public:
-        SceneTree(); //TODO rewrite for Resource interface
+
+        SceneTree(const std::string & sName, const rid_t new_rid);
         ~SceneTree() noexcept;
 
         TSceneNode * Create(const std::string_view sNewName = "");
@@ -29,6 +35,7 @@ template <class ... TGeom > class SceneTree {
         bool         Destroy(TSceneNode * pNode);
         bool         Destroy(const std::string_view sName);
         void         Print();
+        bool         UpdateNodeName(TSceneNode * pNode, const std::string_view sOldName, const std::string_view sNewName);
 
 };
 

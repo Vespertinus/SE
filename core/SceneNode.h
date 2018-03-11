@@ -9,10 +9,13 @@
 
 namespace SE {
 
+template <class ... TArgs> class SceneTree;
+
 template <class ... TGeom> class SceneNode {
 
         using TSceneNode = SceneNode<TGeom...>;
-        using TVariant = std::variant<TGeom...>;
+        using TVariant   = std::variant<TGeom...>;
+        using TSceneTree = SceneTree<TGeom...>;
 
         template <class ... TArgs> friend class SceneTree;
 
@@ -22,9 +25,10 @@ template <class ... TGeom> class SceneNode {
         std::vector<SceneNode<TGeom...> * >     vChildren;
         Transform                               oTransform;
         std::string                             sName;
+        TSceneTree                            * pScene;
 
         //SceneNode(); //THINK ???
-        SceneNode(TSceneNode * pParentNode, const std::string_view sNewName);
+        SceneNode(TSceneNode * pParentNode, const std::string_view sNewName, TSceneTree * pNewScene);
         //~SceneNode() noexcept TODO
 
         void                    SetParent(TSceneNode * pNewParent);
@@ -37,7 +41,7 @@ template <class ... TGeom> class SceneNode {
         //void    Apply() const; only apply transformation..
         void                    SetPos(const glm::vec3 & vPos);
         void                    SetRotation(const glm::vec3 & vDegreeAngles);
-        void                    SetScale(const float new_scale);
+        void                    SetScale(const glm::vec3 & new_scale);
         //void     DrawBBox() const;
         uint32_t                GetGeomCnt() const;
         template <class T> void AddRenderEntity(T oRenderEntity);
@@ -45,8 +49,9 @@ template <class ... TGeom> class SceneNode {
         void                    RemoveChild(TSceneNode * pNode);
         //TODO destroy all childs
         const std::string &     GetName() const;
-        //void                    SetName();
+        bool                    SetName(std::string_view sNewName);
         void                    Print(const size_t indent);
+        TSceneTree            * GetScene() const;
 
         //template <class T> void Apply(T & functor);
         /*      TODO
@@ -56,6 +61,9 @@ template <class ... TGeom> class SceneNode {
                 Add / Remove entity
                 coordinate type local, global, ...
                 get children vec..
+
+                unlink from scene
+                SetScene -> move to another scene
         */
 };
 

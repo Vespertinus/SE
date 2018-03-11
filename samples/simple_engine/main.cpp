@@ -11,7 +11,7 @@ std::shared_ptr<spdlog::logger> gLogger;
 
 
 int main(int argc, char **argv) {
-        
+
         gLogger = spdlog::stdout_logger_mt("G");
         gLogger->set_level(spdlog::level::debug);
 
