@@ -22,9 +22,10 @@ struct ShapeData {
 struct MeshData {
 
         std::vector<ShapeData>  vShapes;
-        bool                    skip_normals;
         glm::vec3               min;
         glm::vec3               max;
+        std::string             sName;
+        bool                    skip_normals;
 
 };
 

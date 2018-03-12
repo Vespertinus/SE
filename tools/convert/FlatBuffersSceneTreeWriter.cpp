@@ -14,20 +14,24 @@ using StringOffset = flatbuffers::Offset<flatbuffers::String>;
 using SE::FlatBuffers::Node;
 using SE::FlatBuffers::Mesh;
 using SE::FlatBuffers::Vec3;
+using SE::FlatBuffers::Entity;
 
 static flatbuffers::Offset<Node> SerializeNode(
                 const NodeData & oNode,
                 flatbuffers::FlatBufferBuilder & oBuilder) {
 
         std::vector<flatbuffers::Offset<Node>> vChildren;
-        std::vector<flatbuffers::Offset<Mesh>> vEntity;
+        std::vector<flatbuffers::Offset<Entity>> vEntity;
 
         for (auto & item : oNode.vChildren) {
                 vChildren.emplace_back(SerializeNode(item, oBuilder));
         }
 
         for (auto & item : oNode.vEntity) {
-                vEntity.emplace_back(SerializeMesh(item, oBuilder));
+                vEntity.emplace_back( SE::FlatBuffers::CreateEntity(
+                                        oBuilder,
+                                        oBuilder.CreateString(item.sName),
+                                        SerializeMesh(item, oBuilder)) );
         }
 
         auto translation_fb = Vec3(oNode.translation.x,

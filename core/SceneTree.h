@@ -36,6 +36,7 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
         bool         Destroy(const std::string_view sName);
         void         Print();
         bool         UpdateNodeName(TSceneNode * pNode, const std::string_view sOldName, const std::string_view sNewName);
+        void         Draw() const;
 
 };
 

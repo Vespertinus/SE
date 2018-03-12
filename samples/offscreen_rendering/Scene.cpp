@@ -11,8 +11,9 @@ namespace SAMPLES {
 
 Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
         oCamera(oCurCamera),
-        pTex01(SE::TResourceManager::Instance().Create<SE::TTexture>("resource/texture/tst_01.tga")),
-        pTex02(SE::TResourceManager::Instance().Create<SE::TTexture>("resource/texture/tst_01.png")) {
+        pTex01(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.tga")),
+        pTex02(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.png")),
+        pSceneTree(SE::CreateResource<SE::TSceneTree>("resource/scene/test-01.sesc")) {
 
 
                 //external material: false
@@ -76,7 +77,7 @@ void Scene::Process() {
                              pTex02->GetID());
 
 
-        pTestMesh->Draw();
+        pSceneTree->Draw();
 
         glDisable(GL_TEXTURE_2D);
 

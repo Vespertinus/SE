@@ -190,8 +190,7 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
                 size_t entity_cnt     = pEntityFB->Length();
                 for (size_t i = 0; i < entity_cnt; ++i) {
                         auto * pCurEntity = pEntityFB->Get(i);
-                        std::string sMeshName = "zzz"; //TEMP rewrite format to store entity name in holder
-                        auto * pMesh = CreateResource<TMesh>(sName + ":" + sMeshName, pCurEntity);
+                        auto * pMesh = CreateResource<TMesh>(sName + ":" + pCurEntity->name()->c_str(), pCurEntity->data());
                         pDstNode->AddRenderEntity(pMesh);
                 }
         }
@@ -242,6 +241,12 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
         }
 
         return true;
+}
+
+template <class ... TGeom > void SceneTree<TGeom ...>::
+        Draw() const {
+
+        oRoot.Draw();
 }
 
 } //namespace SE

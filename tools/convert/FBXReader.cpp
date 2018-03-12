@@ -227,7 +227,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                 log_d("empty node: '{}'", pNode->GetName());
         }
         else {
-                log_d("mesh node: '{}'", pNode->GetName());
+                log_d("mesh node: '{}', name: '{}'", pNode->GetName(), pAttribute->GetName());
                 FbxMesh * pMesh = (FbxMesh *) pNode->GetNodeAttribute ();
 
                 int32_t         vertices_cnt    = pMesh->GetControlPointsCount();
@@ -243,6 +243,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                 MeshData        oMesh;
                 ShapeData       oShapeData;
                 oMesh.skip_normals              = oCtx.skip_normals;
+                oMesh.sName                     = pAttribute->GetName();
 
                 if (pNode->GetSrcObjectCount<FbxSurfaceMaterial>() > 0) {
 

@@ -130,5 +130,22 @@ template <class ... TGeom > SceneTree<TGeom...> * SceneNode<TGeom ...>::
         return pScene;
 }
 
+//TODO rewrite on property based visitor, via enable_if + is_renderable etc
+template <class ... TGeom > void SceneNode<TGeom ...>::
+        Draw() const {
+
+        for (auto & oEntity : vRenderEntity) {
+
+                std::visit([](auto && arg) {
+                        arg->Draw();
+                },
+                oEntity);
+
+        }
+
+        for (auto * pChild: vChildren) {
+                pChild->Draw();
+        }
+}
 
 }
