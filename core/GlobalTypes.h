@@ -14,6 +14,7 @@
 
 #include <ErrCode.h>
 #include <Util.h>
+#include <StrID.h>
 
 #include <Logging.h>
 
