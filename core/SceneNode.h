@@ -25,6 +25,7 @@ template <class ... TGeom> class SceneNode {
         std::vector<SceneNode<TGeom...> * >     vChildren;
         Transform                               oTransform;
         std::string                             sName;
+        std::string                             sFullName;
         TSceneTree                            * pScene;
 
         //SceneNode(); //THINK ???
@@ -33,6 +34,9 @@ template <class ... TGeom> class SceneNode {
 
         void                    SetParent(TSceneNode * pNewParent);
         void                    InvalidateChildren();
+        void                    RebuildFullName();
+        void                    BuildFullName(std::string & sNewFullName,
+                                              const std::string_view sNewName);
 
         public:
 
@@ -49,6 +53,7 @@ template <class ... TGeom> class SceneNode {
         void                    RemoveChild(TSceneNode * pNode);
         //TODO destroy all childs
         const std::string &     GetName() const;
+        const std::string &     GetFullName() const;
         bool                    SetName(std::string_view sNewName);
         void                    Print(const size_t indent);
         TSceneTree            * GetScene() const;

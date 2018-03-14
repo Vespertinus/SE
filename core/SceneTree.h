@@ -6,14 +6,13 @@
 
 namespace SE {
 
-//TODO as resource.. load from file
 template <class ... TGeom > class SceneTree : public ResourceHolder {
 
         using TSceneNode = SceneNode<TGeom...>;
 
         TSceneNode oRoot;
 
-        std::unordered_map<std::string_view, TSceneNode *> mNamedNodes;
+        std::unordered_map<StrID, TSceneNode *> mNamedNodes;
 
         void Load();
         void Load(const SE::FlatBuffers::Node * pRoot);
@@ -29,13 +28,16 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
         TSceneNode * Create(TSceneNode * pParent, const std::string_view sNewName = "");
         //TSceneNode * CloneNode(TSceneNode * pNode);
         TSceneNode * Find(const std::string_view sName) const;
+        TSceneNode * Find(const StrID sid) const;
         TSceneNode * GetRoot() const;
         //Apply (visitor, recursive = false)
         //Apply (visitor, Node, recursive = false)
         bool         Destroy(TSceneNode * pNode);
         bool         Destroy(const std::string_view sName);
         void         Print();
-        bool         UpdateNodeName(TSceneNode * pNode, const std::string_view sOldName, const std::string_view sNewName);
+        bool         UpdateNodeName(TSceneNode * pNode,
+                                    const std::string_view sNewName,
+                                    const std::string_view sNewFullName);
         void         Draw() const;
 
 };

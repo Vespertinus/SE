@@ -43,6 +43,7 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         else {
                 oTransform.SetParent(nullptr);
         }
+        RebuildFullName();
 }
 
 template <class ... TGeom > void SceneNode<TGeom ...>::
@@ -66,6 +67,7 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 
         pNode->pParent = this;
         pNode->oTransform.SetParent(&oTransform);
+        pNode->RebuildFullName();
 
         vChildren.emplace_back(pNode);
 
@@ -100,6 +102,12 @@ template <class ... TGeom > const std::string & SceneNode<TGeom ...>::
         return sName;
 }
 
+template <class ... TGeom > const std::string & SceneNode<TGeom ...>::
+        GetFullName() const {
+
+        return sFullName;
+}
+
 
 template <class ... TGeom > void SceneNode<TGeom ...>::
         RemoveChild(TSceneNode * pNode) {
@@ -110,7 +118,7 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 template <class ... TGeom > void SceneNode<TGeom ...>::
         Print(const size_t indent) {
 
-        log_d("{:>{}} '{}': entity cnt = {}", ">", indent, sName, vRenderEntity.size());
+        log_d("{:>{}} '{}': entity cnt = {}", ">", indent, sFullName, vRenderEntity.size());
         oTransform.Print(indent);
 
         for (auto * item : vChildren) {
@@ -119,9 +127,18 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 }
 
 template <class ... TGeom > bool SceneNode<TGeom ...>::
-        SetName(std::string_view sNewName) {
+        SetName(const std::string_view sNewName) {
 
-        return pScene->UpdateNodeName(this, sName, sNewName);
+        std::string sNewFullName;
+        BuildFullName(sNewFullName, sNewName);
+
+        bool res = pScene->UpdateNodeName(this, sNewName, sNewFullName);
+        if (res) {
+                sName     = sNewName;
+                sFullName = sNewFullName;
+        }
+
+        return res;
 }
 
 template <class ... TGeom > SceneTree<TGeom...> * SceneNode<TGeom ...>::
@@ -134,18 +151,45 @@ template <class ... TGeom > SceneTree<TGeom...> * SceneNode<TGeom ...>::
 template <class ... TGeom > void SceneNode<TGeom ...>::
         Draw() const {
 
-        for (auto & oEntity : vRenderEntity) {
+        if (vRenderEntity.size()) {
+                const auto & world_mat = oTransform.GetWorld();
+                glPushMatrix();
+                glMultMatrixf(glm::value_ptr(world_mat));
 
-                std::visit([](auto && arg) {
-                        arg->Draw();
-                },
-                oEntity);
+                for (auto & oEntity : vRenderEntity) {
 
+                        std::visit([](auto && arg) {
+                                        arg->Draw();
+                                        },
+                                        oEntity);
+
+                }
+
+                glPopMatrix();
         }
 
         for (auto * pChild: vChildren) {
                 pChild->Draw();
         }
 }
+
+template <class ... TGeom > void SceneNode<TGeom ...>::
+        BuildFullName(std::string & sNewFullName, const std::string_view sNewName) {
+
+        if (pParent) {
+                sNewFullName = pParent->GetFullName() + "|" + sNewName.data();
+        }
+        else {
+                sNewFullName = sNewName;
+        }
+}
+
+
+template <class ... TGeom > void SceneNode<TGeom ...>::
+        RebuildFullName() {
+
+        BuildFullName(sFullName, sName);
+}
+
 
 }

@@ -43,13 +43,19 @@ template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
 }
 
 template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
-        Find(const std::string_view sName) const {
+        Find(const StrID sid) const {
 
-        auto it = mNamedNodes.find(sName);
+        auto it = mNamedNodes.find(sid);
         if (it != mNamedNodes.end()) {
                 return it->second;
         }
         return nullptr;
+}
+
+template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
+        Find(const std::string_view sName) const {
+
+        return Find(StrID(sName));
 }
 
 template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
@@ -208,36 +214,37 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
 }
 
 template <class ... TGeom > bool SceneTree<TGeom ...>::
-        UpdateNodeName(TSceneNode * pNode, const std::string_view sOldName, const std::string_view sNewName) {
+        UpdateNodeName(TSceneNode * pNode, const std::string_view sNewName, const std::string_view sNewFullName) {
 
         if (pNode->GetScene() != this) {
-                log_w("node: {}, from other scene", sOldName);
+                log_w("node: {}, from other scene", pNode->GetFullName());
                 return false;
         }
 
+        StrID oFullNameID(sNewFullName);
+
         if (!sNewName.empty()) {
-                auto itCheckNode = mNamedNodes.find(sNewName);
+                auto itCheckNode = mNamedNodes.find(oFullNameID);
                 if (itCheckNode != mNamedNodes.end()) {
                         log_w("failed to rename node from: '{}', to '{}', node already exist with same name",
-                                        sOldName,
-                                        sNewName);
+                                        pNode->GetFullName(),
+                                        sNewFullName);
                         return false;
                 }
         }
 
-        if (!sOldName.empty()) {
+        if (!pNode->GetName().empty()) {
 
-                auto itCheckNode = mNamedNodes.find(sOldName);
+                auto itCheckNode = mNamedNodes.find(pNode->GetFullName());
                 if (itCheckNode == mNamedNodes.end() || itCheckNode->second != pNode) {
-                        log_w("failed to find node by old name = '{}'", sOldName);
+                        log_w("failed to find node by old name = '{}'", pNode->GetFullName());
                         return false;
                 }
                 mNamedNodes.erase(itCheckNode);
         }
 
         if (!sNewName.empty()) {
-                pNode->sName = sNewName; //FIXME
-                mNamedNodes.emplace(pNode->GetName(), pNode);
+                mNamedNodes.emplace(oFullNameID, pNode);
         }
 
         return true;
