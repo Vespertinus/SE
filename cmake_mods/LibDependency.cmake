@@ -43,7 +43,8 @@ else()
 endif()
 
 #check OpenCV
-find_package(OpenCV REQUIRED COMPONENTS core highgui)
+#imgproc only for workaround to convert BGR2BGRA
+find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)
 message(STATUS "Found OpenCV libraries: ${OpenCV_LIBRARIES}")
 list(APPEND EXTERN_INC_DIRS ${OpenCV_INCLUDE_DIRS})
 list(APPEND LIBRARIES_LIST ${OpenCV_LIBRARIES})
