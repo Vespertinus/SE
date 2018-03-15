@@ -20,19 +20,20 @@ template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
          TSceneNode * pNode = new TSceneNode(pParent, sNewName, this);
 
          if (!sNewName.empty()) {
+                 StrID sid(pNode->GetFullName());
 
-                 auto it = mNamedNodes.find(sNewName);
+                 auto it = mNamedNodes.find(sid);
                  if (it != mNamedNodes.end()) {
-                        log_e("duplication found, node with name: '{}' already exist", sNewName);
+                        log_e("duplication found, node with name: '{}' already exist", pNode->GetFullName() );
                         delete pNode;
                         return nullptr;
                  }
                  else {
-                        mNamedNodes.emplace(pNode->GetName(), pNode);
+                        mNamedNodes.emplace(sid, pNode);
                  }
          }
 
-         log_d("name: '{}'", sNewName);
+         log_d("name: '{}'", pNode->GetFullName());
          return pNode;
 }
 
@@ -192,11 +193,15 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
 
         auto * pEntityFB          = pSrcNode->render_entity();
         if (pEntityFB != nullptr) {
+                //TODO support instances from maya
+                //they does not write mesh name, only node name
+                //may be compare Mesh pointes..
 
                 size_t entity_cnt     = pEntityFB->Length();
                 for (size_t i = 0; i < entity_cnt; ++i) {
                         auto * pCurEntity = pEntityFB->Get(i);
-                        auto * pMesh = CreateResource<TMesh>(sName + ":" + pCurEntity->name()->c_str(), pCurEntity->data());
+                        //FIXME currently without instances..
+                        auto * pMesh = CreateResource<TMesh>(sName + ":" + pDstNode->GetFullName() + ":" + pCurEntity->name()->c_str(), pCurEntity->data());
                         pDstNode->AddRenderEntity(pMesh);
                 }
         }
