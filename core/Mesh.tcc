@@ -183,20 +183,9 @@ template <class StoreStrategyList, class LoadStrategyList>
         }
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        if (pTransform) {
-                const auto & world_mat = pTransform->GetWorld();
-                glPushMatrix();
-                glMultMatrixf(glm::value_ptr(world_mat));
-        }
-
         for (auto & oShapeCtx : oMeshCtx.vShapes) {
                 DrawShape(oShapeCtx);
         }
-
-        if (pTransform) {
-                glPopMatrix();
-        }
-
 }
 
 
@@ -366,7 +355,8 @@ template <class StoreStrategyList, class LoadStrategyList>
                 auto * pMax             = pCurShape->max();
                 oShape.max              = glm::vec3(pMax->x(), pMax->y(), pMax->z());
 
-                std::string sTexPath    = pCurShape->texture()->c_str();
+                auto * pTexNameFB       = pCurShape->texture();
+                std::string sTexPath    = (pTexNameFB != nullptr) ? pTexNameFB->c_str() : "";
                 if (!sTexPath.empty() && !oMeshSettings.ext_material) {
                         //TODO tex settings ?
                         oShape.pTex     = CreateResource<SE::TTexture>(sTexPath);
