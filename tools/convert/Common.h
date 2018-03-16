@@ -41,9 +41,10 @@ struct NodeData {
 
 struct ImportCtx {
 
-        bool                    skip_normals;
         std::string             sCutPath;
         std::string             sReplace;
+        bool                    skip_normals;
+        bool                    flip_yz;
         /** stats */
         uint32_t                node_cnt;
         uint32_t                mesh_cnt;

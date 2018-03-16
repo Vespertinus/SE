@@ -132,16 +132,6 @@ ret_code_t FBXReader::ReadScene(const std::string_view sPath, NodeData & oRootNo
                 log_e("empty fbx scene, can't get root node. imported from: '{}'", sPath);
                 return uWRONG_INPUT_DATA;
         }
-/*
-        for(int32_t i = 0; i < pNode->GetChildCount(); ++i) {
-                if (ret_code_t res = ImportNode(pNode->GetChild(i)); res != uSUCCESS) {
-                        log_e("failed to import node");
-                        return res;
-                }
-        }
-
-        return uSUCCESS;
-*/
         return ImportNode(pNode, oRootNode, oCtx);
 }
 
@@ -200,14 +190,29 @@ static ret_code_t GetUV(
                         log_e("unsupported UV MappingMode = {}, mesh: '{}'", pUV->GetMappingMode(), pNode->GetName() );
                         return uWRONG_INPUT_DATA;
         }
+/*
         log_d("polygon: {}, vertex: local index {}, global index {}, tex coord: {}, {}",
                         polygon_num,
                         polygon_vert_ind,
                         vertex_ind,
                         oUV[0],
                         oUV[1]);
+*/
 
         return uSUCCESS;
+}
+
+static void FlipYZ(float * data, const uint8_t elem_size) {
+
+        float old_y[3] = { data[1], data[1 + elem_size], data[1 + elem_size * 2]};
+
+        data[1]                 = - data[2];
+        data[1 + elem_size]     = - data[2 + elem_size];
+        data[1 + elem_size * 2] = - data[2 + elem_size * 2];
+
+        data[2]                 = old_y[0];
+        data[2 + elem_size]     = old_y[1];
+        data[2 + elem_size * 2] = old_y[2];
 }
 
 static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
@@ -232,6 +237,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
                 int32_t         vertices_cnt    = pMesh->GetControlPointsCount();
                 FbxVector4    * pControlPoints  = pMesh->GetControlPoints();
+                const uint8_t   elem_size       = (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE;
 
                 log_d("vertices cnt: {}", vertices_cnt);
 
@@ -297,7 +303,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                         for (int32_t polygon_vert_ind = 0; polygon_vert_ind < polygon_size; ++polygon_vert_ind) {
 
                                 int32_t vertex_ind = pMesh->GetPolygonVertex(polygon_num, polygon_vert_ind);
-
+/*
                                 log_d("polygon: {}, vertex: local index {}, global index {}, pos {}, {}, {}",
                                                 polygon_num,
                                                 polygon_vert_ind,
@@ -306,6 +312,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                                 pControlPoints[vertex_ind][1],
                                                 pControlPoints[vertex_ind][2]);
 
+*/
                                 oShapeData.vVertices.push_back(pControlPoints[vertex_ind][0]);
                                 oShapeData.vVertices.push_back(pControlPoints[vertex_ind][1]);
                                 oShapeData.vVertices.push_back(pControlPoints[vertex_ind][2]);
@@ -325,7 +332,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                         oShapeData.vVertices.push_back(oNormal[0]);
                                         oShapeData.vVertices.push_back(oNormal[1]);
                                         oShapeData.vVertices.push_back(oNormal[2]);
-
+/*
                                         log_d("polygon: {}, vertex: local index {}, global index {}, normal: {}, {}, {}",
                                                         polygon_num,
                                                         polygon_vert_ind,
@@ -333,6 +340,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                                         oNormal[0],
                                                         oNormal[1],
                                                         oNormal[2]);
+*/
                                 }
 
 
@@ -347,7 +355,13 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                 oShapeData.vVertices.push_back(oUV[0]);
                                 oShapeData.vVertices.push_back(oUV[1]);
                         }
-
+                        if (oCtx.flip_yz) {
+                                size_t start_ind = oShapeData.vVertices.size() - 3 * elem_size;
+                                FlipYZ(&oShapeData.vVertices[start_ind], elem_size);
+                                if (!oCtx.skip_normals) {
+                                        FlipYZ(&oShapeData.vVertices[start_ind + 3], elem_size);
+                                }
+                        }
                 }
 
                 oCtx.total_triangles_cnt += oShapeData.triangles_cnt;
@@ -369,23 +383,38 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
         FbxDouble3 rotation     = pNode->LclRotation.Get();
         FbxDouble3 scaling      = pNode->LclScaling.Get();
 
-        log_d("node translation: {}, {}, {}", translation[0], translation[1], translation[2]);
-        log_d("node rotation:    {}, {}, {}", rotation[0], rotation[1], rotation[2]);
-        log_d("node scaling:     {}, {}, {}", scaling[0], scaling[1], scaling[2]);
+        if (oCtx.flip_yz) {
+                oNodeData.translation.x = translation[0];
+                oNodeData.translation.y = - translation[2];
+                oNodeData.translation.z = translation[1];
 
-        oNodeData.translation.x = translation[0];
-        oNodeData.translation.y = translation[1];
-        oNodeData.translation.z = translation[2];
+                oNodeData.rotation.x = rotation[0];
+                oNodeData.rotation.y = - rotation[2];
+                oNodeData.rotation.z = rotation[1];
 
-        oNodeData.rotation.x = rotation[0];
-        oNodeData.rotation.y = rotation[1];
-        oNodeData.rotation.z = rotation[2];
+                oNodeData.scale.x = scaling[0];
+                oNodeData.scale.y = - scaling[2];
+                oNodeData.scale.z = scaling[1];
+        }
+        else {
+                oNodeData.translation.x = translation[0];
+                oNodeData.translation.y = translation[1];
+                oNodeData.translation.z = translation[2];
 
-        oNodeData.scale.x = scaling[0];
-        oNodeData.scale.y = scaling[1];
-        oNodeData.scale.z = scaling[2];
+                oNodeData.rotation.x = rotation[0];
+                oNodeData.rotation.y = rotation[1];
+                oNodeData.rotation.z = rotation[2];
+
+                oNodeData.scale.x = scaling[0];
+                oNodeData.scale.y = scaling[1];
+                oNodeData.scale.z = scaling[2];
+        }
 
         oNodeData.sName = pNode->GetName();
+
+        log_d("node translation: {}, {}, {}", oNodeData.translation.x, oNodeData.translation.y, oNodeData.translation.z);
+        log_d("node rotation:    {}, {}, {}", oNodeData.rotation.x, oNodeData.rotation.y, oNodeData.rotation.z);
+        log_d("node scaling:     {}, {}, {}", oNodeData.scale.x, oNodeData.scale.y, oNodeData.scale.z);
 
         ret_code_t res = ImportAttributes(pNode, oNodeData, oCtx);
         if (res != uSUCCESS) {

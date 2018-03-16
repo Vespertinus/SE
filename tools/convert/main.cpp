@@ -41,7 +41,8 @@ int main(int argc, char **argv) {
                         ("log",          bpo::value<string>()->default_value("stdout"),         "log outout (stdout|stderr|<filename>)")
                         ("input",        bpo::value<string>(),                                  "input file, Mesh or Scene (<filename>)")
                         ("output",       bpo::value<string>()->default_value("output.sem"),     "output file destination (<filename>)")
-                        ("skip_normals", bpo::value<bool>()->default_value(false),              "write normals in output file")
+                        ("skip_normals", bpo::value<bool>()->default_value(false),              "does not write normals to output file")
+                        ("flip_yz",      bpo::value<bool>()->default_value(false),              "flip yz axes, depend on what axis might be up")
                         ("cut_path",     bpo::value<string>(),                                  "substring for cuting imported paths (<search substr>)")
                         ("replace",      bpo::value<string>(),                                  "string for replacing cuted path part (<path>)")
                         ;
@@ -99,6 +100,9 @@ int main(int argc, char **argv) {
                 }
                 {
                         oCtx.skip_normals = vm["skip_normals"].as<bool>();
+                }
+                {
+                        oCtx.flip_yz = vm["flip_yz"].as<bool>();
                 }
                 if (vm.count("cut_path") ) {
                         oCtx.sCutPath = vm["cut_path"].as<string>();
