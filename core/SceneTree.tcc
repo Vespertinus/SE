@@ -1,13 +1,16 @@
 
 namespace SE {
 
-template <class ... TGeom > SceneTree<TGeom ...>::SceneTree(const std::string & sName, const rid_t new_rid) :
+template <class ... TGeom > SceneTree<TGeom ...>::SceneTree(
+                const std::string & sName,
+                const rid_t new_rid,
+                const Settings & oSettings) :
         ResourceHolder(new_rid, sName),
         oRoot(nullptr, "root", this) {
 
         mNamedNodes.emplace(oRoot.GetName(), &oRoot);
 
-        Load();
+        Load(oSettings);
 }
 template <class ... TGeom > SceneTree<TGeom ...>::~SceneTree() noexcept {
 
@@ -115,7 +118,7 @@ template <class ... TGeom > void SceneTree<TGeom ...>::
 
 
 template <class ... TGeom > void SceneTree<TGeom ...>::
-        Load() {
+        Load(const Settings & oSettings) {
 
         static const size_t max_file_size = 1024 * 1024 * 100;
 
@@ -146,14 +149,14 @@ template <class ... TGeom > void SceneTree<TGeom ...>::
                 throw(std::runtime_error("failed to verify data in: " + sName));
         }
 
-        Load(SE::FlatBuffers::GetNode(&vBuffer[0]));
+        Load(SE::FlatBuffers::GetNode(&vBuffer[0]), oSettings);
 }
 
 
 template <class ... TGeom > void SceneTree<TGeom ...>::
-        Load(const SE::FlatBuffers::Node * pRoot) {
+        Load(const SE::FlatBuffers::Node * pRoot, const Settings & oSettings) {
 
-        if (auto res = LoadNode(pRoot, nullptr); res != uSUCCESS) {
+        if (auto res = LoadNode(pRoot, nullptr, oSettings); res != uSUCCESS) {
                 throw (std::runtime_error("failed to load tree, reason: " +
                                           std::to_string(res) +
                                           ", from: " +
@@ -162,7 +165,7 @@ template <class ... TGeom > void SceneTree<TGeom ...>::
 }
 
 template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
-        LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode * pParent) {
+        LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode * pParent, const Settings & oSettings) {
 
         TSceneNode * pDstNode;
         auto * pNameFB = pSrcNode->name();
@@ -201,7 +204,7 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
                 for (size_t i = 0; i < entity_cnt; ++i) {
                         auto * pCurEntity = pEntityFB->Get(i);
                         //FIXME currently without instances..
-                        auto * pMesh = CreateResource<TMesh>(sName + ":" + pDstNode->GetFullName() + ":" + pCurEntity->name()->c_str(), pCurEntity->data());
+                        auto * pMesh = CreateResource<TMesh>(sName + ":" + pDstNode->GetFullName() + ":" + pCurEntity->name()->c_str(), pCurEntity->data(), oSettings.oMeshSettings);
                         pDstNode->AddRenderEntity(pMesh);
                 }
         }
@@ -211,8 +214,7 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
         size_t children_cnt     = pChildrenFB->Length();
 
         for (size_t i = 0; i < children_cnt; ++i) {
-
-                LoadNode(pChildrenFB->Get(i), pDstNode);
+                LoadNode(pChildrenFB->Get(i), pDstNode, oSettings);
         }
 
         return uSUCCESS;

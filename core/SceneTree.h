@@ -8,20 +8,30 @@ namespace SE {
 
 template <class ... TGeom > class SceneTree : public ResourceHolder {
 
+        public:
+
+        //TODO rewrite on TGeom::Settings holder for each type of settings
+        struct Settings {
+                //StoreTexture2D::Settings;
+                MeshSettings oMeshSettings;
+        };
+
+        private:
+
         using TSceneNode = SceneNode<TGeom...>;
 
-        TSceneNode oRoot;
-
+        TSceneNode                              oRoot;
         std::unordered_map<StrID, TSceneNode *> mNamedNodes;
 
-        void Load();
-        void Load(const SE::FlatBuffers::Node * pRoot);
-        ret_code_t LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode * pDstNode);
-
+        void Load(const Settings & oSettings);
+        void Load(const SE::FlatBuffers::Node * pRoot, const Settings & oSettings);
+        ret_code_t LoadNode(const SE::FlatBuffers::Node * pSrcNode,
+                            TSceneNode * pDstNode,
+                            const Settings & oSettings);
 
         public:
 
-        SceneTree(const std::string & sName, const rid_t new_rid);
+        SceneTree(const std::string & sName, const rid_t new_rid, const Settings & oSettings = {});
         ~SceneTree() noexcept;
 
         TSceneNode * Create(const std::string_view sNewName = "");
