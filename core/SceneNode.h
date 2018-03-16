@@ -57,6 +57,7 @@ template <class ... TGeom> class SceneNode {
         bool                    SetName(std::string_view sNewName);
         void                    Print(const size_t indent);
         TSceneTree            * GetScene() const;
+        template <class T>  T * GetEntity(const size_t index);
 
         //template <class T> void Apply(T & functor);
         /*      TODO

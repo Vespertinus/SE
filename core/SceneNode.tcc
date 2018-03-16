@@ -191,5 +191,20 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         BuildFullName(sFullName, sName);
 }
 
+template <class ... TGeom >
+        template <class T>
+                T * SceneNode<TGeom ...>::GetEntity(const size_t index) {
+
+        if (index >= vRenderEntity.size()) {
+                log_w("index '{}' exceed entity count '{}', node '{}'",
+                                index,
+                                vRenderEntity.size(),
+                                sFullName);
+                return nullptr;
+        }
+
+        return std::get<T *>(vRenderEntity[index]);
+}
+
 
 }
