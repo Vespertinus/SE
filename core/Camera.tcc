@@ -227,11 +227,14 @@ void Camera::UpdateProjection() const {
 
 void Camera::SetZoom(const float new_zoom) {
         zoom = new_zoom;
+        float min_dim = std::min(oSettings.width, oSettings.height);
+        target_length = min_dim / zoom;
 }
 
 
 void Camera::Zoom(const float factor) {
-        zoom *= factor;
+        target_length /= factor;
+        UpdateZoom();
 }
 
 
