@@ -107,6 +107,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 
         oDimensions.first   = oTextureStock.width;
         oDimensions.second  = oTextureStock.height;
+        gl_type             = oTextureStock.gl_type;
 }
 
 
@@ -119,6 +120,10 @@ template <class StoreStrategyList, class LoadStrategyList> uint32_t Texture<Stor
 template <class StoreStrategyList, class LoadStrategyList> const Dimensions & Texture<StoreStrategyList, LoadStrategyList>::GetDimensions() const {
 
         return oDimensions;
+}
+
+template <class StoreStrategyList, class LoadStrategyList> uint32_t Texture<StoreStrategyList, LoadStrategyList>::Type() const {
+        return gl_type;
 }
 
 /*

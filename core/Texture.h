@@ -6,6 +6,7 @@ namespace SE {
 
 typedef std::pair<uint16_t, uint16_t> Dimensions;
 
+//TODO store settings inside texture for updating later;
 
 
 template <class StoreStrategyList, class LoadStrategyList> class Texture : public ResourceHolder {
@@ -15,6 +16,9 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
 
         Dimensions  oDimensions;
         uint32_t    id;
+        uint32_t    gl_type;
+        //format compressed type | uncompressed
+        //destination (unit index) from settings inside material
 
 
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void
@@ -51,7 +55,9 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
         ~Texture() noexcept;
 
         uint32_t GetID() const;
+        uint32_t Type() const;
         const Dimensions & GetDimensions() const;
+        //Bind() const;
 
 
 };

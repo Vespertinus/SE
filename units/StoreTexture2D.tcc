@@ -82,6 +82,8 @@ ret_code_t StoreTexture2D::Store(TextureStock & oTextureStock, uint32_t & id) {
 
         log_d("is tex = {}", glIsTexture(_id));
 
+        oTextureStock.gl_type = GL_TEXTURE_2D;
+
         //Calc stat
         /*
         uint8_t min_alpha = std::numeric_limits<uint8_t>::max();

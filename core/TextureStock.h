@@ -14,6 +14,12 @@ struct TextureStock {
         uint8_t   * raw_image;
         uint32_t    raw_image_size;
 
+        //GL_RGB, GL_BGRA and so on
+        int        color_order;
+
+        //texture type: GL_TEXTURE_2D etc
+        uint32_t    gl_type;
+
         uint16_t    width;
         uint16_t    height;
 
@@ -24,8 +30,6 @@ struct TextureStock {
         uint8_t     compressed;
 
 
-        //GL_RGB, GL_BGRA and so on
-        int        color_order;
 
         ~TextureStock() throw() { }
 };
