@@ -26,11 +26,13 @@
 #include <ResourceHolder.h>
 #include <ResourceManager.h>
 
+
 #include <TextureStock.h>
 #include <TGALoader.h>
 #include <OpenCVImgLoader.h>
 #include <Texture.h>
 #include <StoreTexture2D.h>
+
 
 namespace SE {
 
@@ -41,6 +43,9 @@ typedef LOKI_TYPELIST_1(StoreTexture2D)                                 TextureS
 typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture;
 
 }
+
+#include <ShaderComponent.h>
+#include <ShaderProgram.h>
 
 #include <MeshStock.h>
 #include <Mesh.h>
@@ -70,7 +75,12 @@ typedef SceneTree<TMesh *> TSceneTree;
 
 namespace SE {
 
-typedef LOKI_TYPELIST_3(TTexture, TMesh, TSceneTree)                    TResourseList;
+typedef LOKI_TYPELIST_5(
+                TTexture,
+                TMesh,
+                TSceneTree,
+                ShaderComponent,
+                ShaderProgram)                                          TResourseList;
 typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourceManager;
 
 
