@@ -11,11 +11,13 @@ class StrID {
         public:
         StrID(const std::string_view sVal);
         StrID(const std::string & sVal);
-        StrID(char const * data, const uint32_t size);
+        StrID(const char * data, const uint32_t size);
+        StrID(const char * data);
 
         bool operator == (const StrID rhs) const noexcept;
         operator uint64_t() const noexcept;
 
+        friend std::ostream & operator<< (std::ostream& stream, const StrID & obj);
 };
 
 inline StrID::StrID(const std::string_view sVal) {
@@ -32,6 +34,9 @@ inline StrID::StrID(char const * data, const uint32_t size) {
         hash = std::hash<std::string_view>{}(std::string_view(data, size));
 }
 
+inline StrID::StrID(const char * data) : StrID(std::string_view(data)) {
+}
+
 inline bool StrID::operator == (const StrID rhs) const noexcept {
         return hash == rhs.hash;
 }
@@ -39,6 +44,12 @@ inline bool StrID::operator == (const StrID rhs) const noexcept {
 inline StrID::operator uint64_t() const noexcept {
         return hash;
 }
+
+std::ostream & operator<< (std::ostream& stream, const StrID & obj) {
+        stream << obj.hash;
+        return stream;
+}
+
 
 } //namespace SE
 
