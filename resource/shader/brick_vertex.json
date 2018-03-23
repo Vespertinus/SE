@@ -1,0 +1,32 @@
+{
+  type: VERTEX,
+  source: [
+    "#version 140\n",
+    "in vec4 MCvertex;\n",
+    "in vec3 MCnormal;\n",
+    "uniform mat4 MVMatrix;\n",
+    "uniform mat4 MVPMatrix;\n",
+    "uniform mat3 NormalMatrix;\n",
+    "uniform vec3 LightPosition;\n",
+    "const float SpecularContribution = 0.3;\n",
+    "const float DiffuseContribution = 1.0 - SpecularContribution;\n",
+    "out float LightIntensity;\n",
+    "out vec2 MCposition;\n",
+    "void main() {\n",
+    "        vec3 ecPosition = vec3(MVMatrix * MCvertex);\n",
+    "        vec3 tnorm = normalize(NormalMatrix * MCnormal);\n",
+    "        vec3 lightVec = normalize(LightPosition - ecPosition);\n",
+    "        vec3 reflectVec = reflect(-lightVec, tnorm);\n",
+    "        vec3 viewVec = normalize(-ecPosition);\n",
+    "        float diffuse = max(dot(lightVec, tnorm), 0.0);\n",
+    "        float spec = 0.0;\n",
+    "        if (diffuse > 0.0) {\n",
+    "                spec = max(dot(reflectVec, viewVec), 0.0);\n",
+    "                spec = pow(spec, 16.0);\n",
+    "        }\n",
+    "        LightIntensity = DiffuseContribution * diffuse + SpecularContribution * spec;\n",
+    "        MCposition = MCvertex.xy;\n",
+    "        gl_Position = MVPMatrix * MCvertex;\n",
+    "}\n"
+  ]
+}

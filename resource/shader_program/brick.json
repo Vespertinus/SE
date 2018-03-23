@@ -1,0 +1,9 @@
+{
+        "vertex" : {
+                "name" : "brick_vertex.sesl"
+        },
+        "fragment" : {
+                "name" : "brick_frag.sesl"
+        }
+}
+

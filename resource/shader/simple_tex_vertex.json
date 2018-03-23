@@ -1,0 +1,19 @@
+
+{
+  type: VERTEX,
+  source: [
+    "#version 130\n",
+    "in vec4 MCvertex;\n",
+    "//in vec3 MCnormal;\n",
+    "//in vec2 TexCoord;\n",
+
+    "uniform mat4 MVPMatrix;\n",
+
+    "//out vec2 CurTexCoord;\n",
+
+    "void main() {\n",
+    "        gl_TexCoord[0] = gl_MultiTexCoord0;\n",
+    "        gl_Position = MVPMatrix * MCvertex;\n",
+    "}\n"
+  ]
+}

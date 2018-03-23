@@ -1,0 +1,16 @@
+{
+  type: FRAGMENT,
+  source: [
+    "#version 130\n",
+    "//in vec2 CurTexCoord;\n",
+
+    "uniform sampler2D DiffuseTex;\n",
+    
+    "out vec4 FragColor;\n",
+    "void main() {\n",
+    "        //FragColor = texture(DiffuseTex, CurTexCoord);\n",
+    "        FragColor = texture(DiffuseTex, gl_TexCoord[0].xy);\n",
+    "        //FragColor = vec4(gl_TexCoord[0].xy, 1, 1);\n",
+    "}\n"
+  ]
+}
