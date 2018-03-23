@@ -26,7 +26,7 @@ class Camera {
                    float       near_clip;
                    float	far_clip;
                    uint8_t     projection;
-                   */    
+                   */
 
         };
 
@@ -45,6 +45,10 @@ class Camera {
         float           zoom,
                         /** zooming target max size  */
                         target_length;
+
+        //TODO move calculation to matrix
+        glm::mat4       mModelView;
+        glm::mat4       mModelViewProjection;
 
         BaseData        oSettings;
         Frustum         oFrustum;
@@ -76,6 +80,8 @@ class Camera {
         void Zoom(const float factor);
         void ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox);
         void ZoomTo(const float width);
+        const glm::mat4 & GetMVMatrix();
+        const glm::mat4 & GetMVPMatrix();
 
 };
 
