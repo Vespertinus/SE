@@ -1,4 +1,5 @@
 
+#include <fstream>
 #include <GLUtil.h>
 
 namespace SE {

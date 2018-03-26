@@ -40,12 +40,12 @@ inline StrID::StrID(const char * data) : StrID(std::string_view(data)) {
 inline bool StrID::operator == (const StrID rhs) const noexcept {
         return hash == rhs.hash;
 }
-        
+
 inline StrID::operator uint64_t() const noexcept {
         return hash;
 }
 
-std::ostream & operator<< (std::ostream& stream, const StrID & obj) {
+inline std::ostream & operator<< (std::ostream& stream, const StrID & obj) {
         stream << obj.hash;
         return stream;
 }
