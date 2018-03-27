@@ -1,0 +1,9 @@
+{
+        "vertex" : {
+                "name" : "simple_tex_vertex.sesl"
+        },
+        "fragment" : {
+                "name" : "hsl_color_blend.sesl"
+        }
+}
+
