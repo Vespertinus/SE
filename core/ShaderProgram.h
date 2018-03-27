@@ -65,7 +65,7 @@ class ShaderProgram : public ResourceHolder {
         bool                    HasVariable(const StrID name) const;
         ret_code_t              SetTexture(const StrID name, const TTexture * pTex);
         ret_code_t              SetTexture(const TextureUnit unit_index, const TTexture * pTex);
-        //ret_code_t              Validate() const; //check that all variables set ???
+        //ret_code_t              Validate() const; //check that all variables set via bitset + location, texture ???
 };
 
 } //namespace SE

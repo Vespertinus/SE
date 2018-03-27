@@ -57,12 +57,6 @@ template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
 }
 
 template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
-        Find(const std::string_view sName) const {
-
-        return Find(StrID(sName));
-}
-
-template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
         GetRoot() const {
 
         return &oRoot;

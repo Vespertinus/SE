@@ -10,6 +10,8 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
 
         public:
 
+        using TSceneNode = SceneNode<TGeom...>;
+
         //TODO rewrite on TGeom::Settings holder for each type of settings
         struct Settings {
                 //StoreTexture2D::Settings;
@@ -18,7 +20,6 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
 
         private:
 
-        using TSceneNode = SceneNode<TGeom...>;
 
         TSceneNode                              oRoot;
         std::unordered_map<StrID, TSceneNode *> mNamedNodes;
@@ -37,7 +38,6 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
         TSceneNode * Create(const std::string_view sNewName = "");
         TSceneNode * Create(TSceneNode * pParent, const std::string_view sNewName = "");
         //TSceneNode * CloneNode(TSceneNode * pNode);
-        TSceneNode * Find(const std::string_view sName) const;
         TSceneNode * Find(const StrID sid) const;
         TSceneNode * GetRoot() const;
         //Apply (visitor, recursive = false)

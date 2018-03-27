@@ -58,6 +58,7 @@ template <class ... TGeom> class SceneNode {
         void                    Print(const size_t indent);
         TSceneTree            * GetScene() const;
         template <class T>  T * GetEntity(const size_t index);
+        const Transform       & GetTransform() const;
 
         //template <class T> void Apply(T & functor);
         /*      TODO

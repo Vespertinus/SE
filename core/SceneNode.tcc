@@ -206,5 +206,10 @@ template <class ... TGeom >
         return std::get<T *>(vRenderEntity[index]);
 }
 
+template <class ... TGeom > const Transform & SceneNode<TGeom ...>::
+        GetTransform() const {
+
+        return oTransform;
+}
 
 }
