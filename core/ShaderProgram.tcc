@@ -135,18 +135,19 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
 
         glGetProgramiv(gl_id, GL_LINK_STATUS, &status);
         if (auto ret = CheckOpenGLError(); ret != uSUCCESS || !status) {
-                int length = 0;
-                int res_length;
-                glGetProgramiv(gl_id, GL_INFO_LOG_LENGTH, &length);
-                if (length > 0) {
-                        std::string sOutput;
-                        sOutput.resize(length);
-                        glGetProgramInfoLog(gl_id, length, &res_length, sOutput.data());
-                        log_e("shader program infolog: \n{}", sOutput);
-                }
+                PrintInfoLog("link shader program", gl_id);
 
                 glDeleteProgram(gl_id);
                 throw (std::runtime_error( "ShaderProgram::Load: failed to link"));
+        }
+
+        glValidateProgram(gl_id);
+        glGetProgramiv(gl_id, GL_VALIDATE_STATUS, &status);
+        if (auto ret = CheckOpenGLError(); ret != uSUCCESS || !status) {
+                PrintInfoLog("validate shader program", gl_id);
+
+                glDeleteProgram(gl_id);
+                throw (std::runtime_error( "ShaderProgram::Load: failed to validate"));
         }
 
         glUseProgram(gl_id);
