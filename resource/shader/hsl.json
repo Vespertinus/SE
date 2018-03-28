@@ -3,7 +3,7 @@
   source: [
     "#version 130\n",
     "//based on http://www.chilliant.com/rgb2hsv.html\n",
-    
+
     "const float Epsilon = 1e-10;\n",
 
     "vec3 HUE2RGB(float hue) {\n",
@@ -26,7 +26,7 @@
     "   float H = abs((Q.w - Q.y) / (6 * C + Epsilon) + Q.z);\n",
     "   return vec3(H, C, Q.x);\n",
     "}\n",
-    
+
     "vec3 HSL2RGB(vec3 HSLColor) {\n",
     "   vec3 RGBColor = HUE2RGB(HSLColor.x);\n",
     "    float C = (1 - abs(2 * HSLColor.z - 1)) * HSLColor.y;\n",

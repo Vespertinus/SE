@@ -6,16 +6,16 @@
   source: [
     "#version 130\n",
 
-    "uniform sampler2D DiffuseTex;\n",
-    "uniform vec3      HSLMainBlendColor;\n",
-    "uniform vec3      HSLSecondBlendColor;\n",
-    "uniform vec3      HSLBaseColor;\n",
+    "uniform lowp sampler2D DiffuseTex;\n",
+    "uniform lowp vec3      HSLMainBlendColor;\n",
+    "uniform lowp vec3      HSLSecondBlendColor;\n",
+    "uniform lowp vec3      HSLBaseColor;\n",
 
     "out vec4 FragColor;\n",
 
     "vec3 RGB2HSL(vec3 RGBColor);\n",
     "vec3 HSL2RGB(vec3 HSLColor);\n",
-    "const float dt = 0.01;\n",
+    "const lowp float dt = 0.01;\n",
 
     "void main() {\n",
     "\n",
