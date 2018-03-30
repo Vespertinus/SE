@@ -71,5 +71,40 @@ static inline void RGb2HSL(const glm::vec3 & RGBColor, glm::vec3 & HSLColor) {
         HSLColor = glm::vec3(HCVColor.x, Saturation, L);
 }
 
+static inline void PringGLInfo() {
+
+        int val;
+        int gl_major, gl_minor;
+        
+        glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
+        glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
+        auto * pVendor = glGetString(GL_VENDOR);
+        auto * pRenderer = glGetString(GL_RENDERER);
+
+        log_d("OpenGL version: {}.{}, vendor: '{}', renderer: '{}'", gl_major, gl_minor, pVendor, pRenderer);
+
+        glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &val);
+        log_d("GL_MAX_VERTEX_ATTRIBS: {}", val);
+        glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &val);
+        log_d("GL_MAX_UNIFORM_BUFFER_BINDINGS: {}", val);
+        
+        glGetIntegerv(GL_MAX_VERTEX_UNIFORM_BLOCKS, &val);
+        log_d("GL_MAX_VERTEX_UNIFORM_BLOCKS: {}", val);
+        glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_BLOCKS, &val);
+        log_d("GL_MAX_GEOMETRY_UNIFORM_BLOCKS: {}", val);
+        glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS, &val);
+        log_d("GL_MAX_FRAGMENT_UNIFORM_BLOCKS: {}", val);
+        
+        glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &val);
+        log_d("GL_MAX_UNIFORM_BLOCK_SIZE: {}", val);
+
+        glGetIntegerv(GL_NUM_EXTENSIONS, &val);
+        log_d("{} extensions supported", val);
+
+        for (auto i = 0; i < val; ++i) {
+                log_d("'{}'", glGetStringi(GL_EXTENSIONS, i));
+        }
+}
+
 }
 #endif
