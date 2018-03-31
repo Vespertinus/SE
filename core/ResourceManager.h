@@ -15,7 +15,7 @@ namespace SE {
 /**
  LRU
  Limit size for each resource type
- ref count 
+ ref count
  */
 template < class ResourceList > class ResourceManager {
 
@@ -23,7 +23,7 @@ template < class ResourceList > class ResourceManager {
   protected:
 
   template < class R> struct Holder : public std::unordered_map <rid_t, R *> { };
-  
+
   typedef Loki::GenScatterHierarchy<ResourceList, Holder> TResourceStorage;
 
 
@@ -48,7 +48,7 @@ template < class ResourceList > class ResourceManager {
   template <class Resource> bool IsLoaded(const std::string & sPath) const;
   template <class Resource> void Clear();
 
-}; 
+};
 
 } // namespace SE
 

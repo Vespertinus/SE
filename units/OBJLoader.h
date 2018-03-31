@@ -16,6 +16,7 @@ class OBJLoader {
                };
 
                 std::map <std::string, ShapeSettings> mShapesOptions;
+                StoreTexture2D::Settings oTex2DSettings;
         };
         typedef Settings TChild;
 

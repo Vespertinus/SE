@@ -33,7 +33,6 @@
 namespace SE {
 
 typedef LOKI_TYPELIST_2(TGALoader, OpenCVImgLoader)                     TextureLoadStrategyList;
-//typedef LOKI_TYPELIST_1(OpenCVImgLoader)                                TextureLoadStrategyList;
 typedef LOKI_TYPELIST_1(StoreTexture2D)                                 TextureStoreStrategyList;
 typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture;
 

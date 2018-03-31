@@ -19,10 +19,10 @@ template <class TTranspose> Camera::Camera(TTranspose & oTranspose, const CamSet
         oSettings((const BaseData &)oNewSettings),
         oFrustum(oNewSettings.oVolume) {
 
-                oTranspose.ReInit(&pos_x, &pos_y, &pos_z, 
-                                &rot_x, &rot_y, &rot_z, 
-                                &delta_x, &delta_y, &delta_z, 
-                                &oSettings.width, 
+                oTranspose.ReInit(&pos_x, &pos_y, &pos_z,
+                                &rot_x, &rot_y, &rot_z,
+                                &delta_x, &delta_y, &delta_z,
+                                &oSettings.width,
                                 &oSettings.height);
 }
 
@@ -33,7 +33,7 @@ Camera::~Camera() throw() { ;; }
 
 
 void Camera::Adjust() {
-  
+
         pos_x += delta_x;
         pos_y += delta_y;
         pos_z += delta_z;
@@ -72,8 +72,8 @@ void Camera::Adjust() {
         printf("m1(%f) m5(%f) m9 (%f) m13(%f)\n", new_mat[1], new_mat[5], new_mat[9],  new_mat[13]);
         printf("m2(%f) m6(%f) m10(%f) m14(%f)\n", new_mat[2], new_mat[6], new_mat[10], new_mat[14]);
         printf("m3(%f) m7(%f) m11(%f) m15(%f)\n", new_mat[3], new_mat[7], new_mat[11], new_mat[15]);
-        
-        glm::extractEulerAngleXYZ(mModel, angle_x, angle_y, angle_z);        
+
+        glm::extractEulerAngleXYZ(mModel, angle_x, angle_y, angle_z);
         printf("calc angles: x = %f, y = %f, z = %f\n", - glm::degrees(angle_x), glm::degrees(angle_y), glm::degrees(angle_z));
 
         glm::mat4 mRealMat = glm::make_mat4(mat);
@@ -85,7 +85,7 @@ void Camera::Adjust() {
         printf("m1(%f) m5(%f) m9 (%f) m13(%f)\n", new_mat2[1], new_mat2[5], new_mat2[9],  new_mat2[13]);
         printf("m2(%f) m6(%f) m10(%f) m14(%f)\n", new_mat2[2], new_mat2[6], new_mat2[10], new_mat2[14]);
         printf("m3(%f) m7(%f) m11(%f) m15(%f)\n", new_mat2[3], new_mat2[7], new_mat2[11], new_mat2[15]);
-        
+
         glm::extractEulerAngleXYZ(mRealMat, angle_x, angle_y, angle_z);
         printf("calc angles: x = %f, y = %f, z = %f\n", glm::degrees(angle_x), glm::degrees(angle_y), glm::degrees(angle_z));
 
@@ -95,7 +95,7 @@ void Camera::Adjust() {
 
 
 
-void Camera::UpdateSettings(const CamSettings_t & oNewSettings) { 
+void Camera::UpdateSettings(const CamSettings_t & oNewSettings) {
         oSettings = (const BaseData &)oNewSettings;
         oFrustum.SetVolume(oNewSettings.oVolume);
 }
@@ -104,10 +104,10 @@ void Camera::UpdateSettings(const CamSettings_t & oNewSettings) {
 
 template <class TTranspose> void Camera::UpdateTransposer(TTranspose & oTranspose) {
 
-	oTranspose.ReInit(&pos_x, &pos_y, &pos_z, 
-                    &rot_x, &rot_y, &rot_z, 
-                    &delta_x, &delta_y, &delta_z, 
-                    &oSettings.width, 
+	oTranspose.ReInit(&pos_x, &pos_y, &pos_z,
+                    &rot_x, &rot_y, &rot_z,
+                    &delta_x, &delta_y, &delta_z,
+                    &oSettings.width,
                     &oSettings.height);
 }
 
@@ -136,9 +136,16 @@ void Camera::UpdateDimension(const int32_t new_width, const int32_t new_height) 
 
 void Camera::SetPos(const float new_x, const float new_y, const float new_z) {
 
-  pos_x = new_x; 
-  pos_y = new_y;
-  pos_z = new_z;
+        pos_x = new_x;
+        pos_y = new_y;
+        pos_z = new_z;
+}
+
+void Camera::SetRotation(const float new_x, const float new_y, const float new_z) {
+
+        rot_x = new_x;
+        rot_y = new_y;
+        rot_z = new_z;
 }
 
 
@@ -161,7 +168,7 @@ void Camera::LookAt(const glm::vec3 & center) {
               angle_z;
 
         glm::extractEulerAngleXYZ(mModel, angle_x, angle_y, angle_z);
-        
+
         rot_x = -glm::degrees(angle_x);
         rot_y = glm::degrees(angle_y);
         rot_z = glm::degrees(angle_z);
@@ -169,8 +176,8 @@ void Camera::LookAt(const glm::vec3 & center) {
                 rot_z = 360 + rot_z;
         }
 
-        log_d("new angles: rot_x = {}, rot_y = {}, rot_z = {}, center x = {}, y = {}, z = {}", 
-                        rot_x, rot_y, rot_z, 
+        log_d("new angles: rot_x = {}, rot_y = {}, rot_z = {}, center x = {}, y = {}, z = {}",
+                        rot_x, rot_y, rot_z,
                         center.x, center.y, center.z);
 }
 
@@ -186,12 +193,12 @@ void Camera::UpdateProjection() const {
 
                 case Frustum::uPERSPECTIVE:
                         /*
-                        gluPerspective(oVolume.fov, 
+                        gluPerspective(oVolume.fov,
                                        //(GLfloat)oSettings.width / (GLfloat) oSettings.height,
                                        oVolume.aspect,
                                        oVolume.near_clip,
                                        oVolume.far_clip);
-                        */                                        
+                        */
 
                         glFrustum(oVolume.left, oVolume.right, oVolume.bottom, oVolume.top, oVolume.near_clip, oVolume.far_clip);
                         break;
@@ -199,11 +206,11 @@ void Camera::UpdateProjection() const {
                 case Frustum::uORTHO:
                         //TODO calc zoom
                         //glOrtho(oVolume.left /* * scale */, oVolume.right /* * scale */, oVolume.bottom /* * scale*/, oVolume.top /* * scale */, oVolume.near_clip, oVolume.far_clip);
-                        glOrtho ((- oSettings.width / 2) / zoom, 
-                                 (oSettings.width / 2) / zoom, 
-                                 (- oSettings.height / 2) / zoom, 
-                                 (oSettings.height / 2) / zoom, 
-                                 oVolume.near_clip, 
+                        glOrtho ((- oSettings.width / 2) / zoom,
+                                 (oSettings.width / 2) / zoom,
+                                 (- oSettings.height / 2) / zoom,
+                                 (oSettings.height / 2) / zoom,
+                                 oVolume.near_clip,
                                  oVolume.far_clip);
                         //glOrtho (0, oSettings.width, oSettings.height, 0, oVolume.near_clip, oVolume.far_clip);
                         break;
@@ -252,12 +259,17 @@ void Camera::ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox)
 
         log_d("bbox len = {}", glm::distance(max, min) );
 //*/
-        
+
         target_length = std::max({ std::abs(len.x), std::abs(len.y), std::abs(len.z) });
-        
+
         UpdateZoom();
 }
 
+void Camera::ZoomTo(const float width) {
+
+        target_length = width;
+        UpdateZoom();
+}
 
 } //namhespace SE
 
