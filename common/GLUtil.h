@@ -98,6 +98,14 @@ static inline void PringGLInfo() {
         glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &val);
         log_d("GL_MAX_UNIFORM_BLOCK_SIZE: {}", val);
 
+        glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &val);
+        log_d("GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS: {}", val);
+        glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &val);
+        log_d("GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: {}", val);
+
+        glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &val);
+        log_d("GL_MAX_TEXTURE_BUFFER_SIZE: {}", val);
+
         glGetIntegerv(GL_NUM_EXTENSIONS, &val);
         log_d("{} extensions supported", val);
 
