@@ -71,7 +71,7 @@ static inline void RGb2HSL(const glm::vec3 & RGBColor, glm::vec3 & HSLColor) {
         HSLColor = glm::vec3(HCVColor.x, Saturation, L);
 }
 
-static inline void PringGLInfo() {
+static inline void PrintGLInfo() {
 
         int val;
         int gl_major, gl_minor;
