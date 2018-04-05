@@ -61,7 +61,7 @@ set(CMAKE_CXX_FLAGS             "${COMMON_FLAGS} ${COMMON_CXX_FLAGS} ${CXX_WARNI
 set(CMAKE_EXE_LINKER_FLAGS      "${COMMON_FLAGS} -Wl,--hash-style=gnu")
 
 
-set(DEBUG_FLAGS                 "-O0")
+set(DEBUG_FLAGS                 "-O0 -DDEBUG_BUILD")
 set(RELEASE_FLAGS               "-Og -finline-small-functions")
 
 # Release build type
