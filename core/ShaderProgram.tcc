@@ -13,23 +13,46 @@ static const std::unordered_map<StrID, TextureUnit> mTextureUnitMapping = {
         { "CustomTex",          TextureUnit::CUSTOM }
 };
 
+static const std::unordered_map<uint32_t, uint32_t> mSamplers2Textures = {
+        { GL_SAMPLER_1D,                        GL_TEXTURE_1D},
+        { GL_SAMPLER_2D,                        GL_TEXTURE_2D },
+        { GL_SAMPLER_3D,                        GL_TEXTURE_3D },
+        { GL_SAMPLER_CUBE,                      GL_TEXTURE_CUBE_MAP },
+        { GL_SAMPLER_1D_SHADOW,                 GL_TEXTURE_1D },
+        { GL_SAMPLER_2D_SHADOW,                 GL_TEXTURE_2D },
+        { GL_SAMPLER_1D_ARRAY,                  GL_TEXTURE_1D_ARRAY },
+        { GL_SAMPLER_2D_ARRAY,                  GL_TEXTURE_2D_ARRAY },
+        { GL_SAMPLER_1D_ARRAY_SHADOW,           GL_TEXTURE_1D_ARRAY },
+        { GL_SAMPLER_2D_ARRAY_SHADOW,           GL_TEXTURE_2D_ARRAY },
+        { GL_SAMPLER_2D_MULTISAMPLE,            GL_TEXTURE_2D_MULTISAMPLE },
+        { GL_SAMPLER_2D_MULTISAMPLE_ARRAY,      GL_TEXTURE_2D_MULTISAMPLE_ARRAY },
+        { GL_SAMPLER_CUBE_SHADOW,               GL_TEXTURE_CUBE_MAP },
+        { GL_SAMPLER_BUFFER,                    GL_TEXTURE_BUFFER },
+        { GL_SAMPLER_2D_RECT,                   GL_TEXTURE_RECTANGLE },
+        { GL_SAMPLER_2D_RECT_SHADOW,            GL_TEXTURE_RECTANGLE },
+};
+
 static bool IsTexture(uint32_t gl_type) {
 
         bool res = false;
 
         switch (gl_type) {
-
-                case GL_TEXTURE_1D:
-                case GL_TEXTURE_2D:
-                case GL_TEXTURE_3D:
-                case GL_TEXTURE_CUBE_MAP:
-                case GL_TEXTURE_RECTANGLE:
-                case GL_TEXTURE_1D_ARRAY:
-                case GL_TEXTURE_2D_ARRAY:
-                case GL_TEXTURE_CUBE_MAP_ARRAY:
-                case GL_TEXTURE_BUFFER:
-                case GL_TEXTURE_2D_MULTISAMPLE:
-                case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+                case GL_SAMPLER_1D:
+                case GL_SAMPLER_2D:
+                case GL_SAMPLER_3D:
+                case GL_SAMPLER_CUBE:
+                case GL_SAMPLER_1D_SHADOW:
+                case GL_SAMPLER_2D_SHADOW:
+                case GL_SAMPLER_1D_ARRAY:
+                case GL_SAMPLER_2D_ARRAY:
+                case GL_SAMPLER_1D_ARRAY_SHADOW:
+                case GL_SAMPLER_2D_ARRAY_SHADOW:
+                case GL_SAMPLER_2D_MULTISAMPLE:
+                case GL_SAMPLER_2D_MULTISAMPLE_ARRAY:
+                case GL_SAMPLER_CUBE_SHADOW:
+                case GL_SAMPLER_BUFFER:
+                case GL_SAMPLER_2D_RECT:
+                case GL_SAMPLER_2D_RECT_SHADOW:
                         res = true;
         }
 
@@ -117,6 +140,7 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
                 throw (std::runtime_error( "ShaderProgram::Load: failed to create gl program, name: " + sName));
         }
 
+        //TODO hierarchical dependencies are not yet supported
         glAttachShader(gl_id, pVertexShader->Get());
         const auto & vVertDependencies = pVertexShader->GetDependencies();
         for (auto * pItem : vVertDependencies) {
@@ -133,18 +157,33 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
 
         glLinkProgram(gl_id);
 
+        glDetachShader(gl_id, pVertexShader->Get());
+        for (auto * pItem : vVertDependencies) {
+                glDetachShader(gl_id, pItem->Get());
+        }
+        glDetachShader(gl_id, pFragmentShader->Get());
+        for (auto * pItem : vFragDependencies) {
+                glDetachShader(gl_id, pItem->Get());
+        }
+
+
         glGetProgramiv(gl_id, GL_LINK_STATUS, &status);
         if (auto ret = CheckOpenGLError(); ret != uSUCCESS || !status) {
-                PrintInfoLog("link shader program", gl_id);
+                PrintProgramInfoLog("link shader program", gl_id);
 
                 glDeleteProgram(gl_id);
                 throw (std::runtime_error( "ShaderProgram::Load: failed to link"));
         }
+#ifdef DEBUG_BUILD
+        else {
+                PrintProgramInfoLog("link shader program", gl_id);
+        }
+#endif
 
         glValidateProgram(gl_id);
         glGetProgramiv(gl_id, GL_VALIDATE_STATUS, &status);
         if (auto ret = CheckOpenGLError(); ret != uSUCCESS || !status) {
-                PrintInfoLog("validate shader program", gl_id);
+                PrintProgramInfoLog("validate shader program", gl_id);
 
                 glDeleteProgram(gl_id);
                 throw (std::runtime_error( "ShaderProgram::Load: failed to validate"));
@@ -197,6 +236,19 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
                                                         "', can't find proper texture unit, shader program name: " +
                                                         sName));
                         }
+                        auto it2 = mSamplers2Textures.find(oVar.type);
+                        if (it2 == mSamplers2Textures.end()) {
+                                glDeleteProgram(gl_id);
+                                throw (std::runtime_error(
+                                                        "ShaderProgram::Load: unknown sampler type: " +
+                                                        std::to_string(oVar.type) +
+                                                        ", name: '" +
+                                                        oVar.sName +
+                                                        "', shader program name: " +
+                                                        sName));
+
+                        }
+                        oVar.type = it2->second;
 
                         glUniform1iv(oVar.location, 1, reinterpret_cast<const int32_t *>(&it->second));
                         oVar.unit_index = it->second;

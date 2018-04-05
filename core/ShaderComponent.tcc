@@ -104,19 +104,16 @@ void ShaderComponent::Load(const SE::FlatBuffers::ShaderComponent * pShader, con
 
         glGetShaderiv(gl_id, GL_COMPILE_STATUS, &status);
         if (auto ret = CheckOpenGLError(); ret != uSUCCESS || !status) {
-                int length = 0;
-                int res_length;
-                glGetShaderiv(gl_id, GL_INFO_LOG_LENGTH, &length);
-                if (length > 0) {
-                        std::string sOutput;
-                        sOutput.resize(length);
-                        glGetShaderInfoLog(gl_id, length, &res_length, sOutput.data());
-                        log_e("shader infolog: \n{}", sOutput);
-                }
+                PrintShaderInfoLog("compile shader", gl_id);
 
                 glDeleteShader(gl_id);
                 throw (std::runtime_error( "ShaderComponent::Load: failed to compile"));
         }
+#ifdef DEBUG_BUILD
+        else {
+                PrintShaderInfoLog("compile shader", gl_id);
+        }
+#endif
         log_d("shader '{}' compiled from {} source lines", sName, source_lines_cnt);
 }
 

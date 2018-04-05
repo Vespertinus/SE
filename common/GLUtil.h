@@ -18,7 +18,8 @@ enum class TextureUnit : int32_t {
 
 
 #define CheckOpenGLError() CheckGLError(__FILE__, __LINE__)
-#define PrintInfoLog(msg, gl_id)  PrintGLInfoLog(msg, gl_id, __FILE__, __LINE__)
+#define PrintProgramInfoLog(msg, gl_id)  PrintGLProgramInfoLog(msg, gl_id, __FILE__, __LINE__)
+#define PrintShaderInfoLog(msg, gl_id)  PrintGLShaderInfoLog(msg, gl_id, __FILE__, __LINE__)
 
 static inline ret_code_t CheckGLError (const char * file, const int line) {
 
@@ -32,7 +33,7 @@ static inline ret_code_t CheckGLError (const char * file, const int line) {
         return res;
 }
 
-static inline void PrintGLInfoLog(std::string_view sMsg, const uint32_t gl_id, const char * file, const int line) {
+static inline void PrintGLProgramInfoLog(std::string_view sMsg, const uint32_t gl_id, const char * file, const int line) {
 
                 int length = 0;
                 int res_length;
@@ -41,6 +42,19 @@ static inline void PrintGLInfoLog(std::string_view sMsg, const uint32_t gl_id, c
                         std::string sOutput;
                         sOutput.resize(length);
                         glGetProgramInfoLog(gl_id, length, &res_length, sOutput.data());
+                        log_e("{}: infolog: ({}:{})\n{}", sMsg, file, line, sOutput);
+                }
+}
+
+static inline void PrintGLShaderInfoLog(std::string_view sMsg, const uint32_t gl_id, const char * file, const int line) {
+
+                int length = 0;
+                int res_length;
+                glGetShaderiv(gl_id, GL_INFO_LOG_LENGTH, &length);
+                if (length > 0) {
+                        std::string sOutput;
+                        sOutput.resize(length);
+                        glGetShaderInfoLog(gl_id, length, &res_length, sOutput.data());
                         log_e("{}: infolog: ({}:{})\n{}", sMsg, file, line, sOutput);
                 }
 }
