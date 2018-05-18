@@ -14,7 +14,6 @@ template <class StoreStrategyList, class LoadStrategyList>
                         const MeshSettings & oNewMeshSettings) :
                 ResourceHolder(new_rid, sName),
                 oMeshCtx{},
-                pTransform(nullptr),
                 oMeshSettings(oNewMeshSettings) {
 
         Import(oStoreStrategySettings, oLoadStrategySettings);
@@ -28,7 +27,6 @@ template <class StoreStrategyList, class LoadStrategyList>
                 const MeshSettings & oNewMeshSettings) :
         ResourceHolder(new_rid, sName),
         oMeshCtx{},
-        pTransform(nullptr),
         oMeshSettings(oNewMeshSettings) {
 
         Load(pMesh);
@@ -41,7 +39,6 @@ template <class StoreStrategyList, class LoadStrategyList>
                 const MeshSettings & oNewMeshSettings) :
         ResourceHolder(new_rid, sName),
         oMeshCtx{},
-        pTransform(nullptr),
         oMeshSettings(oNewMeshSettings) {
 
         boost::filesystem::path oPath(sName);
@@ -85,7 +82,10 @@ template <class StoreStrategyList, class LoadStrategyList>
                                      oNewMeshSettings) {
 }
 
-template <class StoreStrategyList, class LoadStrategyList> Mesh<StoreStrategyList, LoadStrategyList>::~Mesh() throw() { ;; }
+template <class StoreStrategyList, class LoadStrategyList> Mesh<StoreStrategyList, LoadStrategyList>::~Mesh() noexcept {
+
+        Clean();
+}
 
 
 
@@ -132,56 +132,25 @@ template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreSt
 
 template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
-                SetTransform(Transform const * const pNewTransform) {
-
-        pTransform = pNewTransform;
-}
-
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
                 DrawShape(const ShapeCtx & oShapeCtx) const {
 
-        if (oShapeCtx.buf_id < 1) {
-               return;
-        }
-
-        glBindBuffer(GL_ARRAY_BUFFER, oShapeCtx.buf_id);
-
         if (!oMeshSettings.ext_material) {
+                TRenderState::Instance().SetShaderProgram(oShapeCtx.pShader);
 
+                //TODO move into material manipulation
                 if (oShapeCtx.pTex != nullptr) {
-                        glBindTexture(GL_TEXTURE_2D, oShapeCtx.pTex->GetID());
+                        //glBindTexture(GL_TEXTURE_2D, oShapeCtx.pTex->GetID());
+                        TRenderState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, oShapeCtx.pTex);
                 }
-                else {
-                        glBindTexture(GL_TEXTURE_2D, 0);
-                }
-
-                glColor3f(1, 1, 1);
-
         }
 
-        glVertexPointer(3, GL_FLOAT,   oMeshCtx.stride, (const void*)0);
-        if (!oMeshCtx.skip_normals) {
-                glNormalPointer(GL_FLOAT,      oMeshCtx.stride, (const void*)(sizeof(float) * 3));
-                glTexCoordPointer(2, GL_FLOAT, oMeshCtx.stride, (const void*)(sizeof(float) * 6));
-        }
-        else {
-                glTexCoordPointer(2, GL_FLOAT, oMeshCtx.stride, (const void*)(sizeof(float) * 3));
-        }
-
-        glDrawArrays(GL_TRIANGLES, 0, 3 * oShapeCtx.triangles_cnt);
+        TRenderState::Instance().Draw(oShapeCtx.vao_id, oShapeCtx.triangles_cnt, oShapeCtx.gl_index_type);
 }
 
 
 template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 Draw() const {
-
-        glEnableClientState(GL_VERTEX_ARRAY);
-        if (!oMeshCtx.skip_normals) {
-                glEnableClientState(GL_NORMAL_ARRAY);
-        }
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
         for (auto & oShapeCtx : oMeshCtx.vShapes) {
                 DrawShape(oShapeCtx);
@@ -196,12 +165,6 @@ template <class StoreStrategyList, class LoadStrategyList>
         if (shape_ind >= oMeshCtx.vShapes.size()) {
                 return;
         }
-
-        glEnableClientState(GL_VERTEX_ARRAY);
-        if (!oMeshCtx.skip_normals) {
-                glEnableClientState(GL_NORMAL_ARRAY);
-        }
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
         DrawShape(oMeshCtx.vShapes[shape_ind]);
 }
@@ -319,21 +282,20 @@ template <class StoreStrategyList, class LoadStrategyList>
         void Mesh<StoreStrategyList, LoadStrategyList>::
                 Load(const SE::FlatBuffers::Mesh * pMesh) {
 
-        auto * pShapesFB        = pMesh->shapes();
-        size_t shapes_cnt       = pShapesFB->Length();
-        auto * pMin             = pMesh->min();
-        auto * pMax             = pMesh->max();
+        auto                  * pShapesFB        = pMesh->shapes();
+        size_t                  shapes_cnt       = pShapesFB->Length();
+        auto                  * pMin             = pMesh->min();
+        auto                  * pMax             = pMesh->max();
 
+        uint32_t                index_buf_id;
+        std::vector<uint32_t>   vBuffersGLType;
+        std::vector<uint32_t>   vBuffersID;
 
-        oMeshCtx.stride         = ((pMesh->skip_normals()) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
         oMeshCtx.min            = glm::vec3(pMin->x(), pMin->y(), pMin->z());
         oMeshCtx.max            = glm::vec3(pMax->x(), pMax->y(), pMax->z());
-        oMeshCtx.skip_normals   = pMesh->skip_normals();
 
-        log_d("mesh: shape cnt = {}, stride = {}, skip_normals = {}, min ({}, {}, {}), max({}, {}, {})",
+        log_d("mesh: shape cnt = {}, min ({}, {}, {}), max({}, {}, {})",
                         shapes_cnt,
-                        oMeshCtx.stride,
-                        oMeshCtx.skip_normals,
                         oMeshCtx.min.x,
                         oMeshCtx.min.y,
                         oMeshCtx.min.z,
@@ -342,10 +304,26 @@ template <class StoreStrategyList, class LoadStrategyList>
                         oMeshCtx.max.z);
         log_d("ext_material = {}", oMeshSettings.ext_material);
 
-        for (size_t i = 0; i < shapes_cnt; ++i) {
+        auto LocalClean = [&index_buf_id, &vBuffersID](uint32_t cur_vao_id) {
+
+                glBindVertexArray(0);
+
+                if (index_buf_id) {
+                        glDeleteBuffers(1, &index_buf_id);
+                }
+                if (vBuffersID.size()) {
+                        glDeleteBuffers(vBuffersID.size(), &vBuffersID[0]);
+                }
+
+                if (cur_vao_id) {
+                        glDeleteVertexArrays(1, &cur_vao_id);
+                }
+        };
+
+        for (size_t shape_num = 0; shape_num < shapes_cnt; ++shape_num) {
 
                 ShapeCtx oShape{};
-                auto pCurShape          = pShapesFB->Get(i);
+                auto pCurShape          = pShapesFB->Get(shape_num);
                 auto * pNameFB          = pCurShape->name();
 
                 oShape.sName            = (pNameFB != nullptr) ? pNameFB->c_str() : "";
@@ -357,36 +335,230 @@ template <class StoreStrategyList, class LoadStrategyList>
 
                 auto * pTexNameFB       = pCurShape->texture();
                 std::string sTexPath    = (pTexNameFB != nullptr) ? pTexNameFB->c_str() : "";
-                if (!sTexPath.empty() && !oMeshSettings.ext_material) {
-                        //TODO tex settings ?
-                        oShape.pTex     = CreateResource<SE::TTexture>(sTexPath);
+
+                index_buf_id            = 0;
+                vBuffersID.clear();
+                vBuffersGLType.clear();
+
+                // ___Start___ FIXME basic material manipulation, move into separate class
+                if (!oMeshSettings.ext_material) {
+
+                        if (!sTexPath.empty()) {
+                                oShape.pTex     = CreateResource<SE::TTexture>(sTexPath);
+                                oShape.pShader  = CreateResource<SE::ShaderProgram>(
+                                                "resource/shader_program/simple_tex.sesp",
+                                                SE::ShaderProgram::Settings{"resource/shader/"}
+                                                );
+                        }
+                        else {
+                                oShape.pShader  = CreateResource<SE::ShaderProgram>(
+                                                "resource/shader_program/simple.sesp",
+                                                SE::ShaderProgram::Settings{"resource/shader/"}
+                                                );
+                        }
+                }
+                // ___End_____ FIXME basic material manipulation, move into separate class
+
+                uint32_t index_size             = 0;
+                uint32_t index_type_size        = 0;
+                const void * index_data         = nullptr;
+                SE::FlatBuffers::IndexBuffer index_type = pCurShape->index_type();
+
+                switch (index_type) {
+
+                        case SE::FlatBuffers::IndexBuffer::Uint8Vector:
+                                {
+                                        auto pIndexVec          = pCurShape->index_as_Uint8Vector()->data();
+                                        index_size              = pIndexVec->Length();
+                                        index_type_size         = sizeof(uint8_t);
+                                        index_data              = pIndexVec->Data();
+                                        oShape.gl_index_type    = GL_UNSIGNED_BYTE;
+                                }
+                                break;
+                        case SE::FlatBuffers::IndexBuffer::Uint16Vector:
+                                {
+                                        auto pIndexVec          = pCurShape->index_as_Uint16Vector()->data();
+                                        index_size              = pIndexVec->Length();
+                                        index_type_size         = sizeof(uint16_t);
+                                        index_data              = pIndexVec->Data();
+                                        oShape.gl_index_type    = GL_UNSIGNED_SHORT;
+                                }
+                                break;
+                        case SE::FlatBuffers::IndexBuffer::Uint32Vector:
+                                {
+                                        auto pIndexVec          = pCurShape->index_as_Uint32Vector()->data();
+                                        index_size              = pIndexVec->Length();
+                                        index_type_size         = sizeof(uint32_t);
+                                        index_data              = pIndexVec->Data();
+                                        oShape.gl_index_type    = GL_UNSIGNED_INT;
+                                }
+                                break;
+                        default:
+                                LocalClean(oShape.vao_id);
+                                Clean();
+                                throw(std::runtime_error("unknown IndexBuffer type: " +
+                                                        std::to_string(static_cast<uint8_t>(index_type)) +
+                                                        ", file: " +
+                                                        sName));
                 }
 
+                glGenVertexArrays(1, &oShape.vao_id);
+                glBindVertexArray(oShape.vao_id);
 
-                auto * pVertices        = pCurShape->vertices();
-
-                glGenBuffers(1, &oShape.buf_id);
-                glBindBuffer(GL_ARRAY_BUFFER, oShape.buf_id);
-                glBufferData(GL_ARRAY_BUFFER,
-                             pVertices->Length() * sizeof(float),
-                             pVertices->Data(),
+                glGenBuffers(1, &index_buf_id);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buf_id);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                             index_size * index_type_size,
+                             index_data,
                              GL_STATIC_DRAW);
 
-                log_d("shape[{}] name = '{}', triangles cnt = {}, buf_id = {}, texture id = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
-                                i,
+                log_d("index size = {}, type size = {}", index_size, index_type_size);
+
+                auto pVertices          = pCurShape->vertices();
+                auto pVerticesTypes     = pCurShape->vertices_type();
+                uint32_t buffers_cnt    = pVertices->Length();
+
+                if ((buffers_cnt != pVerticesTypes->Length()) || (buffers_cnt == 0)) {
+
+                        LocalClean(oShape.vao_id);
+                        Clean();
+                        throw(std::runtime_error("uneven vectors size, or empty vertex buffers, vertices size: " +
+                                                std::to_string(buffers_cnt) +
+                                                ", vertices types size: " +
+                                                 std::to_string(pVerticesTypes->Length()) ));
+                }
+
+                vBuffersGLType.resize(buffers_cnt, 0);
+                vBuffersID.resize(buffers_cnt, 0);
+                glGenBuffers(buffers_cnt, &vBuffersID[0]);
+
+                uint32_t buffer_size             = 0;
+                uint32_t buffer_type_size        = 0;
+                const void * buffer_data         = nullptr;
+
+                for (uint32_t i = 0; i < buffers_cnt; ++i) {
+                        auto buffer_type = static_cast<SE::FlatBuffers::VertexBuffer>(pVerticesTypes->Get(i));
+                        switch (buffer_type) {
+                                case SE::FlatBuffers::VertexBuffer::FloatVector:
+                                        {
+                                        auto pBufferVec  = static_cast<const SE::FlatBuffers::FloatVector *>(pVertices->Get(i))->data();
+                                        buffer_size      = pBufferVec->Length();
+                                        buffer_type_size = sizeof(float);
+                                        buffer_data      = pBufferVec->Data();
+                                        vBuffersGLType[i] = GL_FLOAT;
+                                        }
+                                        break;
+                                case SE::FlatBuffers::VertexBuffer::ByteVector:
+                                        {
+                                        auto pBufferVec  = static_cast<const SE::FlatBuffers::ByteVector *>(pVertices->Get(i))->data();
+                                        buffer_size      = pBufferVec->Length();
+                                        buffer_type_size = sizeof(uint8_t);
+                                        buffer_data      = pBufferVec->Data();
+                                        vBuffersGLType[i] = GL_UNSIGNED_BYTE;
+                                        }
+                                        break;
+
+                                case SE::FlatBuffers::VertexBuffer::Uint32Vector:
+                                        {
+                                        auto pBufferVec  = static_cast<const SE::FlatBuffers::Uint32Vector *>(pVertices->Get(i))->data();
+                                        buffer_size      = pBufferVec->Length();
+                                        buffer_type_size = sizeof(uint32_t);
+                                        buffer_data      = pBufferVec->Data();
+                                        vBuffersGLType[i] = GL_UNSIGNED_INT;
+                                        }
+                                        break;
+                                default:
+                                        LocalClean(oShape.vao_id);
+                                        Clean();
+                                        throw(std::runtime_error("unknown VertexBuffer type: " +
+                                                                std::to_string(static_cast<uint8_t>(buffer_type)) ));
+                        }
+
+                        /*
+                        if (buffer_size != index_size) {
+                                LocalClean(oShape.vao_id);
+                                Clean();
+                                throw(std::runtime_error("buffer[" +
+                                                        std::to_string(i) +
+                                                        "] size (" +
+                                                        std::to_string(buffer_size) +
+                                                        ") mismatch index size (" +
+                                                        std::to_string(index_size) +
+                                                        ")" ));
+                        }
+                        */
+
+                        glBindBuffer(GL_ARRAY_BUFFER, vBuffersID[i]);
+                        glBufferData(GL_ARRAY_BUFFER,
+                                        buffer_size * buffer_type_size,
+                                        buffer_data,
+                                        GL_STATIC_DRAW);
+
+                        log_d("buffer[{}] size = {}, type size = {}", i, buffer_size, buffer_type_size);
+                }
+
+                auto pAttributes = pCurShape->attributes();
+
+                for (uint32_t i = 0; i < pAttributes->Length(); ++i) {
+
+                        auto pCurAttrubute = pAttributes->Get(i);
+                        auto itLocation = mAttributeLocation.find(pCurAttrubute->name()->c_str());
+                        if (itLocation == mAttributeLocation.end()) {
+                                LocalClean(oShape.vao_id);
+                                Clean();
+                                throw(std::runtime_error("unknown vertex attribute name: '" +
+                                                        pCurAttrubute->name()->str() +
+                                                        "', shape num = " +
+                                                        std::to_string(shape_num) ));
+                        }
+                        std::uintptr_t offset = pCurAttrubute->offset();
+                        /*
+                        log_d("elem_size = {}, gl_type = {}, stride = {}, offset = {}",
+                                        pCurAttrubute->elem_size(),
+                                        vBuffersGLType[pCurAttrubute->buffer_ind()],
+                                        pCurShape->stride(),
+                                        offset);
+                        */
+                        glVertexAttribPointer(itLocation->second,
+                                        pCurAttrubute->elem_size(),
+                                        vBuffersGLType[pCurAttrubute->buffer_ind()],
+                                        false,
+                                        pCurShape->stride(), //FIXME move to buffer info after switching serialization from flatbuffers union to table
+                                        (const void *)offset);
+                        glEnableVertexAttribArray(itLocation->second);
+
+                }
+
+                glBindVertexArray(0);
+                glDeleteBuffers(1, &index_buf_id);
+                glDeleteBuffers(buffers_cnt, &vBuffersID[0]);
+
+                log_d("shape[{}] name = '{}', triangles cnt = {}, vao_id = {}, texture id = {}, buffers_cnt = {}, vert attributes cnt = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
+                                shape_num,
                                 oShape.sName,
                                 oShape.triangles_cnt,
-                                oShape.buf_id,
+                                oShape.vao_id,
                                 (oShape.pTex) ? oShape.pTex->GetID() : 0,
+                                buffers_cnt,
+                                pAttributes->Length(),
                                 oShape.min.x, oShape.min.y, oShape.min.z,
                                 oShape.max.x, oShape.max.y, oShape.max.z);
 
                 oMeshCtx.vShapes.emplace_back(std::move(oShape));
         }
-
 }
 
+template <class StoreStrategyList, class LoadStrategyList>
+        void Mesh<StoreStrategyList, LoadStrategyList>::
+                Clean() {
+
+        for (auto & oShape : oMeshCtx.vShapes) {
+
+                glDeleteVertexArrays(1, &oShape.vao_id);
+        }
 }
 
+
+}
 
 

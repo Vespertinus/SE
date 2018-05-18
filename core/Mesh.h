@@ -14,8 +14,6 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         typedef typename  LoadStrategyList::Head  TDefaultLoadStrategy;
 
         MeshCtx                 oMeshCtx;
-        Transform       const * pTransform; //TODO into iface struct
-
         MeshSettings            oMeshSettings;
 
         template <class TStoreStrategySettings,  class TLoadStrategySettings> void Import(
@@ -24,8 +22,8 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
 
         void Load();
         void Load(const SE::FlatBuffers::Mesh * pMesh);
-
         void DrawShape(const ShapeCtx & oShapeCtx) const;
+        void Clean();
 
         public:
 
@@ -64,7 +62,6 @@ template <class StoreStrategyList, class LoadStrategyList> class Mesh : public R
         uint32_t GetTrianglesCnt() const;
         void     Draw() const;
         void     Draw(const size_t shape_ind) const;
-        void     SetTransform(Transform const * const pNewTransform);
         TShapesInfo GetShapesInfo() const;
         glm::vec3 GetCenter() const;
         glm::vec3 GetCenter(const size_t shape_ind) const;

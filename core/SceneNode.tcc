@@ -81,7 +81,6 @@ template <class ... TGeom >
                         AddRenderEntity(T oRenderEntity) {
 
         vRenderEntity.emplace_back(oRenderEntity);
-        oRenderEntity->SetTransform(&oTransform); //TODO . ->
 
         log_d("render entity added, cnt = {}", vRenderEntity.size());
 }
@@ -152,9 +151,8 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         Draw() const {
 
         if (vRenderEntity.size()) {
-                const auto & world_mat = oTransform.GetWorld();
-                glPushMatrix();
-                glMultMatrixf(glm::value_ptr(world_mat));
+
+                TRenderState::Instance().SetTransform(oTransform.GetWorld());
 
                 for (auto & oEntity : vRenderEntity) {
 
@@ -164,8 +162,6 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
                                         oEntity);
 
                 }
-
-                glPopMatrix();
         }
 
         for (auto * pChild: vChildren) {

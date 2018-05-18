@@ -5,8 +5,6 @@
 // C include
 #include <string.h>
 
-//#include <Global.h>
-
 // Loki include
 #include <loki/Singleton.h>
 #include <loki/HierarchyGenerators.h>
@@ -46,6 +44,7 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 
 #include <ShaderComponent.h>
 #include <ShaderProgram.h>
+#include <RenderState.h>
 
 #include <MeshStock.h>
 #include <Mesh.h>
@@ -70,7 +69,6 @@ typedef SceneTree<TMesh *> TSceneTree;
 
 
 }
-
 
 
 namespace SE {

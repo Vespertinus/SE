@@ -48,6 +48,7 @@ template <class TLoop> void Application<TLoop>::Init() {
         //glLineWidth(4);
         glEnable(GL_ALPHA_TEST);
         glAlphaFunc (GL_GREATER, 0.7);
+        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
         oCamera.UpdateProjection();
 
@@ -80,6 +81,8 @@ template <class TLoop> void Application<TLoop>::Run() {
         glLoadIdentity();
         glPushMatrix();
         oCamera.Adjust();
+
+        SE::TRenderState::Instance().Reset();
 
         oLoop.Process();
 

@@ -15,6 +15,20 @@ enum class TextureUnit : int32_t {
         //MAX_TEXTURE_IMAGE_UNITS = 16
 };
 
+static std::unordered_map<std::string, uint32_t> mAttributeLocation = {
+        { "Position",   0 },
+        { "Normal",     1 },
+        { "TexCoord0",  2 },
+        { "TexCoord1",  3 },
+        { "TexCoord2",  4 },
+        { "TexCoord3",  5 },
+        { "JointW",     6 },
+        { "MorphW0",    7 },
+        { "MorphW1",    8 },
+        //tangent etc
+        { "Custom0",    14},
+        { "Custom1",    15}
+};
 
 
 #define CheckOpenGLError() CheckGLError(__FILE__, __LINE__)
@@ -38,7 +52,7 @@ static inline void PrintGLProgramInfoLog(std::string_view sMsg, const uint32_t g
                 int length = 0;
                 int res_length;
                 glGetProgramiv(gl_id, GL_INFO_LOG_LENGTH, &length);
-                if (length > 0) {
+                if (length > 1) {
                         std::string sOutput;
                         sOutput.resize(length);
                         glGetProgramInfoLog(gl_id, length, &res_length, sOutput.data());
@@ -51,7 +65,7 @@ static inline void PrintGLShaderInfoLog(std::string_view sMsg, const uint32_t gl
                 int length = 0;
                 int res_length;
                 glGetShaderiv(gl_id, GL_INFO_LOG_LENGTH, &length);
-                if (length > 0) {
+                if (length > 1) {
                         std::string sOutput;
                         sOutput.resize(length);
                         glGetShaderInfoLog(gl_id, length, &res_length, sOutput.data());
@@ -89,7 +103,7 @@ static inline void PrintGLInfo() {
 
         int val;
         int gl_major, gl_minor;
-        
+
         glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
         glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
         auto * pVendor = glGetString(GL_VENDOR);
@@ -101,14 +115,14 @@ static inline void PrintGLInfo() {
         log_d("GL_MAX_VERTEX_ATTRIBS: {}", val);
         glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &val);
         log_d("GL_MAX_UNIFORM_BUFFER_BINDINGS: {}", val);
-        
+
         glGetIntegerv(GL_MAX_VERTEX_UNIFORM_BLOCKS, &val);
         log_d("GL_MAX_VERTEX_UNIFORM_BLOCKS: {}", val);
         glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_BLOCKS, &val);
         log_d("GL_MAX_GEOMETRY_UNIFORM_BLOCKS: {}", val);
         glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS, &val);
         log_d("GL_MAX_FRAGMENT_UNIFORM_BLOCKS: {}", val);
-        
+
         glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &val);
         log_d("GL_MAX_UNIFORM_BLOCK_SIZE: {}", val);
 

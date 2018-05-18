@@ -63,7 +63,8 @@ ShaderProgram::ShaderProgram(const std::string & sName,
                              const rid_t         new_rid,
                              const Settings    & oSettings) :
         ResourceHolder(new_rid, sName),
-        gl_id(0) {
+        gl_id(0),
+        used_texture_units(0) {
 
         static const size_t max_file_size = 1024 * 1024 * 10;
 
@@ -101,7 +102,8 @@ ShaderProgram::ShaderProgram(const std::string & sName,
                              const SE::FlatBuffers::ShaderProgram * pShaderProgram,
                              const Settings   & oSettings) :
         ResourceHolder(new_rid, sName),
-        gl_id(0) {
+        gl_id(0),
+        used_texture_units(0) {
 
         Load(pShaderProgram, oSettings);
 }
@@ -138,6 +140,17 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
         gl_id = glCreateProgram();
         if (!gl_id) {
                 throw (std::runtime_error( "ShaderProgram::Load: failed to create gl program, name: " + sName));
+        }
+
+        //bind attributes
+        for (auto & oAttribLocation : mAttributeLocation) {
+                glBindAttribLocation(gl_id, oAttribLocation.second, oAttribLocation.first.c_str());
+                //log_d("bind attrib: '{}', location: {}", oAttribLocation.first, oAttribLocation.second);
+        }
+        if (CheckOpenGLError() != uSUCCESS) {
+
+                glDeleteProgram(gl_id);
+                throw (std::runtime_error( "ShaderProgram::Load: failed to bind vertex attribute location"));
         }
 
         //TODO hierarchical dependencies are not yet supported
@@ -250,6 +263,22 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
                         }
                         oVar.type = it2->second;
 
+                        int32_t unit_num = static_cast<int32_t>(it->second);
+                        assert(unit_num < MAX_TEXTURE_IMAGE_UNITS);
+
+                        if (used_texture_units & (1 << unit_num) ) {
+                                glDeleteProgram(gl_id);
+                                throw (std::runtime_error(
+                                                        "ShaderProgram::Load: texture block: " +
+                                                        std::to_string(unit_num) +
+                                                        "already used, name: '" +
+                                                        oVar.sName +
+                                                        "', shader program name: " +
+                                                        sName));
+                        }
+
+                        used_texture_units |= 1 << unit_num;
+
                         glUniform1iv(oVar.location, 1, reinterpret_cast<const int32_t *>(&it->second));
                         oVar.unit_index = it->second;
 
@@ -257,10 +286,11 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
                         mSamplers.emplace(key, std::move(oVar));
                 }
                 else {
-                        log_d("add uniform: '{}', type: {}, size: {}, to shader program: '{}'",
+                        log_d("add uniform: '{}', type: {}, size: {}, location: {}, to shader program: '{}'",
                                         oVar.sName,
                                         oVar.type,
                                         items_cnt,
+                                        oVar.location,
                                         sName);
                         mVariables.emplace(key, std::move(oVar));
                 }
@@ -391,8 +421,20 @@ ret_code_t ShaderProgram::SetTexture(const TextureUnit unit_index, const TTextur
                 return uWRONG_INPUT_DATA;
         }
 
+        if (!(used_texture_units & (1 << unit_num)) ) {
+                log_e("texture unit {} unused, shader program: '{}'",
+                                unit_num,
+                                sName);
+                return uWRONG_INPUT_DATA;
+        }
+
         glActiveTexture(GL_TEXTURE0 + unit_num);
-        glBindTexture(pTex->Type(), pTex->GetID());
+        if (pTex) {
+                glBindTexture(pTex->Type(), pTex->GetID());
+        }
+        else {
+                glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
         return uSUCCESS;
 }
@@ -415,7 +457,12 @@ ret_code_t ShaderProgram::SetTexture(const StrID name, const TTexture * pTex) {
         }
 
         glActiveTexture(GL_TEXTURE0 + static_cast<int32_t>(it->second.unit_index) );
-        glBindTexture(pTex->Type(), pTex->GetID());
+        if (pTex) {
+                glBindTexture(pTex->Type(), pTex->GetID());
+        }
+        else {
+                glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
         return uSUCCESS;
 }

@@ -2,6 +2,9 @@
 #ifndef __MP_UTIL_H__
 #define __MP_UTIL_H__ 1
 
+#include <loki/Typelist.h>
+#include <variant>
+
 namespace MP {
 
 template <class TList, template < class > class Holder> struct ExtendList;
@@ -89,6 +92,14 @@ template <typename H> struct MakeTL<H> {
 
                 typedef Loki::Typelist<H, Loki::NullType> TL;
 };
+
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+template <class ... Args, class TVariant> auto Visit(TVariant && oVar, Args && ... args) {
+
+        return std::visit(overloaded { args... }, oVar);
+}
 
 
 } //namespace MP

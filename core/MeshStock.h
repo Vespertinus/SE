@@ -39,9 +39,13 @@ struct MeshStock {
 
 struct ShapeCtx {
 
-        uint32_t        buf_id;
+        uint32_t        vao_id;
         uint32_t        triangles_cnt;
+        uint32_t        gl_index_type;
+        //TODO move into material manipulation
         TTexture      * pTex;
+        ShaderProgram * pShader;
+
         std::string     sName;
         glm::vec3       min;
         glm::vec3       max;
@@ -51,8 +55,8 @@ struct MeshCtx {
         std::vector<ShapeCtx>   vShapes;
         glm::vec3               min;
         glm::vec3               max;
-        uint32_t                stride;
-        bool                    skip_normals;
+        uint32_t                stride;//FIXME
+        bool                    skip_normals;//FIXME
 };
 
 } //namespace SE

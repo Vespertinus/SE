@@ -10,6 +10,9 @@ namespace SE {
   check current state and decide when need to change it
   some kind of gl ctx, FSM like
   TODO init shader const from gl
+
+  set attributes locations (BindBuffer) before linking
+  store used attributes list with it's types
 */
 struct ShaderVariable {
 
@@ -38,9 +41,8 @@ class ShaderProgram : public ResourceHolder {
 
         std::unordered_map<StrID, ShaderVariable> mVariables;
         std::unordered_map<StrID, ShaderVariable> mSamplers;
-        //vertex attributes
-        //...TODO
         uint32_t gl_id;
+        uint16_t used_texture_units;
 
         void Load(const FlatBuffers::ShaderProgram * pShaderProgram, const Settings & oSettings);
 
