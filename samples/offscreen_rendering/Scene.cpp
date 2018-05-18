@@ -54,7 +54,6 @@ Scene::~Scene() throw() { ;; }
 
 void Scene::Process() {
 
-
         SE::HELPERS::DrawAxes(10);
 
         glEnable(GL_TEXTURE_2D);
