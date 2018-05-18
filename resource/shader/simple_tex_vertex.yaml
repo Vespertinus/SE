@@ -1,0 +1,17 @@
+type: VERTEX
+source:
+ - |
+        #version 130
+
+        in vec4         Position;
+        in vec2         TexCoord0;
+
+        uniform mat4    MVPMatrix;
+        uniform mat4    MVMatrix;
+
+        out vec2        TexCoord;
+
+        void main() {
+                TexCoord        = TexCoord0;
+                gl_Position     = MVPMatrix * (MVMatrix * Position);
+        }

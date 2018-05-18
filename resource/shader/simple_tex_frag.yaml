@@ -1,0 +1,15 @@
+type: FRAGMENT
+source:
+ - |
+        #version 130
+
+        in vec2 TexCoord;
+
+        uniform sampler2D DiffuseTex;
+    
+        out vec4 FragColor;
+
+        void main() {
+                FragColor = texture(DiffuseTex, TexCoord);
+                //FragColor = vec4(1, 1, 1, 1);
+        }
