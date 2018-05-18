@@ -196,6 +196,10 @@ inline const SE::FlatBuffers::Node *GetNode(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::Node>(buf);
 }
 
+inline const SE::FlatBuffers::Node *GetSizePrefixedNode(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Node>(buf);
+}
+
 inline const char *NodeIdentifier() {
   return "SESC";
 }
@@ -210,6 +214,11 @@ inline bool VerifyNodeBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::Node>(NodeIdentifier());
 }
 
+inline bool VerifySizePrefixedNodeBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::Node>(NodeIdentifier());
+}
+
 inline const char *NodeExtension() {
   return "sesc";
 }
@@ -218,6 +227,12 @@ inline void FinishNodeBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::Node> root) {
   fbb.Finish(root, NodeIdentifier());
+}
+
+inline void FinishSizePrefixedNodeBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<SE::FlatBuffers::Node> root) {
+  fbb.FinishSizePrefixed(root, NodeIdentifier());
 }
 
 }  // namespace FlatBuffers

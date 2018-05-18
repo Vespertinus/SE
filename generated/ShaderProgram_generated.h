@@ -136,6 +136,10 @@ inline const SE::FlatBuffers::ShaderProgram *GetShaderProgram(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::ShaderProgram>(buf);
 }
 
+inline const SE::FlatBuffers::ShaderProgram *GetSizePrefixedShaderProgram(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::ShaderProgram>(buf);
+}
+
 inline const char *ShaderProgramIdentifier() {
   return "SESP";
 }
@@ -150,6 +154,11 @@ inline bool VerifyShaderProgramBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::ShaderProgram>(ShaderProgramIdentifier());
 }
 
+inline bool VerifySizePrefixedShaderProgramBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::ShaderProgram>(ShaderProgramIdentifier());
+}
+
 inline const char *ShaderProgramExtension() {
   return "sesp";
 }
@@ -158,6 +167,12 @@ inline void FinishShaderProgramBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> root) {
   fbb.Finish(root, ShaderProgramIdentifier());
+}
+
+inline void FinishSizePrefixedShaderProgramBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> root) {
+  fbb.FinishSizePrefixed(root, ShaderProgramIdentifier());
 }
 
 }  // namespace FlatBuffers

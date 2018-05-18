@@ -15,9 +15,129 @@ struct Vec2;
 
 struct ColorARGB;
 
+struct VertexAttribute;
+
+struct FloatVector;
+
+struct ByteVector;
+
+struct Uint32Vector;
+
+struct Uint16Vector;
+
+struct Uint8Vector;
+
 struct Shape;
 
 struct Mesh;
+
+enum class VertexBuffer : uint8_t {
+  NONE = 0,
+  FloatVector = 1,
+  ByteVector = 2,
+  Uint32Vector = 3,
+  MIN = NONE,
+  MAX = Uint32Vector
+};
+
+inline const VertexBuffer (&EnumValuesVertexBuffer())[4] {
+  static const VertexBuffer values[] = {
+    VertexBuffer::NONE,
+    VertexBuffer::FloatVector,
+    VertexBuffer::ByteVector,
+    VertexBuffer::Uint32Vector
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesVertexBuffer() {
+  static const char * const names[] = {
+    "NONE",
+    "FloatVector",
+    "ByteVector",
+    "Uint32Vector",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameVertexBuffer(VertexBuffer e) {
+  const size_t index = static_cast<int>(e);
+  return EnumNamesVertexBuffer()[index];
+}
+
+template<typename T> struct VertexBufferTraits {
+  static const VertexBuffer enum_value = VertexBuffer::NONE;
+};
+
+template<> struct VertexBufferTraits<FloatVector> {
+  static const VertexBuffer enum_value = VertexBuffer::FloatVector;
+};
+
+template<> struct VertexBufferTraits<ByteVector> {
+  static const VertexBuffer enum_value = VertexBuffer::ByteVector;
+};
+
+template<> struct VertexBufferTraits<Uint32Vector> {
+  static const VertexBuffer enum_value = VertexBuffer::Uint32Vector;
+};
+
+bool VerifyVertexBuffer(flatbuffers::Verifier &verifier, const void *obj, VertexBuffer type);
+bool VerifyVertexBufferVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types);
+
+enum class IndexBuffer : uint8_t {
+  NONE = 0,
+  Uint8Vector = 1,
+  Uint16Vector = 2,
+  Uint32Vector = 3,
+  MIN = NONE,
+  MAX = Uint32Vector
+};
+
+inline const IndexBuffer (&EnumValuesIndexBuffer())[4] {
+  static const IndexBuffer values[] = {
+    IndexBuffer::NONE,
+    IndexBuffer::Uint8Vector,
+    IndexBuffer::Uint16Vector,
+    IndexBuffer::Uint32Vector
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesIndexBuffer() {
+  static const char * const names[] = {
+    "NONE",
+    "Uint8Vector",
+    "Uint16Vector",
+    "Uint32Vector",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameIndexBuffer(IndexBuffer e) {
+  const size_t index = static_cast<int>(e);
+  return EnumNamesIndexBuffer()[index];
+}
+
+template<typename T> struct IndexBufferTraits {
+  static const IndexBuffer enum_value = IndexBuffer::NONE;
+};
+
+template<> struct IndexBufferTraits<Uint8Vector> {
+  static const IndexBuffer enum_value = IndexBuffer::Uint8Vector;
+};
+
+template<> struct IndexBufferTraits<Uint16Vector> {
+  static const IndexBuffer enum_value = IndexBuffer::Uint16Vector;
+};
+
+template<> struct IndexBufferTraits<Uint32Vector> {
+  static const IndexBuffer enum_value = IndexBuffer::Uint32Vector;
+};
+
+bool VerifyIndexBuffer(flatbuffers::Verifier &verifier, const void *obj, IndexBuffer type);
+bool VerifyIndexBufferVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types);
 
 MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
  private:
@@ -100,24 +220,384 @@ MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
 };
 STRUCT_END(ColorARGB, 16);
 
-struct Shape FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct VertexAttribute FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_NAME = 4,
-    VT_VERTICES = 6,
-    VT_TRIANGLES_CNT = 8,
-    VT_TEXTURE = 10,
-    VT_MIN = 12,
-    VT_MAX = 14
+    VT_OFFSET = 6,
+    VT_ELEM_SIZE = 8,
+    VT_BUFFER_IND = 10
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
   }
-  ///pos 3 float, normal 3 float, uv 2 float, or pos and uv
-  const flatbuffers::Vector<float> *vertices() const {
-    return GetPointer<const flatbuffers::Vector<float> *>(VT_VERTICES);
+  uint16_t offset() const {
+    return GetField<uint16_t>(VT_OFFSET, 0);
+  }
+  uint8_t elem_size() const {
+    return GetField<uint8_t>(VT_ELEM_SIZE, 3);
+  }
+  uint8_t buffer_ind() const {
+    return GetField<uint8_t>(VT_BUFFER_IND, 0);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.Verify(name()) &&
+           VerifyField<uint16_t>(verifier, VT_OFFSET) &&
+           VerifyField<uint8_t>(verifier, VT_ELEM_SIZE) &&
+           VerifyField<uint8_t>(verifier, VT_BUFFER_IND) &&
+           verifier.EndTable();
+  }
+};
+
+struct VertexAttributeBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+    fbb_.AddOffset(VertexAttribute::VT_NAME, name);
+  }
+  void add_offset(uint16_t offset) {
+    fbb_.AddElement<uint16_t>(VertexAttribute::VT_OFFSET, offset, 0);
+  }
+  void add_elem_size(uint8_t elem_size) {
+    fbb_.AddElement<uint8_t>(VertexAttribute::VT_ELEM_SIZE, elem_size, 3);
+  }
+  void add_buffer_ind(uint8_t buffer_ind) {
+    fbb_.AddElement<uint8_t>(VertexAttribute::VT_BUFFER_IND, buffer_ind, 0);
+  }
+  explicit VertexAttributeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  VertexAttributeBuilder &operator=(const VertexAttributeBuilder &);
+  flatbuffers::Offset<VertexAttribute> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<VertexAttribute>(end);
+    fbb_.Required(o, VertexAttribute::VT_NAME);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<VertexAttribute> CreateVertexAttribute(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::String> name = 0,
+    uint16_t offset = 0,
+    uint8_t elem_size = 3,
+    uint8_t buffer_ind = 0) {
+  VertexAttributeBuilder builder_(_fbb);
+  builder_.add_name(name);
+  builder_.add_offset(offset);
+  builder_.add_buffer_ind(buffer_ind);
+  builder_.add_elem_size(elem_size);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<VertexAttribute> CreateVertexAttributeDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    uint16_t offset = 0,
+    uint8_t elem_size = 3,
+    uint8_t buffer_ind = 0) {
+  return SE::FlatBuffers::CreateVertexAttribute(
+      _fbb,
+      name ? _fbb.CreateString(name) : 0,
+      offset,
+      elem_size,
+      buffer_ind);
+}
+
+struct FloatVector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_DATA = 4
+  };
+  const flatbuffers::Vector<float> *data() const {
+    return GetPointer<const flatbuffers::Vector<float> *>(VT_DATA);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_DATA) &&
+           verifier.Verify(data()) &&
+           verifier.EndTable();
+  }
+};
+
+struct FloatVectorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<float>> data) {
+    fbb_.AddOffset(FloatVector::VT_DATA, data);
+  }
+  explicit FloatVectorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  FloatVectorBuilder &operator=(const FloatVectorBuilder &);
+  flatbuffers::Offset<FloatVector> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<FloatVector>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<FloatVector> CreateFloatVector(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::Vector<float>> data = 0) {
+  FloatVectorBuilder builder_(_fbb);
+  builder_.add_data(data);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FloatVector> CreateFloatVectorDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<float> *data = nullptr) {
+  return SE::FlatBuffers::CreateFloatVector(
+      _fbb,
+      data ? _fbb.CreateVector<float>(*data) : 0);
+}
+
+struct ByteVector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_DATA = 4
+  };
+  const flatbuffers::Vector<uint8_t> *data() const {
+    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_DATA);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_DATA) &&
+           verifier.Verify(data()) &&
+           verifier.EndTable();
+  }
+};
+
+struct ByteVectorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data) {
+    fbb_.AddOffset(ByteVector::VT_DATA, data);
+  }
+  explicit ByteVectorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ByteVectorBuilder &operator=(const ByteVectorBuilder &);
+  flatbuffers::Offset<ByteVector> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<ByteVector>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<ByteVector> CreateByteVector(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
+  ByteVectorBuilder builder_(_fbb);
+  builder_.add_data(data);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<ByteVector> CreateByteVectorDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint8_t> *data = nullptr) {
+  return SE::FlatBuffers::CreateByteVector(
+      _fbb,
+      data ? _fbb.CreateVector<uint8_t>(*data) : 0);
+}
+
+struct Uint32Vector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_DATA = 4
+  };
+  const flatbuffers::Vector<uint32_t> *data() const {
+    return GetPointer<const flatbuffers::Vector<uint32_t> *>(VT_DATA);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_DATA) &&
+           verifier.Verify(data()) &&
+           verifier.EndTable();
+  }
+};
+
+struct Uint32VectorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> data) {
+    fbb_.AddOffset(Uint32Vector::VT_DATA, data);
+  }
+  explicit Uint32VectorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  Uint32VectorBuilder &operator=(const Uint32VectorBuilder &);
+  flatbuffers::Offset<Uint32Vector> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Uint32Vector>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Uint32Vector> CreateUint32Vector(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::Vector<uint32_t>> data = 0) {
+  Uint32VectorBuilder builder_(_fbb);
+  builder_.add_data(data);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Uint32Vector> CreateUint32VectorDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint32_t> *data = nullptr) {
+  return SE::FlatBuffers::CreateUint32Vector(
+      _fbb,
+      data ? _fbb.CreateVector<uint32_t>(*data) : 0);
+}
+
+struct Uint16Vector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_DATA = 4
+  };
+  const flatbuffers::Vector<uint16_t> *data() const {
+    return GetPointer<const flatbuffers::Vector<uint16_t> *>(VT_DATA);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_DATA) &&
+           verifier.Verify(data()) &&
+           verifier.EndTable();
+  }
+};
+
+struct Uint16VectorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint16_t>> data) {
+    fbb_.AddOffset(Uint16Vector::VT_DATA, data);
+  }
+  explicit Uint16VectorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  Uint16VectorBuilder &operator=(const Uint16VectorBuilder &);
+  flatbuffers::Offset<Uint16Vector> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Uint16Vector>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Uint16Vector> CreateUint16Vector(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::Vector<uint16_t>> data = 0) {
+  Uint16VectorBuilder builder_(_fbb);
+  builder_.add_data(data);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Uint16Vector> CreateUint16VectorDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint16_t> *data = nullptr) {
+  return SE::FlatBuffers::CreateUint16Vector(
+      _fbb,
+      data ? _fbb.CreateVector<uint16_t>(*data) : 0);
+}
+
+struct Uint8Vector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_DATA = 4
+  };
+  const flatbuffers::Vector<uint8_t> *data() const {
+    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_DATA);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_DATA) &&
+           verifier.Verify(data()) &&
+           verifier.EndTable();
+  }
+};
+
+struct Uint8VectorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data) {
+    fbb_.AddOffset(Uint8Vector::VT_DATA, data);
+  }
+  explicit Uint8VectorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  Uint8VectorBuilder &operator=(const Uint8VectorBuilder &);
+  flatbuffers::Offset<Uint8Vector> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Uint8Vector>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Uint8Vector> CreateUint8Vector(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
+  Uint8VectorBuilder builder_(_fbb);
+  builder_.add_data(data);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Uint8Vector> CreateUint8VectorDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint8_t> *data = nullptr) {
+  return SE::FlatBuffers::CreateUint8Vector(
+      _fbb,
+      data ? _fbb.CreateVector<uint8_t>(*data) : 0);
+}
+
+struct Shape FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_NAME = 4,
+    VT_INDEX_TYPE = 6,
+    VT_INDEX = 8,
+    VT_VERTICES_TYPE = 10,
+    VT_VERTICES = 12,
+    VT_ATTRIBUTES = 14,
+    VT_TRIANGLES_CNT = 16,
+    VT_STRIDE = 18,
+    VT_TEXTURE = 20,
+    VT_MIN = 22,
+    VT_MAX = 24
+  };
+  const flatbuffers::String *name() const {
+    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  }
+  IndexBuffer index_type() const {
+    return static_cast<IndexBuffer>(GetField<uint8_t>(VT_INDEX_TYPE, 0));
+  }
+  const void *index() const {
+    return GetPointer<const void *>(VT_INDEX);
+  }
+  template<typename T> const T *index_as() const;
+  const Uint8Vector *index_as_Uint8Vector() const {
+    return index_type() == IndexBuffer::Uint8Vector ? static_cast<const Uint8Vector *>(index()) : nullptr;
+  }
+  const Uint16Vector *index_as_Uint16Vector() const {
+    return index_type() == IndexBuffer::Uint16Vector ? static_cast<const Uint16Vector *>(index()) : nullptr;
+  }
+  const Uint32Vector *index_as_Uint32Vector() const {
+    return index_type() == IndexBuffer::Uint32Vector ? static_cast<const Uint32Vector *>(index()) : nullptr;
+  }
+  const flatbuffers::Vector<uint8_t> *vertices_type() const {
+    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_VERTICES_TYPE);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<void>> *vertices() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<void>> *>(VT_VERTICES);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<VertexAttribute>> *attributes() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<VertexAttribute>> *>(VT_ATTRIBUTES);
   }
   uint32_t triangles_cnt() const {
     return GetField<uint32_t>(VT_TRIANGLES_CNT, 0);
+  }
+  uint8_t stride() const {
+    return GetField<uint8_t>(VT_STRIDE, 32);
   }
   const flatbuffers::String *texture() const {
     return GetPointer<const flatbuffers::String *>(VT_TEXTURE);
@@ -132,9 +612,19 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
            verifier.Verify(name()) &&
+           VerifyField<uint8_t>(verifier, VT_INDEX_TYPE) &&
+           VerifyOffsetRequired(verifier, VT_INDEX) &&
+           VerifyIndexBuffer(verifier, index(), index_type()) &&
+           VerifyOffsetRequired(verifier, VT_VERTICES_TYPE) &&
+           verifier.Verify(vertices_type()) &&
            VerifyOffsetRequired(verifier, VT_VERTICES) &&
            verifier.Verify(vertices()) &&
+           VerifyVertexBufferVector(verifier, vertices(), vertices_type()) &&
+           VerifyOffsetRequired(verifier, VT_ATTRIBUTES) &&
+           verifier.Verify(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
            VerifyField<uint32_t>(verifier, VT_TRIANGLES_CNT) &&
+           VerifyField<uint8_t>(verifier, VT_STRIDE) &&
            VerifyOffset(verifier, VT_TEXTURE) &&
            verifier.Verify(texture()) &&
            VerifyFieldRequired<Vec3>(verifier, VT_MIN) &&
@@ -143,17 +633,44 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
 };
 
+template<> inline const Uint8Vector *Shape::index_as<Uint8Vector>() const {
+  return index_as_Uint8Vector();
+}
+
+template<> inline const Uint16Vector *Shape::index_as<Uint16Vector>() const {
+  return index_as_Uint16Vector();
+}
+
+template<> inline const Uint32Vector *Shape::index_as<Uint32Vector>() const {
+  return index_as_Uint32Vector();
+}
+
 struct ShapeBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
     fbb_.AddOffset(Shape::VT_NAME, name);
   }
-  void add_vertices(flatbuffers::Offset<flatbuffers::Vector<float>> vertices) {
+  void add_index_type(IndexBuffer index_type) {
+    fbb_.AddElement<uint8_t>(Shape::VT_INDEX_TYPE, static_cast<uint8_t>(index_type), 0);
+  }
+  void add_index(flatbuffers::Offset<void> index) {
+    fbb_.AddOffset(Shape::VT_INDEX, index);
+  }
+  void add_vertices_type(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> vertices_type) {
+    fbb_.AddOffset(Shape::VT_VERTICES_TYPE, vertices_type);
+  }
+  void add_vertices(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> vertices) {
     fbb_.AddOffset(Shape::VT_VERTICES, vertices);
+  }
+  void add_attributes(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<VertexAttribute>>> attributes) {
+    fbb_.AddOffset(Shape::VT_ATTRIBUTES, attributes);
   }
   void add_triangles_cnt(uint32_t triangles_cnt) {
     fbb_.AddElement<uint32_t>(Shape::VT_TRIANGLES_CNT, triangles_cnt, 0);
+  }
+  void add_stride(uint8_t stride) {
+    fbb_.AddElement<uint8_t>(Shape::VT_STRIDE, stride, 32);
   }
   void add_texture(flatbuffers::Offset<flatbuffers::String> texture) {
     fbb_.AddOffset(Shape::VT_TEXTURE, texture);
@@ -172,7 +689,10 @@ struct ShapeBuilder {
   flatbuffers::Offset<Shape> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Shape>(end);
+    fbb_.Required(o, Shape::VT_INDEX);
+    fbb_.Required(o, Shape::VT_VERTICES_TYPE);
     fbb_.Required(o, Shape::VT_VERTICES);
+    fbb_.Required(o, Shape::VT_ATTRIBUTES);
     fbb_.Required(o, Shape::VT_MIN);
     fbb_.Required(o, Shape::VT_MAX);
     return o;
@@ -182,8 +702,13 @@ struct ShapeBuilder {
 inline flatbuffers::Offset<Shape> CreateShape(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    flatbuffers::Offset<flatbuffers::Vector<float>> vertices = 0,
+    IndexBuffer index_type = IndexBuffer::NONE,
+    flatbuffers::Offset<void> index = 0,
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> vertices_type = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> vertices = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<VertexAttribute>>> attributes = 0,
     uint32_t triangles_cnt = 0,
+    uint8_t stride = 32,
     flatbuffers::Offset<flatbuffers::String> texture = 0,
     const Vec3 *min = 0,
     const Vec3 *max = 0) {
@@ -192,24 +717,39 @@ inline flatbuffers::Offset<Shape> CreateShape(
   builder_.add_min(min);
   builder_.add_texture(texture);
   builder_.add_triangles_cnt(triangles_cnt);
+  builder_.add_attributes(attributes);
   builder_.add_vertices(vertices);
+  builder_.add_vertices_type(vertices_type);
+  builder_.add_index(index);
   builder_.add_name(name);
+  builder_.add_stride(stride);
+  builder_.add_index_type(index_type);
   return builder_.Finish();
 }
 
 inline flatbuffers::Offset<Shape> CreateShapeDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
-    const std::vector<float> *vertices = nullptr,
+    IndexBuffer index_type = IndexBuffer::NONE,
+    flatbuffers::Offset<void> index = 0,
+    const std::vector<uint8_t> *vertices_type = nullptr,
+    const std::vector<flatbuffers::Offset<void>> *vertices = nullptr,
+    const std::vector<flatbuffers::Offset<VertexAttribute>> *attributes = nullptr,
     uint32_t triangles_cnt = 0,
+    uint8_t stride = 32,
     const char *texture = nullptr,
     const Vec3 *min = 0,
     const Vec3 *max = 0) {
   return SE::FlatBuffers::CreateShape(
       _fbb,
       name ? _fbb.CreateString(name) : 0,
-      vertices ? _fbb.CreateVector<float>(*vertices) : 0,
+      index_type,
+      index,
+      vertices_type ? _fbb.CreateVector<uint8_t>(*vertices_type) : 0,
+      vertices ? _fbb.CreateVector<flatbuffers::Offset<void>>(*vertices) : 0,
+      attributes ? _fbb.CreateVector<flatbuffers::Offset<VertexAttribute>>(*attributes) : 0,
       triangles_cnt,
+      stride,
       texture ? _fbb.CreateString(texture) : 0,
       min,
       max);
@@ -219,8 +759,7 @@ struct Mesh FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_SHAPES = 4,
     VT_MIN = 6,
-    VT_MAX = 8,
-    VT_SKIP_NORMALS = 10
+    VT_MAX = 8
   };
   const flatbuffers::Vector<flatbuffers::Offset<Shape>> *shapes() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Shape>> *>(VT_SHAPES);
@@ -231,9 +770,6 @@ struct Mesh FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const Vec3 *max() const {
     return GetStruct<const Vec3 *>(VT_MAX);
   }
-  bool skip_normals() const {
-    return GetField<uint8_t>(VT_SKIP_NORMALS, 0) != 0;
-  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_SHAPES) &&
@@ -241,7 +777,6 @@ struct Mesh FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyVectorOfTables(shapes()) &&
            VerifyFieldRequired<Vec3>(verifier, VT_MIN) &&
            VerifyFieldRequired<Vec3>(verifier, VT_MAX) &&
-           VerifyField<uint8_t>(verifier, VT_SKIP_NORMALS) &&
            verifier.EndTable();
   }
 };
@@ -257,9 +792,6 @@ struct MeshBuilder {
   }
   void add_max(const Vec3 *max) {
     fbb_.AddStruct(Mesh::VT_MAX, max);
-  }
-  void add_skip_normals(bool skip_normals) {
-    fbb_.AddElement<uint8_t>(Mesh::VT_SKIP_NORMALS, static_cast<uint8_t>(skip_normals), 0);
   }
   explicit MeshBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -280,13 +812,11 @@ inline flatbuffers::Offset<Mesh> CreateMesh(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Shape>>> shapes = 0,
     const Vec3 *min = 0,
-    const Vec3 *max = 0,
-    bool skip_normals = false) {
+    const Vec3 *max = 0) {
   MeshBuilder builder_(_fbb);
   builder_.add_max(max);
   builder_.add_min(min);
   builder_.add_shapes(shapes);
-  builder_.add_skip_normals(skip_normals);
   return builder_.Finish();
 }
 
@@ -294,18 +824,86 @@ inline flatbuffers::Offset<Mesh> CreateMeshDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<flatbuffers::Offset<Shape>> *shapes = nullptr,
     const Vec3 *min = 0,
-    const Vec3 *max = 0,
-    bool skip_normals = false) {
+    const Vec3 *max = 0) {
   return SE::FlatBuffers::CreateMesh(
       _fbb,
       shapes ? _fbb.CreateVector<flatbuffers::Offset<Shape>>(*shapes) : 0,
       min,
-      max,
-      skip_normals);
+      max);
+}
+
+inline bool VerifyVertexBuffer(flatbuffers::Verifier &verifier, const void *obj, VertexBuffer type) {
+  switch (type) {
+    case VertexBuffer::NONE: {
+      return true;
+    }
+    case VertexBuffer::FloatVector: {
+      auto ptr = reinterpret_cast<const FloatVector *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case VertexBuffer::ByteVector: {
+      auto ptr = reinterpret_cast<const ByteVector *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case VertexBuffer::Uint32Vector: {
+      auto ptr = reinterpret_cast<const Uint32Vector *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return false;
+  }
+}
+
+inline bool VerifyVertexBufferVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
+  if (values->size() != types->size()) return false;
+  for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+    if (!VerifyVertexBuffer(
+        verifier,  values->Get(i), types->GetEnum<VertexBuffer>(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool VerifyIndexBuffer(flatbuffers::Verifier &verifier, const void *obj, IndexBuffer type) {
+  switch (type) {
+    case IndexBuffer::NONE: {
+      return true;
+    }
+    case IndexBuffer::Uint8Vector: {
+      auto ptr = reinterpret_cast<const Uint8Vector *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case IndexBuffer::Uint16Vector: {
+      auto ptr = reinterpret_cast<const Uint16Vector *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case IndexBuffer::Uint32Vector: {
+      auto ptr = reinterpret_cast<const Uint32Vector *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return false;
+  }
+}
+
+inline bool VerifyIndexBufferVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
+  if (values->size() != types->size()) return false;
+  for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+    if (!VerifyIndexBuffer(
+        verifier,  values->Get(i), types->GetEnum<IndexBuffer>(i))) {
+      return false;
+    }
+  }
+  return true;
 }
 
 inline const SE::FlatBuffers::Mesh *GetMesh(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::Mesh>(buf);
+}
+
+inline const SE::FlatBuffers::Mesh *GetSizePrefixedMesh(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Mesh>(buf);
 }
 
 inline const char *MeshIdentifier() {
@@ -322,6 +920,11 @@ inline bool VerifyMeshBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::Mesh>(MeshIdentifier());
 }
 
+inline bool VerifySizePrefixedMeshBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::Mesh>(MeshIdentifier());
+}
+
 inline const char *MeshExtension() {
   return "sems";
 }
@@ -330,6 +933,12 @@ inline void FinishMeshBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::Mesh> root) {
   fbb.Finish(root, MeshIdentifier());
+}
+
+inline void FinishSizePrefixedMeshBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<SE::FlatBuffers::Mesh> root) {
+  fbb.FinishSizePrefixed(root, MeshIdentifier());
 }
 
 }  // namespace FlatBuffers
