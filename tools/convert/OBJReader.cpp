@@ -7,6 +7,8 @@
 #include <GeometryUtil.h>
 #include "OBJReader.h"
 
+#include <Mesh_generated.h>
+
 namespace SE {
 namespace TOOLS {
 
@@ -25,15 +27,15 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
         std::vector<tinyobj::shape_t>           vShapes;
         std::vector<tinyobj::material_t>        vMaterials;
         std::vector<std::string>                vTextures;
+        VertexIndex                             oVertexIndex;
+        std::vector<float>                      vVertexData;
+
+        vVertexData.reserve(8);
 
         std::string sBaseDir = GetBaseDir(sPath);
         if (sBaseDir.empty()) {
                 sBaseDir = "./";
         }
-
-        uint8_t elem_size = (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE;
-
-        oMeshData.skip_normals = oCtx.skip_normals;
 
         bool ret = tinyobj::LoadObj(&oAttrib,
                                     &vShapes,
@@ -74,15 +76,40 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
         oMeshData.vShapes.reserve(vShapes.size());
 
         for (size_t s = 0; s < vShapes.size(); s++) {
-                std::vector<float> vVertices;  // pos(3float), normal(3float), tex(2float)
-                vVertices.reserve((vShapes[s].mesh.indices.size() / 3) * (3 * 3 + 3 * 3 + 3 * 2 ));
 
-                for (size_t f = 0; f < vShapes[s].mesh.indices.size() / 3; f++) {
+                uint32_t                cur_index = 0;
+                ShapeData               oShapeData;
+                TPackVertexIndex        Pack;
+                std::vector<float>      vVertices;  // pos(3float), normal(3float), tex(2float)
+
+                vVertices.reserve((vShapes[s].mesh.indices.size() / 3) * (3 * 3 + 3 * 3 + 3 * 2 ));
+                oVertexIndex.Clear();
+                oShapeData.triangles_cnt = vShapes[s].mesh.indices.size() / 3;
+                Pack                    = PackVertexIndexInit(vShapes[s].mesh.indices.size(), oShapeData.oIndex);
+                oShapeData.stride       = ((oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
+
+                for (size_t f = 0; f < oShapeData.triangles_cnt; f++) {
                         tinyobj::index_t idx0 = vShapes[s].mesh.indices[3 * f + 0];
                         tinyobj::index_t idx1 = vShapes[s].mesh.indices[3 * f + 1];
                         tinyobj::index_t idx2 = vShapes[s].mesh.indices[3 * f + 2];
 
                         int current_material_id = vShapes[s].mesh.material_ids[f];
+
+                        log_d("face: {}:1, vert index: pos = {}, normal = {}, tex coord = {}",
+                                        f,
+                                        vShapes[s].mesh.indices[3 * f + 0].vertex_index,
+                                        vShapes[s].mesh.indices[3 * f + 0].normal_index,
+                                        vShapes[s].mesh.indices[3 * f + 0].texcoord_index);
+                        log_d("face: {}:2, vert index: pos = {}, normal = {}, tex coord = {}",
+                                        f,
+                                        vShapes[s].mesh.indices[3 * f + 1].vertex_index,
+                                        vShapes[s].mesh.indices[3 * f + 1].normal_index,
+                                        vShapes[s].mesh.indices[3 * f + 1].texcoord_index);
+                        log_d("face: {}:3, vert index: pos = {}, normal = {}, tex coord = {}",
+                                        f,
+                                        vShapes[s].mesh.indices[3 * f + 2].vertex_index,
+                                        vShapes[s].mesh.indices[3 * f + 2].normal_index,
+                                        vShapes[s].mesh.indices[3 * f + 2].texcoord_index);
 
                         if ((current_material_id < 0) || (current_material_id >= static_cast<int>(vMaterials.size()))) {
                                 // Invaid material ID. Use default material.
@@ -154,18 +181,44 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
                         }
 
                         for (int k = 0; k < 3; k++) {
-                                vVertices.push_back(vert[k][0]);
-                                vVertices.push_back(vert[k][1]);
-                                vVertices.push_back(vert[k][2]);
+                                vVertexData.clear();
+
+                                vVertexData.push_back(vert[k][0]);
+                                vVertexData.push_back(vert[k][1]);
+                                vVertexData.push_back(vert[k][2]);
 
                                 if (!oCtx.skip_normals) {
-                                        vVertices.push_back(normals[k][0]);
-                                        vVertices.push_back(normals[k][1]);
-                                        vVertices.push_back(normals[k][2]);
+                                        vVertexData.push_back(normals[k][0]);
+                                        vVertexData.push_back(normals[k][1]);
+                                        vVertexData.push_back(normals[k][2]);
                                 }
 
-                                vVertices.push_back(tex_coord[k][0]);
-                                vVertices.push_back(tex_coord[k][1]);
+                                vVertexData.push_back(tex_coord[k][0]);
+                                vVertexData.push_back(tex_coord[k][1]);
+
+                                if (oVertexIndex.Get(vVertexData, cur_index)) {
+
+                                        log_d("new index = {}, pos ({}, {}, {}), rot ({}, {}, {}), uv ({}, {})",
+                                                        cur_index,
+                                                        vVertexData[0], vVertexData[1], vVertexData[2],
+                                                        (oCtx.skip_normals) ? 0 : vVertexData[3],
+                                                        (oCtx.skip_normals) ? 0 : vVertexData[4],
+                                                        (oCtx.skip_normals) ? 0 : vVertexData[5],
+                                                        vVertexData[6], vVertexData[7]);
+
+                                        vVertices.insert(vVertices.end(), vVertexData.begin(), vVertexData.end());
+                                        ++oCtx.total_vertices_cnt;
+                                }
+                                else {
+                                        log_d("old index = {}, pos ({}, {}, {}), rot ({}, {}, {}), uv ({}, {})",
+                                                        cur_index,
+                                                        vVertexData[0], vVertexData[1], vVertexData[2],
+                                                        (oCtx.skip_normals) ? 0 : vVertexData[3],
+                                                        (oCtx.skip_normals) ? 0 : vVertexData[4],
+                                                        (oCtx.skip_normals) ? 0 : vVertexData[5],
+                                                        vVertexData[6], vVertexData[7]);
+                                }
+                                Pack(oShapeData.oIndex, cur_index);
                         }
                 }
 
@@ -174,35 +227,52 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
                         continue;
                 }
 
-                uint32_t triangles_cnt = vVertices.size() / elem_size / 3;
-
-                std::string sTexName = (vShapes[s].mesh.material_ids.size() > 0 && vShapes[s].mesh.material_ids[0] >= 0) ?
+                oShapeData.sTextureName = (vShapes[s].mesh.material_ids.size() > 0 && vShapes[s].mesh.material_ids[0] >= 0) ?
                                                         vTextures[vShapes[s].mesh.material_ids[0] ] :
                                                         "";
+                oShapeData.sName = vShapes[s].name.c_str();
 
 
-                if (!sTexName.empty()) {
+                if (!oShapeData.sTextureName.empty()) {
                         ++oCtx.textures_cnt;
                 }
 
-                oCtx.total_triangles_cnt += triangles_cnt;
+                oCtx.total_triangles_cnt += oShapeData.triangles_cnt;
 
-                auto & oItem = oMeshData.vShapes.emplace_back(ShapeData {
-                                std::move(vVertices),
-                                vShapes[s].name.c_str(),
-                                sTexName,
-                                triangles_cnt
+                CalcBasicBBox(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE, oShapeData.min, oShapeData.max);
 
-                                });
-                CalcBasicBBox(oItem.vVertices, elem_size, oItem.min, oItem.max);
+                oShapeData.vVertexBuffers.emplace_back(std::move(vVertices));
+
+                uint16_t next_offset = 3;
+
+                oShapeData.vAttributes.emplace_back(ShapeData::VertexAttribute{
+                                "Position",
+                                0,
+                                3,
+                                0 });
+                if (!oCtx.skip_normals) {
+                        oShapeData.vAttributes.emplace_back(ShapeData::VertexAttribute{
+                                        "Normal",
+                                        static_cast<uint16_t>(3 * sizeof(float)),
+                                        3,
+                                        0 });
+                        next_offset = 6;
+                }
+                oShapeData.vAttributes.emplace_back(ShapeData::VertexAttribute{
+                                "TexCoord0",
+                                static_cast<uint16_t>(next_offset * sizeof(float)),
+                                2,
+                                0 });
 
                 log_d("shape[{}] name = '{}', triangles cnt = {}, texture = '{}', min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
                                 s,
                                 vShapes[s].name.c_str(),
-                                triangles_cnt,
-                                sTexName,
-                                oItem.min.x, oItem.min.y, oItem.min.z,
-                                oItem.max.x, oItem.max.y, oItem.max.z);
+                                oShapeData.triangles_cnt,
+                                oShapeData.sTextureName,
+                                oShapeData.min.x, oShapeData.min.y, oShapeData.min.z,
+                                oShapeData.max.x, oShapeData.max.y, oShapeData.max.z);
+
+                oMeshData.vShapes.emplace_back(std::move(oShapeData));
         }
         ++oCtx.mesh_cnt;
 

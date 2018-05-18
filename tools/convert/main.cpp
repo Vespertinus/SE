@@ -29,6 +29,7 @@ int main(int argc, char **argv) {
         ImportCtx       oCtx{};
         string          sInput;
         string          sOutput;
+        bool            to_scene;
 
         try {
                 namespace bpo = boost::program_options;
@@ -40,11 +41,12 @@ int main(int argc, char **argv) {
                         ("level",        bpo::value<string>()->default_value("info"),           "log level (debug|info|warn|error)")
                         ("log",          bpo::value<string>()->default_value("stdout"),         "log outout (stdout|stderr|<filename>)")
                         ("input",        bpo::value<string>(),                                  "input file, Mesh or Scene (<filename>)")
-                        ("output",       bpo::value<string>()->default_value("output.sem"),     "output file destination (<filename>)")
+                        ("output",       bpo::value<string>(),                                  "output file destination (<filename>)")
                         ("skip_normals", bpo::value<bool>()->default_value(false),              "does not write normals to output file")
                         ("flip_yz",      bpo::value<bool>()->default_value(false),              "flip yz axes, depend on what axis might be up")
-                        ("cut_path",     bpo::value<string>(),                                  "substring for cuting imported paths (<search substr>)")
+                        ("cut_path",     bpo::value<string>(),                                  "regex for cuting imported paths (<search substr>)")
                         ("replace",      bpo::value<string>(),                                  "string for replacing cuted path part (<path>)")
+                        ("to_scene",    bpo::value<bool>()->default_value(false),               "write mesh as scene")
                         ;
 
                 bpo::variables_map vm;
@@ -92,7 +94,7 @@ int main(int argc, char **argv) {
                         }
 
                 }
-                {
+                if (vm.count("output") ) {
                         sOutput = vm["output"].as<string>();
                 }
                 if (vm.count("input") ) {
@@ -110,6 +112,9 @@ int main(int argc, char **argv) {
                 if (vm.count("replace") ) {
                         oCtx.sReplace = vm["replace"].as<string>();
                 }
+                {
+                        to_scene = vm["to_scene"].as<bool>();
+                }
         }
         catch (std::exception & ex) {
                 log_e("parsing input exception catched, reason: '{}'", ex.what());
@@ -125,6 +130,9 @@ int main(int argc, char **argv) {
                 boost::filesystem::path oPath(sInput);
                 string                  sExt = oPath.extension().string();
                 std::transform(sExt.begin(), sExt.end(), sExt.begin(), ::tolower);
+                if (sOutput.empty()) {
+                        sOutput = oPath.stem().string();
+                }
 
                 if (sExt == ".obj") {
                         log_d("file '{}' ext '{}', call OBJLoader", sInput, sExt);
@@ -134,13 +142,29 @@ int main(int argc, char **argv) {
                                 throw (std::runtime_error("Loading failed, err_code = " + std::to_string(err_code)) );
                         }
 
-                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, textures cnt: {}",
+                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, total_vertices_cnt: {}, textures cnt: {}",
                                         oCtx.node_cnt,
                                         oCtx.mesh_cnt,
                                         oCtx.total_triangles_cnt,
+                                        oCtx.total_vertices_cnt,
                                         oCtx.textures_cnt);
 
-                        err_code = WriteMesh("test.sems", oMeshData);
+                        if (to_scene) {
+                                NodeData oRoot,
+                                         oChild;
+                                oRoot.sName = "RootNode";
+                                oRoot.scale = glm::vec3(1, 1, 1);
+
+                                oChild.sName = "obj";
+                                oChild.scale = glm::vec3(1, 1, 1);
+                                oChild.vEntity.emplace_back(std::move(oMeshData));
+                                oRoot.vChildren.emplace_back(std::move(oChild));
+
+                                err_code = WriteSceneTree(sOutput + ".sesc", oRoot);
+                        }
+                        else {
+                                err_code = WriteMesh(sOutput + ".sems", oMeshData);
+                        }
                         if (err_code) {
                                 throw (std::runtime_error("Write failed, err_code = " + std::to_string(err_code)) );
                         }
@@ -154,13 +178,14 @@ int main(int argc, char **argv) {
                                 throw (std::runtime_error("Loading failed, err_code = " + std::to_string(err_code)) );
                         }
 
-                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, textures cnt: {}",
+                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, total_vertices_cnt: {}, textures cnt: {}",
                                         oCtx.node_cnt,
                                         oCtx.mesh_cnt,
                                         oCtx.total_triangles_cnt,
+                                        oCtx.total_vertices_cnt,
                                         oCtx.textures_cnt);
 
-                        err_code = WriteSceneTree("test.sesc", oRoot);
+                        err_code = WriteSceneTree(sOutput + ".sesc", oRoot);
                         if (err_code) {
                                 throw (std::runtime_error("Write failed, err_code = " + std::to_string(err_code)) );
                         }
