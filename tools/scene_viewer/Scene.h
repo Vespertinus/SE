@@ -22,7 +22,7 @@ class Scene {
 };
 
 
-} //namespace TOOLS 
+} //namespace TOOLS
 } //SE
 
 #endif
