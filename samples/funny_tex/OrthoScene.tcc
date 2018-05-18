@@ -13,12 +13,7 @@ OrthoScene::OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera) :
         oCamera.SetPos(0, -20, 0);
         oCamera.LookAt(0, 0, 0);
 
-        SE::MeshSettings oMeshSettings {0};
-
-        pTestMesh = SE::CreateResource<SE::TMesh>("resource/mesh/tests/test_ship01.obj",
-                        SE::StoreMesh::Settings(),
-                        SE::OBJLoader::Settings(),
-                        oMeshSettings);
+        pTestMesh = SE::CreateResource<SE::TMesh>("resource/mesh/tests/test_ship01.sems");
 
         oCamera.ZoomTo(pTestMesh->GetBBox());
 
@@ -76,6 +71,7 @@ void OrthoScene::Process() {
         auto & mModelView = oCamera.GetMVMatrix();
         glm::mat3 mNormal = glm::inverseTranspose(glm::mat3(mModelView));
         auto & mModelViewProjection = oCamera.GetMVPMatrix();
+        SE::TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
 
 /*        pBrickShader->SetVariable("NormalMatrix", mNormal);

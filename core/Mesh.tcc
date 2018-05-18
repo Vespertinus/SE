@@ -4,23 +4,8 @@
 
 namespace SE  {
 
-template <class StoreStrategyList, class LoadStrategyList>
-        template <class TStoreStrategySettings,  class TLoadStrategySettings>
-                Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                        const std::string & sName,
-                        const rid_t new_rid,
-                        const TStoreStrategySettings & oStoreStrategySettings,
-                        const TLoadStrategySettings & oLoadStrategySettings,
-                        const MeshSettings & oNewMeshSettings) :
-                ResourceHolder(new_rid, sName),
-                oMeshCtx{},
-                oMeshSettings(oNewMeshSettings) {
 
-        Import(oStoreStrategySettings, oLoadStrategySettings);
-}
-
-template <class StoreStrategyList, class LoadStrategyList>
-        Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
+Mesh::Mesh(
                 const std::string & sName,
                 const rid_t new_rid,
                 const SE::FlatBuffers::Mesh * pMesh,
@@ -32,8 +17,7 @@ template <class StoreStrategyList, class LoadStrategyList>
         Load(pMesh);
 }
 
-template <class StoreStrategyList, class LoadStrategyList>
-        Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
+Mesh::Mesh(
                 const std::string & sName,
                 const rid_t new_rid,
                 const MeshSettings & oNewMeshSettings) :
@@ -41,87 +25,20 @@ template <class StoreStrategyList, class LoadStrategyList>
         oMeshCtx{},
         oMeshSettings(oNewMeshSettings) {
 
-        boost::filesystem::path oPath(sName);
-        std::string sExt = oPath.extension().string();
-        std::transform(sExt.begin(), sExt.end(), sExt.begin(), ::tolower);
-
-        if (sExt == ".sems") {
-                log_d("file '{}' ext '{}', call FBLoader", sName, sExt);
-                Load();
-        }
-        else {
-                Import(typename TDefaultStoreStrategy::Settings(), typename TDefaultLoadStrategy::Settings());
-        }
+        Load();
 }
 
-template <class StoreStrategyList, class LoadStrategyList>
-        template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<StoreStrategyList, TConcreateSettings>::value, TConcreateSettings> * >
-                Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                        const std::string & sName,
-                        const rid_t new_rid,
-                        const TConcreateSettings & oSettings,
-                        const MeshSettings & oNewMeshSettings) :
-                                Mesh(sName,
-                                     rid,
-                                     oSettings,
-                                     typename TDefaultLoadStrategy::Settings(),
-                                     oNewMeshSettings) {
-}
-
-template <class StoreStrategyList, class LoadStrategyList>
-        template <class TConcreateSettings, std::enable_if_t< MP::InnerContain<LoadStrategyList, TConcreateSettings>::value, TConcreateSettings> * >
-                Mesh<StoreStrategyList, LoadStrategyList>::Mesh(
-                        const std::string & sName,
-                        const rid_t new_rid,
-                        const TConcreateSettings & oSettings,
-                        const MeshSettings & oNewMeshSettings) :
-                                Mesh(sName,
-                                     rid,
-                                     typename TDefaultStoreStrategy::Settings(),
-                                     oSettings,
-                                     oNewMeshSettings) {
-}
-
-template <class StoreStrategyList, class LoadStrategyList> Mesh<StoreStrategyList, LoadStrategyList>::~Mesh() noexcept {
+Mesh::~Mesh() noexcept {
 
         Clean();
 }
 
-
-
-template <class StoreStrategyList, class LoadStrategyList>
-        template <class TStoreStrategySettings,  class TLoadStrategySettings> void
-                Mesh<StoreStrategyList, LoadStrategyList>::Import(
-                                const TStoreStrategySettings & oStoreStrategySettings,
-                                const TLoadStrategySettings & oLoadStrategySettings) {
-
-        typedef typename MP::InnerSearch<StoreStrategyList, TStoreStrategySettings>::Result TStoreStrategy;
-        typedef typename MP::InnerSearch<LoadStrategyList,  TLoadStrategySettings >::Result TLoadStrategy;
-
-        MeshStock    oMeshStock(oMeshSettings);
-        ret_code_t   err_code;
-
-        TLoadStrategy   oLoadStrategy(oLoadStrategySettings);
-        TStoreStrategy  oStoreStrategy(oStoreStrategySettings);
-
-        log_d("ext_material = {}", oMeshSettings.ext_material);
-
-        err_code = oLoadStrategy.Load(sName, oMeshStock);
-        if (err_code) {
-                throw (std::runtime_error( "Mesh::Import: Loading failed, err_code = " + std::to_string(err_code)));
-        }
-
-        err_code = oStoreStrategy.Store(oMeshStock, oMeshCtx);
-        if (err_code) {
-                throw (std::runtime_error( "Mesh::Import: Storing failed, err_code = " + std::to_string(err_code)));
-        }
-}
-
-template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreStrategyList, LoadStrategyList>::GetShapesCnt() const {
+uint32_t Mesh::GetShapesCnt() const {
         return oMeshCtx.vShapes.size();
 }
 
-template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreStrategyList, LoadStrategyList>::GetTrianglesCnt() const {
+uint32_t Mesh::GetTrianglesCnt() const {
+
         uint32_t total_triangles_cnt = 0;
         for (auto item : oMeshCtx.vShapes) {
                 total_triangles_cnt += item.triangles_cnt;
@@ -130,9 +47,7 @@ template <class StoreStrategyList, class LoadStrategyList> uint32_t Mesh<StoreSt
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                DrawShape(const ShapeCtx & oShapeCtx) const {
+void Mesh::DrawShape(const ShapeCtx & oShapeCtx) const {
 
         if (!oMeshSettings.ext_material) {
                 TRenderState::Instance().SetShaderProgram(oShapeCtx.pShader);
@@ -148,9 +63,8 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                Draw() const {
+
+void Mesh::Draw() const {
 
         for (auto & oShapeCtx : oMeshCtx.vShapes) {
                 DrawShape(oShapeCtx);
@@ -158,9 +72,8 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                Draw(const size_t shape_ind) const {
+
+void Mesh::Draw(const size_t shape_ind) const {
 
         if (shape_ind >= oMeshCtx.vShapes.size()) {
                 return;
@@ -170,9 +83,8 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        typename Mesh<StoreStrategyList, LoadStrategyList>::TShapesInfo Mesh<StoreStrategyList, LoadStrategyList>::
-                GetShapesInfo() const {
+
+typename Mesh::TShapesInfo Mesh::GetShapesInfo() const {
 
         TShapesInfo vInfo;
         vInfo.reserve(oMeshCtx.vShapes.size());
@@ -184,10 +96,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-
-template <class StoreStrategyList, class LoadStrategyList>
-        glm::vec3 Mesh<StoreStrategyList, LoadStrategyList>::
-                GetCenter(const size_t shape_ind) const {
+glm::vec3 Mesh::GetCenter(const size_t shape_ind) const {
 //TODO use transform
         if (shape_ind >= oMeshCtx.vShapes.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
@@ -200,9 +109,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        glm::vec3 Mesh<StoreStrategyList, LoadStrategyList>::
-                GetCenter() const {
+glm::vec3 Mesh::GetCenter() const {
 //TODO use transform
         return glm::vec3((oMeshCtx.max.x + oMeshCtx.min.x) / 2,
                          (oMeshCtx.max.y + oMeshCtx.min.y) / 2,
@@ -210,9 +117,7 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                DrawBBox(const size_t shape_ind) const {
+void Mesh::DrawBBox(const size_t shape_ind) const {
 
         if (shape_ind >= oMeshCtx.vShapes.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
@@ -226,26 +131,19 @@ template <class StoreStrategyList, class LoadStrategyList>
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                DrawBBox() const {
+void Mesh::DrawBBox() const {
 
         HELPERS::DrawBBox(oMeshCtx.min, oMeshCtx.max);
 }
 
 
-
-template <class StoreStrategyList, class LoadStrategyList>
-        std::tuple<const glm::vec3 &, const glm::vec3 &> Mesh<StoreStrategyList, LoadStrategyList>::
-                GetBBox() const {
+std::tuple<const glm::vec3 &, const glm::vec3 &> Mesh::GetBBox() const {
 
         return { oMeshCtx.min, oMeshCtx.max };
 }
 
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                Load() {
+void Mesh::Load() {
 
         static const size_t max_file_size = 1024 * 1024 * 10;
 
@@ -278,9 +176,8 @@ template <class StoreStrategyList, class LoadStrategyList>
         Load(SE::FlatBuffers::GetMesh(&vBuffer[0]));
 }
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                Load(const SE::FlatBuffers::Mesh * pMesh) {
+
+void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
 
         auto                  * pShapesFB        = pMesh->shapes();
         size_t                  shapes_cnt       = pShapesFB->Length();
@@ -548,9 +445,8 @@ template <class StoreStrategyList, class LoadStrategyList>
         }
 }
 
-template <class StoreStrategyList, class LoadStrategyList>
-        void Mesh<StoreStrategyList, LoadStrategyList>::
-                Clean() {
+
+void Mesh::Clean() {
 
         for (auto & oShape : oMeshCtx.vShapes) {
 

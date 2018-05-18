@@ -15,35 +15,20 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
         pSceneTree(SE::CreateResource<SE::TSceneTree>("resource/scene/test-01.sesc")) {
 
 
-                //external material: false
-                SE::MeshSettings        oMeshSettings {0};
-                SE::OBJLoader::Settings oLoaderSettings;
-                //skip normals loading:
-                oLoaderSettings.skip_normals   = false;
-                oLoaderSettings.oTex2DSettings = SE::StoreTexture2D::Settings(false);
+        /*
+        const glm::vec3 & center = pTestMesh->GetCenter();
+        oCurCamera.SetPos(center.x, center.y - 50, center.z);
+        oCurCamera.LookAt(center);
+        oCurCamera.ZoomTo(pTestMesh->GetBBox());
+        */
 
-                //flip texture coordinates: 0 original, 1 u flip, 2 v flip
-                oLoaderSettings.mShapesOptions.emplace("ship_Cube", SE::OBJLoader::Settings::ShapeSettings{0});
+        //auto pTestNode = pSceneTree->Create("test");
+        //pTestNode->SetPos(glm::vec3(0, 0, 0));
+        //pTestNode->SetScale(0.75);
+        //pTestNode->SetRotation(glm::vec3(0, 0, 90));
+        //pTestNode->AddRenderEntity(pTestMesh);
 
-                pTestMesh = SE::TResourceManager::Instance().Create<SE::TMesh>("resource/mesh/tests/test_ship01.obj",
-                                                                               oLoaderSettings,
-                                                                               oMeshSettings);
-
-                log_d("pTestMesh: shape cnt = {}, tringles cnt = {}", pTestMesh->GetShapesCnt(), pTestMesh->GetTrianglesCnt());
-
-                const glm::vec3 & center = pTestMesh->GetCenter();
-                oCurCamera.SetPos(center.x, center.y - 50, center.z);
-                oCurCamera.LookAt(center);
-                oCurCamera.ZoomTo(pTestMesh->GetBBox());
-
-
-                auto pTestNode = pSceneTree->Create("test");
-                //pTestNode->SetPos(glm::vec3(0, 0, 0));
-                //pTestNode->SetScale(0.75);
-                //pTestNode->SetRotation(glm::vec3(0, 0, 90));
-                pTestNode->AddRenderEntity(pTestMesh);
-
-                pSceneTree->Print();
+        pSceneTree->Print();
 }
 
 
@@ -78,8 +63,6 @@ void Scene::Process() {
         pSceneTree->Draw();
 
         glDisable(GL_TEXTURE_2D);
-
-        pTestMesh->DrawBBox();
 }
 
 

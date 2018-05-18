@@ -9,7 +9,6 @@ class Scene {
         SE::Camera      & oCamera;
         SE::TTexture    * pTex01;
         SE::TTexture    * pTex02;
-        SE::TMesh       * pTestMesh;
         SE::TSceneTree  * pSceneTree;
 
         public:

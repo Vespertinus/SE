@@ -48,16 +48,12 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 
 #include <MeshStock.h>
 #include <Mesh.h>
-#include <OBJLoader.h>
-#include <StoreMesh.h>
 
 namespace SE {
 
 typedef Loki::SingletonHolder< SimpleFPS >                              TSimpleFPS;
 
-typedef LOKI_TYPELIST_1(OBJLoader)                                      MeshLoadStrategyList;
-typedef LOKI_TYPELIST_1(StoreMesh)                                      MeshStoreStrategyList;
-typedef Mesh<MeshStoreStrategyList, MeshLoadStrategyList>               TMesh;
+typedef Mesh                                                            TMesh;
 
 }
 
