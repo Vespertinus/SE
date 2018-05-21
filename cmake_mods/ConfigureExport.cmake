@@ -42,7 +42,7 @@ install(                        DIRECTORY ${LOCAL_INC_DIRS}
 install(                        TARGETS
                                 SE
                                 SECommon
-                                DESTINATION lib
+                                DESTINATION ${CMAKE_INSTALL_LIBDIR}
                                 EXPORT SimpleEngineTargets)
 
 install(                        EXPORT SimpleEngineTargets
