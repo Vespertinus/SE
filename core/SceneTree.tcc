@@ -1,4 +1,6 @@
 
+#include <fstream>
+
 namespace SE {
 
 template <class ... TGeom > SceneTree<TGeom ...>::SceneTree(
