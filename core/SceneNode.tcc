@@ -202,10 +202,49 @@ template <class ... TGeom >
         return std::get<T *>(vRenderEntity[index]);
 }
 
+template <class ... TGeom > uint32_t SceneNode<TGeom ...>::GetEntityCnt() const {
+
+        return vRenderEntity.size();
+}
+
+
 template <class ... TGeom > const Transform & SceneNode<TGeom ...>::
         GetTransform() const {
 
         return oTransform;
 }
+
+template <class ... TGeom >
+        template <class THandler>
+                void SceneNode<TGeom ...>::DepthFirstWalk(THandler && oHandler) {
+
+         oHandler(*this);
+
+         for (auto * pChild : vChildren) {
+                pChild->DepthFirstWalk(oHandler);
+         }
+}
+
+template <class ... TGeom >
+        template <class THandler>
+                void SceneNode<TGeom ...>::BreadtFirstWalk(THandler && oHandler) {
+
+         oHandler(*this);
+         BreadtFirstWalkChild(oHandler);
+
+}
+
+template <class ... TGeom >
+        template <class THandler>
+                void SceneNode<TGeom ...>::BreadtFirstWalkChild(THandler && oHandler) {
+
+         for (auto * pChild : vChildren) {
+                oHandler(*pChild);
+         }
+         for (auto * pChild : vChildren) {
+                pChild->BreadtFirstWalkChild(oHandler);
+         }
+}
+
 
 }

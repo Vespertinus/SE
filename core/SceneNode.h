@@ -26,6 +26,7 @@ template <class ... TGeom> class SceneNode {
         Transform                               oTransform;
         std::string                             sName;
         std::string                             sFullName;
+        std::string                             sCustomInfo;
         TSceneTree                            * pScene;
 
         //SceneNode(); //THINK ???
@@ -37,6 +38,7 @@ template <class ... TGeom> class SceneNode {
         void                    RebuildFullName();
         void                    BuildFullName(std::string & sNewFullName,
                                               const std::string_view sNewName);
+        template <class THandler> void BreadtFirstWalkChild(THandler && oHandler);
 
         public:
 
@@ -47,7 +49,7 @@ template <class ... TGeom> class SceneNode {
         void                    SetRotation(const glm::vec3 & vDegreeAngles);
         void                    SetScale(const glm::vec3 & new_scale);
         //void     DrawBBox() const;
-        uint32_t                GetGeomCnt() const;
+        uint32_t                GetEntityCnt() const;
         template <class T> void AddRenderEntity(T oRenderEntity);
         void                    AddChild(TSceneNode * pNode);
         void                    RemoveChild(TSceneNode * pNode);
@@ -60,7 +62,6 @@ template <class ... TGeom> class SceneNode {
         template <class T>  T * GetEntity(const size_t index);
         const Transform       & GetTransform() const;
 
-        //template <class T> void Apply(T & functor);
         /*      TODO
                 SetRotation(glm::quaternion)
                 enabled \ disabled
@@ -72,6 +73,9 @@ template <class ... TGeom> class SceneNode {
                 unlink from scene
                 SetScene -> move to another scene
         */
+
+        template <class THandler> void BreadtFirstWalk(THandler && oHandler);
+        template <class THandler> void DepthFirstWalk(THandler && oHandler);
 };
 
 } //namespace SE

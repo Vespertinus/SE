@@ -109,6 +109,8 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
 template <class ... TGeom > void SceneTree<TGeom ...>::
         Print() {
 
+        if (gLogger->level() != spdlog::level::debug) { return; }
+
         oRoot.Print(0);
 }
 
