@@ -7,9 +7,10 @@ project(SimpleEngine VERSION 0.1.0)
 option(GPU                      "Compile with direct rendering support"  ON)
 option(ASAN                     "Compile with address sanitizer"         OFF)
 option(OLD_ABI                  "Compile with old CXX ABI"               OFF)
+option(TOOLS                    "Compile tools with their dependencies"  ON)
 
 
-set(LOCAL_INC_DIRS              core common units)
+set(LOCAL_INC_DIRS              core common units generated)
 set(EXTERN_INC_DIRS)
 set(LIBRARIES_LIST              "")
 
@@ -44,7 +45,7 @@ if (ASAN)
 endif()
 
 set(COMMON_C_FLAGS              "-std=gnu11 -fgnu89-inline")
-set(COMMON_CXX_FLAGS            "-std=gnu++14")
+set(COMMON_CXX_FLAGS            "-std=gnu++17")
 
 set(C_WARNING_FLAGS             "-Wignored-qualifiers -Wwrite-strings")
 set(CXX_WARNING_FLAGS           "-Wmissing-declarations -Winvalid-pch")
@@ -60,7 +61,7 @@ set(CMAKE_CXX_FLAGS             "${COMMON_FLAGS} ${COMMON_CXX_FLAGS} ${CXX_WARNI
 set(CMAKE_EXE_LINKER_FLAGS      "${COMMON_FLAGS} -Wl,--hash-style=gnu")
 
 
-set(DEBUG_FLAGS                 "-O0")
+set(DEBUG_FLAGS                 "-O0 -DDEBUG_BUILD")
 set(RELEASE_FLAGS               "-Og -finline-small-functions")
 
 # Release build type
@@ -90,12 +91,14 @@ prepend_path(                   LOCAL_INC_DIRS
                                 ${CMAKE_SOURCE_DIR})
 
 include_directories(${REL_LOCAL_INC_DIR} ${EXTERN_INC_DIRS})
-link_libraries(${LIBRARIES_LIST})
+#link_libraries(${LIBRARIES_LIST})
 
 include("ConfigureExport")
 
 
 #default target with some samples
 add_subdirectory("samples")
+
+add_subdirectory("tools")
 
 

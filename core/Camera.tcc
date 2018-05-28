@@ -93,11 +93,83 @@ void Camera::Adjust() {
         */
 }
 
+//TODO store mat4 inside cam
+const glm::mat4 & Camera::GetMVMatrix() {
 
+        mModelView      = glm::mat4(1.0);
+        mModelView      = glm::rotate(mModelView, glm::radians(rot_x), glm::vec3(-1, 0, 0) );
+        mModelView      = glm::rotate(mModelView, glm::radians(rot_y), glm::vec3( 0, 1, 0) );
+        mModelView      = glm::rotate(mModelView, glm::radians(rot_z), glm::vec3( 0, 0, 1) );
+        mModelView      = glm::translate(mModelView, glm::vec3(-pos_x, -pos_y, -pos_z));
+/*
+        float mat[16];
+        glGetFloatv(GL_MODELVIEW_MATRIX, mat);
+
+        printf("GL model view matrix:\n");
+        printf("m0(%f) m4(%f) m8 (%f) m12(%f)\n", mat[0], mat[4], mat[8],  mat[12]);
+        printf("m1(%f) m5(%f) m9 (%f) m13(%f)\n", mat[1], mat[5], mat[9],  mat[13]);
+        printf("m2(%f) m6(%f) m10(%f) m14(%f)\n", mat[2], mat[6], mat[10], mat[14]);
+        printf("m3(%f) m7(%f) m11(%f) m15(%f)\n", mat[3], mat[7], mat[11], mat[15]);
+
+        printf("calculated model view matrix:\n");
+        printf("m0(%f) m4(%f) m8 (%f) m12(%f)\n", mModelView[0][0], mModelView[1][0], mModelView[2][0], mModelView[3][0]);
+        printf("m1(%f) m5(%f) m9 (%f) m13(%f)\n", mModelView[0][1], mModelView[1][1], mModelView[2][1], mModelView[3][1]);
+        printf("m2(%f) m6(%f) m10(%f) m14(%f)\n", mModelView[0][2], mModelView[1][2], mModelView[2][2], mModelView[3][2]);
+        printf("m3(%f) m7(%f) m11(%f) m15(%f)\n", mModelView[0][3], mModelView[1][3], mModelView[2][3], mModelView[3][3]);
+
+        const float * new_mat2 = (const float *)glm::value_ptr(mModelView);
+
+        printf("glm matrix:\n");
+        printf("m0(%f) m4(%f) m8 (%f) m12(%f)\n", new_mat2[0], new_mat2[4], new_mat2[8],  new_mat2[12]);
+        printf("m1(%f) m5(%f) m9 (%f) m13(%f)\n", new_mat2[1], new_mat2[5], new_mat2[9],  new_mat2[13]);
+        printf("m2(%f) m6(%f) m10(%f) m14(%f)\n", new_mat2[2], new_mat2[6], new_mat2[10], new_mat2[14]);
+        printf("m3(%f) m7(%f) m11(%f) m15(%f)\n", new_mat2[3], new_mat2[7], new_mat2[11], new_mat2[15]);
+*/
+        return mModelView;
+}
+
+
+const glm::mat4 & Camera::GetMVPMatrix() {
+
+        GetMVMatrix();
+        const Frustum::Volume & oVolume = oFrustum.GetVolume();
+        glm::mat4 mProjection;
+
+        switch (oVolume.projection) {
+
+                case Frustum::uPERSPECTIVE:
+
+                        mProjection = glm::frustum(oVolume.left, oVolume.right, oVolume.bottom, oVolume.top, oVolume.near_clip, oVolume.far_clip);
+                        break;
+
+                case Frustum::uORTHO:
+                        mProjection = glm::ortho ((- oSettings.width / 2) / zoom,
+                                 (oSettings.width / 2) / zoom,
+                                 (- oSettings.height / 2) / zoom,
+                                 (oSettings.height / 2) / zoom,
+                                 oVolume.near_clip,
+                                 oVolume.far_clip);
+                        break;
+
+                default:
+                        log_e("wrong projection = {}", oVolume.projection);
+                        abort();
+        }
+        mModelViewProjection = mProjection * mModelView;
+        return mModelViewProjection;
+}
 
 void Camera::UpdateSettings(const CamSettings_t & oNewSettings) {
         oSettings = (const BaseData &)oNewSettings;
         oFrustum.SetVolume(oNewSettings.oVolume);
+}
+
+const Camera::BaseData & Camera::GetSettings() const {
+        return oSettings;
+}
+
+const Frustum::Volume & Camera::GetVolume() const {
+        return oFrustum.GetVolume();
 }
 
 
@@ -227,11 +299,14 @@ void Camera::UpdateProjection() const {
 
 void Camera::SetZoom(const float new_zoom) {
         zoom = new_zoom;
+        float min_dim = std::min(oSettings.width, oSettings.height);
+        target_length = min_dim / zoom;
 }
 
 
 void Camera::Zoom(const float factor) {
-        zoom *= factor;
+        target_length /= factor;
+        UpdateZoom();
 }
 
 

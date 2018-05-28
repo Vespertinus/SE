@@ -1,0 +1,88 @@
+
+namespace SE.FlatBuffers;
+
+struct Vec3 {
+        x:float;
+        y:float;
+        z:float;
+}
+
+struct Vec2 {
+        u:float;
+        v:float;
+}
+
+struct ColorARGB {
+        a:float;
+        r:float;
+        g:float;
+        b:float;
+}
+
+table VertexAttribute {
+        name:string (required);
+        offset:uint16 = 0;
+        elem_size:uint8 = 3;
+        buffer_ind:uint8 = 0;
+}
+
+table FloatVector {
+        data:[float];
+}
+table ByteVector {
+        data:[ubyte];
+}
+table Uint32Vector {
+        data:[uint32];
+}
+table Uint16Vector {
+        data:[uint16];
+}
+table Uint8Vector {
+        data:[uint8];
+}
+
+union VertexBuffer {
+        FloatVector,
+        ByteVector,
+        Uint32Vector
+}
+
+union IndexBuffer {
+        Uint8Vector,
+        Uint16Vector,
+        Uint32Vector
+}
+
+/*
+table IndexBuffer {
+        uint8_data:[uint8];
+        uint16_data:[uint16];
+        uint32_data:[uint32];
+}
+*/
+
+table Shape {
+        name:string;
+        index:IndexBuffer (required);
+        vertices:[VertexBuffer] (required);
+        attributes:[VertexAttribute] (required);
+        triangles_cnt:uint32;
+        stride:uint8 = 32;
+        //TODO rewrite on material usage
+        texture:string;
+        min:Vec3 (required);
+        max:Vec3 (required);
+}
+
+table Mesh {
+        shapes:[Shape] (required);
+        min:Vec3 (required);
+        max:Vec3 (required);
+}
+
+root_type Mesh;
+
+file_identifier "SEMS";
+file_extension "sems";
+

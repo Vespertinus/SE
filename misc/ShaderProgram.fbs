@@ -1,0 +1,22 @@
+
+include "ShaderComponent.fbs";
+
+namespace SE.FlatBuffers;
+
+table Shader {
+        name:string (required);
+        data:ShaderComponent;
+}
+
+table ShaderProgram {
+        vertex:Shader(required);
+        fragment:Shader (required);
+        //variables..
+}
+
+root_type ShaderProgram;
+
+file_identifier "SESP";
+file_extension "sesp";
+
+

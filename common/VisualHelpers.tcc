@@ -124,29 +124,29 @@ void DrawPlane(const float width, const float height,
                const float x_dir, const float y_dir, const float z_dir,
                const uint32_t texture_id) {
 
-	
-  
-  glColor3f(1, 1, 1);
-  glBindTexture (GL_TEXTURE_2D, texture_id);
-  glBegin(GL_QUADS);
-  
-  glTexCoord2f (0, 0);
-  //glNormal3f(0, 1, 0);
-  glVertex3f(x_pos, y_pos, z_pos);
-  
-  glTexCoord2f (1, 0);
-  //glNormal3f(0, 1, 0);
-  glVertex3f(x_dir * width + x_pos, y_pos, z_dir * height + z_pos);
-  
-  glTexCoord2f (1, 1);
-  //glNormal3f(0, 1, 0);
-  glVertex3f(x_dir * width + x_pos, y_dir * height + y_pos, z_dir * height + z_pos);
-  
-  glTexCoord2f (0, 1);
-  //glNormal3f(0, 1, 0);
-  glVertex3f(x_pos, y_dir * height + y_pos, z_pos);
+        //CCW order
 
-  glEnd();
+        glColor3f(1, 1, 1);
+        glBindTexture (GL_TEXTURE_2D, texture_id);
+        glBegin(GL_QUADS);
+
+        glTexCoord2f (0, 0);
+        //glNormal3f(0, 1, 0);
+        glVertex3f(x_pos, y_pos, z_pos);
+
+        glTexCoord2f (1, 0);
+        //glNormal3f(0, 1, 0);
+        glVertex3f(x_dir * width + x_pos, y_pos, z_pos);
+
+        glTexCoord2f (1, 1);
+        //glNormal3f(0, 1, 0);
+        glVertex3f(x_dir * width + x_pos, y_pos, z_dir * height + z_pos);
+
+        glTexCoord2f (0, 1);
+        //glNormal3f(0, 1, 0);
+        glVertex3f(x_pos, y_pos, z_dir * height + z_pos);
+
+        glEnd();
 }
 
 

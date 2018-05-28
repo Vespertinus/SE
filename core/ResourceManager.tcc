@@ -29,6 +29,11 @@ template < class ResourceList > template <class Resource, class ... TConcreateSe
 
         typedef Holder <Resource> TConcreateStorage;
 
+        if (oPath.empty()) {
+                log_e("empty resource name");
+                return nullptr;
+        }
+
         rid_t                         key       = Hash64(oPath.c_str(), oPath.length());
         TConcreateStorage           & oStorage  = Storage<Resource>();
 
@@ -48,7 +53,7 @@ template < class ResourceList > template <class Resource, class ... TConcreateSe
                 oStorage.insert(std::pair<rid_t, Resource *>(key, pResource));
         }
         catch(std::exception & ex) {
-                log_e("got exception, description = '{}'", ex.what());
+                log_e("got exception, description = '{}', name: '{}'", ex.what(), oPath);
                 if (pResource != nullptr) {
                         delete pResource;
                         //pResource = nullptr;
@@ -56,7 +61,7 @@ template < class ResourceList > template <class Resource, class ... TConcreateSe
                 throw;
         }
         catch(...) {
-                log_e("got unknown exception");
+                log_e("got unknown exception, name: '{}'", oPath);
                 if (pResource != nullptr) {
                         delete pResource;
                         //pResource = nullptr;

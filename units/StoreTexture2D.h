@@ -14,12 +14,15 @@ class StoreTexture2D {
                 int32_t apply_method;
                 bool    mipmap_enabled;
 
-                Settings(bool mipmap_on = true) :
-                        wrap(GL_CLAMP_TO_EDGE),
-                        min_filter((mipmap_on) ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR),
+                Settings(
+                                bool    mipmap          = true, 
+                                int32_t wrap_option     = GL_CLAMP_TO_EDGE, 
+                                int32_t apply_option    = GL_MODULATE) : 
+                        wrap(wrap_option),
+                        min_filter((mipmap) ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR),
                         mag_filter(GL_LINEAR),
-                        apply_method(GL_MODULATE),
-                        mipmap_enabled(mipmap_on)
+                        apply_method(apply_option),
+                        mipmap_enabled(mipmap)
                 { ;; }
         };
 

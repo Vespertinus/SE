@@ -2,7 +2,7 @@
 
 namespace SE {
 
- 
+
 TGALoader::TGALoader(const Settings & oSettings) { ;; }
 
 
@@ -65,7 +65,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
                                 ex.what());
                 fclose (oImageFile);
                 return uMEMORY_ALLOCATION_ERROR;
-        
+
         }
         catch(...) {
                 log_e("failed to allocate {} bytes for image ({}) data",
@@ -74,7 +74,7 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
                 fclose (oImageFile);
                 return uMEMORY_ALLOCATION_ERROR;
         }
-        
+
 
         if (fread (&vImageData[0], 1, oTextureStock.raw_image_size, oImageFile) != oTextureStock.raw_image_size) {
 
@@ -84,21 +84,21 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
                 return uREAD_FILE_ERROR;
         }
 
-        for (uint32_t index = 0; index < oTextureStock.raw_image_size; index += oTextureStock.bpp)	{ 
+        for (uint32_t index = 0; index < oTextureStock.raw_image_size; index += oTextureStock.bpp)	{
                 swap                    = vImageData [index];
                 vImageData [index]      = vImageData [index + 2];
                 vImageData [index + 2]  = swap;
         }
 
-        oTextureStock.compressed = uUNCOMPRESSED_TEXTURE;        
+        oTextureStock.compressed = uUNCOMPRESSED_TEXTURE;
         oTextureStock.raw_image  = &vImageData[0];
-        
+
         fclose (oImageFile);
 
         vImagesData.emplace_back(std::move(vImageData));
 
         return ret_code;
-} 
+}
 
 
 

@@ -29,4 +29,9 @@ extern std::shared_ptr<spdlog::logger> gLogger;
                 gLogger->error("{}: " format " ({}:{})", __func__, ##__VA_ARGS__, LOG_BASENAME, __LINE__ ); \
         } while (0)
 
+#define log_e_clean(format, ...) \
+        do { \
+                gLogger->error("{}: " format, __func__, ##__VA_ARGS__); \
+        } while (0)
+
 #endif

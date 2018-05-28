@@ -18,7 +18,7 @@ uint32_t CalcDuration::Get() const {
         return std::chrono::duration_cast<ms>(end - start).count();
 }
 
-void CalcDuration::Log(string_view msg) const {
+void CalcDuration::Log(std::string_view msg) const {
 
        log_i("{} duration {} ms", msg, Get()); 
 }

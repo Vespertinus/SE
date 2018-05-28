@@ -1,0 +1,8 @@
+{
+        "vertex" : {
+                "name" : "simple_tex_vertex.sesl"
+        },
+        "fragment" : {
+                "name" : "simple_tex_frag.sesl"
+        }
+}

@@ -1,0 +1,13 @@
+type: VERTEX
+source:
+ - |
+        #version 130
+
+        in vec4 Position;
+
+        uniform mat4 MVPMatrix;
+        uniform mat4 MVMatrix;
+
+        void main() {
+                gl_Position = MVPMatrix * (MVMatrix * Position);
+        }

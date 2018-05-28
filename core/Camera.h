@@ -26,7 +26,7 @@ class Camera {
                    float       near_clip;
                    float	far_clip;
                    uint8_t     projection;
-                   */    
+                   */
 
         };
 
@@ -46,6 +46,10 @@ class Camera {
                         /** zooming target max size  */
                         target_length;
 
+        //TODO move calculation to matrix
+        glm::mat4       mModelView;
+        glm::mat4       mModelViewProjection;
+
         BaseData        oSettings;
         Frustum         oFrustum;
 
@@ -58,6 +62,8 @@ class Camera {
 	~Camera() throw();
 
 	void UpdateSettings(const CamSettings_t & oNewSettings);
+        const Frustum::Volume & GetVolume() const;
+        const BaseData & GetSettings() const;
 	void Adjust();
 	template <class TTranspose> void UpdateTransposer(TTranspose & oTranspose);
 	void UpdateDimension(const int32_t new_width, const int32_t new_height);
@@ -74,6 +80,8 @@ class Camera {
         void Zoom(const float factor);
         void ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox);
         void ZoomTo(const float width);
+        const glm::mat4 & GetMVMatrix();
+        const glm::mat4 & GetMVPMatrix();
 
 };
 

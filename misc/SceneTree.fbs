@@ -1,0 +1,25 @@
+
+include "Mesh.fbs";
+
+namespace SE.FlatBuffers;
+
+table Entity {
+        name:string (required);
+        data:Mesh (required);
+}
+
+table Node {
+
+        name:string;
+        translation:Vec3;
+        rotation:Vec3;
+        scale:Vec3;
+        children:[Node];
+        render_entity:[Entity];
+}
+
+root_type Node;
+
+file_identifier "SESC";
+file_extension "sesc";
+

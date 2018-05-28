@@ -1,0 +1,19 @@
+
+namespace SE.FlatBuffers;
+
+enum ShaderType : uint8 {
+        VERTEX   = 1,
+        FRAGMENT = 2
+}
+
+table ShaderComponent {
+        dependencies:[string];
+        type:ShaderType = FRAGMENT;
+        source:[string] (required);
+}
+
+root_type ShaderComponent;
+
+file_identifier "SESL";
+file_extension "sesl";
+
