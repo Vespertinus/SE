@@ -246,5 +246,18 @@ template <class ... TGeom >
          }
 }
 
+template <class ... TGeom >
+        void SceneNode<TGeom ...>::SetCustomInfo(const std::string_view sInfo) {
+
+        sCustomInfo = sInfo;
+}
+
+template <class ... TGeom >
+        const std::string & SceneNode<TGeom ...>::GetCustomInfo() const {
+
+        return sCustomInfo;
 
 }
+
+}
+

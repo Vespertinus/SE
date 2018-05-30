@@ -46,7 +46,9 @@ int main(int argc, char **argv) {
                         ("flip_yz",      bpo::value<bool>()->default_value(false),              "flip yz axes, depend on what axis might be up")
                         ("cut_path",     bpo::value<string>(),                                  "regex for cuting imported paths (<search substr>)")
                         ("replace",      bpo::value<string>(),                                  "string for replacing cuted path part (<path>)")
-                        ("to_scene",    bpo::value<bool>()->default_value(false),               "write mesh as scene")
+                        ("to_scene",     bpo::value<bool>()->default_value(false),              "write mesh as scene")
+                        ("info_prop",    bpo::value<bool>()->default_value(true),               "import custom data from fbx node property ('info') as string")
+
                         ;
 
                 bpo::variables_map vm;
@@ -114,6 +116,9 @@ int main(int argc, char **argv) {
                 }
                 {
                         to_scene = vm["to_scene"].as<bool>();
+                }
+                {
+                        oCtx.import_info_prop = vm["info_prop"].as<bool>();
                 }
         }
         catch (std::exception & ex) {

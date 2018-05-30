@@ -16,6 +16,7 @@ table Node {
         scale:Vec3;
         children:[Node];
         render_entity:[Entity];
+        info:string;
 }
 
 root_type Node;

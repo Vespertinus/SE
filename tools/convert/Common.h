@@ -56,12 +56,13 @@ struct MeshData {
 
 struct NodeData {
 
-        std::string             sName;
         glm::vec3               translation;
         glm::vec3               rotation;
         glm::vec3               scale;
+        std::string             sName;
         std::vector<NodeData>   vChildren;
         std::vector<MeshData>   vEntity;
+        std::string             sInfo;
 };
 
 struct ImportCtx {
@@ -70,6 +71,7 @@ struct ImportCtx {
         std::string             sReplace;
         bool                    skip_normals;
         bool                    flip_yz;
+        bool                    import_info_prop;
         /** stats */
         uint32_t                node_cnt;
         uint32_t                mesh_cnt;

@@ -50,7 +50,8 @@ static flatbuffers::Offset<Node> SerializeNode(
                           &rotation_fb,
                           &scale_fb,
                           vChildren.size() ? oBuilder.CreateVector(vChildren) : 0,
-                          vEntity.size() ?   oBuilder.CreateVector(vEntity) : 0 );
+                          vEntity.size() ?   oBuilder.CreateVector(vEntity) : 0,
+                          oNode.sInfo.empty() ? 0 : oBuilder.CreateString(oNode.sInfo) );
 
 }
 

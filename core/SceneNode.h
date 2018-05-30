@@ -61,6 +61,8 @@ template <class ... TGeom> class SceneNode {
         TSceneTree            * GetScene() const;
         template <class T>  T * GetEntity(const size_t index);
         const Transform       & GetTransform() const;
+        void                    SetCustomInfo(const std::string_view sInfo);
+        const std::string     & GetCustomInfo() const;
 
         /*      TODO
                 SetRotation(glm::quaternion)

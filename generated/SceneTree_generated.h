@@ -86,7 +86,8 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_ROTATION = 8,
     VT_SCALE = 10,
     VT_CHILDREN = 12,
-    VT_RENDER_ENTITY = 14
+    VT_RENDER_ENTITY = 14,
+    VT_INFO = 16
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -106,6 +107,9 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<Entity>> *render_entity() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Entity>> *>(VT_RENDER_ENTITY);
   }
+  const flatbuffers::String *info() const {
+    return GetPointer<const flatbuffers::String *>(VT_INFO);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
@@ -119,6 +123,8 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_RENDER_ENTITY) &&
            verifier.Verify(render_entity()) &&
            verifier.VerifyVectorOfTables(render_entity()) &&
+           VerifyOffset(verifier, VT_INFO) &&
+           verifier.Verify(info()) &&
            verifier.EndTable();
   }
 };
@@ -144,6 +150,9 @@ struct NodeBuilder {
   void add_render_entity(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Entity>>> render_entity) {
     fbb_.AddOffset(Node::VT_RENDER_ENTITY, render_entity);
   }
+  void add_info(flatbuffers::Offset<flatbuffers::String> info) {
+    fbb_.AddOffset(Node::VT_INFO, info);
+  }
   explicit NodeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -163,8 +172,10 @@ inline flatbuffers::Offset<Node> CreateNode(
     const Vec3 *rotation = 0,
     const Vec3 *scale = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Node>>> children = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Entity>>> render_entity = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Entity>>> render_entity = 0,
+    flatbuffers::Offset<flatbuffers::String> info = 0) {
   NodeBuilder builder_(_fbb);
+  builder_.add_info(info);
   builder_.add_render_entity(render_entity);
   builder_.add_children(children);
   builder_.add_scale(scale);
@@ -181,7 +192,8 @@ inline flatbuffers::Offset<Node> CreateNodeDirect(
     const Vec3 *rotation = 0,
     const Vec3 *scale = 0,
     const std::vector<flatbuffers::Offset<Node>> *children = nullptr,
-    const std::vector<flatbuffers::Offset<Entity>> *render_entity = nullptr) {
+    const std::vector<flatbuffers::Offset<Entity>> *render_entity = nullptr,
+    const char *info = nullptr) {
   return SE::FlatBuffers::CreateNode(
       _fbb,
       name ? _fbb.CreateString(name) : 0,
@@ -189,7 +201,8 @@ inline flatbuffers::Offset<Node> CreateNodeDirect(
       rotation,
       scale,
       children ? _fbb.CreateVector<flatbuffers::Offset<Node>>(*children) : 0,
-      render_entity ? _fbb.CreateVector<flatbuffers::Offset<Entity>>(*render_entity) : 0);
+      render_entity ? _fbb.CreateVector<flatbuffers::Offset<Entity>>(*render_entity) : 0,
+      info ? _fbb.CreateString(info) : 0);
 }
 
 inline const SE::FlatBuffers::Node *GetNode(const void *buf) {

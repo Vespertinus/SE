@@ -391,6 +391,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                         }
                                 }
 
+                                /*
                                 log_d("new index = {}, pos ({}, {}, {}), rot ({}, {}, {}), uv ({}, {})",
                                                 cur_index,
                                                 vVertexData[0], vVertexData[1], vVertexData[2],
@@ -398,10 +399,11 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                                 (oCtx.skip_normals) ? 0 : vVertexData[4],
                                                 (oCtx.skip_normals) ? 0 : vVertexData[5],
                                                 vVertexData[6], vVertexData[7]);
+                                                */
 
                                 vVertices.insert(vVertices.end(), vVertexData.begin(), vVertexData.end());
                                 ++oCtx.total_vertices_cnt;
-                        }
+                        }/*
                         else {
                                 log_d("old index = {}, pos ({}, {}, {}), rot ({}, {}, {}), uv ({}, {})",
                                                 cur_index,
@@ -410,7 +412,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                                 (oCtx.skip_normals) ? 0 : vVertexData[4],
                                                 (oCtx.skip_normals) ? 0 : vVertexData[5],
                                                 vVertexData[6], vVertexData[7]);
-                        }
+                        }*/
                         Pack(oShapeData.oIndex, cur_index);
                 }
         }
@@ -448,6 +450,27 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
         oNodeData.vEntity.emplace_back(std::move(oMesh));
 
         return uSUCCESS;
+}
+
+static void ImportCustomProperty(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
+
+        if (!oCtx.import_info_prop) { return; }
+
+        FbxProperty oProperty = pNode->GetFirstProperty();
+
+        while(oProperty.IsValid()) {
+
+                if (oProperty.GetFlag(FbxPropertyFlags::eUserDefined) &&
+                    (oProperty.GetName() == "info") &&
+                    (oProperty.GetPropertyDataType().GetType() == eFbxString) ) {
+
+                        oNodeData.sInfo = oProperty.Get<FbxString>();
+                        log_d("info: '{}'", oNodeData.sInfo);
+                        break;
+                }
+
+                oProperty = pNode->GetNextProperty(oProperty);
+        }
 }
 
 ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
@@ -493,6 +516,8 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
         if (res != uSUCCESS) {
                 return res;
         }
+
+        ImportCustomProperty(pNode, oNodeData, oCtx);
 
         for(int32_t i = 0; i < pNode->GetChildCount(); ++i) {
                 auto & oChildNodeData = oNodeData.vChildren.emplace_back(NodeData{});
