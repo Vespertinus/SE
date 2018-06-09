@@ -262,7 +262,7 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
 template <class ... TGeom > void SceneTree<TGeom ...>::
         Draw() const {
 
-        oRoot.Draw();
+        oRoot.DrawRecursive();
 }
 
 } //namespace SE

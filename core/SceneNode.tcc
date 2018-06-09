@@ -118,7 +118,10 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         Print(const size_t indent) {
 
         log_d("{:>{}} '{}': entity cnt = {}", ">", indent, sFullName, vRenderEntity.size());
-        oTransform.Print(indent);
+        oTransform.Print(indent + 2);
+        if (!sCustomInfo.empty()) {
+                log_d("{:>{}} info: '{}'", ">", indent + 2, sCustomInfo);
+        }
 
         for (auto * item : vChildren) {
                 item->Print(indent + 4);
@@ -148,7 +151,7 @@ template <class ... TGeom > SceneTree<TGeom...> * SceneNode<TGeom ...>::
 
 //TODO rewrite on property based visitor, via enable_if + is_renderable etc
 template <class ... TGeom > void SceneNode<TGeom ...>::
-        Draw() const {
+        DrawSelf() const {
 
         if (vRenderEntity.size()) {
 
@@ -163,9 +166,15 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 
                 }
         }
+}
+
+template <class ... TGeom > void SceneNode<TGeom ...>::
+        DrawRecursive() const {
+
+        DrawSelf();
 
         for (auto * pChild: vChildren) {
-                pChild->Draw();
+                pChild->DrawRecursive();
         }
 }
 
@@ -218,7 +227,8 @@ template <class ... TGeom >
         template <class THandler>
                 void SceneNode<TGeom ...>::DepthFirstWalk(THandler && oHandler) {
 
-         oHandler(*this);
+         bool res = oHandler(*this);
+         if (res == false) { return; }
 
          for (auto * pChild : vChildren) {
                 pChild->DepthFirstWalk(oHandler);
@@ -229,7 +239,9 @@ template <class ... TGeom >
         template <class THandler>
                 void SceneNode<TGeom ...>::BreadtFirstWalk(THandler && oHandler) {
 
-         oHandler(*this);
+         bool res = oHandler(*this);
+         if (res == false) { return; }
+
          BreadtFirstWalkChild(oHandler);
 
 }

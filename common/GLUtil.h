@@ -90,7 +90,7 @@ static inline void RGB2HCV(const glm::vec3 & RGBColor, glm::vec3 & HCVColor) {
 }
 
 
-static inline void RGb2HSL(const glm::vec3 & RGBColor, glm::vec3 & HSLColor) {
+static inline void RGB2HSL(const glm::vec3 & RGBColor, glm::vec3 & HSLColor) {
 
         glm::vec3 HCVColor;
         RGB2HCV(RGBColor, HCVColor);

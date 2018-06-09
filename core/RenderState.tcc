@@ -8,16 +8,6 @@ RenderState::RenderState() :
 }
 
 
-template <class T> ret_code_t RenderState::SetVariable(const StrID name, const T & val) {
-
-        if (pShader) {
-                return pShader->SetVariable(name, val);
-        }
-
-        log_w("shader not set, var: '{}'", name);
-        return uLOGIC_ERROR;
-}
-
 ret_code_t RenderState::SetTexture(const TextureUnit unit_index, const TTexture * pTex) {
 
         if (pShader) {

@@ -1,0 +1,29 @@
+type: FRAGMENT
+dependencies : 
+ - "hsl.sesl"
+source:
+ - |
+        #version 130
+
+        in vec2 TexCoord;
+
+        uniform sampler2D DiffuseTex;
+        uniform vec3      HSLBlendColor;
+
+        out vec4 FragColor;
+
+        vec3 RGB2HSL(vec3 RGBColor);
+        vec3 HSL2RGB(vec3 HSLColor);
+
+        void main() {
+
+                vec4 TexColor =  texture(DiffuseTex, TexCoord);
+                if (TexColor.a < 0.55) {
+                        FragColor = TexColor;
+                }
+                else {
+
+                        vec3 HSLTexColor = RGB2HSL(TexColor.rgb);
+                        FragColor = vec4(HSL2RGB(vec3(HSLBlendColor.xy, HSLTexColor.z)), 1);
+                }
+        }
