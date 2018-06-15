@@ -1,3 +1,7 @@
+
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 namespace SE  {
 
 Transform::Transform() :
@@ -22,11 +26,20 @@ void Transform::Recalc() const {
 
         //TODO rewrite
 
+        /*
         mTransform  = glm::translate(glm::mat4(1.0), vTranslation);
         mTransform  = glm::scale (mTransform, vScale);
         mTransform  = glm::rotate(mTransform, glm::radians(vRotation.x), glm::vec3( 1, 0, 0) );
         mTransform  = glm::rotate(mTransform, glm::radians(vRotation.y), glm::vec3( 0, 1, 0) );
         mTransform  = glm::rotate(mTransform, glm::radians(vRotation.z), glm::vec3( 0, 0, 1) );
+        */
+
+        glm::mat4 mTranslate    = glm::translate(glm::mat4(1.0), vTranslation);
+        glm::mat4 mScale        = glm::scale (glm::mat4(1.0), vScale);
+        glm::quat oQuat(glm::vec3(glm::radians(vRotation.x), glm::radians(vRotation.y), glm::radians(vRotation.z)));
+        glm::mat4 mRotation     = glm::toMat4(oQuat);
+
+        mTransform  = mTranslate * mRotation * mScale;
 
         local_dirty = 0;
 }
