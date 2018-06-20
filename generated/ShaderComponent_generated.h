@@ -14,14 +14,16 @@ struct ShaderComponent;
 enum class ShaderType : uint8_t {
   VERTEX = 1,
   FRAGMENT = 2,
+  GEOMETRY = 3,
   MIN = VERTEX,
-  MAX = FRAGMENT
+  MAX = GEOMETRY
 };
 
-inline const ShaderType (&EnumValuesShaderType())[2] {
+inline const ShaderType (&EnumValuesShaderType())[3] {
   static const ShaderType values[] = {
     ShaderType::VERTEX,
-    ShaderType::FRAGMENT
+    ShaderType::FRAGMENT,
+    ShaderType::GEOMETRY
   };
   return values;
 }
@@ -30,6 +32,7 @@ inline const char * const *EnumNamesShaderType() {
   static const char * const names[] = {
     "VERTEX",
     "FRAGMENT",
+    "GEOMETRY",
     nullptr
   };
   return names;

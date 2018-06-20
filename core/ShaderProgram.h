@@ -11,9 +11,16 @@ namespace SE {
   some kind of gl ctx, FSM like
   TODO init shader const from gl
 
-  set attributes locations (BindBuffer) before linking
   store used attributes list with it's types
 */
+
+enum ShaderSystemVariables : uint32_t {
+
+        MVPMatrix       = 0x1,
+        MVMatrix        = 0x2,
+        ScreenSize      = 0x4
+};
+
 struct ShaderVariable {
 
         std::string     sName;
@@ -42,6 +49,7 @@ class ShaderProgram : public ResourceHolder {
         std::unordered_map<StrID, ShaderVariable> mVariables;
         std::unordered_map<StrID, ShaderVariable> mSamplers;
         uint32_t gl_id;
+        uint32_t used_system_variables;
         uint16_t used_texture_units;
 
         void Load(const FlatBuffers::ShaderProgram * pShaderProgram, const Settings & oSettings);
@@ -62,12 +70,14 @@ class ShaderProgram : public ResourceHolder {
         ret_code_t              SetVariable(const StrID name, const glm::vec3 & val);
         ret_code_t              SetVariable(const StrID name, const glm::mat3 & val);
         ret_code_t              SetVariable(const StrID name, const glm::mat4 & val);
+        ret_code_t              SetVariable(const StrID name, const glm::uvec2 & val);
         //and so on
 
         bool                    HasVariable(const StrID name) const;
         ret_code_t              SetTexture(const StrID name, const TTexture * pTex);
         ret_code_t              SetTexture(const TextureUnit unit_index, const TTexture * pTex);
         //ret_code_t              Validate() const; //check that all variables set via bitset + location, texture ???
+        uint32_t                UsedSystemVariables() const;
 };
 
 } //namespace SE

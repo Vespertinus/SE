@@ -94,7 +94,9 @@ void ShaderComponent::Load(const SE::FlatBuffers::ShaderComponent * pShader, con
 
         type = pShader->type();
 
-        gl_id = glCreateShader((type == SE::FlatBuffers::ShaderType::VERTEX) ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
+        gl_id = glCreateShader(
+                        (type == SE::FlatBuffers::ShaderType::VERTEX) ? GL_VERTEX_SHADER :
+                        (type == SE::FlatBuffers::ShaderType::FRAGMENT) ? GL_FRAGMENT_SHADER : GL_GEOMETRY_SHADER);
         if (!gl_id) {
                 throw (std::runtime_error( "ShaderComponent::Load: failed to create gl shader"));
         }

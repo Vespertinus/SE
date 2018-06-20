@@ -81,7 +81,8 @@ inline flatbuffers::Offset<Shader> CreateShaderDirect(
 struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_VERTEX = 4,
-    VT_FRAGMENT = 6
+    VT_FRAGMENT = 6,
+    VT_GEOMETRY = 8
   };
   const Shader *vertex() const {
     return GetPointer<const Shader *>(VT_VERTEX);
@@ -89,12 +90,17 @@ struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const Shader *fragment() const {
     return GetPointer<const Shader *>(VT_FRAGMENT);
   }
+  const Shader *geometry() const {
+    return GetPointer<const Shader *>(VT_GEOMETRY);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_VERTEX) &&
            verifier.VerifyTable(vertex()) &&
            VerifyOffsetRequired(verifier, VT_FRAGMENT) &&
            verifier.VerifyTable(fragment()) &&
+           VerifyOffset(verifier, VT_GEOMETRY) &&
+           verifier.VerifyTable(geometry()) &&
            verifier.EndTable();
   }
 };
@@ -107,6 +113,9 @@ struct ShaderProgramBuilder {
   }
   void add_fragment(flatbuffers::Offset<Shader> fragment) {
     fbb_.AddOffset(ShaderProgram::VT_FRAGMENT, fragment);
+  }
+  void add_geometry(flatbuffers::Offset<Shader> geometry) {
+    fbb_.AddOffset(ShaderProgram::VT_GEOMETRY, geometry);
   }
   explicit ShaderProgramBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -125,8 +134,10 @@ struct ShaderProgramBuilder {
 inline flatbuffers::Offset<ShaderProgram> CreateShaderProgram(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<Shader> vertex = 0,
-    flatbuffers::Offset<Shader> fragment = 0) {
+    flatbuffers::Offset<Shader> fragment = 0,
+    flatbuffers::Offset<Shader> geometry = 0) {
   ShaderProgramBuilder builder_(_fbb);
+  builder_.add_geometry(geometry);
   builder_.add_fragment(fragment);
   builder_.add_vertex(vertex);
   return builder_.Finish();

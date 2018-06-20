@@ -11,6 +11,7 @@ table Shader {
 table ShaderProgram {
         vertex:Shader(required);
         fragment:Shader (required);
+        geometry:Shader;
         //variables..
 }
 

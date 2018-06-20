@@ -13,6 +13,13 @@ static const std::unordered_map<StrID, TextureUnit> mTextureUnitMapping = {
         { "CustomTex",          TextureUnit::CUSTOM }
 };
 
+//TODO store gl_type for type checking on load
+static const std::unordered_map<StrID, uint32_t> mSystemVariables = {
+        { "MVPMatrix",          ShaderSystemVariables::MVPMatrix },
+        { "MVMatrix",           ShaderSystemVariables::MVMatrix },
+        { "ScreenSize",         ShaderSystemVariables::ScreenSize }
+};
+
 static const std::unordered_map<uint32_t, uint32_t> mSamplers2Textures = {
         { GL_SAMPLER_1D,                        GL_TEXTURE_1D},
         { GL_SAMPLER_2D,                        GL_TEXTURE_2D },
@@ -64,6 +71,7 @@ ShaderProgram::ShaderProgram(const std::string & sName,
                              const Settings    & oSettings) :
         ResourceHolder(new_rid, sName),
         gl_id(0),
+        used_system_variables(0),
         used_texture_units(0) {
 
         static const size_t max_file_size = 1024 * 1024 * 10;
@@ -121,6 +129,8 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
         int      status;
 
         auto GetShader = [&](const SE::FlatBuffers::Shader * pShaderFB) -> ShaderComponent * {
+                if (pShaderFB == nullptr) { return nullptr; }
+
                 auto * pShaderDataFB = pShaderFB->data();
                 if (pShaderDataFB != nullptr) {
                         return CreateResource<ShaderComponent>(
@@ -136,6 +146,14 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
 
         auto * pVertexShader    = GetShader(pShaderProgram->vertex());
         auto * pFragmentShader  = GetShader(pShaderProgram->fragment());
+        auto * pGeometryShader  = GetShader(pShaderProgram->geometry());
+
+        if (!pVertexShader) {
+                throw (std::runtime_error( "ShaderProgram::Load: failed to get vertex shader, program name: " + sName));
+        }
+        if (!pFragmentShader) {
+                throw (std::runtime_error( "ShaderProgram::Load: failed to get fragment shader, program name: " + sName));
+        }
 
         gl_id = glCreateProgram();
         if (!gl_id) {
@@ -166,6 +184,17 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
                 glAttachShader(gl_id, pItem->Get());
                 ++shader_cnt;
         }
+
+        if (pGeometryShader != nullptr) {
+                glAttachShader(gl_id, pGeometryShader->Get());
+                ++shader_cnt;
+                const auto & vDependencies = pGeometryShader->GetDependencies();
+                for (auto * pItem : vDependencies) {
+                        glAttachShader(gl_id, pItem->Get());
+                        ++shader_cnt;
+                }
+        }
+
         log_d("attach {} shaders to program '{}'", shader_cnt, sName);
 
         glLinkProgram(gl_id);
@@ -178,7 +207,12 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
         for (auto * pItem : vFragDependencies) {
                 glDetachShader(gl_id, pItem->Get());
         }
-
+        if (pGeometryShader != nullptr) {
+                glDetachShader(gl_id, pGeometryShader->Get());
+                for (auto * pItem : pGeometryShader->GetDependencies()) {
+                        glDetachShader(gl_id, pItem->Get());
+                }
+        }
 
         glGetProgramiv(gl_id, GL_LINK_STATUS, &status);
         if (auto ret = CheckOpenGLError(); ret != uSUCCESS || !status) {
@@ -286,13 +320,21 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
                         mSamplers.emplace(key, std::move(oVar));
                 }
                 else {
-                        log_d("add uniform: '{}', type: {}, size: {}, location: {}, to shader program: '{}'",
+                        uint32_t mask    = 0;
+                        auto itSystemVar = mSystemVariables.find(key);
+                        if (itSystemVar != mSystemVariables.end()) {
+                                mask = itSystemVar->second;
+                        }
+
+                        log_d("add {} uniform: '{}', type: {}, size: {}, location: {}, to shader program: '{}'",
+                                        (mask) ? "system" : "custom",
                                         oVar.sName,
                                         oVar.type,
                                         items_cnt,
                                         oVar.location,
                                         sName);
                         mVariables.emplace(key, std::move(oVar));
+                        used_system_variables |= mask;
                 }
 
         }
@@ -399,6 +441,25 @@ ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::mat4 & val) {
         return uSUCCESS;
 }
 
+ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::uvec2 & val) {
+
+        auto it = mVariables.find(name);
+        if (it == mVariables.end()) {
+                log_e("can't find variable with strid = '{}' in shader program: '{}'", name, sName);
+                return uWRONG_INPUT_DATA;
+        }
+
+        if (it->second.type != GL_UNSIGNED_INT_VEC2) {
+                log_e("wrong type 'glm::uvec2', variable '{}' expect {}, in shader program: '{}'",
+                                it->second.sName,
+                                it->second.type,
+                                sName);
+                return uWRONG_INPUT_DATA;
+        }
+        glUniform2uiv(it->second.location, 1, glm::value_ptr(val));
+        return uSUCCESS;
+}
+
 void ShaderProgram::Use() const {
 
         glUseProgram(gl_id);
@@ -465,6 +526,10 @@ ret_code_t ShaderProgram::SetTexture(const StrID name, const TTexture * pTex) {
         }
 
         return uSUCCESS;
+}
+
+uint32_t ShaderProgram::UsedSystemVariables() const {
+        return used_system_variables;
 }
 
 } //namespace SE

@@ -17,6 +17,8 @@ class RenderState {
         const glm::mat4 * pModelViewProjection;
         const glm::mat4 * pTransformMat;
         ShaderProgram   * pShader;
+        uint32_t          cur_vao;
+        glm::uvec2        screen_size;
 
         //TODO
         //texture units
@@ -32,9 +34,14 @@ class RenderState {
         void                            SetTransform(const glm::mat4 & oMat);
         void                            SetViewProjection(const glm::mat4 & oMat);
         void                            SetShaderProgram(ShaderProgram * pNewShader);
+        void                            SetScreenSize(const uint32_t width, const uint32_t height);
         void                            Draw(const uint32_t vao_id,
                                              const uint32_t triangles_cnt,
                                              const uint32_t gl_index_type);
+        void                            DrawArrays(const uint32_t vao_id,
+                                                   const uint32_t mode,
+                                                   const uint32_t first,
+                                                   const uint32_t count);
         void                            Reset(); //TODO --> frame start
 
 };

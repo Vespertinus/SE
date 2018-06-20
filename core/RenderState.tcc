@@ -1,10 +1,14 @@
 
 namespace SE {
 
+static StrID    oScreenSizeID("ScreenSize");
+
 RenderState::RenderState() :
         pModelViewProjection(nullptr),
         pTransformMat(nullptr),
-        pShader(nullptr) {
+        pShader(nullptr),
+        cur_vao(0),
+        screen_size(800, 600) {
 }
 
 
@@ -55,6 +59,9 @@ void RenderState::SetShaderProgram(ShaderProgram * pNewShader) {
 
                 pShader->SetVariable("MVPMatrix", *pModelViewProjection);
         }
+        if (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize) {
+                pShader->SetVariable(oScreenSizeID, screen_size);
+        }
 }
 
 void RenderState::Reset() {
@@ -76,8 +83,39 @@ void RenderState::Draw(
                return;
         }
 
-        glBindVertexArray(vao_id);
+        if (vao_id != cur_vao) {
+                glBindVertexArray(vao_id);
+                cur_vao = vao_id;
+        }
         glDrawElements(GL_TRIANGLES, triangles_cnt * 3, gl_index_type, 0);
+}
+
+void RenderState::DrawArrays(
+                const uint32_t vao_id,
+                const uint32_t mode,
+                const uint32_t first,
+                const uint32_t count) {
+
+        if (vao_id < 1) {
+               return;
+        }
+
+        if (vao_id != cur_vao) {
+                glBindVertexArray(vao_id);
+                cur_vao = vao_id;
+        }
+
+        glDrawArrays(mode, first, count);
+}
+
+void RenderState::SetScreenSize(const uint32_t width, const uint32_t height) {
+
+        screen_size.x = width;
+        screen_size.y = height;
+
+        if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize)) {
+                pShader->SetVariable(oScreenSizeID, screen_size);
+        }
 }
 
 } // namespace SE

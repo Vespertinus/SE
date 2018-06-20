@@ -3,7 +3,8 @@ namespace SE.FlatBuffers;
 
 enum ShaderType : uint8 {
         VERTEX   = 1,
-        FRAGMENT = 2
+        FRAGMENT = 2,
+        GEOMETRY = 3
 }
 
 table ShaderComponent {
