@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
 
         SE::SysSettings_t oSettings;
         string            sScenePath;
+        bool              vdebug;
 
 
         try {
@@ -31,6 +32,7 @@ int main(int argc, char **argv) {
                         ("scene",        bpo::value<string>(),                                  "SceneTree file for visualisation (<filename.sesc>)")
                         ("ortho",        bpo::value<bool>()->default_value(false),              "orthogonal projection")
                         ("resource",     bpo::value<string>()->default_value("resource/"),      "resource dir (<dir path>)")
+                        ("vdebug",       bpo::value<bool>()->default_value(false),              "visual debug helpers")
                         ;
 
                 bpo::variables_map vm;
@@ -77,6 +79,7 @@ int main(int argc, char **argv) {
                 if (vm.count("scene") ) {
                         sScenePath  = vm["scene"].as<string>();
                 }
+                vdebug = vm["vdebug"].as<bool>();
 
                 oSettings.oCamSettings.width 			= 1920;
                 oSettings.oCamSettings.height			= 1200;
@@ -87,8 +90,8 @@ int main(int argc, char **argv) {
                 oSettings.oCamSettings.oVolume.aspect           = (float)oSettings.oCamSettings.width / (float)oSettings.oCamSettings.height;
                 oSettings.oCamSettings.oVolume.near_clip	= 0.1;
                 oSettings.oCamSettings.oVolume.far_clip         = 2000;
-                oSettings.oCamSettings.oVolume.projection       = (vm["ortho"].as<bool>()) ? 
-                        SE::Frustum::uORTHO : 
+                oSettings.oCamSettings.oVolume.projection       = (vm["ortho"].as<bool>()) ?
+                        SE::Frustum::uORTHO :
                         SE::Frustum::uPERSPECTIVE;
 
                 oSettings.clear_flag			            = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
@@ -114,8 +117,7 @@ int main(int argc, char **argv) {
 
 
         try {
-
-                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath});
+                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath, vdebug});
         }
         catch (std::exception & ex) {
                 log_e("exception catched = {}", ex.what());

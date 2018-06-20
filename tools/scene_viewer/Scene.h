@@ -7,15 +7,19 @@ namespace TOOLS {
 
 class Scene {
 
-        SE::Camera      & oCamera;
-        SE::TSceneTree  * pSceneTree;
-
         public:
         struct Settings {
                 const std::string & sScenePath;
+                bool  vdebug;
         };
 
-        Scene(const Settings & oSettings, SE::Camera & oCurCamera);
+        private:
+        SE::Camera            & oCamera;
+        SE::TSceneTree        * pSceneTree;
+        Settings                oSettings;
+
+        public:
+        Scene(const Settings & oNewSettings, SE::Camera & oCurCamera);
         ~Scene() throw();
 
         void Process();

@@ -39,7 +39,7 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
         TSceneNode * Create(TSceneNode * pParent, const std::string_view sNewName = "");
         //TSceneNode * CloneNode(TSceneNode * pNode);
         TSceneNode * Find(const StrID sid) const;
-        TSceneNode * GetRoot() const;
+        TSceneNode * GetRoot();
         //Apply (visitor, recursive = false)
         //Apply (visitor, Node, recursive = false)
         bool         Destroy(TSceneNode * pNode);

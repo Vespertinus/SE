@@ -59,7 +59,7 @@ template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
 }
 
 template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
-        GetRoot() const {
+        GetRoot() {
 
         return &oRoot;
 }
