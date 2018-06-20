@@ -1,0 +1,12 @@
+{
+        "vertex" : {
+                "name" : "simple_vertex.sesl"
+        },
+        "geometry" : {
+                "name" : "wireframe_geometry.sesl"
+        },
+        "fragment" : {
+                "name" : "wireframe_frag.sesl"
+        }
+}
+

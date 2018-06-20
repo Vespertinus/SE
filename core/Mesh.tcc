@@ -82,8 +82,6 @@ void Mesh::Draw(const size_t shape_ind) const {
         DrawShape(oMeshCtx.vShapes[shape_ind]);
 }
 
-
-
 typename Mesh::TShapesInfo Mesh::GetShapesInfo() const {
 
         TShapesInfo vInfo;
@@ -249,7 +247,7 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                         }
                         else {
                                 oShape.pShader  = CreateResource<SE::ShaderProgram>(
-                                                "resource/shader_program/simple.sesp",
+                                                "resource/shader_program/wireframe.sesp",
                                                 SE::ShaderProgram::Settings{"resource/shader/"}
                                                 );
                         }

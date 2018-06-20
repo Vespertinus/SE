@@ -1,0 +1,15 @@
+type: FRAGMENT
+source:
+ - |
+        #version 130
+
+        noperspective in vec3 Distance;
+
+        out vec4 FragColor;
+
+        void main() {
+                float Nearest = min(min(Distance[0], Distance[1]), Distance[2]);
+                float EdgeFactor = exp2(-1.0 * Nearest * Nearest);
+                FragColor = (EdgeFactor * vec4(0.4, 0.01, 0.01, 1.0)) + ((1.0 - EdgeFactor) * vec4(0.8, 0.8, 0.8, 1.0));
+        }
+

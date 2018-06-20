@@ -1,0 +1,36 @@
+type: GEOMETRY
+source:
+ - |
+        #version 330
+        layout (triangles) in;
+        layout (triangle_strip, max_vertices = 3) out;
+
+        uniform uvec2 ScreenSize;
+
+        noperspective out vec3 Distance;
+
+        void main() {
+
+                vec2 Point0 = ScreenSize * gl_in[0].gl_Position.xy / gl_in[0].gl_Position.w;
+                vec2 Point1 = ScreenSize * gl_in[1].gl_Position.xy / gl_in[1].gl_Position.w;
+                vec2 Point2 = ScreenSize * gl_in[2].gl_Position.xy / gl_in[2].gl_Position.w;
+                vec2 V0 = Point2 - Point1;
+                vec2 V1 = Point2 - Point0;
+                vec2 V2 = Point1 - Point0;
+                float Area = abs(V1.x * V2.y - V1.y * V2.x);
+
+                Distance    = vec3(Area / length(V0), 0, 0);
+                gl_Position = gl_in[0].gl_Position;
+                EmitVertex();
+               
+                Distance    = vec3(0, Area / length(V1), 0);
+                gl_Position = gl_in[1].gl_Position;
+                EmitVertex();
+               
+                Distance    = vec3(0, 0, Area / length(V2));
+                gl_Position = gl_in[2].gl_Position;
+                EmitVertex();
+
+                EndPrimitive();
+        }
+
