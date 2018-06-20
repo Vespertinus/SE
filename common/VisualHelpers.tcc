@@ -34,7 +34,7 @@ void DrawAxes(const float size) {
     glVertex3f(size, i, 0);
   }
   glEnd();
-  
+
   glColor3f(0, 1, 0);
   glBegin(GL_LINES);
   for (float i = 0; i < size; ++i) {
@@ -59,7 +59,7 @@ void DrawAxes(const float size) {
 Elipse::Elipse(const float x_pos, const float y_pos, const float z_pos, const float new_radius, const uint32_t new_edge_count) : radius(new_radius), edge_count(new_edge_count) {
 
   delta = (360 * (M_PI / 180.0)) / edge_count;
-  
+
   ChangePos(x_pos, y_pos, z_pos);
   Resize(new_radius, new_edge_count);
 }
@@ -70,7 +70,7 @@ void Elipse::Resize(const float new_radius, const uint32_t new_edge_count) {
 
   radius      = new_radius;
   edge_count  = new_edge_count;
-  
+
   oVertArray.resize(edge_count);
   oColorArray.resize(edge_count);
 
@@ -86,7 +86,7 @@ void Elipse::Resize(const float new_radius, const uint32_t new_edge_count) {
 
     //log_d("oColorArray: x = {}, y = {}", oColorArray[i].first, oColorArray[i].second);
   }
-  
+
 }
 
 void Elipse::ChangePos(const float x_pos, const float y_pos, const float z_pos) {
@@ -100,17 +100,17 @@ void Elipse::Draw() const {
 
   glBegin(GL_LINES);
   for (uint32_t i = 1; i < edge_count; ++i) {
-    
+
     glColor3f(oColorArray[i - 1].first, oColorArray[i - 1].second, 0);
     glVertex3f(oVertArray[i - 1].first + pos[0], oVertArray[i - 1].second + pos[1], pos[2]);
 
     glColor3f(oColorArray[i].first, oColorArray[i].second, 0);
     glVertex3f(oVertArray[i].first + pos[0], oVertArray[i].second + pos[1], pos[2]);
   }
-  
+
   glColor3f(oColorArray[edge_count - 1].first, oColorArray[edge_count - 1].second, 0);
   glVertex3f(oVertArray[edge_count - 1].first + pos[0], oVertArray[edge_count - 1].second + pos[1], pos[2]);
-  
+
   glColor3f(oColorArray[0].first, oColorArray[0].second, 0);
   glVertex3f(oVertArray[0].first + pos[0], oVertArray[0].second + pos[1], pos[2]);
 
@@ -119,7 +119,7 @@ void Elipse::Draw() const {
 }
 
 
-void DrawPlane(const float width, const float height, 
+void DrawPlane(const float width, const float height,
                const float x_pos, const float y_pos, const float z_pos,
                const float x_dir, const float y_dir, const float z_dir,
                const uint32_t texture_id) {
@@ -150,7 +150,7 @@ void DrawPlane(const float width, const float height,
 }
 
 
-void DrawBox(const float x_size, 
+void DrawBox(const float x_size,
              const float y_size,
              const float z_size,
              const float x_pos,
@@ -174,7 +174,7 @@ void DrawBox(const float x_size,
         glTexCoord2f (0, 1);
         glVertex3f(x_pos, y_size + y_pos, z_pos);
         glEnd();
-        
+
         glBegin(GL_QUADS);
         glTexCoord2f (0, 0);
         glVertex3f(x_pos, y_pos, z_pos + z_size);
@@ -203,7 +203,7 @@ void DrawBox(const float x_size,
         glTexCoord2f (0, 1);
         glVertex3f(x_pos, y_size + y_pos, z_pos);
         glEnd();
-        
+
 
         glBegin(GL_QUADS);
         glTexCoord2f (0, 0);
@@ -218,7 +218,7 @@ void DrawBox(const float x_size,
         glTexCoord2f (0, 1);
         glVertex3f(x_pos + x_size, y_size + y_pos, z_pos);
         glEnd();
-        
+
 
         glBegin(GL_QUADS);
         glTexCoord2f (0, 0);
@@ -233,7 +233,7 @@ void DrawBox(const float x_size,
         glTexCoord2f (0, 1);
         glVertex3f(x_pos + x_size, y_pos, z_pos);
         glEnd();
-        
+
         glBegin(GL_QUADS);
         glTexCoord2f (0, 0);
         glVertex3f(x_pos, y_pos + y_size, z_pos);
@@ -247,7 +247,7 @@ void DrawBox(const float x_size,
         glTexCoord2f (0, 1);
         glVertex3f(x_pos + x_size, y_pos + y_size, z_pos);
         glEnd();
-        
+
 }
 
 
@@ -297,7 +297,7 @@ void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max) {
         glVertex3f(cur_max.x, cur_min.y, cur_max.z);
         glVertex3f(cur_max.x, cur_max.y, cur_max.z);
         glEnd();
-        
+
 
         glColor3f(0, 0, 1);
 
@@ -322,6 +322,81 @@ void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max) {
         glEnd();
 }
 
+VisualHelpers::VisualHelpers() {
+
+        const size_t COLOR_OFFSET = 3;
+        const size_t VERT_SIZE    = 6;
+
+        std::vector<float> vVertices((3 + 3) * 6);
+
+        vVertices[0 * VERT_SIZE + COLOR_OFFSET] = 1.0f;
+        vVertices[1 * VERT_SIZE] = 1.0f;
+        vVertices[1 * VERT_SIZE + COLOR_OFFSET] = 1.0f;
+
+        vVertices[2 * VERT_SIZE + COLOR_OFFSET + 1] = 1.0f;
+        vVertices[3 * VERT_SIZE + 1] = 1.0f;
+        vVertices[3 * VERT_SIZE + COLOR_OFFSET + 1] = 1.0f;
+
+        vVertices[4 * VERT_SIZE + COLOR_OFFSET + 2] = 1.0f;
+        vVertices[5 * VERT_SIZE + 2] = 1.0f;
+        vVertices[5 * VERT_SIZE + COLOR_OFFSET + 2] = 1.0f;
+
+        glGenVertexArrays(1, &local_axes_vao);
+        glBindVertexArray(local_axes_vao);
+
+        uint32_t vbo_id;
+        glGenBuffers(1, &vbo_id);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+        glBufferData(GL_ARRAY_BUFFER,
+                     vVertices.size() * sizeof(float),
+                     &vVertices[0],
+                     GL_STATIC_DRAW);
+
+        auto itLocation = mAttributeLocation.find("Position");
+        if (itLocation == mAttributeLocation.end()) {
+                glDeleteVertexArrays(1, &local_axes_vao);
+                glDeleteBuffers(1, &vbo_id);
+                throw(std::runtime_error("unknown vertex attribute name: 'Position'"));
+        }
+
+        glVertexAttribPointer(itLocation->second,
+                        3,
+                        GL_FLOAT,
+                        false,
+                        VERT_SIZE * sizeof(float),
+                        (const void *)0);
+        glEnableVertexAttribArray(itLocation->second);
+
+        itLocation = mAttributeLocation.find("Color");
+        if (itLocation == mAttributeLocation.end()) {
+                glDeleteVertexArrays(1, &local_axes_vao);
+                glDeleteBuffers(1, &vbo_id);
+                throw(std::runtime_error("unknown vertex attribute name: 'Color'"));
+        }
+
+        glVertexAttribPointer(itLocation->second,
+                        3,
+                        GL_FLOAT,
+                        false,
+                        VERT_SIZE * sizeof(float),
+                        (const void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(itLocation->second);
+
+        glBindVertexArray(0);
+        glDeleteBuffers(1, &vbo_id);
+
+        //TODO rewrite path handling after switching on global app settings
+        pShader  = CreateResource<SE::ShaderProgram>(
+                        "resource/shader_program/simple_color.sesp",
+                        SE::ShaderProgram::Settings{"resource/shader/"}
+                        );
+}
+
+void VisualHelpers::DrawLocalAxes() {
+
+        TRenderState::Instance().SetShaderProgram(pShader);
+        TRenderState::Instance().DrawArrays(local_axes_vao, GL_LINES, 0, 6);
+}
 
 } //namespace HELPERS
 

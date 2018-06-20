@@ -1,0 +1,13 @@
+type: FRAGMENT
+source:
+ - |
+        #version 130
+
+        in vec4 DiffuseColor;
+
+        out vec4 FragColor;
+
+        void main() {
+                FragColor = DiffuseColor;
+        }
+

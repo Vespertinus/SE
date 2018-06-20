@@ -19,7 +19,6 @@
 #include <Chrono.h>
 #include <SimpleFPS.h>
 #include <MPUtil.h>
-#include <VisualHelpers.h>
 
 #include <ResourceHolder.h>
 #include <ResourceManager.h>
@@ -45,6 +44,7 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 #include <ShaderComponent.h>
 #include <ShaderProgram.h>
 #include <RenderState.h>
+#include <VisualHelpers.h>
 
 #include <MeshStock.h>
 #include <Mesh.h>

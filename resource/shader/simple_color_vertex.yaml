@@ -1,0 +1,18 @@
+type: VERTEX
+source:
+ - |
+        #version 130
+
+        in vec4 Position;
+        in vec3 Color;
+
+        uniform mat4 MVPMatrix;
+        uniform mat4 MVMatrix;
+
+        out vec4 DiffuseColor;
+
+        void main() {
+                DiffuseColor = vec4(Color, 1.0);
+                gl_Position  = MVPMatrix * (MVMatrix * Position);
+        }
+

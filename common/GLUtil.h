@@ -25,6 +25,7 @@ static std::unordered_map<std::string, uint32_t> mAttributeLocation = {
         { "JointW",     6 },
         { "MorphW0",    7 },
         { "MorphW1",    8 },
+        { "Color",      9 },
         //tangent etc
         { "Custom0",    14},
         { "Custom1",    15}

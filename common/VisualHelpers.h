@@ -9,7 +9,7 @@ namespace HELPERS {
 
 void DrawAxes(const float size);
 
-void DrawPlane(const float width, const float height, 
+void DrawPlane(const float width, const float height,
                const float x_pos, const float y_pos, const float z_pos,
                const float x_dir, const float y_dir, const float z_dir,
                const uint32_t texture_id);
@@ -47,7 +47,22 @@ class Elipse {
 void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max);
 
 
+class VisualHelpers {
+
+        uint32_t        local_axes_vao;
+        ShaderProgram * pShader;
+
+        public:
+        VisualHelpers();
+        //DrawAxes(const float size)
+        void DrawLocalAxes();
+        //Draw ...
+};
+
+
 } // HELPERS
+
+using TVisualHelpers = Loki::SingletonHolder < HELPERS::VisualHelpers >;
 
 } // SE
 
