@@ -9,6 +9,7 @@ class StrID {
         uint64_t        hash;
 
         public:
+        StrID();
         StrID(const std::string_view sVal);
         StrID(const std::string & sVal);
         StrID(const char * data, const uint32_t size);
@@ -16,9 +17,12 @@ class StrID {
 
         bool operator == (const StrID rhs) const noexcept;
         operator uint64_t() const noexcept;
+        void operator = (const StrID rhs) noexcept;
 
         friend std::ostream & operator<< (std::ostream& stream, const StrID & obj);
 };
+
+inline StrID::StrID() : hash(0xDEADBEEF) { ;; }
 
 inline StrID::StrID(const std::string_view sVal) {
 
@@ -50,6 +54,9 @@ inline std::ostream & operator<< (std::ostream& stream, const StrID & obj) {
         return stream;
 }
 
+inline void StrID::operator = (const StrID rhs) noexcept {
+        hash = rhs.hash;
+}
 
 } //namespace SE
 
