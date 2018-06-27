@@ -1,6 +1,6 @@
 type: FRAGMENT
-dependencies : 
- - "hsl.sesl"
+dependencies :
+ - "color_space.sesl"
 source:
  - |
         #version 130
