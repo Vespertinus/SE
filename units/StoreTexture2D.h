@@ -11,19 +11,22 @@ class StoreTexture2D {
                 int32_t wrap;
                 int32_t min_filter,
                         mag_filter;
-                int32_t apply_method;
                 bool    mipmap_enabled;
 
-                Settings(
-                                bool    mipmap          = true, 
-                                int32_t wrap_option     = GL_CLAMP_TO_EDGE, 
-                                int32_t apply_option    = GL_MODULATE) : 
+                Settings(bool    mipmap          = true,
+                         int32_t wrap_option     = GL_CLAMP_TO_EDGE) :
                         wrap(wrap_option),
                         min_filter((mipmap) ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR),
                         mag_filter(GL_LINEAR),
-                        apply_method(apply_option),
-                        mipmap_enabled(mipmap)
-                { ;; }
+                        mipmap_enabled(mipmap) { ;; }
+                Settings(bool    mipmap,
+                         int32_t wrap_option,
+                         int32_t min,
+                         int32_t mag) :
+                        wrap(wrap_option),
+                        min_filter(min),
+                        mag_filter(mag),
+                        mipmap_enabled(mipmap) { ;; }
         };
 
         typedef Settings  TChild;
