@@ -11,6 +11,8 @@ namespace SE {
   some kind of gl ctx, FSM like
   TODO init shader const from gl
 
+  TODO create uniform variables storage, like buffer + ptr + type
+
   store used attributes list with it's types
 */
 

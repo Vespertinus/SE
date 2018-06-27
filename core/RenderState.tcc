@@ -69,6 +69,7 @@ void RenderState::Reset() {
         pModelViewProjection = nullptr;
         pTransformMat        = nullptr;
         pShader              = nullptr;
+        cur_vao              = 0;
         glUseProgram(0);
         glBindVertexArray(0);
 }
