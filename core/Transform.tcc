@@ -1,6 +1,7 @@
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 namespace SE  {
 
@@ -118,7 +119,7 @@ void Transform::Invalidate() {
 
 void Transform::Print(const size_t indent) {
 
-        log_d("{:>{}} pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}",
+        log_d("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}",
                         ">",
                         indent,
                         vTranslation.x,
@@ -131,6 +132,37 @@ void Transform::Print(const size_t indent) {
                         vScale.y,
                         vScale.z,
                         (void *)pParent);
+
+        RecalcWorld();
+
+        glm::vec3 vWorldScale;
+        glm::quat qWorlRotation;
+        glm::vec3 vWorldTranslation;
+        glm::vec3 vWorldSkew;
+        glm::vec4 vWorldPersp;
+        glm::decompose(mWorldTransform, vWorldScale, qWorlRotation, vWorldTranslation, vWorldSkew, vWorldPersp);
+
+        glm::vec3 vWorldRotation = glm::eulerAngles(qWorlRotation);
+        log_d("{:>{}} world: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), skew ({}, {}, {}), persp ({}, {}, {}, {})",
+                        ">",
+                        indent,
+                        vWorldTranslation.x,
+                        vWorldTranslation.y,
+                        vWorldTranslation.z,
+                        glm::degrees(vWorldRotation.x),
+                        glm::degrees(vWorldRotation.y),
+                        glm::degrees(vWorldRotation.z),
+                        vWorldScale.x,
+                        vWorldScale.y,
+                        vWorldScale.z,
+                        vWorldSkew.x,
+                        vWorldSkew.y,
+                        vWorldSkew.z,
+                        vWorldPersp.x,
+                        vWorldPersp.y,
+                        vWorldPersp.z,
+                        vWorldPersp.q );
+
 }
 
 
