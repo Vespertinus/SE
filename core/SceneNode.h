@@ -49,6 +49,9 @@ template <class ... TGeom> class SceneNode {
         void                    SetPos(const glm::vec3 & vPos);
         void                    SetRotation(const glm::vec3 & vDegreeAngles);
         void                    SetScale(const glm::vec3 & new_scale);
+        void                    Translate(const glm::vec3 & vPos);
+        void                    Rotate(const glm::vec3 & vDegreeAngles);
+        void                    Scale(const glm::vec3 & new_scale);
         //void     DrawBBox() const;
         uint32_t                GetEntityCnt() const;
         template <class T> void AddRenderEntity(T oRenderEntity);

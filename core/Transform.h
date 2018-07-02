@@ -28,9 +28,15 @@ class Transform {
         void              SetScale(const glm::vec3 & new_scale);
         const glm::mat4 & Get() const;
         const glm::mat4 & GetWorld() const;
+        const glm::vec3 & GetPos() const;
+        const glm::vec3 & GetRotation() const;
+        const glm::vec3 & GetScale() const;
         void              Invalidate();
         void              SetParent(Transform * pNode);
         void              Print(const size_t indent);
+        void              Translate(const glm::vec3 & vPos);
+        void              Rotate(const glm::vec3 & vDegreeAngles);
+        void              Scale(const glm::vec3 & new_scale);
 };
 
 } //namespace SE

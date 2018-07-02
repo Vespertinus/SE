@@ -33,6 +33,23 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         InvalidateChildren();
 }
 
+template <class ... TGeom > void SceneNode<TGeom ...>::Translate(const glm::vec3 & vPos) {
+
+        oTransform.Translate(vPos);
+        InvalidateChildren();
+}
+
+template <class ... TGeom > void SceneNode<TGeom ...>::Rotate(const glm::vec3 & vDegreeAngles) {
+
+        oTransform.Rotate(vDegreeAngles);
+        InvalidateChildren();
+}
+
+template <class ... TGeom > void SceneNode<TGeom ...>::Scale(const glm::vec3 & new_scale) {
+
+        oTransform.Scale(new_scale);
+        InvalidateChildren();
+}
 
 template <class ... TGeom > void SceneNode<TGeom ...>::
         SetParent(TSceneNode * pNewParent) {

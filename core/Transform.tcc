@@ -85,6 +85,24 @@ void Transform::SetScale(const glm::vec3 & new_scale) {
         local_dirty = 1;
 }
 
+void Transform::Translate(const glm::vec3 & vPos) {
+
+        vTranslation    += vPos;
+        local_dirty     = 1;
+}
+
+void Transform::Rotate(const glm::vec3 & vDegreeAngles) {
+
+        vRotation       += vDegreeAngles;
+        local_dirty     = 1;
+}
+
+void Transform::Scale(const glm::vec3 & new_scale) {
+
+        vScale          += new_scale;
+        local_dirty     = 1;
+}
+
 const glm::mat4 & Transform::Get() const {
 
         Recalc();
@@ -165,5 +183,19 @@ void Transform::Print(const size_t indent) {
 
 }
 
+const glm::vec3 & Transform::GetPos() const {
+        return vTranslation;
+}
+
+const glm::vec3 & Transform::GetRotation() const {
+        return vRotation;
+}
+
+const glm::vec3 & Transform::GetScale() const {
+        return vScale;
+}
+
+
 
 }
+
