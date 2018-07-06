@@ -38,8 +38,6 @@ struct ShaderVariable {
 
 class ShaderProgram : public ResourceHolder {
 
-        static const uint8_t MAX_TEXTURE_IMAGE_UNITS = 16;
-
         public:
         struct Settings {
         //???

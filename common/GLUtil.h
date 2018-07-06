@@ -2,6 +2,8 @@
 #define __GL_UTIL_H__ 1
 
 namespace SE {
+//TODO move to graphics sub system
+static const uint8_t MAX_TEXTURE_IMAGE_UNITS = 16;
 
 enum class TextureUnit : int32_t {
         DIFFUSE         = 0,
