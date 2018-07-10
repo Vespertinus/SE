@@ -85,9 +85,10 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_TRANSLATION = 6,
     VT_ROTATION = 8,
     VT_SCALE = 10,
-    VT_CHILDREN = 12,
-    VT_RENDER_ENTITY = 14,
-    VT_INFO = 16
+    VT_PIVOT = 12,
+    VT_CHILDREN = 14,
+    VT_RENDER_ENTITY = 16,
+    VT_INFO = 18
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -100,6 +101,9 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   const Vec3 *scale() const {
     return GetStruct<const Vec3 *>(VT_SCALE);
+  }
+  const Vec3 *pivot() const {
+    return GetStruct<const Vec3 *>(VT_PIVOT);
   }
   const flatbuffers::Vector<flatbuffers::Offset<Node>> *children() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Node>> *>(VT_CHILDREN);
@@ -117,6 +121,7 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<Vec3>(verifier, VT_TRANSLATION) &&
            VerifyField<Vec3>(verifier, VT_ROTATION) &&
            VerifyField<Vec3>(verifier, VT_SCALE) &&
+           VerifyField<Vec3>(verifier, VT_PIVOT) &&
            VerifyOffset(verifier, VT_CHILDREN) &&
            verifier.Verify(children()) &&
            verifier.VerifyVectorOfTables(children()) &&
@@ -143,6 +148,9 @@ struct NodeBuilder {
   }
   void add_scale(const Vec3 *scale) {
     fbb_.AddStruct(Node::VT_SCALE, scale);
+  }
+  void add_pivot(const Vec3 *pivot) {
+    fbb_.AddStruct(Node::VT_PIVOT, pivot);
   }
   void add_children(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Node>>> children) {
     fbb_.AddOffset(Node::VT_CHILDREN, children);
@@ -171,6 +179,7 @@ inline flatbuffers::Offset<Node> CreateNode(
     const Vec3 *translation = 0,
     const Vec3 *rotation = 0,
     const Vec3 *scale = 0,
+    const Vec3 *pivot = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Node>>> children = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Entity>>> render_entity = 0,
     flatbuffers::Offset<flatbuffers::String> info = 0) {
@@ -178,6 +187,7 @@ inline flatbuffers::Offset<Node> CreateNode(
   builder_.add_info(info);
   builder_.add_render_entity(render_entity);
   builder_.add_children(children);
+  builder_.add_pivot(pivot);
   builder_.add_scale(scale);
   builder_.add_rotation(rotation);
   builder_.add_translation(translation);
@@ -191,6 +201,7 @@ inline flatbuffers::Offset<Node> CreateNodeDirect(
     const Vec3 *translation = 0,
     const Vec3 *rotation = 0,
     const Vec3 *scale = 0,
+    const Vec3 *pivot = 0,
     const std::vector<flatbuffers::Offset<Node>> *children = nullptr,
     const std::vector<flatbuffers::Offset<Entity>> *render_entity = nullptr,
     const char *info = nullptr) {
@@ -200,6 +211,7 @@ inline flatbuffers::Offset<Node> CreateNodeDirect(
       translation,
       rotation,
       scale,
+      pivot,
       children ? _fbb.CreateVector<flatbuffers::Offset<Node>>(*children) : 0,
       render_entity ? _fbb.CreateVector<flatbuffers::Offset<Entity>>(*render_entity) : 0,
       info ? _fbb.CreateString(info) : 0);

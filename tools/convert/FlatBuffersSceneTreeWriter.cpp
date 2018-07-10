@@ -44,11 +44,16 @@ static flatbuffers::Offset<Node> SerializeNode(
                                    oNode.scale.y,
                                    oNode.scale.z);
 
+        auto pivot_fb       = Vec3(oNode.pivot.x,
+                                   oNode.pivot.y,
+                                   oNode.pivot.z);
+
         return CreateNode(oBuilder,
                           oNode.sName.empty() ? 0 : oBuilder.CreateString(oNode.sName),
                           &translation_fb,
                           &rotation_fb,
                           &scale_fb,
+                          &pivot_fb,
                           vChildren.size() ? oBuilder.CreateVector(vChildren) : 0,
                           vEntity.size() ?   oBuilder.CreateVector(vEntity) : 0,
                           oNode.sInfo.empty() ? 0 : oBuilder.CreateString(oNode.sInfo) );

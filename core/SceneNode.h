@@ -42,13 +42,13 @@ template <class ... TGeom> class SceneNode {
 
         public:
 
-
         void                    DrawRecursive() const; //THINK maybe external;
         void                    DrawSelf() const;
         //void    Apply() const; only apply transformation..
         void                    SetPos(const glm::vec3 & vPos);
         void                    SetRotation(const glm::vec3 & vDegreeAngles);
         void                    SetScale(const glm::vec3 & new_scale);
+        void                    SetPivot(const glm::vec3 & new_pivot);
         void                    Translate(const glm::vec3 & vPos);
         void                    Rotate(const glm::vec3 & vDegreeAngles);
         void                    Scale(const glm::vec3 & new_scale);
