@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 flatc --cpp --scoped-enums -o generated/ misc/Mesh.fbs
 flatc --cpp --scoped-enums -o generated/ misc/SceneTree.fbs
