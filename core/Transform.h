@@ -11,7 +11,6 @@ class Transform {
         glm::vec3               vTranslation;
         glm::vec3               vRotation;
         glm::vec3               vScale;
-        glm::vec3               vPivot;
         mutable uint8_t         local_dirty : 1,
                                 world_dirty : 1;
 
@@ -23,21 +22,15 @@ class Transform {
         Transform();
         Transform(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale);
 
-        void              Set(
-                        const glm::vec3 & pos,
-                        const glm::vec3 & rotation,
-                        const glm::vec3 & new_scale,
-                        const glm::vec3 & new_pivot);
+        void              Set(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale);
         void              SetPos(const glm::vec3 & vPos);
         void              SetRotation(const glm::vec3 & vDegreeAngles);
         void              SetScale(const glm::vec3 & new_scale);
-        void              SetPivot(const glm::vec3 & new_pivot);
         const glm::mat4 & Get() const;
         const glm::mat4 & GetWorld() const;
         const glm::vec3 & GetPos() const;
         const glm::vec3 & GetRotation() const;
         const glm::vec3 & GetScale() const;
-        const glm::vec3 & GetPivot() const;
         void              Invalidate();
         void              SetParent(Transform * pNode);
         void              Print(const size_t indent);

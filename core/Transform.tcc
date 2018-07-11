@@ -40,10 +40,7 @@ void Transform::Recalc() const {
         glm::quat oQuat(glm::vec3(glm::radians(vRotation.x), glm::radians(vRotation.y), glm::radians(vRotation.z)));
         glm::mat4 mRotation     = glm::toMat4(oQuat);
 
-        glm::mat4 mPivot        = glm::translate(glm::mat4(1.0), vPivot);
-        glm::mat4 mPivotRev     = glm::translate(glm::mat4(1.0), -vPivot);
-
-        mTransform  = mTranslate * mPivot * mRotation * mScale * mPivotRev;
+        mTransform  = mTranslate * mRotation * mScale;
 
         local_dirty = 0;
 }
@@ -63,16 +60,11 @@ void Transform::RecalcWorld() const {
         world_dirty = 0;
 }
 
-void Transform::Set(
-                const glm::vec3 & pos,
-                const glm::vec3 & rotation,
-                const glm::vec3 & new_scale,
-                const glm::vec3 & new_pivot) {
+void Transform::Set(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale) {
 
         vTranslation    = pos;
         vRotation       = rotation;
         vScale          = new_scale;
-        vPivot          = new_pivot;
         local_dirty     = 1;
 }
 
@@ -90,12 +82,6 @@ void Transform::SetRotation(const glm::vec3 & vDegreeAngles) {
 void Transform::SetScale(const glm::vec3 & new_scale) {
 
         vScale = new_scale;
-        local_dirty = 1;
-}
-
-void Transform::SetPivot(const glm::vec3 & new_pivot) {
-
-        vPivot = new_pivot;
         local_dirty = 1;
 }
 
@@ -151,7 +137,7 @@ void Transform::Invalidate() {
 
 void Transform::Print(const size_t indent) {
 
-        log_d("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), pivot ({}, {}, {}), parent = {:p}",
+        log_d("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}",
                         ">",
                         indent,
                         vTranslation.x,
@@ -163,9 +149,6 @@ void Transform::Print(const size_t indent) {
                         vScale.x,
                         vScale.y,
                         vScale.z,
-                        vPivot.x,
-                        vPivot.y,
-                        vPivot.z,
                         (void *)pParent);
 
         RecalcWorld();
@@ -212,9 +195,6 @@ const glm::vec3 & Transform::GetScale() const {
         return vScale;
 }
 
-const glm::vec3 & Transform::GetPivot() const {
-        return vPivot;
-}
 
 
 }

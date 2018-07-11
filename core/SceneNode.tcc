@@ -33,13 +33,6 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
-        SetPivot(const glm::vec3 & new_pivot) {
-
-        oTransform.SetPivot(new_pivot);
-        InvalidateChildren();
-}
-
 template <class ... TGeom > void SceneNode<TGeom ...>::Translate(const glm::vec3 & vPos) {
 
         oTransform.Translate(vPos);

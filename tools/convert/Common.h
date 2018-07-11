@@ -59,7 +59,6 @@ struct NodeData {
         glm::vec3               translation;
         glm::vec3               rotation;
         glm::vec3               scale;
-        glm::vec3               pivot;
         std::string             sName;
         std::vector<NodeData>   vChildren;
         std::vector<MeshData>   vEntity;

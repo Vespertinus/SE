@@ -187,12 +187,10 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
         auto * pTranslationFB   = pSrcNode->translation();
         auto * pRotationFB      = pSrcNode->rotation();
         auto * pScaleFB         = pSrcNode->scale();
-        auto * pPivotFB         = pSrcNode->pivot();
 
         pDstNode->SetPos     (glm::vec3(pTranslationFB->x(), pTranslationFB->y(), pTranslationFB->z()));
         pDstNode->SetRotation(glm::vec3(pRotationFB->x(), pRotationFB->y(), pRotationFB->z()));
         pDstNode->SetScale   (glm::vec3(pScaleFB->x(), pScaleFB->y(), pScaleFB->z()));
-        pDstNode->SetPivot   (glm::vec3(pPivotFB->x(), pPivotFB->y(), pPivotFB->z()));
 
         if (pSrcNode->info() != nullptr) {
                 pDstNode->SetCustomInfo(pSrcNode->info()->c_str());

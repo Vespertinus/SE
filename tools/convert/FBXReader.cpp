@@ -479,26 +479,6 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
         FbxDouble3 rotation     = pNode->LclRotation.Get();
         FbxDouble3 scaling      = pNode->LclScaling.Get();
 
-        FbxVector4 rot_pivot    = pNode->GetRotationPivot(FbxNode::eSourcePivot);
-        FbxVector4 rot_offset   = pNode->GetRotationOffset(FbxNode::eSourcePivot);
-        rot_pivot += rot_offset;
-
-        FbxVector4 scale_pivot  = pNode->GetScalingPivot(FbxNode::eSourcePivot);
-        FbxVector4 scale_offset = pNode->GetScalingOffset(FbxNode::eSourcePivot);
-
-        if (rot_pivot != (scale_pivot + scale_offset)) {
-
-                rot_pivot       = pNode->GetRotationPivot(FbxNode::eSourcePivot);
-                log_e("engine support only one pivot for node, fbx node '{}' rotation pivot: ({}, {}, {}) plus rotation offset: ({}, {}, {}) must be equal to scaling pivot: ({}, {}, {}) plus scaling offset: ({}, {}, {})",
-                                pNode->GetName(),
-                                rot_pivot[0], rot_pivot[1], rot_pivot[2],
-                                rot_offset[0], rot_offset[1], rot_offset[2],
-                                scale_pivot[0], scale_pivot[1], scale_pivot[2],
-                                scale_offset[0], scale_offset[1], scale_offset[2]);
-                return uWRONG_INPUT_DATA;
-        }
-
-
         if (oCtx.flip_yz) {
                 oNodeData.translation.x = translation[0];
                 oNodeData.translation.y = - translation[2];
@@ -511,10 +491,6 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
                 oNodeData.scale.x = scaling[0];
                 oNodeData.scale.y = - scaling[2];
                 oNodeData.scale.z = scaling[1];
-
-                oNodeData.pivot.x = rot_pivot[0];
-                oNodeData.pivot.y = -rot_pivot[2];
-                oNodeData.pivot.z = rot_pivot[1];
         }
         else {
                 oNodeData.translation.x = translation[0];
@@ -528,10 +504,6 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
                 oNodeData.scale.x = scaling[0];
                 oNodeData.scale.y = scaling[1];
                 oNodeData.scale.z = scaling[2];
-
-                oNodeData.pivot.x = rot_pivot[0];
-                oNodeData.pivot.y = rot_pivot[1];
-                oNodeData.pivot.z = rot_pivot[2];
         }
 
         oNodeData.sName = pNode->GetName();
@@ -539,7 +511,6 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
         log_d("node translation: {}, {}, {}", oNodeData.translation.x, oNodeData.translation.y, oNodeData.translation.z);
         log_d("node rotation:    {}, {}, {}", oNodeData.rotation.x, oNodeData.rotation.y, oNodeData.rotation.z);
         log_d("node scaling:     {}, {}, {}", oNodeData.scale.x, oNodeData.scale.y, oNodeData.scale.z);
-        log_d("node pivot:       {}, {}, {}", oNodeData.pivot.x, oNodeData.pivot.y, oNodeData.pivot.z);
 
         ret_code_t res = ImportAttributes(pNode, oNodeData, oCtx);
         if (res != uSUCCESS) {
