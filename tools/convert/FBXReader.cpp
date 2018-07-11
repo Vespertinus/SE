@@ -135,6 +135,7 @@ ret_code_t FBXReader::ReadScene(const std::string_view sPath, NodeData & oRootNo
                 log_e("empty fbx scene, can't get root node. imported from: '{}'", sPath);
                 return uWRONG_INPUT_DATA;
         }
+
         return ImportNode(pNode, oRootNode, oCtx);
 }
 
@@ -475,9 +476,10 @@ static void ImportCustomProperty(FbxNode * pNode, NodeData & oNodeData, ImportCt
 
 ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
 
-        FbxDouble3 translation  = pNode->LclTranslation.Get();
-        FbxDouble3 rotation     = pNode->LclRotation.Get();
-        FbxDouble3 scaling      = pNode->LclScaling.Get();
+        FbxAMatrix & mLocalTransform    = pNode->EvaluateLocalTransform();
+        FbxDouble4 translation          = mLocalTransform.GetT();
+        FbxDouble4 rotation             = mLocalTransform.GetR();
+        FbxDouble4 scaling              = mLocalTransform.GetS();
 
         if (oCtx.flip_yz) {
                 oNodeData.translation.x = translation[0];
