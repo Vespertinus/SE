@@ -11,6 +11,7 @@ template <class ... TGeom > SceneTree<TGeom ...>::SceneTree(
         oRoot(nullptr, "root", this) {
 
         mNamedNodes.emplace(oRoot.GetName(), &oRoot);
+        mLocalNamedNodes.emplace(oRoot.GetName(), std::vector<TSceneNode *>(1, &oRoot) );
 
         Load(oSettings);
 }
@@ -26,15 +27,23 @@ template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
 
          if (!sNewName.empty()) {
                  StrID sid(pNode->GetFullName());
+                 StrID local_sid(pNode->GetName());
 
                  auto it = mNamedNodes.find(sid);
                  if (it != mNamedNodes.end()) {
-                        log_e("duplication found, node with name: '{}' already exist", pNode->GetFullName() );
-                        delete pNode;
-                        return nullptr;
+                         log_e("duplication found, node with name: '{}' already exist", pNode->GetFullName() );
+                         delete pNode;
+                         return nullptr;
+                 }
+
+                 mNamedNodes.emplace(sid, pNode);
+
+                 auto itLocalCheckNode = mLocalNamedNodes.find(local_sid);
+                 if (itLocalCheckNode == mLocalNamedNodes.end() ) {
+                         mLocalNamedNodes.emplace(local_sid, std::vector<TSceneNode *>(1, pNode) );
                  }
                  else {
-                        mNamedNodes.emplace(sid, pNode);
+                         itLocalCheckNode->second.emplace_back(pNode);
                  }
          }
 
@@ -49,11 +58,20 @@ template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
 }
 
 template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
-        Find(const StrID sid) const {
+        FindFullName(const StrID sid) const {
 
         auto it = mNamedNodes.find(sid);
         if (it != mNamedNodes.end()) {
                 return it->second;
+        }
+        return nullptr;
+}
+template <class ... TGeom > const std::vector<SceneNode<TGeom ...> *> * SceneTree<TGeom ...>::
+        FindLocalName(const StrID sid) const {
+
+        auto it = mLocalNamedNodes.find(sid);
+        if (it != mLocalNamedNodes.end()) {
+                return &it->second;
         }
         return nullptr;
 }
@@ -230,10 +248,11 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
                 return false;
         }
 
-        StrID oFullNameID(sNewFullName);
+        StrID full_name_id(sNewFullName);
+        StrID local_name_id(sNewName);
 
         if (!sNewName.empty()) {
-                auto itCheckNode = mNamedNodes.find(oFullNameID);
+                auto itCheckNode = mNamedNodes.find(full_name_id);
                 if (itCheckNode != mNamedNodes.end()) {
                         log_w("failed to rename node from: '{}', to '{}', node already exist with same name",
                                         pNode->GetFullName(),
@@ -249,11 +268,40 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
                         log_w("failed to find node by old name = '{}'", pNode->GetFullName());
                         return false;
                 }
+
+                auto itLocalCheckNode = mLocalNamedNodes.find(pNode->GetName());
+                if (itLocalCheckNode == mLocalNamedNodes.end() ) {
+                        log_w("failed to find node by old local name = '{}'", pNode->GetFullName());
+                        return false;
+                }
+                if (auto itL = std::find(itLocalCheckNode->second.begin(), itLocalCheckNode->second.end(), pNode); itL != itLocalCheckNode->second.end() ) {
+                        if (itLocalCheckNode->second.size() > 1) {
+                                itLocalCheckNode->second.erase(itL);
+                        }
+                        else {
+                                mLocalNamedNodes.erase(itLocalCheckNode);
+                        }
+                }
+                else {
+                        log_w("failed to find node by old local name = '{}', vec size = {}",
+                                        pNode->GetFullName(),
+                                        itLocalCheckNode->second.size());
+                        return false;
+                }
+
                 mNamedNodes.erase(itCheckNode);
         }
 
         if (!sNewName.empty()) {
-                mNamedNodes.emplace(oFullNameID, pNode);
+                mNamedNodes.emplace(full_name_id, pNode);
+
+                auto itLocalCheckNode = mLocalNamedNodes.find(local_name_id);
+                if (itLocalCheckNode == mLocalNamedNodes.end() ) {
+                        mLocalNamedNodes.emplace(local_name_id, std::vector<TSceneNode *>(1, pNode) );
+                }
+                else {
+                        itLocalCheckNode->second.emplace_back(pNode);
+                }
         }
 
         return true;

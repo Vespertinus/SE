@@ -132,7 +132,7 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 }
 
 template <class ... TGeom > void SceneNode<TGeom ...>::
-        Print(const size_t indent) {
+        Print(const size_t indent, bool recursive) {
 
         log_d("{:>{}} '{}': entity cnt = {}", ">", indent, sFullName, vRenderEntity.size());
         oTransform.Print(indent + 2);
@@ -140,8 +140,10 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
                 log_d("{:>{}} info: '{}'", ">", indent + 2, sCustomInfo);
         }
 
-        for (auto * item : vChildren) {
-                item->Print(indent + 4);
+        if (recursive) {
+                for (auto * item : vChildren) {
+                        item->Print(indent + 4);
+                }
         }
 }
 

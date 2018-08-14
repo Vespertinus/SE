@@ -23,6 +23,10 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
 
         TSceneNode                              oRoot;
         std::unordered_map<StrID, TSceneNode *> mNamedNodes;
+        std::unordered_map<
+                StrID,
+                std::vector<TSceneNode *>
+                        >                       mLocalNamedNodes;
 
         void Load(const Settings & oSettings);
         void Load(const SE::FlatBuffers::Node * pRoot, const Settings & oSettings);
@@ -38,7 +42,8 @@ template <class ... TGeom > class SceneTree : public ResourceHolder {
         TSceneNode * Create(const std::string_view sNewName = "");
         TSceneNode * Create(TSceneNode * pParent, const std::string_view sNewName = "");
         //TSceneNode * CloneNode(TSceneNode * pNode);
-        TSceneNode * Find(const StrID sid) const;
+        TSceneNode * FindFullName(const StrID sid) const;
+        const std::vector <TSceneNode *> * FindLocalName(const StrID sid) const;
         TSceneNode * GetRoot();
         //Apply (visitor, recursive = false)
         //Apply (visitor, Node, recursive = false)

@@ -61,7 +61,7 @@ template <class ... TGeom> class SceneNode {
         const std::string &     GetName() const;
         const std::string &     GetFullName() const;
         bool                    SetName(std::string_view sNewName);
-        void                    Print(const size_t indent);
+        void                    Print(const size_t indent, bool recursive = true);
         TSceneTree            * GetScene() const;
         template <class T>  T * GetEntity(const size_t index);
         const Transform       & GetTransform() const;
