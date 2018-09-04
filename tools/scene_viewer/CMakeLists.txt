@@ -13,6 +13,9 @@ include_directories(${TOOLS_INC_DIRS})
 
 set(SOURCES     "Main.cpp"
                 "Scene.cpp"
+                "${CMAKE_SOURCE_DIR}/common/ImGui.cpp"
+                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui.cpp"
+                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_draw.cpp"
                 )
 
 add_executable(         scene_viewer

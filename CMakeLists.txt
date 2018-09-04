@@ -10,7 +10,7 @@ option(OLD_ABI                  "Compile with old CXX ABI"               OFF)
 option(TOOLS                    "Compile tools with their dependencies"  ON)
 
 
-set(LOCAL_INC_DIRS              core common units generated)
+set(LOCAL_INC_DIRS              core common units generated "third_party/imgui")
 set(EXTERN_INC_DIRS)
 set(LIBRARIES_LIST              "")
 
