@@ -1,0 +1,10 @@
+{
+        "vertex" : {
+                "name" : "imgui_vert.sesl"
+        },
+        "fragment" : {
+                "name" : "imgui_frag.sesl"
+        }
+}
+
+
