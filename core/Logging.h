@@ -3,6 +3,7 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
+#include <spdlog/sinks/stdout_sinks.h>
 
 extern std::shared_ptr<spdlog::logger> gLogger;
 
