@@ -57,16 +57,28 @@ if( pInputSystem ) {
 }
 }
 
-void InputManager::Initialise(const uint32_t window_id, const int32_t width, const int32_t height) {
+void InputManager::Initialise(
+                const uint32_t  window_id,
+                const int32_t   width,
+                const int32_t   height,
+                const bool      grab_mouse,
+                const bool      hide_mouse) {
 
   if( !pInputSystem ) {
     // Setup basic variables
-    OIS::ParamList paramList;    
+    OIS::ParamList paramList;
     std::ostringstream window_hnd_str;
 
     // Fill parameter list
     window_hnd_str << window_id;
     paramList.insert( std::make_pair( std::string( "WINDOW" ), window_hnd_str.str() ) );
+
+    if (!grab_mouse) {
+        paramList.emplace("x11_mouse_grab", "false");
+    }
+    if (!hide_mouse) {
+        paramList.emplace("x11_mouse_hide", "false");
+    }
 
     // Create inputsystem
     pInputSystem = OIS::InputManager::createInputSystem( paramList );
@@ -144,6 +156,7 @@ void InputManager::Capture() {
 }
 
 void InputManager::AddKeyListener( OIS::KeyListener *keyListener, const std::string& instanceName ) {
+
   if( pKeyboard ) {
     // Check for duplicate items
     itKeyListener = oKeyListeners.find( instanceName );
@@ -269,7 +282,7 @@ void InputManager::RemoveAllJoystickListeners() {
 void InputManager::SetWindowExtents(const int32_t width, const int32_t height ) {
 
   if (!pMouse) return;
-  
+
   // Set mouse region (if window resizes, we should alter this to reflect as well)
   const OIS::MouseState &mouseState = pMouse->getMouseState();
   mouseState.width  = width;
@@ -299,6 +312,7 @@ size_t InputManager::GetNumOfJoysticks() const {
 }
 
 bool InputManager::keyPressed( const OIS::KeyEvent &e ) {
+
   itKeyListener    = oKeyListeners.begin();
   itKeyListenerEnd = oKeyListeners.end();
   for(; itKeyListener != itKeyListenerEnd; ++itKeyListener ) {
