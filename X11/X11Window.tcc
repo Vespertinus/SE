@@ -4,8 +4,8 @@
 namespace SE {
 
 template <class ResizeHandler,  class DrawHandler> X11Window<ResizeHandler, DrawHandler>::X11Window(
-                ResizeHandler & oNewResizeHandler, 
-                DrawHandler & oNewDrawHandler, 
+                ResizeHandler & oNewResizeHandler,
+                DrawHandler & oNewDrawHandler,
                 const WindowSettings & oNewSettings) :
         display(0),
         window(0),
@@ -40,17 +40,18 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
         int32_t               x,
                               y;
 
-        int attr_list_single[] = {GLX_RGBA, GLX_RED_SIZE, 4,
-                GLX_GREEN_SIZE, 4,
-                GLX_BLUE_SIZE, 4,
-                GLX_DEPTH_SIZE, 16,
+        int attr_list_single[] = {GLX_RGBA, GLX_RED_SIZE, 8,
+                GLX_GREEN_SIZE, 8,
+                GLX_BLUE_SIZE, 8,
+                GLX_DEPTH_SIZE, 24,
                 None};
 
-        int attr_list_double[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
-                GLX_RED_SIZE, 4,
-                GLX_GREEN_SIZE, 4,
-                GLX_BLUE_SIZE, 4,
-                GLX_DEPTH_SIZE, 16,
+        int attr_list_double[] = {GLX_RGBA,
+                GLX_DOUBLEBUFFER, True,
+                GLX_RED_SIZE, 8,
+                GLX_GREEN_SIZE, 8,
+                GLX_BLUE_SIZE, 8,
+                GLX_DEPTH_SIZE, 24,
                 None};
 
         display = XOpenDisplay(0);
@@ -84,6 +85,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
         color_map             = XCreateColormap(display, RootWindow(display, visual->screen), visual->visual, AllocNone);
         wnd_attr.colormap     = color_map;
         wnd_attr.border_pixel = 0;
+        wnd_attr.cursor       = None;
 
         if (oSettings.fullscreen) {
 
@@ -94,7 +96,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                 }
                 if (best_mode == -1) {
                         log_e("target mode unsupported, width = {}, height = {}", oSettings.width, oSettings.height);
-                        exit(-1);  
+                        exit(-1);
                 }
 
                 XF86VidModeSwitchToMode(display, screen, modes[best_mode]);
@@ -105,18 +107,17 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                 XFree(modes);
 
                 wnd_attr.override_redirect = true;
-                //wnd_attr.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | StructureNotifyMask;
                 wnd_attr.event_mask = ExposureMask | StructureNotifyMask;
 
-                window = XCreateWindow( display, 
+                window = XCreateWindow( display,
                                 RootWindow(display, visual->screen),
-                                0, 
-                                0, 
-                                dpy_width, 
-                                dpy_height, 
-                                0, 
-                                visual->depth, 
-                                InputOutput, 
+                                0,
+                                0,
+                                dpy_width,
+                                dpy_height,
+                                0,
+                                visual->depth,
+                                InputOutput,
                                 visual->visual,
                                 CWBorderPixel | CWColormap | CWEventMask | CWOverrideRedirect,
                                 &wnd_attr);
@@ -128,21 +129,21 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                 XGrabPointer  (display, window, true, ButtonPressMask, GrabModeAsync, GrabModeAsync, window, None, CurrentTime);
         }
         else {
+                log_d("try to set window mode");
 
-                //wnd_attr.event_mask = ExposureMask | KeyPressMask | ButtonPressMask |	StructureNotifyMask;
                 wnd_attr.event_mask = ExposureMask | StructureNotifyMask;
 
-                window = XCreateWindow( display, 
-                                RootWindow(display, visual->screen),								  
-                                0, 
-                                0, 
-                                oSettings.width, 
-                                oSettings.height, 
-                                0, 
-                                visual->depth, 
-                                InputOutput, 
+                window = XCreateWindow( display,
+                                RootWindow(display, visual->screen),
+                                0,
+                                0,
+                                oSettings.width,
+                                oSettings.height,
+                                0,
+                                visual->depth,
+                                InputOutput,
                                 visual->visual,
-                                CWBorderPixel | CWColormap | CWEventMask, 
+                                CWBorderPixel | CWColormap | CWEventMask,
                                 &wnd_attr);
 
                 wm_delete = XInternAtom(display, "WM_DELETE_WINDOW", true);
@@ -151,6 +152,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                 XSetStandardProperties(display, window, oSettings.title.c_str(), oSettings.title.c_str(), None, NULL, 0, NULL);
                 XMapRaised(display, window);
         }
+
 
         uint32_t bpp;
         uint32_t width;
@@ -243,6 +245,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
 template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler, DrawHandler>::DestroyWindow() {
 
+        log_i("destriy X11 window");
         if(glx_context) {
                 if(!glXMakeCurrent(display, None, NULL)) {
                         log_e("error releasing drawing context");
@@ -255,6 +258,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                 XF86VidModeSwitchToMode(display, screen, &video_mode);
                 XF86VidModeSetViewPort(display, screen, 0, 0);
         }
+        XDestroyWindow(display, window);
         XCloseDisplay(display);
 }
 

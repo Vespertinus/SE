@@ -21,7 +21,7 @@ class SimpleFPS {
   //TODO average fps
   public:
   
-  SimpleFPS(const uint32_t delta);
+  SimpleFPS(const uint32_t delta = 100);
   void    Update();
   double  GetFPS() const;
 };

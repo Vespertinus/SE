@@ -2,6 +2,8 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+#include <spdlog/sinks/rotating_file_sink.h>
+
 #define SE_IMPL
 #include <application.h>
 #include "Scene.h"
@@ -94,12 +96,14 @@ int main(int argc, char **argv) {
                         SE::Frustum::uORTHO :
                         SE::Frustum::uPERSPECTIVE;
 
-                oSettings.clear_flag			            = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+                oSettings.clear_flag                            = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+                oSettings.hide_mouse                            = false;
+                oSettings.grab_mouse                            = false;
 
                 oSettings.oWindowSettings.width       = oSettings.oCamSettings.width;
                 oSettings.oWindowSettings.height      = oSettings.oCamSettings.height;
                 oSettings.oWindowSettings.bpp         = 24;
-                oSettings.oWindowSettings.fullscreen  = 0;
+                oSettings.oWindowSettings.fullscreen  = false;
                 oSettings.oWindowSettings.title       = "Scene Viewer";
                 oSettings.sResourceDir                = vm["resource"].as<string>();
 

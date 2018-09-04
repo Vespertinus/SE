@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 
 #include <Logging.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 
 #include "OBJReader.h"
 #include "FlatBuffersMeshWriter.h"

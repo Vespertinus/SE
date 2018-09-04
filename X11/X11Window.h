@@ -43,11 +43,11 @@ template <class ResizeHandler,  class DrawHandler> class X11Window {
   void DestroyWindow();
 
   public:
-  
+
   // resize handler, draw handler, settings
   X11Window(ResizeHandler & oNewResizeHandler, DrawHandler & oNewDrawHandler, const WindowSettings & oSettings);
   ~X11Window() throw();
-  
+
   uint32_t GetWindowID() const;
   void Loop();
 
