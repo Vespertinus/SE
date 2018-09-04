@@ -59,7 +59,7 @@ void Mesh::DrawShape(const ShapeCtx & oShapeCtx) const {
                 }
         }
 
-        TRenderState::Instance().Draw(oShapeCtx.vao_id, oShapeCtx.triangles_cnt, oShapeCtx.gl_index_type);
+        TRenderState::Instance().Draw(oShapeCtx.vao_id, oShapeCtx.triangles_cnt * 3, oShapeCtx.gl_index_type);
 }
 
 
@@ -247,7 +247,8 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                         }
                         else {
                                 oShape.pShader  = CreateResource<SE::ShaderProgram>(
-                                                "resource/shader_program/wireframe.sesp",
+                                                //"resource/shader_program/wireframe.sesp",
+                                                "resource/shader_program/simple.sesp",
                                                 SE::ShaderProgram::Settings{"resource/shader/"}
                                                 );
                         }
