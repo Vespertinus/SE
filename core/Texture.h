@@ -52,6 +52,16 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
                         const rid_t new_rid,
                         const TConcreateSettings & oSettings);
 
+        template <class TStoreStrategySettings = TDefaultStoreStrategy>
+                Texture(const std::string sName,
+                        const rid_t new_rid,
+                        uint8_t * pImageData,
+                        uint16_t  width,
+                        uint16_t  height,
+                        int       color_order,
+                        uint8_t   bpp,
+                        const TStoreStrategySettings & oStoreStrategySettings);
+
         ~Texture() noexcept;
 
         uint32_t GetID() const;
