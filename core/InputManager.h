@@ -98,7 +98,6 @@ class InputManager : public OIS::KeyListener, public OIS::MouseListener, public 
 
         size_t GetNumOfJoysticks() const ;
 
-        //static InputManager* getSingletonPtr();
 };
 
 
