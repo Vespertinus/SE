@@ -128,5 +128,9 @@ template < class ResourceList > template <class Resource> void ResourceManager<R
         }
 }
 
+template < class ResourceList > template <class Resource> size_t ResourceManager<ResourceList>::Size() {
+        return Storage<Resource>().size();
+}
+
 
 } // namespace SE

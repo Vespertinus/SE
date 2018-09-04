@@ -46,6 +46,7 @@ template < class ResourceList > class ResourceManager {
   template <class Resource> bool IsLoaded(const rid_t key) const;
   template <class Resource> bool IsLoaded(const std::string & sPath) const;
   template <class Resource> void Clear();
+  template <class Resource> size_t Size();
   /*TODO
                 нужен Clone в ResourceManager
                 Create empty и указание у Resource может ли он быть создан как empty
