@@ -27,6 +27,13 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 }
 
 template <class ... TGeom > void SceneNode<TGeom ...>::
+        SetRotation(const glm::quat & qNewRotation) {
+
+        oTransform.SetRotation(qNewRotation);
+        InvalidateChildren();
+}
+
+template <class ... TGeom > void SceneNode<TGeom ...>::
         SetScale(const glm::vec3 & new_scale) {
 
         oTransform.SetScale(new_scale);
@@ -252,6 +259,21 @@ template <class ... TGeom >
          for (auto * pChild : vChildren) {
                 pChild->DepthFirstWalk(oHandler);
          }
+}
+
+template <class ... TGeom >
+        template <class THandler, class TPostHandler>
+                void SceneNode<TGeom ...>::DepthFirstWalkEx(THandler && oHandler, TPostHandler && oPostHandler) {
+
+         bool res = oHandler(*this);
+         if (res == false) {
+                 return;
+         }
+
+         for (auto * pChild : vChildren) {
+                pChild->DepthFirstWalkEx(oHandler, oPostHandler);
+         }
+         oPostHandler(*this);
 }
 
 template <class ... TGeom >

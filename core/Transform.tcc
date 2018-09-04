@@ -12,8 +12,8 @@ Transform::Transform() :
 Transform::Transform(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale) :
         pParent(nullptr),
         vTranslation(pos),
-        vRotation(rotation),
         vScale(new_scale),
+        qRotation(glm::radians(rotation)),
         local_dirty(1),
         world_dirty(0) {
 
@@ -37,8 +37,7 @@ void Transform::Recalc() const {
 
         glm::mat4 mTranslate    = glm::translate(glm::mat4(1.0), vTranslation);
         glm::mat4 mScale        = glm::scale (glm::mat4(1.0), vScale);
-        glm::quat oQuat(glm::vec3(glm::radians(vRotation.x), glm::radians(vRotation.y), glm::radians(vRotation.z)));
-        glm::mat4 mRotation     = glm::toMat4(oQuat);
+        glm::mat4 mRotation     = glm::toMat4(qRotation);
 
         mTransform  = mTranslate * mRotation * mScale;
 
@@ -63,7 +62,7 @@ void Transform::RecalcWorld() const {
 void Transform::Set(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale) {
 
         vTranslation    = pos;
-        vRotation       = rotation;
+        qRotation       = glm::quat(glm::radians(rotation));
         vScale          = new_scale;
         local_dirty     = 1;
 }
@@ -75,7 +74,13 @@ void Transform::SetPos(const glm::vec3 & vPos) {
 
 void Transform::SetRotation(const glm::vec3 & vDegreeAngles) {
 
-        vRotation = vDegreeAngles;
+        qRotation       = glm::quat(glm::radians(vDegreeAngles));
+        local_dirty = 1;
+}
+
+void Transform::SetRotation(const glm::quat & qNewRotation) {
+
+        qRotation       = qNewRotation;
         local_dirty = 1;
 }
 
@@ -93,8 +98,22 @@ void Transform::Translate(const glm::vec3 & vPos) {
 
 void Transform::Rotate(const glm::vec3 & vDegreeAngles) {
 
-        vRotation       += vDegreeAngles;
+        qRotation       = glm::normalize(glm::quat(glm::radians(vDegreeAngles)) * qRotation);
         local_dirty     = 1;
+}
+
+void Transform::RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles) {
+
+        RotateAround(vPoint, glm::quat(glm::radians(vDegreeAngles)));
+}
+
+void Transform::RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation) {
+
+        glm::vec3 vOldRelativePos = glm::inverse(qRotation) * (vTranslation - vPoint);
+        qRotation       = glm::normalize(qDeltaRotation * qRotation);
+        vTranslation    = qRotation * vOldRelativePos + vPoint;
+
+        //glm::vec3 vRotationAngles = glm::degrees(glm::eulerAngles(qRotation));
 }
 
 void Transform::Scale(const glm::vec3 & new_scale) {
@@ -137,6 +156,8 @@ void Transform::Invalidate() {
 
 void Transform::Print(const size_t indent) {
 
+        glm::vec3 vRotation = glm::degrees(glm::eulerAngles(qRotation));
+
         log_d("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}",
                         ">",
                         indent,
@@ -160,16 +181,16 @@ void Transform::Print(const size_t indent) {
         glm::vec4 vWorldPersp;
         glm::decompose(mWorldTransform, vWorldScale, qWorlRotation, vWorldTranslation, vWorldSkew, vWorldPersp);
 
-        glm::vec3 vWorldRotation = glm::eulerAngles(qWorlRotation);
+        glm::vec3 vWorldRotation = glm::degrees(glm::eulerAngles(qWorlRotation));
         log_d("{:>{}} world: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), skew ({}, {}, {}), persp ({}, {}, {}, {})",
                         ">",
                         indent,
                         vWorldTranslation.x,
                         vWorldTranslation.y,
                         vWorldTranslation.z,
-                        glm::degrees(vWorldRotation.x),
-                        glm::degrees(vWorldRotation.y),
-                        glm::degrees(vWorldRotation.z),
+                        vWorldRotation.x,
+                        vWorldRotation.y,
+                        vWorldRotation.z,
                         vWorldScale.x,
                         vWorldScale.y,
                         vWorldScale.z,
@@ -180,15 +201,20 @@ void Transform::Print(const size_t indent) {
                         vWorldPersp.y,
                         vWorldPersp.z,
                         vWorldPersp.q );
-
 }
 
 const glm::vec3 & Transform::GetPos() const {
         return vTranslation;
 }
 
-const glm::vec3 & Transform::GetRotation() const {
+const glm::vec3 Transform::GetRotationDeg() const {
+
+        glm::vec3 vRotation = glm::degrees(glm::eulerAngles(qRotation));
         return vRotation;
+}
+
+const glm::quat & Transform::GetRotation() const {
+        return qRotation;
 }
 
 const glm::vec3 & Transform::GetScale() const {

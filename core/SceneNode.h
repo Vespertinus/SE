@@ -48,6 +48,7 @@ template <class ... TGeom> class SceneNode {
         //void    Apply() const; only apply transformation..
         void                    SetPos(const glm::vec3 & vPos);
         void                    SetRotation(const glm::vec3 & vDegreeAngles);
+        void                    SetRotation(const glm::quat & qNewRotation);
         void                    SetScale(const glm::vec3 & new_scale);
         void                    Translate(const glm::vec3 & vPos);
         void                    Rotate(const glm::vec3 & vDegreeAngles);
@@ -82,6 +83,8 @@ template <class ... TGeom> class SceneNode {
 
         template <class THandler> void BreadtFirstWalk(THandler && oHandler);
         template <class THandler> void DepthFirstWalk(THandler && oHandler);
+        template <class THandler, class TPostHandler>
+                                  void DepthFirstWalkEx(THandler && oHandler, TPostHandler && oPostHandler);
 };
 
 } //namespace SE
