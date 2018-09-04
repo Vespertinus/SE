@@ -3,6 +3,7 @@
 #define __RENDER_STATE_H__ 1
 
 #include <GLUtil.h>
+#include <Chrono.h>
 
 namespace SE {
 
@@ -14,11 +15,13 @@ namespace SE {
  */
 class RenderState {
 
-        const glm::mat4 * pModelViewProjection;
-        const glm::mat4 * pTransformMat;
-        ShaderProgram   * pShader;
-        uint32_t          cur_vao;
-        glm::uvec2        screen_size;
+        const glm::mat4       * pModelViewProjection;
+        const glm::mat4       * pTransformMat;
+        ShaderProgram         * pShader;
+        uint32_t                cur_vao;
+        glm::uvec2              screen_size;
+        time_point <micro>      frame_start_time;
+        float                   last_frame_time;
 
         //TODO
         //texture units
@@ -35,14 +38,19 @@ class RenderState {
         void                            SetViewProjection(const glm::mat4 & oMat);
         void                            SetShaderProgram(ShaderProgram * pNewShader);
         void                            SetScreenSize(const uint32_t width, const uint32_t height);
+        void                            SetVao(const uint32_t vao_id);
         void                            Draw(const uint32_t vao_id,
-                                             const uint32_t triangles_cnt,
-                                             const uint32_t gl_index_type);
+                                             const uint32_t count,
+                                             const uint32_t gl_index_type,
+                                             const uint32_t mode = GL_TRIANGLES,
+                                             const void   * indices = nullptr);
         void                            DrawArrays(const uint32_t vao_id,
                                                    const uint32_t mode,
                                                    const uint32_t first,
                                                    const uint32_t count);
-        void                            Reset(); //TODO --> frame start
+        void                            FrameStart();
+        const glm::uvec2 &              GetScreenSize() const;
+        float                           GetLastFrameTime() const;
 
 };
 

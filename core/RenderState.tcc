@@ -8,7 +8,9 @@ RenderState::RenderState() :
         pTransformMat(nullptr),
         pShader(nullptr),
         cur_vao(0),
-        screen_size(800, 600) {
+        screen_size(800, 600),
+        frame_start_time(std::chrono::time_point_cast<micro>(clock::now())),//FIXME
+        last_frame_time(1/60.) {
 }
 
 
@@ -35,13 +37,17 @@ ret_code_t RenderState::SetTexture(const StrID name, const TTexture * pTex) {
 void RenderState::SetViewProjection(const glm::mat4 & oMat) {
 
         pModelViewProjection = &oMat;
-        if (pShader) { pShader->SetVariable("MVPMatrix", oMat); }
+        if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVPMatrix)) {
+                pShader->SetVariable("MVPMatrix", oMat);
+        }
 }
 
 void RenderState::SetTransform(const glm::mat4 & oMat) {
 
         pTransformMat = &oMat;
-        if (pShader) { pShader->SetVariable("MVMatrix", oMat); }
+        if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix)) {
+                pShader->SetVariable("MVMatrix", oMat);
+        }
 }
 
 
@@ -52,10 +58,10 @@ void RenderState::SetShaderProgram(ShaderProgram * pNewShader) {
         pShader = pNewShader;
         pShader->Use();
 
-        if (pTransformMat) {
+        if (pTransformMat && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix)) {
                 pShader->SetVariable("MVMatrix", *pTransformMat);
         }
-        if (pModelViewProjection) {
+        if (pModelViewProjection && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVPMatrix)) {
 
                 pShader->SetVariable("MVPMatrix", *pModelViewProjection);
         }
@@ -64,7 +70,11 @@ void RenderState::SetShaderProgram(ShaderProgram * pNewShader) {
         }
 }
 
-void RenderState::Reset() {
+void RenderState::FrameStart() {
+
+        time_point <micro> cur_time = std::chrono::time_point_cast<micro>(clock::now());
+        last_frame_time = std::chrono::duration<float>(cur_time - frame_start_time).count();
+        frame_start_time = cur_time;
 
         pModelViewProjection = nullptr;
         pTransformMat        = nullptr;
@@ -77,18 +87,18 @@ void RenderState::Reset() {
 //TODO later sort all draw objects |vao|shader|shader values| and apply only changes
 void RenderState::Draw(
                 const uint32_t vao_id,
-                const uint32_t triangles_cnt,
-                const uint32_t gl_index_type) {
+                const uint32_t count,
+                const uint32_t gl_index_type,
+                const uint32_t mode,
+                const void *   indices) {
 
         if (vao_id < 1) {
                return;
         }
 
-        if (vao_id != cur_vao) {
-                glBindVertexArray(vao_id);
-                cur_vao = vao_id;
-        }
-        glDrawElements(GL_TRIANGLES, triangles_cnt * 3, gl_index_type, 0);
+        SetVao(vao_id);
+
+        glDrawElements(mode, count, gl_index_type, indices);
 }
 
 void RenderState::DrawArrays(
@@ -101,10 +111,7 @@ void RenderState::DrawArrays(
                return;
         }
 
-        if (vao_id != cur_vao) {
-                glBindVertexArray(vao_id);
-                cur_vao = vao_id;
-        }
+        SetVao(vao_id);
 
         glDrawArrays(mode, first, count);
 }
@@ -116,6 +123,22 @@ void RenderState::SetScreenSize(const uint32_t width, const uint32_t height) {
 
         if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize)) {
                 pShader->SetVariable(oScreenSizeID, screen_size);
+        }
+}
+
+const glm::uvec2 & RenderState::GetScreenSize() const {
+        return screen_size;
+}
+
+float RenderState::GetLastFrameTime() const {
+        return last_frame_time;
+}
+
+void RenderState::SetVao(const uint32_t vao_id) {
+
+        if (vao_id != cur_vao) {
+                glBindVertexArray(vao_id);
+                cur_vao = vao_id;
         }
 }
 
