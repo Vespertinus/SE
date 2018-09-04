@@ -2,23 +2,30 @@
 
 namespace SE {
 
+template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t & oSettings, const uint32_t window_id) {
+
+        log_d("try to init OIS");
+
+        TInputManager::Instance().Initialise(
+                        window_id,
+                        oSettings.oCamSettings.width,
+                        oSettings.oCamSettings.height,
+                        oSettings.grab_mouse,
+                        oSettings.hide_mouse);
+
+}
+
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
         oSettings(oNewSettings),
         oCamera(oTranspose,	oSettings.oCamSettings),
         oRunFunctor   (*this, &Application<TLoop>::Run),
         oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
         oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
+        oStub(oSettings, oMainWindow.GetWindowID()),
         oLoop(oLoopSettings, oCamera) {
-
-                log_d("try to init OIS");
-
-                //ResizeViewport(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-
-                TInputManager::Instance().Initialise(oMainWindow.GetWindowID(), oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
                 TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
                 TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
-
 
                 Init();
 
@@ -83,7 +90,7 @@ template <class TLoop> void Application<TLoop>::Run() {
         glPushMatrix();
         oCamera.Adjust();
 
-        SE::TRenderState::Instance().Reset();
+        SE::TRenderState::Instance().FrameStart();
 
         oLoop.Process();
 

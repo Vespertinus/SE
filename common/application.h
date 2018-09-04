@@ -37,11 +37,19 @@ struct SysSettings_t {
         //float			fov;
         //bool			fullscreen;
         int                     clear_flag;
+        bool                    grab_mouse;
+        bool                    hide_mouse;
 
         Camera::CamSettings_t   oCamSettings;
         WindowSettings          oWindowSettings;
 
         std::string             sResourceDir;
+
+        SysSettings_t() :
+                clear_flag(0),
+                grab_mouse(true),
+                hide_mouse(true)
+        { ;; }
 };
 
 
@@ -57,6 +65,12 @@ template <class TLoop > class Application {
         //# error "unsupported OS"
         //#endif
 
+        /** global initialization before user code (Loop)*/
+        struct PreInit {
+
+                PreInit(const SysSettings_t & oSettings, const uint32_t window_id);
+        };
+
 
         SysSettings_t		oSettings;
         int                     window_id;
@@ -67,6 +81,7 @@ template <class TLoop > class Application {
         TResizeFunctor          oResizeFunctor;
 
         TWindow                 oMainWindow;
+        PreInit                 oStub;
         TLoop			oLoop;
 
         public:
