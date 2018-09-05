@@ -106,6 +106,7 @@ void Scene::ShowGUI() {
 
         //scene tree
         static SE::TSceneTree::TSceneNode  * pCurNode = nullptr;
+        ImGui::SetNextWindowBgAlpha(0.9);
         ImGui::Begin("Scene tree", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
         if (pCurNode) {
@@ -118,11 +119,18 @@ void Scene::ShowGUI() {
                 glm::vec3 prev_local_rot = local_rot;
                 glm::vec3 local_scale = oTransform.GetScale();
 
+                static glm::vec3 cur_rot_around(0);
+                static glm::vec3 cur_point(0);
+
                 ImGui::Text("Local:");
 
                 ImGui::DragFloat3("pos",   &local_pos[0], 0.1, -100, 100);
                 ImGui::DragFloat3("rot",   &local_rot[0], 0.2, -180, 180);
                 ImGui::DragFloat3("scale", &local_scale[0], 0.1, 0.01, 100);
+                ImGui::Separator();
+                ImGui::DragFloat3("point", &cur_point[0], 0.1, -100, 100);
+                ImGui::DragFloat3("angle", &cur_rot_around[0], 0.2, -180, 180);
+
 
                 if (local_pos != oTransform.GetPos()) {
 
@@ -135,6 +143,12 @@ void Scene::ShowGUI() {
                         pCurNode->SetScale(local_scale);
                 }
 
+                if (ImGui::Button("rotate around point")) {
+
+                        pCurNode->RotateAround(cur_point, cur_rot_around);
+                        cur_point = glm::vec3(0);
+                        cur_rot_around = glm::vec3(0);
+                }
 
         }
 

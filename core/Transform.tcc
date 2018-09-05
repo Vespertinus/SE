@@ -113,7 +113,7 @@ void Transform::RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaR
         qRotation       = glm::normalize(qDeltaRotation * qRotation);
         vTranslation    = qRotation * vOldRelativePos + vPoint;
 
-        //glm::vec3 vRotationAngles = glm::degrees(glm::eulerAngles(qRotation));
+        local_dirty     = 1;
 }
 
 void Transform::Scale(const glm::vec3 & new_scale) {

@@ -312,5 +312,18 @@ template <class ... TGeom >
 
 }
 
+template <class ... TGeom >
+        void SceneNode<TGeom ...>::RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles) {
+
+        oTransform.RotateAround(vPoint, vDegreeAngles);
+        InvalidateChildren();
+}
+
+template <class ... TGeom >
+        void SceneNode<TGeom ...>::RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation) {
+        oTransform.RotateAround(vPoint, qDeltaRotation);
+        InvalidateChildren();
+}
+
 }
 
