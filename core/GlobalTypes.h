@@ -19,6 +19,7 @@
 #include <Chrono.h>
 #include <SimpleFPS.h>
 #include <MPUtil.h>
+#include <BoundingBox.h>
 
 #include <ResourceHolder.h>
 #include <ResourceManager.h>
@@ -46,7 +47,6 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 #include <RenderState.h>
 #include <VisualHelpers.h>
 
-#include <MeshStock.h>
 #include <Mesh.h>
 
 namespace SE {

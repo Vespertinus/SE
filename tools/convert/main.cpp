@@ -7,14 +7,15 @@
 #include <Logging.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
+#define SE_IMPL
+#include <GeometryUtil.h>
+
 #include "OBJReader.h"
 #include "FlatBuffersMeshWriter.h"
 
 #include "FBXReader.h"
 #include "FlatBuffersSceneTreeWriter.h"
 
-#define SE_IMPL
-#include <GeometryUtil.h>
 
 
 std::shared_ptr<spdlog::logger> gLogger;

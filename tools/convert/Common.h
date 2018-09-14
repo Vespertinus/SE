@@ -8,6 +8,9 @@
 #include <regex>
 
 #include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
+
+#include <BoundingBox.h>
 
 namespace SE {
 namespace TOOLS {
@@ -39,8 +42,7 @@ struct ShapeData {
         std::string                     sName;
         std::string                     sTextureName;
         uint32_t                        triangles_cnt;
-        glm::vec3                       min;
-        glm::vec3                       max;
+        BoundingBox                     oBBox;
         uint8_t                         stride;
 };
 
@@ -49,8 +51,7 @@ using TPackVertexIndex = void (*)(ShapeData::TIndexVariant & oData, const uint32
 struct MeshData {
 
         std::vector<ShapeData>  vShapes;
-        glm::vec3               min;
-        glm::vec3               max;
+        BoundingBox             oBBox;
         std::string             sName;
 };
 

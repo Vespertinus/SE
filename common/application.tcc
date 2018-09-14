@@ -47,7 +47,7 @@ template <class TLoop> void Application<TLoop>::Init() {
 
         log_d("basic OpenGL options");
 
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.066f, 0.2235f, 0.3372f, 1.0f);
         glClearDepth(1.0);
         glDepthFunc(GL_LESS);
         glEnable(GL_DEPTH_TEST);
