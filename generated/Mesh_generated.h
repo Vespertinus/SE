@@ -15,6 +15,8 @@ struct Vec2;
 
 struct ColorARGB;
 
+struct BoundingBox;
+
 struct VertexAttribute;
 
 struct FloatVector;
@@ -219,6 +221,28 @@ MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
   }
 };
 STRUCT_END(ColorARGB, 16);
+
+MANUALLY_ALIGNED_STRUCT(4) BoundingBox FLATBUFFERS_FINAL_CLASS {
+ private:
+  Vec3 min_;
+  Vec3 max_;
+
+ public:
+  BoundingBox() {
+    memset(this, 0, sizeof(BoundingBox));
+  }
+  BoundingBox(const Vec3 &_min, const Vec3 &_max)
+      : min_(_min),
+        max_(_max) {
+  }
+  const Vec3 &min() const {
+    return min_;
+  }
+  const Vec3 &max() const {
+    return max_;
+  }
+};
+STRUCT_END(BoundingBox, 24);
 
 struct VertexAttribute FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -562,8 +586,7 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_TRIANGLES_CNT = 16,
     VT_STRIDE = 18,
     VT_TEXTURE = 20,
-    VT_MIN = 22,
-    VT_MAX = 24
+    VT_BBOX = 22
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -602,11 +625,8 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *texture() const {
     return GetPointer<const flatbuffers::String *>(VT_TEXTURE);
   }
-  const Vec3 *min() const {
-    return GetStruct<const Vec3 *>(VT_MIN);
-  }
-  const Vec3 *max() const {
-    return GetStruct<const Vec3 *>(VT_MAX);
+  const BoundingBox *bbox() const {
+    return GetStruct<const BoundingBox *>(VT_BBOX);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -627,8 +647,7 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_STRIDE) &&
            VerifyOffset(verifier, VT_TEXTURE) &&
            verifier.Verify(texture()) &&
-           VerifyFieldRequired<Vec3>(verifier, VT_MIN) &&
-           VerifyFieldRequired<Vec3>(verifier, VT_MAX) &&
+           VerifyFieldRequired<BoundingBox>(verifier, VT_BBOX) &&
            verifier.EndTable();
   }
 };
@@ -675,11 +694,8 @@ struct ShapeBuilder {
   void add_texture(flatbuffers::Offset<flatbuffers::String> texture) {
     fbb_.AddOffset(Shape::VT_TEXTURE, texture);
   }
-  void add_min(const Vec3 *min) {
-    fbb_.AddStruct(Shape::VT_MIN, min);
-  }
-  void add_max(const Vec3 *max) {
-    fbb_.AddStruct(Shape::VT_MAX, max);
+  void add_bbox(const BoundingBox *bbox) {
+    fbb_.AddStruct(Shape::VT_BBOX, bbox);
   }
   explicit ShapeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -693,8 +709,7 @@ struct ShapeBuilder {
     fbb_.Required(o, Shape::VT_VERTICES_TYPE);
     fbb_.Required(o, Shape::VT_VERTICES);
     fbb_.Required(o, Shape::VT_ATTRIBUTES);
-    fbb_.Required(o, Shape::VT_MIN);
-    fbb_.Required(o, Shape::VT_MAX);
+    fbb_.Required(o, Shape::VT_BBOX);
     return o;
   }
 };
@@ -710,11 +725,9 @@ inline flatbuffers::Offset<Shape> CreateShape(
     uint32_t triangles_cnt = 0,
     uint8_t stride = 32,
     flatbuffers::Offset<flatbuffers::String> texture = 0,
-    const Vec3 *min = 0,
-    const Vec3 *max = 0) {
+    const BoundingBox *bbox = 0) {
   ShapeBuilder builder_(_fbb);
-  builder_.add_max(max);
-  builder_.add_min(min);
+  builder_.add_bbox(bbox);
   builder_.add_texture(texture);
   builder_.add_triangles_cnt(triangles_cnt);
   builder_.add_attributes(attributes);
@@ -738,8 +751,7 @@ inline flatbuffers::Offset<Shape> CreateShapeDirect(
     uint32_t triangles_cnt = 0,
     uint8_t stride = 32,
     const char *texture = nullptr,
-    const Vec3 *min = 0,
-    const Vec3 *max = 0) {
+    const BoundingBox *bbox = 0) {
   return SE::FlatBuffers::CreateShape(
       _fbb,
       name ? _fbb.CreateString(name) : 0,
@@ -751,32 +763,26 @@ inline flatbuffers::Offset<Shape> CreateShapeDirect(
       triangles_cnt,
       stride,
       texture ? _fbb.CreateString(texture) : 0,
-      min,
-      max);
+      bbox);
 }
 
 struct Mesh FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_SHAPES = 4,
-    VT_MIN = 6,
-    VT_MAX = 8
+    VT_BBOX = 6
   };
   const flatbuffers::Vector<flatbuffers::Offset<Shape>> *shapes() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Shape>> *>(VT_SHAPES);
   }
-  const Vec3 *min() const {
-    return GetStruct<const Vec3 *>(VT_MIN);
-  }
-  const Vec3 *max() const {
-    return GetStruct<const Vec3 *>(VT_MAX);
+  const BoundingBox *bbox() const {
+    return GetStruct<const BoundingBox *>(VT_BBOX);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_SHAPES) &&
            verifier.Verify(shapes()) &&
            verifier.VerifyVectorOfTables(shapes()) &&
-           VerifyFieldRequired<Vec3>(verifier, VT_MIN) &&
-           VerifyFieldRequired<Vec3>(verifier, VT_MAX) &&
+           VerifyFieldRequired<BoundingBox>(verifier, VT_BBOX) &&
            verifier.EndTable();
   }
 };
@@ -787,11 +793,8 @@ struct MeshBuilder {
   void add_shapes(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Shape>>> shapes) {
     fbb_.AddOffset(Mesh::VT_SHAPES, shapes);
   }
-  void add_min(const Vec3 *min) {
-    fbb_.AddStruct(Mesh::VT_MIN, min);
-  }
-  void add_max(const Vec3 *max) {
-    fbb_.AddStruct(Mesh::VT_MAX, max);
+  void add_bbox(const BoundingBox *bbox) {
+    fbb_.AddStruct(Mesh::VT_BBOX, bbox);
   }
   explicit MeshBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -802,8 +805,7 @@ struct MeshBuilder {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Mesh>(end);
     fbb_.Required(o, Mesh::VT_SHAPES);
-    fbb_.Required(o, Mesh::VT_MIN);
-    fbb_.Required(o, Mesh::VT_MAX);
+    fbb_.Required(o, Mesh::VT_BBOX);
     return o;
   }
 };
@@ -811,11 +813,9 @@ struct MeshBuilder {
 inline flatbuffers::Offset<Mesh> CreateMesh(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Shape>>> shapes = 0,
-    const Vec3 *min = 0,
-    const Vec3 *max = 0) {
+    const BoundingBox *bbox = 0) {
   MeshBuilder builder_(_fbb);
-  builder_.add_max(max);
-  builder_.add_min(min);
+  builder_.add_bbox(bbox);
   builder_.add_shapes(shapes);
   return builder_.Finish();
 }
@@ -823,13 +823,11 @@ inline flatbuffers::Offset<Mesh> CreateMesh(
 inline flatbuffers::Offset<Mesh> CreateMeshDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<flatbuffers::Offset<Shape>> *shapes = nullptr,
-    const Vec3 *min = 0,
-    const Vec3 *max = 0) {
+    const BoundingBox *bbox = 0) {
   return SE::FlatBuffers::CreateMesh(
       _fbb,
       shapes ? _fbb.CreateVector<flatbuffers::Offset<Shape>>(*shapes) : 0,
-      min,
-      max);
+      bbox);
 }
 
 inline bool VerifyVertexBuffer(flatbuffers::Verifier &verifier, const void *obj, VertexBuffer type) {

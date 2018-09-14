@@ -27,24 +27,5 @@ void CalcNormal(float normals[3], float v0[3], float v1[3], float v2[3]) {
         }
 }
 
-void CalcBasicBBox(
-                std::vector<float> & vVertices,
-                const uint8_t        elem_size,
-                glm::vec3 & min,
-                glm::vec3 & max) {
-
-        min = glm::vec3(std::numeric_limits<float>::max());
-        max = glm::vec3(std::numeric_limits<float>::lowest());
-
-        for (uint32_t i = 0; i < vVertices.size(); i += elem_size) {
-                min.x = std::min(vVertices[i    ], min.x);
-                min.y = std::min(vVertices[i + 1], min.y);
-                min.z = std::min(vVertices[i + 2], min.z);
-
-                max.x = std::max(vVertices[i    ], max.x);
-                max.y = std::max(vVertices[i + 1], max.y);
-                max.z = std::max(vVertices[i + 2], max.z);
-        }
-}
 
 }

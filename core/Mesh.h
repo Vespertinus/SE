@@ -7,6 +7,31 @@
 
 namespace SE {
 
+struct MeshSettings {
+
+        uint8_t ext_material    : 1;
+};
+
+struct ShapeCtx {
+
+        uint32_t        vao_id;
+        uint32_t        triangles_cnt;
+        uint32_t        gl_index_type;
+        //TODO move into material manipulation
+        TTexture      * pTex;
+        ShaderProgram * pShader;
+
+        std::string     sName;
+        BoundingBox     oBBox;
+};
+
+struct MeshCtx {
+        std::vector<ShapeCtx>   vShapes;
+        BoundingBox             oBBox;
+        uint32_t                stride;//FIXME
+        bool                    skip_normals;//FIXME
+};
+
 
 class Mesh : public ResourceHolder {
 
@@ -28,16 +53,16 @@ class Mesh : public ResourceHolder {
         Mesh(const std::string & sName, const rid_t new_rid, const SE::FlatBuffers::Mesh * pMesh, const MeshSettings & oNewMeshSettings = MeshSettings());
         ~Mesh() noexcept;
 
-        uint32_t GetShapesCnt() const;
-        uint32_t GetTrianglesCnt() const;
-        void     Draw() const;
-        void     Draw(const size_t shape_ind) const;
-        TShapesInfo GetShapesInfo() const;
-        glm::vec3 GetCenter() const;
-        glm::vec3 GetCenter(const size_t shape_ind) const;
-        void     DrawBBox() const;
-        void     DrawBBox(const size_t shape_ind) const;
-        std::tuple<const glm::vec3 &, const glm::vec3 &> GetBBox() const;
+        uint32_t        GetShapesCnt() const;
+        uint32_t        GetTrianglesCnt() const;
+        void            Draw() const;
+        void            Draw(const size_t shape_ind) const;
+        TShapesInfo     GetShapesInfo() const;
+        glm::vec3       GetCenter() const;
+        glm::vec3       GetCenter(const size_t shape_ind) const;
+        const           BoundingBox & GetBBox() const;
+        std::string     Str() const;
+        //std::string     Str(const size_t shape_ind) const; TODO
 };
 
 } //namespace SE

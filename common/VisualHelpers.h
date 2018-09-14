@@ -49,14 +49,23 @@ void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max);
 
 class VisualHelpers {
 
-        uint32_t        local_axes_vao;
+        static const size_t VERT_SIZE    = 6;
+
+        uint32_t        local_axes_vao,
+                        bbox_vao,
+                        bbox_vbo;
         ShaderProgram * pShader;
+
+        void PrepareAxes();
+        void PrepareBBox();
+        void UpdateBBox(const BoundingBox & oBBox);
 
         public:
         VisualHelpers();
+        ~VisualHelpers() noexcept;
         //DrawAxes(const float size)
         void DrawLocalAxes();
-        //Draw ...
+        void DrawBBox(const BoundingBox & oBBox);
 };
 
 

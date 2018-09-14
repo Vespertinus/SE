@@ -422,7 +422,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
         ++oCtx.mesh_cnt;
 
 
-        CalcBasicBBox(vVertices,  (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE, oShapeData.min, oShapeData.max);
+        oShapeData.oBBox.Calc(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE);
         oShapeData.vVertexBuffers.emplace_back(std::move(vVertices));
 
         uint16_t next_offset = 3;
@@ -447,7 +447,9 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                         0 });
 
         oMesh.vShapes.emplace_back(std::move(oShapeData));
-        CalcCompositeBBox(oMesh.vShapes, oMesh.min, oMesh.max);
+        for (auto & oShape : oMesh.vShapes) {
+                oMesh.oBBox.Concat(oShape.oBBox);
+        }
         oNodeData.vEntity.emplace_back(std::move(oMesh));
 
         return uSUCCESS;

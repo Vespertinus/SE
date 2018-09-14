@@ -322,10 +322,9 @@ void DrawBBox(const glm::vec3 & cur_min, const glm::vec3 & cur_max) {
         glEnd();
 }
 
-VisualHelpers::VisualHelpers() {
+void VisualHelpers::PrepareAxes() {
 
         const size_t COLOR_OFFSET = 3;
-        const size_t VERT_SIZE    = 6;
 
         std::vector<float> vVertices((3 + 3) * 6);
 
@@ -384,18 +383,166 @@ VisualHelpers::VisualHelpers() {
 
         glBindVertexArray(0);
         glDeleteBuffers(1, &vbo_id);
+}
+
+void VisualHelpers::UpdateBBox(const BoundingBox & oBBox) {
+
+        static std::vector<float> vVertices(VERT_SIZE * 24);
+
+        const glm::vec3 & vMin = oBBox.Min();
+        const glm::vec3 & vMax = oBBox.Max();
+
+        std::array<glm::vec3, 8> vPoints = {
+                glm::vec3(vMax.x, vMin.y, vMin.z),
+                glm::vec3(vMin.x, vMin.y, vMin.z),
+                glm::vec3(vMin.x, vMax.y, vMin.z),
+                glm::vec3(vMax.x, vMax.y, vMin.z),
+                glm::vec3(vMax.x, vMin.y, vMax.z),
+                glm::vec3(vMin.x, vMin.y, vMax.z),
+                glm::vec3(vMin.x, vMax.y, vMax.z),
+                glm::vec3(vMax.x, vMax.y, vMax.z)
+        };
+
+        glm::vec3 vColor(1, 0, 0);
+        size_t cur_vert = 0;
+
+        auto UpdateVert = [&cur_vert](glm::vec3 & vPoint, glm::vec3 & vColor) {
+
+                vVertices[cur_vert * VERT_SIZE + 0] = vPoint.x;
+                vVertices[cur_vert * VERT_SIZE + 1] = vPoint.y;
+                vVertices[cur_vert * VERT_SIZE + 2] = vPoint.z;
+
+                vVertices[cur_vert * VERT_SIZE + 3] = vColor.x;
+                vVertices[cur_vert * VERT_SIZE + 4] = vColor.y;
+                vVertices[cur_vert * VERT_SIZE + 5] = vColor.z;
+
+                ++cur_vert;
+        };
+
+        UpdateVert(vPoints[0], vColor);
+        UpdateVert(vPoints[1], vColor);
+
+        UpdateVert(vPoints[2], vColor);
+        UpdateVert(vPoints[3], vColor);
+
+        UpdateVert(vPoints[4], vColor);
+        UpdateVert(vPoints[5], vColor);
+
+        UpdateVert(vPoints[6], vColor);
+        UpdateVert(vPoints[7], vColor);
+
+        vColor = glm::vec3(0, 1, 0);
+
+        UpdateVert(vPoints[0], vColor);
+        UpdateVert(vPoints[3], vColor);
+
+        UpdateVert(vPoints[1], vColor);
+        UpdateVert(vPoints[2], vColor);
+
+        UpdateVert(vPoints[4], vColor);
+        UpdateVert(vPoints[7], vColor);
+
+        UpdateVert(vPoints[5], vColor);
+        UpdateVert(vPoints[6], vColor);
+
+        vColor = glm::vec3(0, 0, 1);
+
+        UpdateVert(vPoints[0], vColor);
+        UpdateVert(vPoints[4], vColor);
+
+        UpdateVert(vPoints[1], vColor);
+        UpdateVert(vPoints[5], vColor);
+
+        UpdateVert(vPoints[2], vColor);
+        UpdateVert(vPoints[6], vColor);
+
+        UpdateVert(vPoints[3], vColor);
+        UpdateVert(vPoints[7], vColor);
+
+        glBindBuffer(GL_ARRAY_BUFFER, bbox_vbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     vVertices.size() * sizeof(float),
+                     &vVertices[0],
+                     GL_DYNAMIC_DRAW);
+}
+
+void VisualHelpers::PrepareBBox() {
+
+        BoundingBox oTmpBox(glm::vec3(-1), glm::vec3(1));
+
+        glGenVertexArrays(1, &bbox_vao);
+        glBindVertexArray(bbox_vao);
+
+        glGenBuffers(1, &bbox_vbo);
+        UpdateBBox(oTmpBox);
+
+        auto itLocation = mAttributeLocation.find("Position");
+        if (itLocation == mAttributeLocation.end()) {
+                glDeleteVertexArrays(1, &bbox_vao);
+                glDeleteBuffers(1, &bbox_vbo);
+                throw(std::runtime_error("unknown vertex attribute name: 'Position'"));
+        }
+
+        glVertexAttribPointer(itLocation->second,
+                        3,
+                        GL_FLOAT,
+                        false,
+                        VERT_SIZE * sizeof(float),
+                        (const void *)0);
+        glEnableVertexAttribArray(itLocation->second);
+
+        itLocation = mAttributeLocation.find("Color");
+        if (itLocation == mAttributeLocation.end()) {
+                glDeleteVertexArrays(1, &bbox_vao);
+                glDeleteBuffers(1, &bbox_vbo);
+                throw(std::runtime_error("unknown vertex attribute name: 'Color'"));
+        }
+
+        glVertexAttribPointer(itLocation->second,
+                        3,
+                        GL_FLOAT,
+                        false,
+                        VERT_SIZE * sizeof(float),
+                        (const void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(itLocation->second);
+
+        glBindVertexArray(0);
+
+}
+
+VisualHelpers::VisualHelpers() {
+
+        PrepareAxes();
+        PrepareBBox();
 
         //TODO rewrite path handling after switching on global app settings
         pShader  = CreateResource<SE::ShaderProgram>(
                         "resource/shader_program/simple_color.sesp",
                         SE::ShaderProgram::Settings{"resource/shader/"}
                         );
+
+}
+
+VisualHelpers::~VisualHelpers() noexcept {
+
+        glDeleteVertexArrays(1, &bbox_vao);
+        glDeleteBuffers(1, &bbox_vbo);
+
+        glDeleteVertexArrays(1, &local_axes_vao);
 }
 
 void VisualHelpers::DrawLocalAxes() {
 
         TRenderState::Instance().SetShaderProgram(pShader);
         TRenderState::Instance().DrawArrays(local_axes_vao, GL_LINES, 0, 6);
+}
+
+void VisualHelpers::DrawBBox(const BoundingBox & oBBox) {
+
+        UpdateBBox(oBBox);
+
+        TRenderState::Instance().SetShaderProgram(pShader);
+        TRenderState::Instance().DrawArrays(bbox_vao, GL_LINES, 0, 24);
 }
 
 } //namespace HELPERS

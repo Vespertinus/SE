@@ -24,8 +24,9 @@ flatbuffers::Offset<SE::FlatBuffers::Mesh> SerializeMesh(const MeshData & oMesh,
 
         for (auto & oItem : oMesh.vShapes) {
 
-                auto min_fb     = Vec3(oItem.min.x, oItem.min.y, oItem.min.z);
-                auto max_fb     = Vec3(oItem.max.x, oItem.max.y, oItem.max.z);
+                auto min_fb     = Vec3(oItem.oBBox.Min().x, oItem.oBBox.Min().y, oItem.oBBox.Min().z);
+                auto max_fb     = Vec3(oItem.oBBox.Max().x, oItem.oBBox.Max().y, oItem.oBBox.Max().z);
+                auto bbox_fb    = SE::FlatBuffers::BoundingBox(min_fb, max_fb);
 
                 std::vector<uint8_t>                                    vVertexBufferType;
                 std::vector<flatbuffers::Offset<void> >                 vVertexBufferData;
@@ -111,19 +112,18 @@ flatbuffers::Offset<SE::FlatBuffers::Mesh> SerializeMesh(const MeshData & oMesh,
                                 oItem.triangles_cnt,
                                 oItem.stride,
                                 oItem.sTextureName.empty() ? 0 : oBuilder.CreateString(oItem.sTextureName),
-                                &min_fb,
-                                &max_fb);
+                                &bbox_fb);
 
                 vFBShapes.emplace_back(shape_fb);
         }
 
-        auto min_fb = Vec3(oMesh.min.x, oMesh.min.y, oMesh.min.z);
-        auto max_fb = Vec3(oMesh.max.x, oMesh.max.y, oMesh.max.z);
+        auto min_fb     = Vec3(oMesh.oBBox.Min().x, oMesh.oBBox.Min().y, oMesh.oBBox.Min().z);
+        auto max_fb     = Vec3(oMesh.oBBox.Max().x, oMesh.oBBox.Max().y, oMesh.oBBox.Max().z);
+        auto bbox_fb    = SE::FlatBuffers::BoundingBox(min_fb, max_fb);
 
         auto mesh_fb = CreateMesh(oBuilder,
                         oBuilder.CreateVector(vFBShapes),
-                        &min_fb,
-                        &max_fb
+                        &bbox_fb
                         );
 
         return mesh_fb;

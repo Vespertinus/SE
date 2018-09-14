@@ -19,6 +19,11 @@ struct ColorARGB {
         b:float;
 }
 
+struct BoundingBox {
+        min:Vec3;
+        max:Vec3;
+}
+
 table VertexAttribute {
         name:string (required);
         offset:uint16 = 0;
@@ -71,14 +76,12 @@ table Shape {
         stride:uint8 = 32;
         //TODO rewrite on material usage
         texture:string;
-        min:Vec3 (required);
-        max:Vec3 (required);
+        bbox:BoundingBox (required);
 }
 
 table Mesh {
         shapes:[Shape] (required);
-        min:Vec3 (required);
-        max:Vec3 (required);
+        bbox:BoundingBox (required);
 }
 
 root_type Mesh;

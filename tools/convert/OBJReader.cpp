@@ -239,8 +239,7 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
 
                 oCtx.total_triangles_cnt += oShapeData.triangles_cnt;
 
-                CalcBasicBBox(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE, oShapeData.min, oShapeData.max);
-
+                oShapeData.oBBox.Calc(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE);
                 oShapeData.vVertexBuffers.emplace_back(std::move(vVertices));
 
                 uint16_t next_offset = 3;
@@ -269,14 +268,16 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
                                 vShapes[s].name.c_str(),
                                 oShapeData.triangles_cnt,
                                 oShapeData.sTextureName,
-                                oShapeData.min.x, oShapeData.min.y, oShapeData.min.z,
-                                oShapeData.max.x, oShapeData.max.y, oShapeData.max.z);
+                                oShapeData.oBBox.Min().x, oShapeData.oBBox.Min().y, oShapeData.oBBox.Min().z,
+                                oShapeData.oBBox.Max().x, oShapeData.oBBox.Max().y, oShapeData.oBBox.Max().z);
 
                 oMeshData.vShapes.emplace_back(std::move(oShapeData));
         }
         ++oCtx.mesh_cnt;
 
-        CalcCompositeBBox(oMeshData.vShapes, oMeshData.min, oMeshData.max);
+        for (auto & oShape : oMeshData.vShapes) {
+                oMeshData.oBBox.Concat(oShape.oBBox);
+        }
 
         return SE::uSUCCESS;
 

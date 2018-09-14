@@ -95,49 +95,25 @@ typename Mesh::TShapesInfo Mesh::GetShapesInfo() const {
 
 
 glm::vec3 Mesh::GetCenter(const size_t shape_ind) const {
-//TODO use transform
+
         if (shape_ind >= oMeshCtx.vShapes.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return glm::vec3();
         }
 
-        return glm::vec3((oMeshCtx.vShapes[shape_ind].max.x + oMeshCtx.vShapes[shape_ind].min.x) / 2,
-                         (oMeshCtx.vShapes[shape_ind].max.y + oMeshCtx.vShapes[shape_ind].min.y) / 2,
-                         (oMeshCtx.vShapes[shape_ind].max.z + oMeshCtx.vShapes[shape_ind].min.z) / 2);
+        return oMeshCtx.vShapes[shape_ind].oBBox.Center();
 }
 
 
 glm::vec3 Mesh::GetCenter() const {
-//TODO use transform
-        return glm::vec3((oMeshCtx.max.x + oMeshCtx.min.x) / 2,
-                         (oMeshCtx.max.y + oMeshCtx.min.y) / 2,
-                         (oMeshCtx.max.z + oMeshCtx.min.z) / 2);
+
+        return oMeshCtx.oBBox.Center();
 }
 
 
-void Mesh::DrawBBox(const size_t shape_ind) const {
+const BoundingBox & Mesh::GetBBox() const {
 
-        if (shape_ind >= oMeshCtx.vShapes.size()) {
-                log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
-                return;
-        }
-
-        const glm::vec3 & cur_min = oMeshCtx.vShapes[shape_ind].min;
-        const glm::vec3 & cur_max = oMeshCtx.vShapes[shape_ind].max;
-
-        HELPERS::DrawBBox(cur_min, cur_max);
-}
-
-
-void Mesh::DrawBBox() const {
-
-        HELPERS::DrawBBox(oMeshCtx.min, oMeshCtx.max);
-}
-
-
-std::tuple<const glm::vec3 &, const glm::vec3 &> Mesh::GetBBox() const {
-
-        return { oMeshCtx.min, oMeshCtx.max };
+        return oMeshCtx.oBBox;
 }
 
 
@@ -179,24 +155,24 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
 
         auto                  * pShapesFB        = pMesh->shapes();
         size_t                  shapes_cnt       = pShapesFB->Length();
-        auto                  * pMin             = pMesh->min();
-        auto                  * pMax             = pMesh->max();
 
         uint32_t                index_buf_id;
         std::vector<uint32_t>   vBuffersGLType;
         std::vector<uint32_t>   vBuffersID;
 
-        oMeshCtx.min            = glm::vec3(pMin->x(), pMin->y(), pMin->z());
-        oMeshCtx.max            = glm::vec3(pMax->x(), pMax->y(), pMax->z());
+        oMeshCtx.oBBox = BoundingBox(
+                        *reinterpret_cast<const glm::vec3 *>(&pMesh->bbox()->min()),
+                        *reinterpret_cast<const glm::vec3 *>(&pMesh->bbox()->max())
+                        );
 
         log_d("mesh: shape cnt = {}, min ({}, {}, {}), max({}, {}, {})",
                         shapes_cnt,
-                        oMeshCtx.min.x,
-                        oMeshCtx.min.y,
-                        oMeshCtx.min.z,
-                        oMeshCtx.max.x,
-                        oMeshCtx.max.y,
-                        oMeshCtx.max.z);
+                        oMeshCtx.oBBox.Min().x,
+                        oMeshCtx.oBBox.Min().y,
+                        oMeshCtx.oBBox.Min().z,
+                        oMeshCtx.oBBox.Max().x,
+                        oMeshCtx.oBBox.Max().y,
+                        oMeshCtx.oBBox.Max().z);
         log_d("ext_material = {}", oMeshSettings.ext_material);
 
         auto LocalClean = [&index_buf_id, &vBuffersID](uint32_t cur_vao_id) {
@@ -223,10 +199,10 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
 
                 oShape.sName            = (pNameFB != nullptr) ? pNameFB->c_str() : "";
                 oShape.triangles_cnt    = pCurShape->triangles_cnt();
-                auto * pMin             = pCurShape->min();
-                oShape.min              = glm::vec3(pMin->x(), pMin->y(), pMin->z());
-                auto * pMax             = pCurShape->max();
-                oShape.max              = glm::vec3(pMax->x(), pMax->y(), pMax->z());
+                oShape.oBBox = BoundingBox(
+                                *reinterpret_cast<const glm::vec3 *>(&pCurShape->bbox()->min()),
+                                *reinterpret_cast<const glm::vec3 *>(&pCurShape->bbox()->max())
+                                );
 
                 auto * pTexNameFB       = pCurShape->texture();
                 std::string sTexPath    = (pTexNameFB != nullptr) ? pTexNameFB->c_str() : "";
@@ -437,8 +413,8 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                                 (oShape.pTex) ? oShape.pTex->GetID() : 0,
                                 buffers_cnt,
                                 pAttributes->Length(),
-                                oShape.min.x, oShape.min.y, oShape.min.z,
-                                oShape.max.x, oShape.max.y, oShape.max.z);
+                                oShape.oBBox.Min().x, oShape.oBBox.Min().y, oShape.oBBox.Min().z,
+                                oShape.oBBox.Max().x, oShape.oBBox.Max().y, oShape.oBBox.Max().z);
 
                 oMeshCtx.vShapes.emplace_back(std::move(oShape));
         }
@@ -453,6 +429,10 @@ void Mesh::Clean() {
         }
 }
 
+std::string Mesh::Str() const {
+
+        return fmt::format("Mesh name: '{}', shapes cnt: {}, bbox: {}", sName, oMeshCtx.vShapes.size(), oMeshCtx.oBBox.Str());
+}
 
 }
 
