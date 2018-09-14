@@ -82,12 +82,19 @@ bool FlyTransposer::keyPressed( const OIS::KeyEvent &ev) {
                         *delta_z	-=	speed;
                         break;
                 case OIS::KC_ESCAPE:
-                case OIS::KC_Q:
                         log_i("stop program");
                         exit(0);
                         //return false;
                         //TODO write correct exit
 
+                case OIS::KC_Q:
+                        *rot_z -= 5;
+                        if (*rot_z < 0.0)   *rot_z = 359.0;
+                        break;
+                case OIS::KC_E:
+                        *rot_z += 5;
+                        if (*rot_z > 359.0) *rot_z = 0.0;
+                        break;
                 case OIS::KC_C:
                         {
 
