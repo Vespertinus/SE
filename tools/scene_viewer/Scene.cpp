@@ -7,6 +7,7 @@
 namespace SE {
 namespace TOOLS {
 
+static const uint8_t NODE_HIDE = 0x1;
 
 Scene::Scene(const Settings & oNewSettings, SE::Camera & oCurCamera) :
         oCamera(oCurCamera),
@@ -20,8 +21,6 @@ Scene::Scene(const Settings & oNewSettings, SE::Camera & oCurCamera) :
         oCamera.SetPos(8, 8, 4);
         oCamera.LookAt(0.1, 0.1, 0.1);
 
-        //TODO write bounding box class
-        //BBox + Tranform -> BBox from SceneTree
         pSceneTree->Print();
 }
 
@@ -39,33 +38,53 @@ void Scene::Process() {
 
         TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
-        /*if (oSettings.vdebug) {
+        //pSceneTree->Draw();
+        pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
 
-                pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
 
-                        if (oNode.GetEntityCnt() == 0) {
-                                return true;
-                        }
+                if (oNode.GetFlags() & NODE_HIDE) {
+                        return false;
+                }
 
-                        auto * pMesh = oNode.GetEntity<TMesh>(0);
-                        pMesh->DrawBBox();
+                oNode.DrawSelf();
 
-                        return true;
-                });
-        }*/
-
-        pSceneTree->Draw();
+                return true;
+        });
 
         if (oSettings.vdebug) {
 
                 pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
 
+                        if (oNode.GetFlags() & NODE_HIDE) {
+                                return false;
+                        }
+
                         if (oNode.GetEntityCnt() == 0) {
                                 return true;
                         }
 
+
                         TRenderState::Instance().SetTransform(oNode.GetTransform().GetWorld());
                         TVisualHelpers::Instance().DrawLocalAxes();
+
+                        return true;
+                });
+
+                pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
+
+                        if (oNode.GetFlags() & NODE_HIDE) {
+                                return false;
+                        }
+
+                        if (oNode.GetEntityCnt() == 0) {
+                                return true;
+                        }
+
+
+                        auto * pMesh = oNode.GetEntity<TMesh>(0);
+
+                        TRenderState::Instance().SetTransform(oNode.GetTransform().GetWorld());
+                        TVisualHelpers::Instance().DrawBBox(pMesh->GetBBox());
 
                         return true;
                 });
@@ -77,6 +96,8 @@ void Scene::Process() {
 }
 
 void Scene::ShowGUI() {
+
+        static const uint8_t NODE_HIDE = 0x1;
 
         //basic info
         const float indent = 10;
@@ -122,15 +143,32 @@ void Scene::ShowGUI() {
                 static glm::vec3 cur_rot_around(0);
                 static glm::vec3 cur_point(0);
 
+                auto [vWorldTranslation, vWorldRotation, vWorldScale] = pCurNode->GetTransform().GetWorldDecomposedEuler();
+
+                ImGui::Text("Global:");
+                ImGui::Text("\t %.3f \t%.3f \t%.3f pos",
+                                vWorldTranslation.x,
+                                vWorldTranslation.y,
+                                vWorldTranslation.z);
+                ImGui::Text(" \t%.3f \t%.3f \t%.3f rot",
+                                vWorldRotation.x,
+                                vWorldRotation.y,
+                                vWorldRotation.z);
+                ImGui::Text(" \t%.3f \t%.3f \t%.3f scale",
+                                vWorldScale.x,
+                                vWorldScale.y,
+                                vWorldScale.z);
+                ImGui::Separator();
+
                 ImGui::Text("Local:");
 
                 ImGui::DragFloat3("pos",   &local_pos[0], 0.1, -100, 100);
                 ImGui::DragFloat3("rot",   &local_rot[0], 0.2, -180, 180);
                 ImGui::DragFloat3("scale", &local_scale[0], 0.1, 0.01, 100);
+
                 ImGui::Separator();
                 ImGui::DragFloat3("point", &cur_point[0], 0.1, -100, 100);
                 ImGui::DragFloat3("angle", &cur_rot_around[0], 0.2, -180, 180);
-
 
                 if (local_pos != oTransform.GetPos()) {
 
@@ -170,7 +208,31 @@ void Scene::ShowGUI() {
                                 return false;
                         }
 
+
                         ImGui::Text("entity cnt: %u", oNode.GetEntityCnt());
+                        oNode.ForEachEntity(
+                                [&oNode](const TMesh * pMesh) {
+
+                                        ImGui::Text(pMesh->Str().c_str());
+
+                                        SE::BoundingBox oGlobalBBox = pMesh->GetBBox().Transformed(oNode.GetTransform().GetWorld());
+                                        ImGui::Text("global bbox: %s", oGlobalBBox.Str().c_str());
+                                },
+                                [] (const auto * pArg) {
+
+                                        ImGui::Text("Entity type: '%s'", typeid(pArg).name());
+                                }
+                        );
+
+                        bool hided = oNode.GetFlags() & NODE_HIDE;
+                        if (ImGui::Button((hided) ? "show" : "hide")) {
+                                if (hided) {
+                                        oNode.ClearFlags(NODE_HIDE);
+                                }
+                                else {
+                                        oNode.SetFlags(NODE_HIDE);
+                                }
+                        }
 
                         return true;
                 },
