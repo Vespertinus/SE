@@ -38,10 +38,22 @@ class Transform {
         void              Print(const size_t indent);
         void              Translate(const glm::vec3 & vPos);
         void              Rotate(const glm::vec3 & vDegreeAngles);
-        void              Scale(const glm::vec3 & new_scale);
+        void              Scale(const glm::vec3 & vNewScale);
+        /** @brief scale around point in local space */
+        void              ScaleWithPivot(const glm::vec3 & vPoint, const glm::vec3 & vNewScale);
         /** @brief rotate around point in local space */
         void              RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles);
         void              RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation);
+        std::tuple<
+                glm::vec3,
+                glm::vec3,
+                glm::vec3>
+                          GetWorldDecomposedEuler() const;
+        std::tuple<
+                glm::vec3,
+                glm::quat,
+                glm::vec3>
+                          GetWorldDecomposedQuat() const;
 };
 
 } //namespace SE

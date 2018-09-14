@@ -300,6 +300,15 @@ template <class ... TGeom >
 }
 
 template <class ... TGeom >
+        template <class ... THandler>
+                void SceneNode<TGeom ...>::ForEachEntity(THandler && ... oHandlers) {
+
+        for (auto & oEntity : vRenderEntity) {
+                MP::Visit(oEntity, oHandlers...);
+        }
+}
+
+template <class ... TGeom >
         void SceneNode<TGeom ...>::SetCustomInfo(const std::string_view sInfo) {
 
         sCustomInfo = sInfo;

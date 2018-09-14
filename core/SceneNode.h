@@ -84,9 +84,11 @@ template <class ... TGeom> class SceneNode {
         template <class THandler> void BreadtFirstWalk(THandler && oHandler);
         template <class THandler> void DepthFirstWalk(THandler && oHandler);
         template <class THandler, class TPostHandler>
-                                  void DepthFirstWalkEx(THandler && oHandler, TPostHandler && oPostHandler);
-        void              RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles);
-        void              RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation);
+                                void DepthFirstWalkEx(THandler && oHandler, TPostHandler && oPostHandler);
+        template <class ... THandler> void ForEachEntity(THandler && ... oHandler);
+
+        void                    RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles);
+        void                    RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation);
 };
 
 } //namespace SE

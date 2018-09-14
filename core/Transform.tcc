@@ -116,10 +116,16 @@ void Transform::RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaR
         local_dirty     = 1;
 }
 
-void Transform::Scale(const glm::vec3 & new_scale) {
+void Transform::Scale(const glm::vec3 & vNewScale) {
 
-        vScale          += new_scale;
+        vScale          *= vNewScale;
         local_dirty     = 1;
+}
+
+void Transform::ScaleWithPivot(const glm::vec3 & vPoint, const glm::vec3 & vNewScale) {
+
+        Translate(vPoint * (vScale - vNewScale));
+        Scale(vNewScale);
 }
 
 const glm::mat4 & Transform::Get() const {
@@ -221,6 +227,27 @@ const glm::vec3 & Transform::GetScale() const {
         return vScale;
 }
 
+std::tuple<glm::vec3, glm::quat, glm::vec3> Transform::GetWorldDecomposedQuat() const {
 
+        RecalcWorld();
+
+        glm::vec3 vWorldScale;
+        glm::quat qWorlRotation;
+        glm::vec3 vWorldTranslation;
+        glm::vec3 vWorldSkew;
+        glm::vec4 vWorldPersp;
+
+        glm::decompose(mWorldTransform, vWorldScale, qWorlRotation, vWorldTranslation, vWorldSkew, vWorldPersp);
+        return std::make_tuple(vWorldTranslation, qWorlRotation, vWorldScale);
+}
+
+std::tuple<glm::vec3, glm::vec3, glm::vec3> Transform::GetWorldDecomposedEuler() const {
+
+        auto [vWorldTranslation, qWorlRotation, vWorldScale] = GetWorldDecomposedQuat();
+
+        glm::vec3 vWorldRotation = glm::degrees(glm::eulerAngles(qWorlRotation));
+
+        return std::make_tuple(vWorldTranslation, vWorldRotation, vWorldScale);
+}
 
 }
