@@ -164,7 +164,7 @@ void Transform::Print(const size_t indent) {
 
         glm::vec3 vRotation = glm::degrees(glm::eulerAngles(qRotation));
 
-        log_d("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}",
+        log_d_clean("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}",
                         ">",
                         indent,
                         vTranslation.x,
@@ -188,7 +188,7 @@ void Transform::Print(const size_t indent) {
         glm::decompose(mWorldTransform, vWorldScale, qWorlRotation, vWorldTranslation, vWorldSkew, vWorldPersp);
 
         glm::vec3 vWorldRotation = glm::degrees(glm::eulerAngles(qWorlRotation));
-        log_d("{:>{}} world: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), skew ({}, {}, {}), persp ({}, {}, {}, {})",
+        log_d_clean("{:>{}} world: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), skew ({}, {}, {}), persp ({}, {}, {}, {})",
                         ">",
                         indent,
                         vWorldTranslation.x,

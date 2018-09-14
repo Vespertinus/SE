@@ -7,7 +7,8 @@ namespace SE  {
 template <class ... TGeom > SceneNode<TGeom ...>::SceneNode(TSceneNode * pParentNode, const std::string_view sNewName, TSceneTree * pNewScene) :
         pParent(nullptr),
         sName(sNewName),
-        pScene(pNewScene) {
+        pScene(pNewScene),
+        flags(0) {
 
         SetParent(pParentNode);
 }
@@ -141,10 +142,17 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
 template <class ... TGeom > void SceneNode<TGeom ...>::
         Print(const size_t indent, bool recursive) {
 
-        log_d("{:>{}} '{}': entity cnt = {}", ">", indent, sFullName, vRenderEntity.size());
+        log_d_clean("{:>{}} '{}': entity cnt = {}", ">", indent, sFullName, vRenderEntity.size());
         oTransform.Print(indent + 2);
         if (!sCustomInfo.empty()) {
-                log_d("{:>{}} info: '{}'", ">", indent + 2, sCustomInfo);
+                log_d_clean("{:>{}} info: '{}'", ">", indent + 2, sCustomInfo);
+        }
+        for (auto & oEntity : vRenderEntity) {
+
+                std::visit([indent](auto && arg) {
+                        log_d_clean("{:>{}} entity: {}", ">", indent + 2, arg->Str());
+                },
+                oEntity);
         }
 
         if (recursive) {
@@ -332,6 +340,30 @@ template <class ... TGeom >
         void SceneNode<TGeom ...>::RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation) {
         oTransform.RotateAround(vPoint, qDeltaRotation);
         InvalidateChildren();
+}
+
+template <class ... TGeom >
+        void  SceneNode<TGeom ...>::SetFlags(const uint8_t state) {
+
+        flags |= state;
+}
+
+template <class ... TGeom >
+        uint8_t SceneNode<TGeom ...>::GetFlags() const {
+
+        return flags;
+}
+
+template <class ... TGeom >
+        void SceneNode<TGeom ...>::ClearFlags() {
+
+        flags = 0;
+}
+
+template <class ... TGeom >
+        void SceneNode<TGeom ...>::ClearFlags(const uint8_t state) {
+
+        flags ^= state;
 }
 
 }

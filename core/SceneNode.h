@@ -28,6 +28,8 @@ template <class ... TGeom> class SceneNode {
         std::string                             sFullName;
         std::string                             sCustomInfo;
         TSceneTree                            * pScene;
+        /** user state flags */
+        uint8_t                                 flags;
 
         //SceneNode(); //THINK ???
         SceneNode(TSceneNode * pParentNode, const std::string_view sNewName, TSceneTree * pNewScene);
@@ -89,6 +91,10 @@ template <class ... TGeom> class SceneNode {
 
         void                    RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles);
         void                    RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation);
+        void                    SetFlags(const uint8_t state);
+        uint8_t                 GetFlags() const;
+        void                    ClearFlags();
+        void                    ClearFlags(const uint8_t state);
 };
 
 } //namespace SE
