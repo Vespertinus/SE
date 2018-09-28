@@ -1,5 +1,6 @@
 
 #include <string.h>
+#include <GLUtil.h>
 
 namespace SE {
 
@@ -35,24 +36,6 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
         int                   dpy_width,
                               dpy_height;
         Atom                  wm_delete;
-        Window                wnd_dummy;
-        uint32_t              border_dummy;
-        int32_t               x,
-                              y;
-
-        int attr_list_single[] = {GLX_RGBA, GLX_RED_SIZE, 8,
-                GLX_GREEN_SIZE, 8,
-                GLX_BLUE_SIZE, 8,
-                GLX_DEPTH_SIZE, 24,
-                None};
-
-        int attr_list_double[] = {GLX_RGBA,
-                GLX_DOUBLEBUFFER, True,
-                GLX_RED_SIZE, 8,
-                GLX_GREEN_SIZE, 8,
-                GLX_BLUE_SIZE, 8,
-                GLX_DEPTH_SIZE, 24,
-                None};
 
         display = XOpenDisplay(0);
         if (!display) {
@@ -67,20 +50,70 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
         video_mode = *modes[0];
 
+        typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+        glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+        glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
 
-        visual = glXChooseVisual(display, screen, attr_list_double);
-        if(!visual) {
+        GLint glxAttribs[] = {
+                GLX_X_RENDERABLE    , True,
+                GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
+                GLX_RENDER_TYPE     , GLX_RGBA_BIT,
+                GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
+                GLX_RED_SIZE        , 8,
+                GLX_GREEN_SIZE      , 8,
+                GLX_BLUE_SIZE       , 8,
+                GLX_ALPHA_SIZE      , 8,
+                GLX_DEPTH_SIZE      , 24,
+                GLX_STENCIL_SIZE    , 8,
+                GLX_DOUBLEBUFFER    , True,
+                None
+        };
 
-                visual = glXChooseVisual(display, screen, attr_list_single);
-                if (!visual) {
-                        log_e("error: can't choose visual");
-                        abort();
-                }
-                log_d("set X11 single buffered window");
+        int fbcount;
+        GLXFBConfig * fbc = glXChooseFBConfig(display, screen, glxAttribs, &fbcount);
+        if (fbc == 0) {
+                XCloseDisplay(display);
+                throw(std::runtime_error("Failed to retrieve framebuffer."));
         }
-        else { log_d("set X11 double buffered window"); }
 
-        glx_context           = glXCreateContext(display, visual, 0, true);
+        int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+        for (int i = 0; i < fbcount; ++i) {
+                XVisualInfo *vi = glXGetVisualFromFBConfig( display, fbc[i] );
+                if ( vi != 0) {
+                        int samp_buf, samples;
+                        glXGetFBConfigAttrib( display, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
+                        glXGetFBConfigAttrib( display, fbc[i], GLX_SAMPLES       , &samples  );
+
+                        if ( best_fbc < 0 || (samp_buf && samples > best_num_samp) ) {
+                                best_fbc = i;
+                                best_num_samp = samples;
+                        }
+                        if ( worst_fbc < 0 || !samp_buf || samples < worst_num_samp )
+                                worst_fbc = i;
+                        worst_num_samp = samples;
+                }
+                XFree( vi );
+        }
+        GLXFBConfig bestFbc = fbc[ best_fbc ];
+        XFree( fbc );
+
+        visual = glXGetVisualFromFBConfig( display, bestFbc );
+        if (visual == 0) {
+                XCloseDisplay(display);
+                throw(std::runtime_error("Could not create correct visual window."));
+        }
+        log_d("visual: 0x{:x}, default screen: {}, screen: {}", visual->visualid, screen, visual->screen);
+
+        int context_attribs[] = {
+                GLX_CONTEXT_MAJOR_VERSION_ARB,  3,
+                GLX_CONTEXT_MINOR_VERSION_ARB,  3,
+                GLX_CONTEXT_FLAGS_ARB,          GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+                GLX_CONTEXT_PROFILE_MASK_ARB,   GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+                None
+        };
+
+        glx_context = glXCreateContextAttribsARB( display, bestFbc, 0, true, context_attribs );
+
 
         color_map             = XCreateColormap(display, RootWindow(display, visual->screen), visual->visual, AllocNone);
         wnd_attr.colormap     = color_map;
@@ -132,6 +165,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                 log_d("try to set window mode");
 
                 wnd_attr.event_mask = ExposureMask | StructureNotifyMask;
+                wnd_attr.override_redirect = true;
 
                 window = XCreateWindow( display,
                                 RootWindow(display, visual->screen),
@@ -154,14 +188,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
         }
 
 
-        uint32_t bpp;
-        uint32_t width;
-        uint32_t height;
-
         glXMakeCurrent(display, window, glx_context);
-        XGetGeometry(display, window, &wnd_dummy, &x, &y, &width, &height, &border_dummy, &bpp);
-
-        //log get options
 
         bool direct_render = glXIsDirect(display, glx_context);
 
@@ -216,7 +243,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
                                                         oSettings.fullscreen = !oSettings.fullscreen;
                                                         CreateWindow();
                                                         break;
-                                                        */              
+                                                        */
                                         }
                                         break;
 
@@ -245,7 +272,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
 template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler, DrawHandler>::DestroyWindow() {
 
-        log_i("destriy X11 window");
+        log_i("destroy X11 window");
         if(glx_context) {
                 if(!glXMakeCurrent(display, None, NULL)) {
                         log_e("error releasing drawing context");

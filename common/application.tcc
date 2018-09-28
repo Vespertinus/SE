@@ -52,16 +52,12 @@ template <class TLoop> void Application<TLoop>::Init() {
         glDepthFunc(GL_LESS);
         glEnable(GL_DEPTH_TEST);
         //glShadeModel(GL_SMOOTH);
-        //glLineWidth(4);
-        glEnable(GL_ALPHA_TEST);
-        glAlphaFunc (GL_GREATER, 0.7);
-        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-
-        oCamera.UpdateProjection();
-
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
         //glEnable(GL_LIGHTING);
+
+        if (SE::CheckOpenGLError() != uSUCCESS) {
+                throw("OpenGL Error after initial initialization");
+        }
 }
 
 
@@ -77,8 +73,6 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 
         TInputManager::Instance().SetWindowExtents(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
         SE::TRenderState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-
-        oCamera.UpdateProjection();
 }
 
 
@@ -86,15 +80,12 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 template <class TLoop> void Application<TLoop>::Run() {
 
         glClear(oSettings.clear_flag);
-        glLoadIdentity();
-        glPushMatrix();
         oCamera.Adjust();
 
         SE::TRenderState::Instance().FrameStart();
 
         oLoop.Process();
 
-        glPopMatrix();
         TInputManager::Instance().Capture();
 
         TSimpleFPS::Instance().Update();

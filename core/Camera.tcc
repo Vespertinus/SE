@@ -37,12 +37,6 @@ void Camera::Adjust() {
         pos_x += delta_x;
         pos_y += delta_y;
         pos_z += delta_z;
-		
-	glRotated (-rot_x, 1.0, 0.0, 0.0);
-	glRotated ( rot_y, 0.0, 1.0, 0.0);
-	glRotated ( rot_z, 0.0, 0.0, 1.0);
-
-	glTranslatef (-pos_x, -pos_y, -pos_z);
 
         /*
         //DEBUG
@@ -251,49 +245,6 @@ void Camera::LookAt(const glm::vec3 & center) {
         log_d("new angles: rot_x = {}, rot_y = {}, rot_z = {}, center x = {}, y = {}, z = {}",
                         rot_x, rot_y, rot_z,
                         center.x, center.y, center.z);
-}
-
-
-void Camera::UpdateProjection() const {
-
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-
-        const Frustum::Volume & oVolume = oFrustum.GetVolume();
-
-        switch (oVolume.projection) {
-
-                case Frustum::uPERSPECTIVE:
-                        /*
-                        gluPerspective(oVolume.fov,
-                                       //(GLfloat)oSettings.width / (GLfloat) oSettings.height,
-                                       oVolume.aspect,
-                                       oVolume.near_clip,
-                                       oVolume.far_clip);
-                        */
-
-                        glFrustum(oVolume.left, oVolume.right, oVolume.bottom, oVolume.top, oVolume.near_clip, oVolume.far_clip);
-                        break;
-
-                case Frustum::uORTHO:
-                        //TODO calc zoom
-                        //glOrtho(oVolume.left /* * scale */, oVolume.right /* * scale */, oVolume.bottom /* * scale*/, oVolume.top /* * scale */, oVolume.near_clip, oVolume.far_clip);
-                        glOrtho ((- oSettings.width / 2) / zoom,
-                                 (oSettings.width / 2) / zoom,
-                                 (- oSettings.height / 2) / zoom,
-                                 (oSettings.height / 2) / zoom,
-                                 oVolume.near_clip,
-                                 oVolume.far_clip);
-                        //glOrtho (0, oSettings.width, oSettings.height, 0, oVolume.near_clip, oVolume.far_clip);
-                        break;
-
-                default:
-                        log_e("wrong projection = {}", oVolume.projection);
-
-        }
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
 }
 
 

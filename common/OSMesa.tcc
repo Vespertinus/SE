@@ -4,11 +4,19 @@ namespace SE {
 
 OSMesa::OSMesa(const WindowSettings & oNewSettings) : oSettings(oNewSettings) { 
 
-        pMesaCtx = OSMesaCreateContextExt( oSettings.format, 
-                                           oSettings.depth,
-                                           oSettings.stencil,
-                                           oSettings.accum,
-                                           NULL );
+        int attribs[] = {
+                OSMESA_FORMAT,                  (int)oSettings.format,
+                OSMESA_DEPTH_BITS,              oSettings.depth,
+                OSMESA_STENCIL_BITS,            oSettings.stencil,
+                OSMESA_ACCUM_BITS,              oSettings.accum,
+                OSMESA_PROFILE,                 OSMESA_CORE_PROFILE,
+                OSMESA_CONTEXT_MAJOR_VERSION,   3,
+                OSMESA_CONTEXT_MINOR_VERSION,   3,
+                0
+        };
+
+        pMesaCtx = OSMesaCreateContextAttribs(attribs, NULL);
+
         if (!pMesaCtx) {
                 throw (std::runtime_error("OSMesa::OSMesa: OSMesaCreateContext failed"));
         }

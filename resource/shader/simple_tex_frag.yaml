@@ -11,5 +11,8 @@ source:
 
         void main() {
                 FragColor = texture(DiffuseTex, TexCoord);
-                //FragColor = vec4(1, 1, 1, 1);
+                if (FragColor.a <= 0.5) {
+                        discard;
+                }
+
         }
