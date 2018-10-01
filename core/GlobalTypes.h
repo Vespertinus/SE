@@ -30,6 +30,7 @@
 #include <OpenCVImgLoader.h>
 #include <Texture.h>
 #include <StoreTexture2D.h>
+#include <StoreTextureBufferObject.h>
 
 
 namespace SE {
@@ -37,7 +38,7 @@ namespace SE {
 template <class Resource, class ... TConcreateSettings> Resource * CreateResource (const std::string & sName, const TConcreateSettings & ... oSettings);
 
 typedef LOKI_TYPELIST_2(TGALoader, OpenCVImgLoader)                     TextureLoadStrategyList;
-typedef LOKI_TYPELIST_1(StoreTexture2D)                                 TextureStoreStrategyList;
+typedef LOKI_TYPELIST_2(StoreTexture2D, StoreTextureBufferObject)       TextureStoreStrategyList;
 typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture;
 
 }

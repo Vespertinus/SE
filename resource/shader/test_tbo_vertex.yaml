@@ -1,0 +1,23 @@
+type: VERTEX
+source:
+ - |
+        #version 150
+
+        in vec4         Position;
+
+        uniform samplerBuffer CustomTex;
+
+        uniform mat4    MVPMatrix;
+        uniform mat4    MVMatrix;
+
+        //out vec2        TexCoord;
+        out vec4        DiffuseColor;
+
+        void main() {
+                DiffuseColor.r  = texelFetch(CustomTex, (gl_VertexID * 3) + 0).r;
+                DiffuseColor.g  = texelFetch(CustomTex, (gl_VertexID * 3) + 1).r;
+                DiffuseColor.b  = texelFetch(CustomTex, (gl_VertexID * 3) + 2).r;
+                DiffuseColor.a  = 1;
+                gl_Position     = MVPMatrix * (MVMatrix * Position);
+        }
+

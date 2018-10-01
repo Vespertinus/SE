@@ -1,0 +1,10 @@
+{
+        "vertex" : {
+                "name" : "test_tbo_vertex.sesl"
+        },
+        "fragment" : {
+                "name" : "simple_color_frag.sesl"
+        }
+}
+
+
