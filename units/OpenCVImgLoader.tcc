@@ -37,19 +37,19 @@ ret_code_t OpenCVImgLoader::Load(const std::string sPath, TextureStock & oTextur
                 cv::flip(oImg, oResImg, 0);
         }
 
-        oTextureStock.bpp               = oResImg.channels();
+        uint32_t bpp                    = oResImg.channels();
         oTextureStock.width             = oResImg.cols;
         oTextureStock.height            = oResImg.rows;
 
-        if (oTextureStock.bpp != 3 && oTextureStock.bpp != 4) {
-                log_e("wrong channels cnt = {}, in file '{}'", oTextureStock.bpp, sPath.c_str());
+        if (bpp != 3 && bpp != 4) {
+                log_e("wrong channels cnt = {}, in file '{}'", bpp, sPath.c_str());
                 return uWRONG_INPUT_DATA;
         }
 
-        oTextureStock.color_order       = (oTextureStock.bpp == 4) ? GL_BGRA : GL_BGR;
+        oTextureStock.format            = (bpp == 4) ? GL_BGRA : GL_BGR;
+        oTextureStock.internal_format   = GL_RGBA8;
         oTextureStock.raw_image         = oResImg.ptr();
         oTextureStock.raw_image_size    = oResImg.total() * oResImg.elemSize();
-        oTextureStock.compressed        = uUNCOMPRESSED_TEXTURE;
 
         vImagesData.emplace_back(std::move(oResImg));
 

@@ -5,33 +5,18 @@
 
 namespace SE {
 
-const uint8_t uUNCOMPRESSED_TEXTURE   = 0;
-const uint8_t uDXT3_TEXTURE           = 3;
-//TODO other types;
-
 struct TextureStock {
 
         uint8_t   * raw_image;
         uint32_t    raw_image_size;
 
         //GL_RGB, GL_BGRA and so on
-        int        color_order;
+        int        format;
+        /** input data type GL_RGBA8, GL_R32F etc */
+        int        internal_format;
 
-        //texture type: GL_TEXTURE_2D etc
-        uint32_t    gl_type;
-
-        uint16_t    width;
-        uint16_t    height;
-
-        /** bytes per pixel */
-        uint8_t     bpp;
-
-        //TODO compressed texture stuff
-        uint8_t     compressed;
-
-
-
-        ~TextureStock() throw() { }
+        uint32_t    width;
+        uint32_t    height;
 };
 
 } //namespace SE

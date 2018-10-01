@@ -50,10 +50,11 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
                 return uREAD_FILE_ERROR;
         }
 
-        oTextureStock.bpp             = header [4] / 8;
-        oTextureStock.color_order     = (oTextureStock.bpp == 4) ? GL_RGBA : GL_RGB;
-        oTextureStock.raw_image       = 0;
-        oTextureStock.raw_image_size  = oTextureStock.width * oTextureStock.height * oTextureStock.bpp;
+        uint32_t bpp                    = header [4] / 8;
+        oTextureStock.format            = (bpp == 4) ? GL_RGBA : GL_RGB;
+        oTextureStock.internal_format   = GL_RGBA8;
+        oTextureStock.raw_image         = 0;
+        oTextureStock.raw_image_size    = oTextureStock.width * oTextureStock.height * bpp;
 
         try {
                 vImageData.resize(oTextureStock.raw_image_size);
@@ -84,13 +85,12 @@ ret_code_t TGALoader::Load(const std::string sPath, TextureStock & oTextureStock
                 return uREAD_FILE_ERROR;
         }
 
-        for (uint32_t index = 0; index < oTextureStock.raw_image_size; index += oTextureStock.bpp)	{
+        for (uint32_t index = 0; index < oTextureStock.raw_image_size; index += bpp) {
                 swap                    = vImageData [index];
                 vImageData [index]      = vImageData [index + 2];
                 vImageData [index + 2]  = swap;
         }
 
-        oTextureStock.compressed = uUNCOMPRESSED_TEXTURE;
         oTextureStock.raw_image  = &vImageData[0];
 
         fclose (oImageFile);

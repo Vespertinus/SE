@@ -46,7 +46,10 @@ template <class StoreStrategyList, class LoadStrategyList>
 
 
 
-template <class StoreStrategyList, class LoadStrategyList> Texture<StoreStrategyList, LoadStrategyList>::~Texture() noexcept { ;; }
+template <class StoreStrategyList, class LoadStrategyList> Texture<StoreStrategyList, LoadStrategyList>::~Texture() noexcept {
+
+        glDeleteTextures(1, &id);
+}
 
 
 template <class StoreStrategyList, class LoadStrategyList>
@@ -97,7 +100,7 @@ template <class StoreStrategyList, class LoadStrategyList>
                 throw (std::runtime_error(buf));
         }
 
-        err_code = oStoreStrategy.Store(oTextureStock, id);
+        err_code = oStoreStrategy.Store(oTextureStock, id, gl_type);
         if (err_code) {
                 char buf[256];
                 snprintf(buf, sizeof(buf), "Texture::Create: Storing failed, err_code = %u\n", err_code);
@@ -107,7 +110,6 @@ template <class StoreStrategyList, class LoadStrategyList>
 
         oDimensions.first   = oTextureStock.width;
         oDimensions.second  = oTextureStock.height;
-        gl_type             = oTextureStock.gl_type;
 }
 
 template <class StoreStrategyList, class LoadStrategyList>
@@ -115,28 +117,17 @@ template <class StoreStrategyList, class LoadStrategyList>
                 Texture<StoreStrategyList, LoadStrategyList>::Texture(
                                 const std::string sName,
                                 const rid_t new_rid,
-                                uint8_t * pImageData,
-                                uint16_t  width,
-                                uint16_t  height,
-                                int       color_order,
-                                uint8_t   bpp,
+                                const TextureStock & oTextureStock,
                                 const TStoreStrategySettings & oStoreStrategySettings) :
-                                        ResourceHolder(new_rid, sName), oDimensions(width, height), id(0) {
+                                        ResourceHolder(new_rid, sName),
+                                        oDimensions(oTextureStock.width, oTextureStock.height),
+                                        id(0) {
 
         typedef typename MP::InnerSearch<StoreStrategyList, TStoreStrategySettings>::Result TStoreStrategy;
 
-        TextureStock    oTextureStock;
-        oTextureStock.bpp               = bpp;
-        oTextureStock.color_order       = color_order;
-        oTextureStock.width             = width;
-        oTextureStock.height            = height;
-        oTextureStock.raw_image         = pImageData;
-        oTextureStock.raw_image_size    = 1;//???
-        oTextureStock.compressed        = uUNCOMPRESSED_TEXTURE;
-
         TStoreStrategy  oStoreStrategy(oStoreStrategySettings);
 
-        ret_code_t err_code = oStoreStrategy.Store(oTextureStock, id);
+        ret_code_t err_code = oStoreStrategy.Store(oTextureStock, id, gl_type);
         if (err_code) {
                 char buf[256];
                 snprintf(buf, sizeof(buf), "Texture::Texture: Storing failed, err_code = %u\n", err_code);
@@ -144,7 +135,6 @@ template <class StoreStrategyList, class LoadStrategyList>
                 throw (std::runtime_error(buf));
         }
 
-        gl_type             = oTextureStock.gl_type;//???
 }
 
 

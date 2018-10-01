@@ -40,7 +40,7 @@ class StoreTexture2D {
 
         StoreTexture2D(const Settings & oNewSettings);
         ~StoreTexture2D() throw();
-        ret_code_t Store(TextureStock & oTextureStock, uint32_t & id);
+        ret_code_t Store(const TextureStock & oTextureStock, uint32_t & id, uint32_t & gl_type);
 
 };
 

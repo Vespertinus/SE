@@ -4,7 +4,7 @@
 
 namespace SE {
 
-typedef std::pair<uint16_t, uint16_t> Dimensions;
+typedef std::pair<uint32_t, uint32_t> Dimensions;
 
 //TODO store settings inside texture for updating later;
 
@@ -18,6 +18,7 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
         uint32_t    id;
         uint32_t    gl_type;
         //format compressed type | uncompressed
+        //gl_format GL_RGBA, GL_R32 etc
         //destination (unit index) from settings inside material
 
 
@@ -55,11 +56,7 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
         template <class TStoreStrategySettings = TDefaultStoreStrategy>
                 Texture(const std::string sName,
                         const rid_t new_rid,
-                        uint8_t * pImageData,
-                        uint16_t  width,
-                        uint16_t  height,
-                        int       color_order,
-                        uint8_t   bpp,
+                        const TextureStock & oTextureStock,
                         const TStoreStrategySettings & oStoreStrategySettings);
 
         ~Texture() noexcept;

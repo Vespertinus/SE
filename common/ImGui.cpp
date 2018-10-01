@@ -125,11 +125,14 @@ void ImGuiWrapper::BuildFontTex() {
 
         pFontTex = CreateResource<SE::TTexture>(
                         "ImGuiFontTexture",
-                        pPixels,
-                        (uint16_t)width,
-                        (uint16_t)height,
-                        GL_RGBA,
-                        4,
+                        TextureStock {
+                                pPixels,
+                                (uint32_t)(width * height * 4) /* RGBA ubyte channels*/,
+                                GL_RGBA,
+                                GL_RGBA8,
+                                (uint16_t)width,
+                                (uint16_t)height
+                        },
                         StoreTexture2D::Settings(false));
 
         io.Fonts->TexID = (ImTextureID)pFontTex;
