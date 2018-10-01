@@ -8,9 +8,11 @@ option(GPU                      "Compile with direct rendering support"  ON)
 option(ASAN                     "Compile with address sanitizer"         OFF)
 option(OLD_ABI                  "Compile with old CXX ABI"               OFF)
 option(TOOLS                    "Compile tools with their dependencies"  ON)
+option(TESTS                    "build tests"                            OFF)
 
 
-set(LOCAL_INC_DIRS              core common units generated "third_party/imgui")
+set(LOCAL_INC_DIRS              core common units generated)
+set(THIRD_PARTY_INC_DIRS        )
 set(EXTERN_INC_DIRS)
 set(LIBRARIES_LIST              "")
 
@@ -84,13 +86,14 @@ set (COMMON_SOURCES             "${CMAKE_SOURCE_DIR}/common/Chrono.cpp")
 if(GPU)
 list(APPEND                     COMMON_SOURCES
                                 "${CMAKE_SOURCE_DIR}/core/InputManager.cpp")
+list(APPEND                     THIRD_PARTY_INC_DIRS "third_party/imgui")
 endif()
 
 prepend_path(                   LOCAL_INC_DIRS
                                 REL_LOCAL_INC_DIR
                                 ${CMAKE_SOURCE_DIR})
 
-include_directories(${REL_LOCAL_INC_DIR} ${EXTERN_INC_DIRS})
+include_directories(${REL_LOCAL_INC_DIR} ${EXTERN_INC_DIRS} ${THIRD_PARTY_INC_DIRS})
 #link_libraries(${LIBRARIES_LIST})
 
 include("ConfigureExport")
@@ -101,4 +104,7 @@ add_subdirectory("samples")
 
 add_subdirectory("tools")
 
+if (TESTS)
+        add_subdirectory("tests")
+endif()
 

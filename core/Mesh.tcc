@@ -223,8 +223,8 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                         }
                         else {
                                 oShape.pShader  = CreateResource<SE::ShaderProgram>(
-                                                //"resource/shader_program/wireframe.sesp",
-                                                "resource/shader_program/simple.sesp",
+                                                "resource/shader_program/wireframe.sesp",
+                                                //"resource/shader_program/simple.sesp",
                                                 SE::ShaderProgram::Settings{"resource/shader/"}
                                                 );
                         }

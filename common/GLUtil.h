@@ -112,6 +112,10 @@ static inline void PrintGLInfo() {
         auto * pVendor = glGetString(GL_VENDOR);
         auto * pRenderer = glGetString(GL_RENDERER);
 
+        if (pVendor == nullptr || pRenderer == nullptr) {
+                throw(std::runtime_error("failed to get OpenGL vendor or renderer"));
+        }
+
         log_d("OpenGL version: {}.{}, vendor: '{}', renderer: '{}'", gl_major, gl_minor, pVendor, pRenderer);
 
         glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &val);
@@ -136,6 +140,9 @@ static inline void PrintGLInfo() {
 
         glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &val);
         log_d("GL_MAX_TEXTURE_BUFFER_SIZE: {}", val);
+
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &val);
+        log_d("GL_MAX_TEXTURE_SIZE: {}", val);
 
         glGetIntegerv(GL_NUM_EXTENSIONS, &val);
         log_d("{} extensions supported", val);
