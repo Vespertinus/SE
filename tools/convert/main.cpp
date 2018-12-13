@@ -45,11 +45,13 @@ int main(int argc, char **argv) {
                         ("input",        bpo::value<string>(),                                  "input file, Mesh or Scene (<filename>)")
                         ("output",       bpo::value<string>(),                                  "output file destination (<filename>)")
                         ("skip_normals", bpo::value<bool>()->default_value(false),              "does not write normals to output file")
+                        ("skip_material", bpo::value<bool>()->default_value(false),             "does not import materials")
                         ("flip_yz",      bpo::value<bool>()->default_value(false),              "flip yz axes, depend on what axis might be up")
                         ("cut_path",     bpo::value<string>(),                                  "regex for cuting imported paths (<search substr>)")
                         ("replace",      bpo::value<string>(),                                  "string for replacing cuted path part (<path>)")
                         ("to_scene",     bpo::value<bool>()->default_value(false),              "write mesh as scene")
                         ("info_prop",    bpo::value<bool>()->default_value(true),               "import custom data from fbx node property ('info') as string")
+                        ("blendshape",   bpo::value<bool>()->default_value(false),              "import blend shape (morph target)")
 
                         ;
 
@@ -108,6 +110,9 @@ int main(int argc, char **argv) {
                         oCtx.skip_normals = vm["skip_normals"].as<bool>();
                 }
                 {
+                        oCtx.skip_material = vm["skip_material"].as<bool>();
+                }
+                {
                         oCtx.flip_yz = vm["flip_yz"].as<bool>();
                 }
                 if (vm.count("cut_path") ) {
@@ -121,6 +126,9 @@ int main(int argc, char **argv) {
                 }
                 {
                         oCtx.import_info_prop = vm["info_prop"].as<bool>();
+                }
+                {
+                        oCtx.import_blend_shape = vm["blendshape"].as<bool>();
                 }
         }
         catch (std::exception & ex) {
@@ -140,20 +148,22 @@ int main(int argc, char **argv) {
                 if (sOutput.empty()) {
                         sOutput = oPath.stem().string();
                 }
+                oCtx.sPackName = sInput + "|";
 
                 if (sExt == ".obj") {
                         log_d("file '{}' ext '{}', call OBJLoader", sInput, sExt);
-                        MeshData oMeshData;
-                        err_code = ReadOBJ(sInput, oMeshData, oCtx);
+                        ModelData oModelData;
+                        err_code = ReadOBJ(sInput, oModelData, oCtx);
                         if (err_code) {
                                 throw (std::runtime_error("Loading failed, err_code = " + std::to_string(err_code)) );
                         }
 
-                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, total_vertices_cnt: {}, textures cnt: {}",
+                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, total_vertices_cnt: {}, materials cnt: {}, textures cnt: {}",
                                         oCtx.node_cnt,
                                         oCtx.mesh_cnt,
                                         oCtx.total_triangles_cnt,
                                         oCtx.total_vertices_cnt,
+                                        oCtx.material_cnt,
                                         oCtx.textures_cnt);
 
                         if (to_scene) {
@@ -164,13 +174,13 @@ int main(int argc, char **argv) {
 
                                 oChild.sName = "obj";
                                 oChild.scale = glm::vec3(1, 1, 1);
-                                oChild.vEntity.emplace_back(std::move(oMeshData));
+                                oChild.vComponents.emplace_back(std::move(oModelData));
                                 oRoot.vChildren.emplace_back(std::move(oChild));
 
                                 err_code = WriteSceneTree(sOutput + ".sesc", oRoot);
                         }
                         else {
-                                err_code = WriteMesh(sOutput + ".sems", oMeshData);
+                                err_code = WriteMesh(sOutput + ".sems", oModelData.oMesh);
                         }
                         if (err_code) {
                                 throw (std::runtime_error("Write failed, err_code = " + std::to_string(err_code)) );
@@ -185,11 +195,12 @@ int main(int argc, char **argv) {
                                 throw (std::runtime_error("Loading failed, err_code = " + std::to_string(err_code)) );
                         }
 
-                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, total_vertices_cnt: {}, textures cnt: {}",
+                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, total_vertices_cnt: {}, materials cnt: {}, textures cnt: {}",
                                         oCtx.node_cnt,
                                         oCtx.mesh_cnt,
                                         oCtx.total_triangles_cnt,
                                         oCtx.total_vertices_cnt,
+                                        oCtx.material_cnt,
                                         oCtx.textures_cnt);
 
                         err_code = WriteSceneTree(sOutput + ".sesc", oRoot);

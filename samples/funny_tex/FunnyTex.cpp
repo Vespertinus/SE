@@ -39,8 +39,6 @@ int main(int argc, char **argv) {
         oSettings.oWindowSettings.title       = "Funny Textures";
         oSettings.sResourceDir                = "resource/";
 
-
-
         try {
 
                 SE::Application<FUNNY_TEX::OrthoScene> App(oSettings, FUNNY_TEX::OrthoScene::Settings());

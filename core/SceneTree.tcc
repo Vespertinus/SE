@@ -3,61 +3,41 @@
 
 namespace SE {
 
-template <class ... TGeom > SceneTree<TGeom ...>::SceneTree(
+template <class ... TComponents > SceneTree<TComponents ...>::SceneTree(
                 const std::string & sName,
-                const rid_t new_rid,
-                const Settings & oSettings) :
+                const rid_t new_rid) :
         ResourceHolder(new_rid, sName),
-        oRoot(nullptr, "root", this) {
+        pRoot(std::make_shared<NodeWrapper>("root", this)) {
 
-        mNamedNodes.emplace(oRoot.GetName(), &oRoot);
-        mLocalNamedNodes.emplace(oRoot.GetName(), std::vector<TSceneNode *>(1, &oRoot) );
+        mNamedNodes.emplace(pRoot->GetName(), pRoot);
+        mLocalNamedNodes.emplace(pRoot->GetName(), std::vector<TSceneNode>(1, pRoot) );
 
-        Load(oSettings);
+        Load();
 }
-template <class ... TGeom > SceneTree<TGeom ...>::~SceneTree() noexcept {
+template <class ... TComponents > SceneTree<TComponents ...>::~SceneTree() noexcept {
 
         //TODO remove all elements
 }
 
-template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
-         Create(TSceneNode * pParent, const std::string_view sNewName) {
+template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
+         Create(TSceneNode pParent, const std::string_view sNewName) {
 
-         TSceneNode * pNode = new TSceneNode(pParent, sNewName, this);
-
-         if (!sNewName.empty()) {
-                 StrID sid(pNode->GetFullName());
-                 StrID local_sid(pNode->GetName());
-
-                 auto it = mNamedNodes.find(sid);
-                 if (it != mNamedNodes.end()) {
-                         log_e("duplication found, node with name: '{}' already exist", pNode->GetFullName() );
-                         delete pNode;
-                         return nullptr;
-                 }
-
-                 mNamedNodes.emplace(sid, pNode);
-
-                 auto itLocalCheckNode = mLocalNamedNodes.find(local_sid);
-                 if (itLocalCheckNode == mLocalNamedNodes.end() ) {
-                         mLocalNamedNodes.emplace(local_sid, std::vector<TSceneNode *>(1, pNode) );
-                 }
-                 else {
-                         itLocalCheckNode->second.emplace_back(pNode);
-                 }
+         TSceneNode pNode = std::make_shared<NodeWrapper>(sNewName, this);
+         if (auto ret = pParent->AddChild(pNode); ret != uSUCCESS) {
+                 return nullptr;
          }
 
          log_d("name: '{}'", pNode->GetFullName());
          return pNode;
 }
 
-template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
+template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
          Create(const std::string_view sNewName) {
 
-         return Create(&oRoot, sNewName);
+         return Create(pRoot, sNewName);
 }
 
-template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
+template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
         FindFullName(const StrID sid) const {
 
         auto it = mNamedNodes.find(sid);
@@ -66,7 +46,7 @@ template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
         }
         return nullptr;
 }
-template <class ... TGeom > const std::vector<SceneNode<TGeom ...> *> * SceneTree<TGeom ...>::
+template <class ... TComponents > const std::vector<std::shared_ptr<SceneNode<TComponents ...>>> * SceneTree<TComponents ...>::
         FindLocalName(const StrID sid) const {
 
         auto it = mLocalNamedNodes.find(sid);
@@ -76,65 +56,55 @@ template <class ... TGeom > const std::vector<SceneNode<TGeom ...> *> * SceneTre
         return nullptr;
 }
 
-template <class ... TGeom > SceneNode<TGeom ...> * SceneTree<TGeom ...>::
+template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
         GetRoot() {
 
-        return &oRoot;
+        return pRoot;
 }
 
-template <class ... TGeom > bool SceneTree<TGeom ...>::
-        Destroy(TSceneNode * pNode) {
+template <class ... TComponents > void SceneTree<TComponents ...>::
+        HandleNodeUnlink(TSceneNodeExact * pNode) {
 
-        if (pNode == &oRoot) { return false; }
-
-        TSceneNode * pOldParent = &oRoot;
-
-        if (pNode->pParent) {
-                pOldParent = pNode->pParent;
-                pNode->SetParent(nullptr);
-
-        }
-        for (auto * pItem : pNode->vChildren) {
-                pOldParent->AddChild(pItem);
+        if (pNode == nullptr || pNode->GetScene() != this) {
+                return;
         }
 
-        delete(pNode);
+        if (pNode->GetName().empty()) { return; }
 
-        return true;
+        mNamedNodes.erase(pNode->GetFullName());
+
+        auto it = mLocalNamedNodes.find(pNode->GetName());
+        if (it != mLocalNamedNodes.end()) {
+                auto & vNames = it->second;
+
+                log_d("CHECK: before size: {}", vNames.size());
+
+                vNames.erase(std::remove_if(
+                                        vNames.begin(),
+                                        vNames.end(),
+                                        [pNode](const auto & pCheckNode) {
+
+                                                return pCheckNode.get() == pNode;
+                                        }),
+                              vNames.end());
+                log_d("CHECK: after size: {}", vNames.size());
+                if (vNames.size() == 0) {
+                        mLocalNamedNodes.erase(it);
+                }
+        }
 }
 
-template <class ... TGeom > bool SceneTree<TGeom ...>::
-        Destroy(const std::string_view sName) {
-
-        if (sName.empty()) {
-                log_w("failed to find node, reason: empty name");
-                return false;
-        }
-
-        auto it = mNamedNodes.find(sName);
-        if (it != mNamedNodes.end()) {
-                TSceneNode * pNode = it->second;
-                mNamedNodes.erase(it);
-                return Destroy(pNode);
-        }
-        else {
-                log_w("failed to find node: '{}'", sName);
-        }
-        return false;
-}
-
-
-template <class ... TGeom > void SceneTree<TGeom ...>::
+template <class ... TComponents > void SceneTree<TComponents ...>::
         Print() {
 
         if (gLogger->level() != spdlog::level::debug) { return; }
 
-        oRoot.Print(0);
+        pRoot->Print(0);
 }
 
 
-template <class ... TGeom > void SceneTree<TGeom ...>::
-        Load(const Settings & oSettings) {
+template <class ... TComponents > void SceneTree<TComponents ...>::
+        Load() {
 
         static const size_t max_file_size = 1024 * 1024 * 100;
 
@@ -165,14 +135,28 @@ template <class ... TGeom > void SceneTree<TGeom ...>::
                 throw(std::runtime_error("failed to verify data in: " + sName));
         }
 
-        Load(SE::FlatBuffers::GetNode(&vBuffer[0]), oSettings);
+        Load(SE::FlatBuffers::GetNode(&vBuffer[0]));
 }
 
 
-template <class ... TGeom > void SceneTree<TGeom ...>::
-        Load(const SE::FlatBuffers::Node * pRoot, const Settings & oSettings) {
+template <class ... TComponents > void SceneTree<TComponents ...>::
+        Load(const SE::FlatBuffers::Node * pRoot) {
 
-        if (auto res = LoadNode(pRoot, nullptr, oSettings); res != uSUCCESS) {
+        TLoaderTuple oLoaders;
+        TLoaderMap mLoaders;
+
+        auto InitMap = [&mLoaders](auto & oLoader) {
+
+                using TExactSerialized = typename std::decay<decltype(oLoader)>::type::TExactSerialized;
+
+                FlatBuffers::ComponentU key = FlatBuffers::ComponentUTraits<TExactSerialized>::enum_value;
+                mLoaders.emplace(key, oLoader);
+        };
+
+        //init loaders map
+        MP::TupleForEach(oLoaders, InitMap);
+
+        if (auto res = LoadNode(pRoot, nullptr, mLoaders); res != uSUCCESS) {
                 throw (std::runtime_error("failed to load tree, reason: " +
                                           std::to_string(res) +
                                           ", from: " +
@@ -180,15 +164,15 @@ template <class ... TGeom > void SceneTree<TGeom ...>::
         }
 }
 
-template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
-        LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode * pParent, const Settings & oSettings) {
+template <class ... TComponents > ret_code_t SceneTree<TComponents ...>::
+        LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode pParent, const TLoaderMap & mLoaders) {
 
-        TSceneNode * pDstNode;
+        TSceneNode pDstNode;
         auto * pNameFB = pSrcNode->name();
         std::string_view sSrcName = (pNameFB != nullptr) ? pNameFB->c_str() : "";
 
-        if (pParent == nullptr) {
-                pDstNode = &oRoot;
+        if (!pParent) {
+                pDstNode = pRoot;
                 if (bool res = pDstNode->SetName(sSrcName); res != true) {
                         return uWRONG_INPUT_DATA;
                 }
@@ -196,7 +180,8 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
         }
         else {
                 pDstNode = Create(pParent, sSrcName);
-                if (pDstNode == nullptr) {
+                if (!pDstNode) {
+                        log_e("failed to create node: '{}'", sSrcName);
                         return uWRONG_INPUT_DATA;
                 }
         }
@@ -214,34 +199,64 @@ template <class ... TGeom > ret_code_t SceneTree<TGeom ...>::
                 pDstNode->SetCustomInfo(pSrcNode->info()->c_str());
         }
 
-        auto * pEntityFB          = pSrcNode->render_entity();
-        if (pEntityFB != nullptr) {
-                //TODO support instances from maya
-                //they does not write mesh name, only node name
-                //may be compare Mesh pointes..
+        //___Start___ load components
+        auto * pComponentsFB = pSrcNode->components();
+        if (pComponentsFB) {
 
-                size_t entity_cnt     = pEntityFB->Length();
-                for (size_t i = 0; i < entity_cnt; ++i) {
-                        auto * pCurEntity = pEntityFB->Get(i);
-                        //FIXME currently without instances..
-                        auto * pMesh = CreateResource<TMesh>(sName + ":" + pDstNode->GetFullName() + ":" + pCurEntity->name()->c_str(), pCurEntity->data(), oSettings.oMeshSettings);
-                        pDstNode->AddRenderEntity(pMesh);
+                ret_code_t res;
+
+                size_t components_cnt = pComponentsFB->Length();
+                for (size_t i = 0; i < components_cnt; ++i) {
+                        auto * pCurComponentFB = pComponentsFB->Get(i);
+                        auto it = mLoaders.find(pCurComponentFB->component_type());
+
+                        if (it != mLoaders.end()) {
+
+                                res = std::visit([pCurComponentFB, &pDstNode](auto & oLoader) {
+
+                                                return oLoader.Load(pCurComponentFB->component(), pDstNode);
+
+
+                                                },
+                                                it->second);
+                                if (res != uSUCCESS) {
+                                        log_e("failed to load component, flatbuffers: '{}', node: '{}', tree: '{}'",
+                                                        FlatBuffers::EnumNameComponentU(
+                                                                pCurComponentFB->component_type()),
+                                                        pDstNode->GetFullName(),
+                                                        sName );
+                                        return res;
+                                }
+                        }
+                        else {
+
+                                log_e("unknown component type: '{}', node: '{}', tree: '{}'",
+                                                FlatBuffers::EnumNameComponentU(
+                                                        pCurComponentFB->component_type()),
+                                                pDstNode->GetFullName(),
+                                                sName );
+                                return uWRONG_INPUT_DATA;
+                        }
                 }
+
         }
+        //___End_____ load components
 
         auto * pChildrenFB      = pSrcNode->children();
         if (pChildrenFB == nullptr) { return uSUCCESS; }
         size_t children_cnt     = pChildrenFB->Length();
 
+        ret_code_t res = uSUCCESS;
         for (size_t i = 0; i < children_cnt; ++i) {
-                LoadNode(pChildrenFB->Get(i), pDstNode, oSettings);
+                res = LoadNode(pChildrenFB->Get(i), pDstNode, mLoaders);
+                if (res != uSUCCESS) { return res; }
         }
 
         return uSUCCESS;
 }
 
-template <class ... TGeom > bool SceneTree<TGeom ...>::
-        UpdateNodeName(TSceneNode * pNode, const std::string_view sNewName, const std::string_view sNewFullName) {
+template <class ... TComponents > bool SceneTree<TComponents ...>::
+        UpdateNodeName(TSceneNode pNode, const std::string_view sNewName, const std::string_view sNewFullName) {
 
         if (pNode->GetScene() != this) {
                 log_w("node: {}, from other scene", pNode->GetFullName());
@@ -261,7 +276,8 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
                 }
         }
 
-        if (!pNode->GetName().empty()) {
+        //THINK GetFullName check..
+        if (!pNode->GetName().empty() && !pNode->GetFullName().empty()) {
 
                 auto itCheckNode = mNamedNodes.find(pNode->GetFullName());
                 if (itCheckNode == mNamedNodes.end() || itCheckNode->second != pNode) {
@@ -274,6 +290,7 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
                         log_w("failed to find node by old local name = '{}'", pNode->GetFullName());
                         return false;
                 }
+
                 if (auto itL = std::find(itLocalCheckNode->second.begin(), itLocalCheckNode->second.end(), pNode); itL != itLocalCheckNode->second.end() ) {
                         if (itLocalCheckNode->second.size() > 1) {
                                 itLocalCheckNode->second.erase(itL);
@@ -297,7 +314,7 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
 
                 auto itLocalCheckNode = mLocalNamedNodes.find(local_name_id);
                 if (itLocalCheckNode == mLocalNamedNodes.end() ) {
-                        mLocalNamedNodes.emplace(local_name_id, std::vector<TSceneNode *>(1, pNode) );
+                        mLocalNamedNodes.emplace(local_name_id, std::vector<TSceneNode>(1, pNode) );
                 }
                 else {
                         itLocalCheckNode->second.emplace_back(pNode);
@@ -305,12 +322,6 @@ template <class ... TGeom > bool SceneTree<TGeom ...>::
         }
 
         return true;
-}
-
-template <class ... TGeom > void SceneTree<TGeom ...>::
-        Draw() const {
-
-        oRoot.DrawRecursive();
 }
 
 } //namespace SE

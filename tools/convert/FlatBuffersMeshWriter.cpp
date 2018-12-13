@@ -11,11 +11,13 @@ namespace SE {
 namespace TOOLS {
 
 //TODO throw or change ret type to ret_code
-flatbuffers::Offset<SE::FlatBuffers::Mesh> SerializeMesh(const MeshData & oMesh,
-                                        flatbuffers::FlatBufferBuilder & oBuilder) {
+std::tuple<flatbuffers::Offset<SE::FlatBuffers::Mesh>, ret_code_t> SerializeMesh(
+                const MeshData & oMesh,
+                flatbuffers::FlatBufferBuilder & oBuilder) {
+
         if (!oMesh.vShapes.size()) {
                 log_w("nothing to write");
-                return SE::uWRONG_INPUT_DATA;
+                return {0, SE::uWRONG_INPUT_DATA};
         }
 
         using namespace SE::FlatBuffers;
@@ -28,105 +30,113 @@ flatbuffers::Offset<SE::FlatBuffers::Mesh> SerializeMesh(const MeshData & oMesh,
                 auto max_fb     = Vec3(oItem.oBBox.Max().x, oItem.oBBox.Max().y, oItem.oBBox.Max().z);
                 auto bbox_fb    = SE::FlatBuffers::BoundingBox(min_fb, max_fb);
 
-                std::vector<uint8_t>                                    vVertexBufferType;
-                std::vector<flatbuffers::Offset<void> >                 vVertexBufferData;
-                std::vector<flatbuffers::Offset<VertexAttribute>>       vVertexAttributes;
-
-                auto [index_type, index_fb] = MP::Visit(oItem.oIndex,
-                                [&oBuilder](const std::vector<uint8_t> & vData) {
-                                        return std::make_tuple(
-                                                IndexBuffer::Uint8Vector,
-                                                CreateUint8Vector(oBuilder, oBuilder.CreateVector(vData)).Union()
-                                                );
-                                },
-                                [&oBuilder](const std::vector<uint16_t> & vData) {
-                                        return std::make_tuple(
-                                                IndexBuffer::Uint16Vector,
-                                                CreateUint16Vector(oBuilder, oBuilder.CreateVector(vData)).Union()
-                                                );
-                                },
-                                [&oBuilder](const std::vector<uint32_t> & vData) {
-                                        return std::make_tuple(
-                                                IndexBuffer::Uint32Vector,
-                                                CreateUint32Vector(oBuilder, oBuilder.CreateVector(vData)).Union()
-                                                );
-                                },
-                                [](auto & arg) {
-                                log_e("unsupported index type: '{}'", typeid(arg).name());
-                                        return std::make_tuple(
-                                                IndexBuffer::NONE,
-                                                flatbuffers::Offset<void>(0)
-                                                );
-                                }
-                );
-
-                if (index_type == IndexBuffer::NONE) {
-                        return SE::uLOGIC_ERROR;
-                }
-
-                for (auto & oVertexBuffer : oItem.vVertexBuffers) {
-
-                        MP::Visit(oVertexBuffer,
-                                  [&vVertexBufferType, &vVertexBufferData, &oBuilder](const std::vector<float> & vData) {
-                                        vVertexBufferType.emplace_back(static_cast<uint8_t>(VertexBuffer::FloatVector));
-                                        vVertexBufferData.emplace_back(CreateFloatVector(oBuilder, oBuilder.CreateVector(vData)).Union());
-                                  },
-                                  [&vVertexBufferType, &vVertexBufferData, &oBuilder](const std::vector<uint8_t> & vData) {
-                                        vVertexBufferType.emplace_back(static_cast<uint8_t>(VertexBuffer::ByteVector));
-                                        vVertexBufferData.emplace_back(CreateByteVector(oBuilder, oBuilder.CreateVector(vData)).Union());
-                                  },
-                                  [&vVertexBufferType, &vVertexBufferData, &oBuilder](const std::vector<uint32_t> & vData) {
-                                        vVertexBufferType.emplace_back(static_cast<uint8_t>(VertexBuffer::Uint32Vector));
-                                        vVertexBufferData.emplace_back(CreateUint32Vector(oBuilder, oBuilder.CreateVector(vData)).Union());
-                                  }
-                                 );
-                }
-
-                if (oItem.vVertexBuffers.size() != vVertexBufferData.size()) {
-                        log_e("failed to add some vertex buffers, in cnt: {}, processed cnt: {}",
-                                        oItem.vVertexBuffers.size(),
-                                        vVertexBufferData.size());
-                        return SE::uLOGIC_ERROR;
-                }
-
-                for (auto & oVertexAttribute : oItem.vAttributes) {
-                        vVertexAttributes.emplace_back(
-                                        CreateVertexAttribute(
-                                                oBuilder,
-                                                oBuilder.CreateString(oVertexAttribute.sName),
-                                                oVertexAttribute.offset,
-                                                oVertexAttribute.elem_size,
-                                                oVertexAttribute.buffer_ind)
-                                        );
-                }
-
-
                 auto shape_fb = CreateShape(
                                 oBuilder,
-                                oItem.sName.empty() ? 0 : oBuilder.CreateString(oItem.sName),
-                                index_type,
-                                index_fb,
-                                oBuilder.CreateVector(vVertexBufferType),
-                                oBuilder.CreateVector(vVertexBufferData),
-                                oBuilder.CreateVector(vVertexAttributes),
-                                oItem.triangles_cnt,
-                                oItem.stride,
-                                oItem.sTextureName.empty() ? 0 : oBuilder.CreateString(oItem.sTextureName),
-                                &bbox_fb);
+                                &bbox_fb,
+                                oItem.start,
+                                oItem.count);
 
                 vFBShapes.emplace_back(shape_fb);
+        }
+
+        std::vector<flatbuffers::Offset<VertexAttribute>>       vVertexAttributes;
+        std::vector<flatbuffers::Offset<VertexBuffer>>          vVertexBuffers;
+
+        auto [index_type, index_fb] = MP::Visit(oMesh.oIndex,
+                        [&oBuilder](const std::vector<uint8_t> & vData) {
+                        return std::make_tuple(
+                                        IndexBufferU::Uint8Vector,
+                                        CreateUint8Vector(oBuilder, oBuilder.CreateVector(vData)).Union()
+                                        );
+                        },
+                        [&oBuilder](const std::vector<uint16_t> & vData) {
+                        return std::make_tuple(
+                                        IndexBufferU::Uint16Vector,
+                                        CreateUint16Vector(oBuilder, oBuilder.CreateVector(vData)).Union()
+                                        );
+                        },
+                        [&oBuilder](const std::vector<uint32_t> & vData) {
+                        return std::make_tuple(
+                                        IndexBufferU::Uint32Vector,
+                                        CreateUint32Vector(oBuilder, oBuilder.CreateVector(vData)).Union()
+                                        );
+                        },
+                        [](auto & arg) {
+                        log_e("unsupported index type: '{}'", typeid(arg).name());
+                        return std::make_tuple(
+                                        IndexBufferU::NONE,
+                                        flatbuffers::Offset<void>(0)
+                                        );
+                        }
+        );
+
+        if (index_type == IndexBufferU::NONE) {
+                return {0, SE::uLOGIC_ERROR};
+        }
+
+        auto index_table_fb = CreateIndexBuffer(oBuilder, index_type, index_fb);
+
+        for (auto & oVertexBuffer : oMesh.vVertexBuffers) {
+
+                MP::Visit(oVertexBuffer.oBuffer,
+                                [&oBuilder, &oVertexBuffer/*FIXME*/, &vVertexBuffers](const std::vector<float> & vData) {
+
+                                        vVertexBuffers.emplace_back(CreateVertexBuffer(
+                                                                oBuilder,
+                                                                VertexBufferU::FloatVector,
+                                                                CreateFloatVector(oBuilder, oBuilder.CreateVector(vData)).Union(),
+                                                                oVertexBuffer.stride));
+                                },
+                                [&oBuilder, &oVertexBuffer, &vVertexBuffers](const std::vector<uint8_t> & vData) {
+                                        vVertexBuffers.emplace_back(CreateVertexBuffer(
+                                                                oBuilder,
+                                                                VertexBufferU::ByteVector,
+                                                                CreateByteVector(oBuilder, oBuilder.CreateVector(vData)).Union(),
+                                                                oVertexBuffer.stride));
+                                },
+                                [&oBuilder, &oVertexBuffer, &vVertexBuffers](const std::vector<uint32_t> & vData) {
+                                        vVertexBuffers.emplace_back(CreateVertexBuffer(
+                                                                oBuilder,
+                                                                VertexBufferU::Uint32Vector,
+                                                                CreateUint32Vector(oBuilder, oBuilder.CreateVector(vData)).Union(),
+                                                                oVertexBuffer.stride));
+                                }
+                         );
+        }
+
+        if (oMesh.vVertexBuffers.size() != vVertexBuffers.size()) {
+                log_e("failed to add some vertex buffers, in cnt: {}, processed cnt: {}",
+                                oMesh.vVertexBuffers.size(),
+                                vVertexBuffers.size());
+                return {0, SE::uLOGIC_ERROR};
+        }
+
+        for (auto & oVertexAttribute : oMesh.vAttributes) {
+                vVertexAttributes.emplace_back(
+                                CreateVertexAttribute(
+                                        oBuilder,
+                                        oBuilder.CreateString(oVertexAttribute.sName),
+                                        oVertexAttribute.offset,
+                                        oVertexAttribute.elem_size,
+                                        oVertexAttribute.buffer_ind)
+                                );
         }
 
         auto min_fb     = Vec3(oMesh.oBBox.Min().x, oMesh.oBBox.Min().y, oMesh.oBBox.Min().z);
         auto max_fb     = Vec3(oMesh.oBBox.Max().x, oMesh.oBBox.Max().y, oMesh.oBBox.Max().z);
         auto bbox_fb    = SE::FlatBuffers::BoundingBox(min_fb, max_fb);
 
-        auto mesh_fb = CreateMesh(oBuilder,
+        return { CreateMesh(
+                        oBuilder,
+                        index_table_fb,
+                        oBuilder.CreateVector(vVertexBuffers),
+                        oBuilder.CreateVector(vVertexAttributes),
+                        PrimitiveType::GEOM_TRIANGLES,
                         oBuilder.CreateVector(vFBShapes),
                         &bbox_fb
-                        );
-
-        return mesh_fb;
+                        ),
+               SE::uSUCCESS
+        };
 }
 
 
@@ -134,7 +144,10 @@ SE::ret_code_t WriteMesh(const std::string sPath, const MeshData & oMesh) {
 
         flatbuffers::FlatBufferBuilder oBuilder(1024);
 
-        auto mesh_fb = SerializeMesh(oMesh, oBuilder);
+        auto [mesh_fb, res] = SerializeMesh(oMesh, oBuilder);
+        if (res != uSUCCESS) {
+                return res;
+        }
 
         FinishMeshBuffer(oBuilder, mesh_fb);
 

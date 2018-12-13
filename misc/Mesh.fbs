@@ -1,23 +1,7 @@
 
+include "Common.fbs";
+
 namespace SE.FlatBuffers;
-
-struct Vec3 {
-        x:float;
-        y:float;
-        z:float;
-}
-
-struct Vec2 {
-        u:float;
-        v:float;
-}
-
-struct ColorARGB {
-        a:float;
-        r:float;
-        g:float;
-        b:float;
-}
 
 struct BoundingBox {
         min:Vec3;
@@ -47,41 +31,59 @@ table Uint8Vector {
         data:[uint8];
 }
 
-union VertexBuffer {
+union VertexBufferU {
         FloatVector,
         ByteVector,
         Uint32Vector
 }
 
-union IndexBuffer {
+union IndexBufferU {
         Uint8Vector,
         Uint16Vector,
         Uint32Vector
 }
 
-/*
-table IndexBuffer {
-        uint8_data:[uint8];
-        uint16_data:[uint16];
-        uint32_data:[uint32];
+table VertexBuffer {
+
+        buf:VertexBufferU (required);
+        stride:uint8 = 32;
 }
-*/
+
+table IndexBuffer {
+
+        buf:IndexBufferU (required);
+}
+
+//TODO fan, strip and line_loop
+enum PrimitiveType : uint8 {
+        GEOM_TRIANGLES  = 1,
+        GEOM_LINES      = 2,
+        GEOM_POINTS     = 3
+}
+
 
 table Shape {
-        name:string;
-        index:IndexBuffer (required);
-        vertices:[VertexBuffer] (required);
-        attributes:[VertexAttribute] (required);
-        triangles_cnt:uint32;
-        stride:uint8 = 32;
-        //TODO rewrite on material usage
-        texture:string;
+
         bbox:BoundingBox (required);
+        index_elem_start:uint32 = 0;
+        index_elem_count:uint32;
 }
 
 table Mesh {
+
+        index:IndexBuffer (required);
+        vertices:[VertexBuffer] (required);
+        attributes:[VertexAttribute] (required);
+        primitive_type:PrimitiveType = GEOM_TRIANGLES;
+
         shapes:[Shape] (required);
         bbox:BoundingBox (required);
+}
+
+table MeshHolder {
+        mesh:Mesh;
+        path:string;
+        name:string;
 }
 
 root_type Mesh;

@@ -1,13 +1,18 @@
 
-
 #ifndef __CAMERA_H__
 #define __CAMERA_H__ 1
 
+#include <BoundingBox.h>
 #include <Frustum.h>
 
 namespace SE {
 
-
+/*
+ TODO split on 3 parts:
+ - Node
+ - Camera component with frustum
+ - Controller component
+ */
 class Camera {
 
         public:
@@ -77,7 +82,7 @@ class Camera {
         void LookAt(const glm::vec3 & center);
         void SetZoom(const float new_zoom);
         void Zoom(const float factor);
-        void ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox);
+        void ZoomTo(const BoundingBox & oBBox);
         void ZoomTo(const float width);
         const glm::mat4 & GetMVMatrix();
         const glm::mat4 & GetMVPMatrix();

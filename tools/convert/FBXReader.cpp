@@ -1,12 +1,14 @@
 
 #include <stdint.h>
 #include <string_view>
+#include <unordered_set>
 
 #include <fbxsdk.h>
 #include "FBXReader.h"
 
 #include <Logging.h>
 #include <GeometryUtil.h>
+#include <StrID.h>
 
 #include <Mesh_generated.h>
 
@@ -18,7 +20,7 @@
                         - translation (3f)
                         - rotation (3f)
                         - scale (3f)
-               - for each Mesh node:
+                - for each Mesh node:
                         - name
                         - first material diffuse texture path
                         - for each polygon:
@@ -228,6 +230,134 @@ static void VertexFlipYZ(float * data) {
         data[2] = old_y;
 }
 
+static ret_code_t ImportBlendShapes(
+                FbxMesh * pMesh,
+                BlendShapeData & oBlendShapeData,
+                const std::unordered_map<uint32_t, std::unordered_set<uint32_t>> & mRemapIndex,
+                const uint32_t remaped_vertices_cnt) {
+
+        FbxVector4    * pMeshControlPoints = pMesh->GetControlPoints();
+        uint32_t        bs_cnt             = pMesh->GetDeformerCount(FbxDeformer::eBlendShape);
+        uint32_t        bs_total_cnt       = 0;
+        uint32_t        bs_cur             = 0;
+        uint32_t        cur_pos;
+
+        for (uint32_t bs_ind = 0; bs_ind < bs_cnt; ++bs_ind) {
+
+                FbxBlendShape * pBlendShape = (FbxBlendShape*) pMesh->GetDeformer(bs_ind, FbxDeformer::eBlendShape);
+
+                uint32_t bs_channel_cnt = pBlendShape->GetBlendShapeChannelCount();
+                for (uint32_t bs_channel_ind = 0; bs_channel_ind < bs_channel_cnt; ++bs_channel_ind) {
+
+                        auto * pBlendShapeChannel = pBlendShape->GetBlendShapeChannel(bs_channel_ind);
+                        uint32_t target_shape_cnt = pBlendShapeChannel->GetTargetShapeCount();
+                        if (target_shape_cnt != 1) {
+                                log_e("BlendShape channel: '{}' got {} target shapes count, support only 1, without in between shapes",
+                                                pBlendShapeChannel->GetName(),
+                                                target_shape_cnt);
+                                return uWRONG_INPUT_DATA;
+                        }
+                }
+                bs_total_cnt += bs_channel_cnt;
+        }
+
+        size_t total_elements_cnt = bs_total_cnt * remaped_vertices_cnt * 3 /* position */;
+        if (total_elements_cnt * sizeof (float) >= (100 * 1024 * 1024)) {
+                log_e("do you really want to allocate > 100mb ({} bytes) for {} blend shapes channels, each {} vertices",
+                                total_elements_cnt * sizeof (float),
+                                bs_total_cnt,
+                                remaped_vertices_cnt);
+                return uMEMORY_ALLOCATION_ERROR;
+        }
+        log_d("total blend shape channels: {}, vertices cnt: {}", bs_total_cnt, remaped_vertices_cnt);
+        oBlendShapeData.vBuffer.resize(total_elements_cnt);
+
+/**
+data layout inside buffer:
+|BS1.Vert1.x|BS1.Vert1.y|BS1.Vert1.z|BS2.Vert1.x|BS2.Vert1.y|BS2.Vert1.z|BS1.Vert2.x|BS1.Vert2.y|BS1.Vert2.z|...
+*/
+
+        for (uint32_t bs_ind = 0; bs_ind < bs_cnt; ++bs_ind) {
+
+                FbxBlendShape * pBlendShape = (FbxBlendShape*) pMesh->GetDeformer(bs_ind, FbxDeformer::eBlendShape);
+                log_d("BlendShape: '{}'", pBlendShape->GetName());
+
+                uint32_t bs_channel_cnt = pBlendShape->GetBlendShapeChannelCount();
+                for (uint32_t bs_channel_ind = 0; bs_channel_ind < bs_channel_cnt; ++bs_channel_ind) {
+
+                        auto * pBlendShapeChannel = pBlendShape->GetBlendShapeChannel(bs_channel_ind);
+                        log_d("BlendShape channel: '{}', default val: {}",
+                                        pBlendShapeChannel->GetName(),
+                                        pBlendShapeChannel->DeformPercent.Get());
+
+                        oBlendShapeData.vNames.emplace_back(pBlendShapeChannel->GetName());
+                        oBlendShapeData.vDefaultWeights.emplace_back(pBlendShapeChannel->DeformPercent.Get());
+                        /*
+                        uint32_t target_shape_cnt = pBlendShapeChannel->GetTargetShapeCount();
+                        if (target_shape_cnt != 1) {
+                                log_e("BlendShape channel: '{}' got {} target shapes count, support only 1, without in between shapes",
+                                                pBlendShapeChannel->GetName(),
+                                                target_shape_cnt);
+                                return uWRONG_INPUT_DATA;
+                        }
+                        */
+                        FbxShape*       pShape            = pBlendShapeChannel->GetTargetShape(0);
+                        int32_t         vertices_cnt      = pShape->GetControlPointsCount();
+                        FbxVector4    * pBSControlPoints  = pShape->GetControlPoints();
+
+                        /*
+                        log_d("BlendShape channel: '{}', vert cnt {}, normals cnt {}",
+                                        pBlendShapeChannel->GetName(),
+                                        vertices_cnt,
+                                        pNormals->GetCount());
+                        */
+
+
+                        for (int32_t i = 0 ; i < vertices_cnt; ++i) {
+
+
+                                auto it = mRemapIndex.find(i);
+                                if (it == mRemapIndex.end()) {
+                                        log_w("BlendShape channel: '{}' vertex {} unused in vertex index");
+                                        continue;
+                                }
+
+                                glm::vec3 vPosDiff(pBSControlPoints[i][0] - pMeshControlPoints[i][0],
+                                                   pBSControlPoints[i][1] - pMeshControlPoints[i][1],
+                                                   pBSControlPoints[i][2] - pMeshControlPoints[i][2]);
+
+                                for (auto new_index : it->second) {
+
+                                        cur_pos = new_index * bs_total_cnt + bs_cur * 3;
+                                        /*
+                                        log_d("cur_pos: {}, diff: ({}, {}, {})",
+                                                        cur_pos,
+                                                        vPosDiff.x,
+                                                        vPosDiff.y,
+                                                        vPosDiff.z);
+                                                        */
+
+                                        /*
+                                        log_d("vert {}, new ind {}: pos ({}, {}, {})",
+                                                        i,
+                                                        new_index,
+                                                        pBSControlPoints[i][0],
+                                                        pBSControlPoints[i][1],
+                                                        pBSControlPoints[i][2]
+                                             );
+                                        */
+                                        memcpy(&oBlendShapeData.vBuffer[cur_pos], &vPosDiff.x, sizeof(float) * 3);
+                                }
+                        }
+
+                        ++bs_cur;
+                }
+        }
+
+        return uSUCCESS;
+}
+
+//TODO import sub meshes by materials
 static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
 
         FbxNodeAttribute::EType attribute_type;
@@ -257,8 +387,6 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
         int32_t         vertices_cnt    = pMesh->GetControlPointsCount();
         FbxVector4    * pControlPoints  = pMesh->GetControlPoints();
 
-        log_d("vertices cnt: {}", vertices_cnt);
-
         if ( pMesh->GetElementUVCount() == 0) {
                 log_e("failed to get UV coordinates for mesh '{}'", pNode->GetName());
                 return uWRONG_INPUT_DATA;
@@ -266,17 +394,24 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
         std::vector<float> vVertices;
 
-        MeshData        oMesh;
-        ShapeData       oShapeData;
-        oMesh.sName                     = pAttribute->GetName();
-        oShapeData.stride               = ((oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
+        ModelData       oModel;
+        uint8_t stride               = ((oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
+        oModel.oMesh.sName           = pAttribute->GetName();
 
-        if (pNode->GetSrcObjectCount<FbxSurfaceMaterial>() > 0) {
+        if (oModel.oMesh.sName.empty()) {
+                oModel.oMesh.sName = oCtx.sPackName + std::to_string(reinterpret_cast<std::uintptr_t>(pMesh));
+        }
+        else {
+                oModel.oMesh.sName = oCtx.sPackName + oModel.oMesh.sName;
+        }
+
+        if (pNode->GetSrcObjectCount<FbxSurfaceMaterial>() > 0 && !oCtx.skip_material) {
 
                 FbxSurfaceMaterial * pMaterial = pNode->GetSrcObject<FbxSurfaceMaterial>(0);
 
-                if(pMaterial) {
+                if(pMaterial) {//TODO fill MaterialData
 
+                        std::string sTextureName;
                         auto oProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
 
                         if (oProperty.IsValid() &&  oProperty.GetSrcObjectCount<FbxTexture>() > 0) {
@@ -288,32 +423,56 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                         FbxTexture * pTexture = pLayeredTexture->GetSrcObject<FbxTexture>(0);
                                         if (pTexture != nullptr) {
                                                 FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
-                                                oShapeData.sTextureName = pFileTexture->GetFileName();
-                                                oCtx.FixPath(oShapeData.sTextureName);
+                                                sTextureName = pFileTexture->GetFileName();
+                                                oCtx.FixPath(sTextureName);
                                                 ++oCtx.textures_cnt;
                                         }
                                 }
                                 else if (FbxTexture * pTexture = oProperty.GetSrcObject<FbxTexture>(0) ) {
                                         FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
-                                        oShapeData.sTextureName = pFileTexture->GetFileName();
-                                        oCtx.FixPath(oShapeData.sTextureName);
+                                        sTextureName = pFileTexture->GetFileName();
+                                        oCtx.FixPath(sTextureName);
                                         ++oCtx.textures_cnt;
                                 }
+                        }
+
+                        //TODO material cache
+                        /*
+                                inside ctx resource cache: map "Mesh:<name>" to ResourceData
+                                if name empty, fill with to_string(ptr)
+                                store all resource by id (name) inside other 'ObjectData' from Common.h
+                         */
+                        /** create basic material with one texture */
+                        if (!sTextureName.empty()) {
+                                log_d("diffuse texture: '{}'", sTextureName);
+
+                                oModel.oMaterial.sShaderPath = "shader_program/simple_tex.sesp";
+                                oModel.oMaterial.mTextures.emplace(
+                                                TextureUnit::DIFFUSE,
+                                                TextureData{std::move(sTextureName)} );
+
+                                oModel.oMaterial.sName = pMaterial->GetName();
+                                if (oModel.oMaterial.sName.empty()) {
+                                        oModel.oMaterial.sName = oCtx.sPackName + std::to_string(StrID(sTextureName + oModel.oMaterial.sShaderPath));
+                                }
+                                else {
+                                        oModel.oMaterial.sName = oCtx.sPackName + oModel.oMaterial.sName;
+                                }
+                                ++oCtx.material_cnt;
                         }
                 }
         }
 
-        log_d("diffuse texture: '{}'", oShapeData.sTextureName);
 
+        std::unordered_map<uint32_t, std::unordered_set<uint32_t>> mRemapIndex;
         int32_t polygon_cnt             = pMesh->GetPolygonCount();
         int32_t polygon_size;
         FbxGeometryElementUV * pUV      = pMesh->GetElementUV(0);
         log_d("polygons: cnt = {}", polygon_cnt);
-        oShapeData.triangles_cnt           = static_cast<uint32_t>(polygon_cnt);
 
-        uint32_t index_size = oShapeData.triangles_cnt * 3;
+        uint32_t index_size = static_cast<uint32_t>(polygon_cnt) * 3;
 
-        Pack = PackVertexIndexInit(index_size, oShapeData.oIndex);
+        Pack = PackVertexIndexInit(index_size, oModel.oMesh.oIndex);
 
         for (int32_t polygon_num = 0; polygon_num < polygon_cnt; ++polygon_num) {
 
@@ -414,43 +573,71 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                                 (oCtx.skip_normals) ? 0 : vVertexData[5],
                                                 vVertexData[6], vVertexData[7]);
                         }*/
-                        Pack(oShapeData.oIndex, cur_index);
+                        mRemapIndex[vertex_ind].emplace(cur_index);
+                        Pack(oModel.oMesh.oIndex, cur_index);
+/*
+                        log_d("vertex {}, map to: {}, pos: ({}, {}, {}), normal: ({}, {}, {}), uv: ({}, {})",
+                                        vertex_ind,
+                                        cur_index,
+                                        pControlPoints[vertex_ind][0],
+                                        pControlPoints[vertex_ind][1],
+                                        pControlPoints[vertex_ind][2],
+                                        vVertexData[3],
+                                        vVertexData[4],
+                                        vVertexData[5],
+                                        vVertexData[6],
+                                        vVertexData[7]
+                                        );
+*/
+
                 }
         }
 
-        oCtx.total_triangles_cnt += oShapeData.triangles_cnt;
+        log_d("input vertex cnt: {}, output vertex cnt: {}", vertices_cnt, oVertexIndex.Size());
+
+        //import blend shapes
+        if (oCtx.import_blend_shape) {
+                ImportBlendShapes(pMesh, oModel.oBlendShape, mRemapIndex, oVertexIndex.Size());
+        }
+
+        oCtx.total_triangles_cnt += polygon_cnt;
         ++oCtx.mesh_cnt;
 
 
-        oShapeData.oBBox.Calc(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE);
-        oShapeData.vVertexBuffers.emplace_back(std::move(vVertices));
+        BoundingBox oBBox;
+        oBBox.Calc(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE);
+        oModel.oMesh.vShapes.emplace_back(0, index_size, std::move(oBBox));
+
+        oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vVertices), stride});
 
         uint16_t next_offset = 3;
 
-        oShapeData.vAttributes.emplace_back(ShapeData::VertexAttribute{
+        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
                         "Position",
                         0,
                         3,
                         0 });
         if (!oCtx.skip_normals) {
-                oShapeData.vAttributes.emplace_back(ShapeData::VertexAttribute{
+                oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
                                 "Normal",
                                 static_cast<uint16_t>(3 * sizeof(float)),
                                 3,
                                 0 });
                 next_offset = 6;
         }
-        oShapeData.vAttributes.emplace_back(ShapeData::VertexAttribute{
+        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
                         "TexCoord0",
                         static_cast<uint16_t>(next_offset * sizeof(float)),
                         2,
                         0 });
 
-        oMesh.vShapes.emplace_back(std::move(oShapeData));
-        for (auto & oShape : oMesh.vShapes) {
-                oMesh.oBBox.Concat(oShape.oBBox);
+
+        //currently only one shape per mesh
+        //TODO support per material sub meshes;
+        for (auto & oShape : oModel.oMesh.vShapes) {
+                oModel.oMesh.oBBox.Concat(oShape.oBBox);
         }
-        oNodeData.vEntity.emplace_back(std::move(oMesh));
+        oNodeData.vComponents.emplace_back(std::move(oModel));
 
         return uSUCCESS;
 }

@@ -40,7 +40,11 @@ void VertexIndex::Clear() {
         last_index = 0;
 }
 
-TPackVertexIndex PackVertexIndexInit(const uint32_t index_size, ShapeData::TIndexVariant & oIndex) {
+uint32_t VertexIndex::Size() const {
+        return last_index;
+}
+
+TPackVertexIndex PackVertexIndexInit(const uint32_t index_size, MeshData::TIndexVariant & oIndex) {
 
         if (index_size <= 255) {
                 //oIndex = std::vector<uint8_t>(); //already here

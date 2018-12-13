@@ -83,6 +83,8 @@ int main(int argc, char **argv) {
                 }
                 vdebug = vm["vdebug"].as<bool>();
 
+                SE::TEngine::Instance().Init<SE::Config>();
+
                 oSettings.oCamSettings.width 			= 1920;
                 oSettings.oCamSettings.height			= 1200;
                 oSettings.oCamSettings.up[0]                    = 0;
@@ -106,6 +108,9 @@ int main(int argc, char **argv) {
                 oSettings.oWindowSettings.fullscreen  = false;
                 oSettings.oWindowSettings.title       = "Scene Viewer";
                 oSettings.sResourceDir                = vm["resource"].as<string>();
+
+                //TEMP
+                SE::GetSystem<SE::Config>().sResourceDir = vm["resource"].as<string>();
 
 
         }

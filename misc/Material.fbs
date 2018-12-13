@@ -1,0 +1,87 @@
+
+include "ShaderProgram.fbs";
+
+namespace SE.FlatBuffers;
+
+//Texture:
+//        TextureStock +
+//        StoreSettings +
+//        img bytes
+//or:
+//        path to file +
+//        LoadSettings + //currently unused
+//        StoreSettings;
+
+table TextureStock {
+        image:[ubyte] (required);
+        format:int;
+        internal_format:int;
+        width:uint;
+        height:uint;
+}
+
+//TODO change int to enums
+table StoreTexture2D {
+        wrap:int;
+        min_filter:int;
+        mag_filter:int;
+        mipmap:bool;
+}
+
+table StoreTextureBuffer {
+
+}
+
+union StoreSettings {
+        StoreTexture2D,
+        StoreTextureBuffer
+}
+
+//THINK duplicate TextureUnit definition inside code
+enum TextureUnit : uint8 {
+        UNIT_DIFFUSE         = 0,
+        UNIT_NORMAL          = 1,
+        UNIT_SPECULAR        = 2,
+        UNIT_ENV             = 3,
+        UNIT_SHADOW          = 4,
+        UNIT_BUFFER          = 5,
+        UNIT_CUSTOM          = 7,
+}
+
+table TextureHolder {
+        stock:TextureStock; //TextureInPlace
+        path:string;        //TextureExt
+        name:string;
+        store:StoreSettings;
+        unit:TextureUnit = UNIT_DIFFUSE;
+}
+
+
+table ShaderVariable {
+        name:string (required);
+        float_val:float;
+        vec2_val:Vec2;
+        vec3_val:Vec3;
+        vec4_val:Vec4;
+        uvec2_val:UVec2;
+        uvec3_val:UVec3;
+        uvec4_val:UVec4;
+}
+
+table Material {
+        shader:ShaderProgramHolder (required);
+        textures:[TextureHolder];
+        variables:[ShaderVariable];
+}
+
+table MaterialHolder {
+        material:Material;
+        path:string;
+        name:string;
+}
+
+root_type Material;
+
+file_identifier "SEMT";
+file_extension "semt";
+

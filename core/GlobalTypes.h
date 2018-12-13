@@ -1,4 +1,4 @@
-
+//
 #ifndef __GLOBAL_TYPES_H__
 #define __GLOBAL_TYPES_H__ 1
 
@@ -20,10 +20,13 @@
 #include <SimpleFPS.h>
 #include <MPUtil.h>
 #include <BoundingBox.h>
+#include <CommonTypes.h>
 
 #include <ResourceHolder.h>
 #include <ResourceManager.h>
 
+#include <Engine.h>
+#include <BasicConfig.h>
 
 #include <TextureStock.h>
 #include <TGALoader.h>
@@ -32,10 +35,14 @@
 #include <StoreTexture2D.h>
 #include <StoreTextureBufferObject.h>
 
+//TODO move to SE.h
 
 namespace SE {
 
+//global helper functions
 template <class Resource, class ... TConcreateSettings> Resource * CreateResource (const std::string & sName, const TConcreateSettings & ... oSettings);
+template <class TSystem> TSystem & GetSystem();
+
 
 typedef LOKI_TYPELIST_2(TGALoader, OpenCVImgLoader)                     TextureLoadStrategyList;
 typedef LOKI_TYPELIST_2(StoreTexture2D, StoreTextureBufferObject)       TextureStoreStrategyList;
@@ -47,6 +54,7 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 #include <ShaderProgram.h>
 #include <RenderState.h>
 #include <VisualHelpers.h>
+#include <Material.h>
 
 #include <Mesh.h>
 
@@ -58,20 +66,57 @@ typedef Mesh                                                            TMesh;
 
 }
 
-#include <SceneTree.h>
+#include <Renderer.h>
+//TEMP
+#include <AllVisible.h>
+
+//TODO forward custom components
 
 namespace SE {
 
-typedef SceneTree<TMesh *> TSceneTree;
+//forward components
+class StaticModel;
 
+
+//renderable components list
+
+//engine subsytem types
+
+//FIXME rewrite on custom component handling
+using TVisibilityManager = AllVisible<StaticModel>;
+using TRenderer = Renderer<TVisibilityManager>;
+
+//singleton
+using TEngine = Loki::SingletonHolder<Engine<Config, TRenderer/*, TRenderState, TInputManager, ...*/>>;
 
 }
 
 
+#include <SceneTree.h>
+
 namespace SE {
 
-typedef LOKI_TYPELIST_5(
+using TSceneTree = SceneTree<StaticModel>;
+
+}
+
+// ___Start___ include components headers
+
+#include <StaticModel.h>
+//#include <AnimatedModel.h>
+// ___End_____ include components headers
+
+
+//TODO include custom components
+
+
+//TODO forward custom resources
+
+namespace SE {
+
+typedef LOKI_TYPELIST_6(
                 TTexture,
+                Material,
                 TMesh,
                 TSceneTree,
                 ShaderComponent,
@@ -83,6 +128,11 @@ typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourc
 template <class Resource, class ... TConcreateSettings> Resource * CreateResource (const std::string & sPath, const TConcreateSettings & ... oSettings) {
 
         return TResourceManager::Instance().Create<Resource>(sPath, oSettings...);
+}
+
+template <class TSystem> TSystem & GetSystem() {
+
+        return TEngine::Instance().Get<TSystem>();
 }
 
 

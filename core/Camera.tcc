@@ -272,19 +272,19 @@ void Camera::UpdateZoom() {
 
 }
 
-void Camera::ZoomTo(const std::tuple<const glm::vec3 &, const glm::vec3 &> bbox) {
+void Camera::ZoomTo(const BoundingBox & oBBox) {
 
-        glm::vec3 len = std::get<1>(bbox) - std::get<0>(bbox);
-///*
-        const glm::vec3 & min = std::get<0>(bbox);
-        const glm::vec3 & max = std::get<1>(bbox);
+        glm::vec3 len = oBBox.Size();
+/*
+        const glm::vec3 & min = oBBox.Min();
+        const glm::vec3 & max = oBBox.Max();
 
         log_d("min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
                         min.x, min.y, min.z,
                         max.x, max.y, max.z);
 
         log_d("bbox len = {}", glm::distance(max, min) );
-//*/
+*/
 
         target_length = std::max({ std::abs(len.x), std::abs(len.y), std::abs(len.z) });
 

@@ -1,0 +1,55 @@
+namespace SE.FlatBuffers;
+
+//Hack for usage inside union
+struct Float {
+        value:float;
+}
+
+struct Vec4 {
+        x:float;
+        y:float;
+        z:float;
+        w:float;
+}
+
+struct Vec3 {
+        x:float;
+        y:float;
+        z:float;
+}
+
+struct Vec2 {
+        u:float;
+        v:float;
+}
+
+struct UVec4 {
+        x:uint32;
+        y:uint32;
+        z:uint32;
+        w:uint32;
+}
+
+struct UVec3 {
+        x:uint32;
+        y:uint32;
+        z:uint32;
+}
+
+struct UVec2 {
+        u:uint32;
+        v:uint32;
+}
+
+struct ColorARGB {
+        a:float;
+        r:float;
+        g:float;
+        b:float;
+}
+
+table ResourcePath {
+        path:string (required);
+}
+
+

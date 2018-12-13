@@ -1,6 +1,12 @@
 
 namespace SE {
 
+template <class TLoop> OffScreenApplication<TLoop>::PreInit::PreInit() {
+
+        log_d ("init remain subsytems");
+        TEngine::Instance().Init();
+}
+
 template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
         oSettings(oNewSettings),
         oCamera(oTranspose, oSettings.oCamSettings),
@@ -49,6 +55,14 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
         oCamera.Adjust();
 
         oLoop.Process();
+
+        CalcDuration oRenderDuration;
+
+        TEngine::Instance().Get<TRenderer>().Render();
+
+        log_i("renderer duration = {} ms", oRenderDuration.Get());
+
+        oLoop.PostRender();
 
         glFinish();
 

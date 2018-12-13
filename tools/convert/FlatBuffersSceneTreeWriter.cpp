@@ -3,7 +3,7 @@
 #include <Logging.h>
 #include <SceneTree_generated.h>
 #include "FlatBuffersSceneTreeWriter.h"
-#include "FlatBuffersMeshWriterDetails.h"
+#include "FlatBuffersComponentWriterDetails.h"
 
 namespace SE {
 namespace TOOLS {
@@ -12,26 +12,32 @@ namespace TOOLS {
 
 using StringOffset = flatbuffers::Offset<flatbuffers::String>;
 using SE::FlatBuffers::Node;
-using SE::FlatBuffers::Mesh;
 using SE::FlatBuffers::Vec3;
-using SE::FlatBuffers::Entity;
+using SE::FlatBuffers::Component;
 
-static flatbuffers::Offset<Node> SerializeNode(
+static std::tuple<flatbuffers::Offset<Node>, ret_code_t> SerializeNode(
                 const NodeData & oNode,
                 flatbuffers::FlatBufferBuilder & oBuilder) {
 
         std::vector<flatbuffers::Offset<Node>> vChildren;
-        std::vector<flatbuffers::Offset<Entity>> vEntity;
+        std::vector<flatbuffers::Offset<Component>> vComponents;
 
-        for (auto & item : oNode.vChildren) {
-                vChildren.emplace_back(SerializeNode(item, oBuilder));
+        for (auto & item : oNode.vComponents) {
+
+                auto [offset, res] =  SerializeComponent(item, oBuilder);
+                if (res != uSUCCESS) {
+                        return {0, res};
+                }
+
+                vComponents.emplace_back(offset);
         }
 
-        for (auto & item : oNode.vEntity) {
-                vEntity.emplace_back( SE::FlatBuffers::CreateEntity(
-                                        oBuilder,
-                                        oBuilder.CreateString(item.sName),
-                                        SerializeMesh(item, oBuilder)) );
+        for (auto & item : oNode.vChildren) {
+                auto [offset, res] =  SerializeNode(item, oBuilder);
+                if (res != uSUCCESS) {
+                        return {0, res};
+                }
+                vChildren.emplace_back(offset);
         }
 
         auto translation_fb = Vec3(oNode.translation.x,
@@ -44,14 +50,17 @@ static flatbuffers::Offset<Node> SerializeNode(
                                    oNode.scale.y,
                                    oNode.scale.z);
 
-        return CreateNode(oBuilder,
+        return {
+                CreateNode(oBuilder,
                           oNode.sName.empty() ? 0 : oBuilder.CreateString(oNode.sName),
                           &translation_fb,
                           &rotation_fb,
                           &scale_fb,
+                          vComponents.size() ?   oBuilder.CreateVector(vComponents) : 0,
                           vChildren.size() ? oBuilder.CreateVector(vChildren) : 0,
-                          vEntity.size() ?   oBuilder.CreateVector(vEntity) : 0,
-                          oNode.sInfo.empty() ? 0 : oBuilder.CreateString(oNode.sInfo) );
+                          oNode.sInfo.empty() ? 0 : oBuilder.CreateString(oNode.sInfo) ),
+                 uSUCCESS
+        };
 
 }
 
@@ -60,7 +69,10 @@ SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNod
 
         flatbuffers::FlatBufferBuilder oBuilder(1024);
 
-        auto root_fb = SerializeNode(oRootNode, oBuilder);
+        auto [root_fb, res] = SerializeNode(oRootNode, oBuilder);
+        if (res != uSUCCESS) {
+                return res;
+        }
 
         FinishNodeBuffer(oBuilder, root_fb);
 

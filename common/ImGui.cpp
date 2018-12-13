@@ -194,7 +194,7 @@ void ImGuiWrapper::Render() {
         for (int n = 0; n < pDrawData->CmdListsCount; ++n) {
 
                 const ImDrawList* cmd_list = pDrawData->CmdLists[n];
-                const ImDrawIdx* idx_buffer_offset = 0;
+                uint32_t index_offset = 0;
 
                 glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
                 glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), (const GLvoid*)cmd_list->VtxBuffer.Data, GL_STREAM_DRAW);
@@ -223,16 +223,17 @@ void ImGuiWrapper::Render() {
 
                                         // Bind texture, Draw
                                         TRenderState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, (TTexture *)pcmd->TextureId);
-                                        //glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset);
                                         TRenderState::Instance().Draw(
                                                         vao_id,
-                                                        pcmd->ElemCount,
-                                                        sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
                                                         GL_TRIANGLES,
-                                                        idx_buffer_offset);
+                                                        sizeof(ImDrawIdx) == 2 ?
+                                                                VertexIndexType::SHORT :
+                                                                VertexIndexType::INT,
+                                                        index_offset,
+                                                        pcmd->ElemCount);
                                 }
                         }
-                        idx_buffer_offset += pcmd->ElemCount;
+                        index_offset += pcmd->ElemCount;
                 }
         }
 

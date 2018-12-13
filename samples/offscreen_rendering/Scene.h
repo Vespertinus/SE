@@ -19,6 +19,7 @@ class Scene {
         ~Scene() throw();
 
         void Process();
+        void PostRender();
 };
 
 

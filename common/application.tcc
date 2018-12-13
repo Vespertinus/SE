@@ -4,6 +4,9 @@ namespace SE {
 
 template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t & oSettings, const uint32_t window_id) {
 
+        log_d ("init remain subsytems");
+        TEngine::Instance().Init();
+
         log_d("try to init OIS");
 
         TInputManager::Instance().Initialise(
@@ -17,12 +20,17 @@ template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t 
 
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
         oSettings(oNewSettings),
-        oCamera(oTranspose,	oSettings.oCamSettings),
+        oCamera(oTranspose,	oSettings.oCamSettings), //TODO move to component
         oRunFunctor   (*this, &Application<TLoop>::Run),
         oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
         oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
-        oStub(oSettings, oMainWindow.GetWindowID()),
+        oPreInit(oSettings, oMainWindow.GetWindowID()),
         oLoop(oLoopSettings, oCamera) {
+
+                /*TODO
+                 init all members as uniq pointers in specified order and destroy in reverse order
+                 or, all depend sub systems inside Engine<>
+                */
 
                 TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
                 TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
@@ -84,7 +92,13 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         SE::TRenderState::Instance().FrameStart();
 
+        //Update
         oLoop.Process();
+
+        //Render
+        TEngine::Instance().Get<TRenderer>().Render();
+
+        oLoop.PostRender();
 
         TInputManager::Instance().Capture();
 

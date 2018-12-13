@@ -16,9 +16,8 @@ class Scene {
   HELPERS::Elipse   oBigElipse;
   //DEBUG code ___End_____
 
-  TTexture        * pTex01;
+  Camera          & oCamera;
   TSceneTree      * pSceneTree;
-
 
 	public:
   //empty settings
@@ -28,7 +27,7 @@ class Scene {
 	~Scene() throw();
 	
 	void Process();
-	//void Load(level);
+	void PostRender();
 
 };
 

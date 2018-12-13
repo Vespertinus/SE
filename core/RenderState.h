@@ -22,9 +22,12 @@ class RenderState {
         glm::uvec2              screen_size;
         time_point <micro>      frame_start_time;
         float                   last_frame_time;
+        uint32_t                active_tex_unit{};
+
+        //TODO initialize from GL limit, store in global graphics config
+        std::array<TTexture *, 16> vTextureUnits{};
 
         //TODO
-        //texture units
         //variables
 
         public:
@@ -32,21 +35,21 @@ class RenderState {
         RenderState();
 
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
-        ret_code_t                      SetTexture(const TextureUnit unit_index, const TTexture * pTex);
-        ret_code_t                      SetTexture(const StrID name, const TTexture * pTex);
+        ret_code_t                      SetTexture(const TextureUnit unit_index, TTexture * pTex);
+        ret_code_t                      SetTexture(const StrID name, TTexture * pTex);
         void                            SetTransform(const glm::mat4 & oMat);
         void                            SetViewProjection(const glm::mat4 & oMat);
         void                            SetShaderProgram(ShaderProgram * pNewShader);
         void                            SetScreenSize(const uint32_t width, const uint32_t height);
         void                            SetVao(const uint32_t vao_id);
         void                            Draw(const uint32_t vao_id,
-                                             const uint32_t count,
-                                             const uint32_t gl_index_type,
-                                             const uint32_t mode = GL_TRIANGLES,
-                                             const void   * indices = nullptr);
+                                             const uint32_t mode,
+                                             const uint32_t index_type,
+                                             const uint32_t start,
+                                             const uint32_t count);
         void                            DrawArrays(const uint32_t vao_id,
                                                    const uint32_t mode,
-                                                   const uint32_t first,
+                                                   const uint32_t start,
                                                    const uint32_t count);
         void                            FrameStart();
         const glm::uvec2 &              GetScreenSize() const;

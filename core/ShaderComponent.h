@@ -11,9 +11,6 @@ class ShaderComponent : public ResourceHolder {
 
         public:
 
-        //static const uint8_t VERTEX_SHADER      = 1;
-        //static const uint8_t FRAGMENT_SHADER    = 2;
-
         struct Settings {
 
                 //TODO incapsulate resource path in some obj
@@ -26,7 +23,6 @@ class ShaderComponent : public ResourceHolder {
 
         std::vector <ShaderComponent *> vDependencies;
         uint32_t                        gl_id;
-        //uint8_t                         type;
         SE::FlatBuffers::ShaderType     type;
 
         void Load(const SE::FlatBuffers::ShaderComponent * pShader, const Settings & oSettings);

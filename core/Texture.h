@@ -53,11 +53,11 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
                         const rid_t new_rid,
                         const TConcreateSettings & oSettings);
 
-        template <class TStoreStrategySettings = TDefaultStoreStrategy>
+        template <class TStoreStrategySettings = typename TDefaultStoreStrategy::Settings>
                 Texture(const std::string sName,
                         const rid_t new_rid,
                         const TextureStock & oTextureStock,
-                        const TStoreStrategySettings & oStoreStrategySettings);
+                        const TStoreStrategySettings & oStoreStrategySettings = TStoreStrategySettings());
 
         ~Texture() noexcept;
 

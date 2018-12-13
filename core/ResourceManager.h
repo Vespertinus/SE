@@ -48,10 +48,12 @@ template < class ResourceList > class ResourceManager {
   template <class Resource> void Clear();
   template <class Resource> size_t Size();
   /*TODO
-                нужен Clone в ResourceManager
+                нужен Clone в ResourceManager, все таки нужен, сделать соответствующие функции у всех типов ресурсов.
                 Create empty и указание у Resource может ли он быть создан как empty
                 автогенерация rid для empty Resource
                 instance id помимо rid для instance'ов
+
+                Resource reload for debug build...?
   */
 
 };

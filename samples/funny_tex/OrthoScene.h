@@ -26,6 +26,7 @@ class OrthoScene {
         ~OrthoScene() throw();
 
         void Process();
+        void PostRender();
 };
 
 

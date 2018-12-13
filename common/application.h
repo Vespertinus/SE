@@ -81,7 +81,7 @@ template <class TLoop > class Application {
         TResizeFunctor          oResizeFunctor;
 
         TWindow                 oMainWindow;
-        PreInit                 oStub;
+        PreInit                 oPreInit;
         TLoop			oLoop;
 
         public:

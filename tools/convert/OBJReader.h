@@ -9,7 +9,7 @@ namespace SE {
 namespace TOOLS {
 
 SE::ret_code_t ReadOBJ(const std::string & sPath,
-                       MeshData          & oMeshData,
+                       ModelData         & oModel,
                        ImportCtx & oCtx);
 
 }

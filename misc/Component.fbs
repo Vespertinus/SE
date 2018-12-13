@@ -1,0 +1,43 @@
+
+include "Mesh.fbs";
+include "Material.fbs";
+
+namespace SE.FlatBuffers;
+
+//Resource:
+
+//Builtin components:
+
+table StaticModel {
+        mesh:MeshHolder (required);
+        material:MaterialHolder;
+}
+
+table AnimatedModel {
+        mesh:MeshHolder (required);
+        material:MaterialHolder (required);
+        tbo:TextureHolder (required);//or as vertex buffer
+}
+
+//Component wrappers
+
+table AppComponent {
+        data:[ubyte] (flexbuffer);
+}
+
+union ComponentU {
+        StaticModel,
+        AnimatedModel,
+//        Camera,
+//        Light,
+//        etc
+        AppComponent
+}
+
+table Component {
+
+        component:ComponentU (required);
+}
+
+root_type Component;
+

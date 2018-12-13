@@ -69,10 +69,7 @@ static bool IsTexture(uint32_t gl_type) {
 ShaderProgram::ShaderProgram(const std::string & sName,
                              const rid_t         new_rid,
                              const Settings    & oSettings) :
-        ResourceHolder(new_rid, sName),
-        gl_id(0),
-        used_system_variables(0),
-        used_texture_units(0) {
+        ResourceHolder(new_rid, sName) {
 
         static const size_t max_file_size = 1024 * 1024 * 10;
 
@@ -109,9 +106,7 @@ ShaderProgram::ShaderProgram(const std::string & sName,
                              const rid_t         new_rid,
                              const SE::FlatBuffers::ShaderProgram * pShaderProgram,
                              const Settings   & oSettings) :
-        ResourceHolder(new_rid, sName),
-        gl_id(0),
-        used_texture_units(0) {
+        ResourceHolder(new_rid, sName) {
 
         Load(pShaderProgram, oSettings);
 }
@@ -163,7 +158,6 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
         //bind attributes
         for (auto & oAttribLocation : mAttributeLocation) {
                 glBindAttribLocation(gl_id, oAttribLocation.second, oAttribLocation.first.c_str());
-                //log_d("bind attrib: '{}', location: {}", oAttribLocation.first, oAttribLocation.second);
         }
         if (CheckOpenGLError() != uSUCCESS) {
 
@@ -403,6 +397,25 @@ ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::vec3 & val) {
         return uSUCCESS;
 }
 
+ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::vec4 & val) {
+
+        auto it = mVariables.find(name);
+        if (it == mVariables.end()) {
+                log_e("can't find variable with strid = '{}' in shader program: '{}'", name, sName);
+                return uWRONG_INPUT_DATA;
+        }
+
+        if (it->second.type != GL_FLOAT_VEC4) {
+                log_e("wrong type 'glm::vec4', variable '{}' expect {}, in shader program: '{}'",
+                                it->second.sName,
+                                it->second.type,
+                                sName);
+                return uWRONG_INPUT_DATA;
+        }
+        glUniform4fv(it->second.location, 1, glm::value_ptr(val));
+        return uSUCCESS;
+}
+
 ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::mat3 & val) {
 
         auto it = mVariables.find(name);
@@ -460,76 +473,76 @@ ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::uvec2 & val) 
         return uSUCCESS;
 }
 
-void ShaderProgram::Use() const {
+ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::uvec3 & val) {
 
-        glUseProgram(gl_id);
-}
-
-bool ShaderProgram::HasVariable(const StrID name) const {
-
-        return (mVariables.find(name) != mVariables.end());
-}
-
-ret_code_t ShaderProgram::SetTexture(const TextureUnit unit_index, const TTexture * pTex) {
-
-        int32_t unit_num = static_cast<int32_t>(unit_index);
-
-        if (unit_num >= MAX_TEXTURE_IMAGE_UNITS) {
-                log_e("too big unit index = {}, max allowed = {}, shader program: '{}'",
-                                unit_num,
-                                (const uint8_t)MAX_TEXTURE_IMAGE_UNITS,
-                                sName);
+        auto it = mVariables.find(name);
+        if (it == mVariables.end()) {
+                log_e("can't find variable with strid = '{}' in shader program: '{}'", name, sName);
                 return uWRONG_INPUT_DATA;
         }
 
-        if (!(used_texture_units & (1 << unit_num)) ) {
-                log_e("texture unit {} unused, shader program: '{}'",
-                                unit_num,
-                                sName);
-                return uWRONG_INPUT_DATA;
-        }
-
-        glActiveTexture(GL_TEXTURE0 + unit_num);
-        if (pTex) {
-                glBindTexture(pTex->Type(), pTex->GetID());
-        }
-        else {
-                glBindTexture(GL_TEXTURE_2D, 0);
-        }
-
-        return uSUCCESS;
-}
-
-ret_code_t ShaderProgram::SetTexture(const StrID name, const TTexture * pTex) {
-
-        auto it = mSamplers.find(name);
-        if (it == mSamplers.end()) {
-                log_e("can't find texture with strid = '{}' in shader program: '{}'", name, sName);
-                return uWRONG_INPUT_DATA;
-        }
-
-        if (it->second.type != pTex->Type()) {
-                log_e("wrong type '{}', sampler '{}' expect {}, in shader program: '{}'",
-                                pTex->Type(),
+        if (it->second.type != GL_UNSIGNED_INT_VEC3) {
+                log_e("wrong type 'glm::uvec3', variable '{}' expect {}, in shader program: '{}'",
                                 it->second.sName,
                                 it->second.type,
                                 sName);
                 return uWRONG_INPUT_DATA;
         }
-
-        glActiveTexture(GL_TEXTURE0 + static_cast<int32_t>(it->second.unit_index) );
-        if (pTex) {
-                glBindTexture(pTex->Type(), pTex->GetID());
-        }
-        else {
-                glBindTexture(GL_TEXTURE_2D, 0);
-        }
-
+        glUniform3uiv(it->second.location, 1, glm::value_ptr(val));
         return uSUCCESS;
+}
+
+ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::uvec4 & val) {
+
+        auto it = mVariables.find(name);
+        if (it == mVariables.end()) {
+                log_e("can't find variable with strid = '{}' in shader program: '{}'", name, sName);
+                return uWRONG_INPUT_DATA;
+        }
+
+        if (it->second.type != GL_UNSIGNED_INT_VEC4) {
+                log_e("wrong type 'glm::uvec4', variable '{}' expect {}, in shader program: '{}'",
+                                it->second.sName,
+                                it->second.type,
+                                sName);
+                return uWRONG_INPUT_DATA;
+        }
+        glUniform4uiv(it->second.location, 1, glm::value_ptr(val));
+        return uSUCCESS;
+}
+
+void ShaderProgram::Use() const {
+
+        glUseProgram(gl_id);
+}
+
+bool ShaderProgram::OwnVariable(const StrID name) const {
+
+        return (mVariables.find(name) != mVariables.end());
+}
+
+bool ShaderProgram::OwnTexture(const StrID name) const {
+        return (mSamplers.find(name) != mSamplers.end());
+}
+
+bool ShaderProgram::OwnTextureUnit(const TextureUnit unit_index) const {
+
+        return (used_texture_units & (1 << static_cast<int32_t>(unit_index))) ;
+}
+
+std::optional<std::reference_wrapper<const ShaderVariable>>
+        ShaderProgram::GetTextureInfo(const StrID name) const {
+
+        if  (auto it = mSamplers.find(name); it != mSamplers.end()) {
+                return std::cref(it->second);
+        }
+
+        return std::nullopt;
 }
 
 uint32_t ShaderProgram::UsedSystemVariables() const {
         return used_system_variables;
 }
+
 
 } //namespace SE

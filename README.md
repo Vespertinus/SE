@@ -4,7 +4,7 @@
 simple rendering engine for inhouse usage.
 support rendering using OpenGL on GPU and on CPU with OSMesa
 
-C++14 required (at least gcc6)
+C++17 required (at least gcc7)
 
 Dependency:
  * General:
@@ -22,6 +22,8 @@ Dependency:
      * https://opencv.org/
    * OpenGL - usually shiped with graphics drivers 
      * or with open source realisation - mesa
+   * FlatBuffers - memory efficient cross platform serialization library
+     * https://github.com/google/flatbuffers
  * GPU enabled build only:
    * OIS - Object Oriented Input System
      * http://sourceforge.net/projects/wgois/develop

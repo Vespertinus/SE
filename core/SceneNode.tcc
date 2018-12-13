@@ -2,116 +2,145 @@
 namespace SE  {
 
 
-//template <class ... TGeom > SceneNode<TGeom ...>::SceneNode() : SceneNode(nullptr, "") {;;}
+template <class ... TComponents > SceneNode<TComponents ...>::
+        SceneNode(const std::string_view sNewName, TSceneTree * pNewScene) :
+                pParent(nullptr),
+                sName(sNewName),
+                pScene(pNewScene),
+                user_flags(0),
+                internal_flags(STATE_ENABLED) {
 
-template <class ... TGeom > SceneNode<TGeom ...>::SceneNode(TSceneNode * pParentNode, const std::string_view sNewName, TSceneTree * pNewScene) :
-        pParent(nullptr),
-        sName(sNewName),
-        pScene(pNewScene),
-        flags(0) {
-
-        SetParent(pParentNode);
+        log_d("create node: '{}'", sName);
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
+template <class ... TComponents> SceneNode<TComponents...>::~SceneNode() noexcept {
+
+        //TODO check destruction with shared ptr and dependencies loops
+        Disable();
+        //remove children
+        //THINK children in broken state?
+        /*
+        if (pScene) {
+                pScene->HandleNodeUnlink(this->weak_from_this());
+        }
+        */
+}
+
+template <class ... TComponents > void SceneNode<TComponents ...>::
         SetPos(const glm::vec3 & vPos) {
 
         oTransform.SetPos(vPos);
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
+template <class ... TComponents > void SceneNode<TComponents ...>::
         SetRotation(const glm::vec3 & vDegreeAngles) {
 
         oTransform.SetRotation(vDegreeAngles);
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
+template <class ... TComponents > void SceneNode<TComponents ...>::
         SetRotation(const glm::quat & qNewRotation) {
 
         oTransform.SetRotation(qNewRotation);
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
+template <class ... TComponents > void SceneNode<TComponents ...>::
         SetScale(const glm::vec3 & new_scale) {
 
         oTransform.SetScale(new_scale);
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::Translate(const glm::vec3 & vPos) {
+template <class ... TComponents > void SceneNode<TComponents ...>::Translate(const glm::vec3 & vPos) {
 
         oTransform.Translate(vPos);
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::Rotate(const glm::vec3 & vDegreeAngles) {
+template <class ... TComponents > void SceneNode<TComponents ...>::Rotate(const glm::vec3 & vDegreeAngles) {
 
         oTransform.Rotate(vDegreeAngles);
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::Scale(const glm::vec3 & new_scale) {
+template <class ... TComponents > void SceneNode<TComponents ...>::Scale(const glm::vec3 & new_scale) {
 
         oTransform.Scale(new_scale);
         InvalidateChildren();
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
-        SetParent(TSceneNode * pNewParent) {
+template <class ... TComponents > ret_code_t SceneNode<TComponents ...>::
+        SetParent(TSceneNodeExact * pNewParent) {
+
+        ret_code_t res = uSUCCESS;
 
         if (pNewParent) {
-                pNewParent->AddChild(this);
+                res = pNewParent->AddChild(this->shared_from_this());
         }
         else {
                 oTransform.SetParent(nullptr);
         }
-        RebuildFullName();
+        //RebuildFullName();
+        //FIXME UpdateNodeName... currently does't update scene tree maps
+        return res;
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
-        AddChild(TSceneNode * pNode) {
+template <class ... TComponents > ret_code_t SceneNode<TComponents ...>::
+        AddChild(TSceneNode pNode) {
 
-        if (!pNode || pNode == this || pNode->pParent == this) {
-                log_w("failed to add, node ptr = {:p} cur node = {:p}, parent = {:p}", (void *)pNode, (void *)this, (pNode) ? (void *)pNode->pParent : nullptr);
-                return;
+        if (!pNode || pNode.get() == this || pNode->pParent == this) {
+                log_w("failed to add, node ptr = {:p} cur node = {:p}, parent = {:p}", (void *)pNode.get(), (void *)this, (pNode) ? (void *)pNode->pParent : nullptr);
+                return uWRONG_INPUT_DATA;
         }
 
-        if (pParent && pParent == pNode) {
-                log_w("failed to add, prevent cyclic link, parent = {:p}, node = {:p}", (void *)pParent, (void *)pNode);
-                return;
+        if (pParent && pParent == pNode.get()) {
+                log_w("failed to add, prevent cyclic link, parent = {:p}, node = {:p}", (void *)pParent, (void *)pNode.get());
+                return uWRONG_INPUT_DATA;
         }
 
-        TSceneNode * pOldParent = pNode->pParent;
+
+        TSceneNodeExact * pOldParent = pNode->pParent;
         if (pOldParent) {
 
                 pOldParent->RemoveChild(pNode);
         }
+        else {
+                pNode->pScene = pScene;
+        }
+
+        std::string sNewFullName;
+        pNode->BuildFullName(sNewFullName, pNode->sName, this);
+        bool res = pScene->UpdateNodeName(pNode, pNode->sName, sNewFullName);
+        if (res) {
+                pNode->sFullName = std::move(sNewFullName);
+        }
+        else {
+                log_w("failed to add node: '{}' as a child of '{}', full name duplication",
+                                pNode->GetFullName(),
+                                GetFullName());
+                //THINK...
+                if (pOldParent) {
+                        pOldParent->AddChild(pNode);
+                }
+                return uWRONG_INPUT_DATA;
+        }
+
 
         pNode->pParent = this;
         pNode->oTransform.SetParent(&oTransform);
-        pNode->RebuildFullName();
+        //pNode->RebuildFullName();
+        pNode->internal_flags ^= STATE_UNLINKED;
 
         vChildren.emplace_back(pNode);
 
         log_d("children cnt = {}", vChildren.size());
+        return uSUCCESS;
 }
 
-
-template <class ... TGeom >
-        template <class T>
-                void SceneNode<TGeom ...>::
-                        AddRenderEntity(T oRenderEntity) {
-
-        vRenderEntity.emplace_back(oRenderEntity);
-
-        log_d("render entity added, cnt = {}", vRenderEntity.size());
-}
-
-
-template <class ... TGeom > void SceneNode<TGeom ...>::
+template <class ... TComponents > void SceneNode<TComponents ...>::
         InvalidateChildren() {
 
         for (auto & item : vChildren) {
@@ -120,173 +149,157 @@ template <class ... TGeom > void SceneNode<TGeom ...>::
         }
 }
 
-template <class ... TGeom > const std::string & SceneNode<TGeom ...>::
+template <class ... TComponents > const std::string & SceneNode<TComponents ...>::
         GetName() const {
 
         return sName;
 }
 
-template <class ... TGeom > const std::string & SceneNode<TGeom ...>::
+template <class ... TComponents > const std::string & SceneNode<TComponents ...>::
         GetFullName() const {
 
         return sFullName;
 }
 
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
-        RemoveChild(TSceneNode * pNode) {
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        RemoveChild(TSceneNode pNode) {
 
+        //FIXME check that it's child
+
+        pNode->pParent = nullptr;
+        pNode->oTransform.SetParent(nullptr);
+
+        pScene->HandleNodeUnlink(pNode.get());
+        pNode->pScene = nullptr;
+        pNode->internal_flags |= STATE_UNLINKED;
+
+        //FIXME rewrite on switching last and cur
         vChildren.erase(std::remove(vChildren.begin(), vChildren.end(), pNode));
 }
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        Unlink() {
+
+        log_d("name: '{}', components: {}", sFullName, vComponents.size());
+
+        if (pParent) {
+                pParent->RemoveChild(this->shared_from_this());
+        }
+        else if (!(internal_flags && STATE_UNLINKED)) {
+                log_e("call Unlink on node without parent, and not unlinked previously, name: '{}'", sName);
+        }
+}
+
+template <class ... TComponents > void SceneNode<TComponents ...>::
         Print(const size_t indent, bool recursive) {
 
-        log_d_clean("{:>{}} '{}': entity cnt = {}", ">", indent, sFullName, vRenderEntity.size());
+        log_d_clean("{:>{}} '{}': components cnt = {}", ">", indent, sFullName, vComponents.size());
         oTransform.Print(indent + 2);
         if (!sCustomInfo.empty()) {
                 log_d_clean("{:>{}} info: '{}'", ">", indent + 2, sCustomInfo);
         }
-        for (auto & oEntity : vRenderEntity) {
+        for (auto & oComponent : vComponents) {
 
                 std::visit([indent](auto && arg) {
-                        log_d_clean("{:>{}} entity: {}", ">", indent + 2, arg->Str());
+                        log_d_clean("{:>{}} component: {}", ">", indent + 2, arg->Str());
                 },
-                oEntity);
+                oComponent);
         }
 
         if (recursive) {
-                for (auto * item : vChildren) {
-                        item->Print(indent + 4);
+                for (auto & pItem : vChildren) {
+                        pItem->Print(indent + 4);
                 }
         }
 }
 
-template <class ... TGeom > bool SceneNode<TGeom ...>::
+template <class ... TComponents > bool SceneNode<TComponents ...>::
         SetName(const std::string_view sNewName) {
 
-        std::string sNewFullName;
-        BuildFullName(sNewFullName, sNewName);
+        if (!pScene) { return false; }
 
-        bool res = pScene->UpdateNodeName(this, sNewName, sNewFullName);
+        std::string sNewFullName;
+        BuildFullName(sNewFullName, sNewName, pParent);
+
+        bool res = pScene->UpdateNodeName(this->shared_from_this(), sNewName, sNewFullName);
         if (res) {
                 sName     = sNewName;
-                sFullName = sNewFullName;
+                sFullName = std::move(sNewFullName);
         }
 
         return res;
 }
 
-template <class ... TGeom > SceneTree<TGeom...> * SceneNode<TGeom ...>::
+template <class ... TComponents > SceneTree<TComponents...> * SceneNode<TComponents ...>::
         GetScene() const {
 
         return pScene;
 }
 
-//TODO rewrite on property based visitor, via enable_if + is_renderable etc
-template <class ... TGeom > void SceneNode<TGeom ...>::
-        DrawSelf() const {
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        BuildFullName(std::string & sNewFullName, const std::string_view sNewName, TSceneNodeExact * pNewParent) {
 
-        if (vRenderEntity.size()) {
-
-                TRenderState::Instance().SetTransform(oTransform.GetWorld());
-
-                for (auto & oEntity : vRenderEntity) {
-
-                        std::visit([](auto && arg) {
-                                        arg->Draw();
-                                        },
-                                        oEntity);
-
-                }
-        }
-}
-
-template <class ... TGeom > void SceneNode<TGeom ...>::
-        DrawRecursive() const {
-
-        DrawSelf();
-
-        for (auto * pChild: vChildren) {
-                pChild->DrawRecursive();
-        }
-}
-
-template <class ... TGeom > void SceneNode<TGeom ...>::
-        BuildFullName(std::string & sNewFullName, const std::string_view sNewName) {
-
-        if (pParent) {
-                sNewFullName = pParent->GetFullName() + "|" + sNewName.data();
+        if (pNewParent) {
+                sNewFullName = pNewParent->GetFullName() + "|" + sNewName.data();
         }
         else {
                 sNewFullName = sNewName;
         }
+
+        //TODO  use UpdateNodeName!!!
 }
 
 
-template <class ... TGeom > void SceneNode<TGeom ...>::
+template <class ... TComponents > void SceneNode<TComponents ...>::
         RebuildFullName() {
 
-        BuildFullName(sFullName, sName);
+        BuildFullName(sFullName, sName, pParent);
 }
 
-template <class ... TGeom >
-        template <class T>
-                T * SceneNode<TGeom ...>::GetEntity(const size_t index) {
+template <class ... TComponents > uint32_t SceneNode<TComponents ...>::GetComponentsCnt() const {
 
-        if (index >= vRenderEntity.size()) {
-                log_w("index '{}' exceed entity count '{}', node '{}'",
-                                index,
-                                vRenderEntity.size(),
-                                sFullName);
-                return nullptr;
-        }
-
-        return std::get<T *>(vRenderEntity[index]);
-}
-
-template <class ... TGeom > uint32_t SceneNode<TGeom ...>::GetEntityCnt() const {
-
-        return vRenderEntity.size();
+        return vComponents.size();
 }
 
 
-template <class ... TGeom > const Transform & SceneNode<TGeom ...>::
+template <class ... TComponents > const Transform & SceneNode<TComponents ...>::
         GetTransform() const {
 
         return oTransform;
 }
 
-template <class ... TGeom >
+template <class ... TComponents >
         template <class THandler>
-                void SceneNode<TGeom ...>::DepthFirstWalk(THandler && oHandler) {
+                void SceneNode<TComponents ...>::DepthFirstWalk(THandler && oHandler) {
 
          bool res = oHandler(*this);
          if (res == false) { return; }
 
-         for (auto * pChild : vChildren) {
+         for (auto & pChild : vChildren) {
                 pChild->DepthFirstWalk(oHandler);
          }
 }
 
-template <class ... TGeom >
+template <class ... TComponents >
         template <class THandler, class TPostHandler>
-                void SceneNode<TGeom ...>::DepthFirstWalkEx(THandler && oHandler, TPostHandler && oPostHandler) {
+                void SceneNode<TComponents ...>::DepthFirstWalkEx(THandler && oHandler, TPostHandler && oPostHandler) {
+
 
          bool res = oHandler(*this);
          if (res == false) {
                  return;
          }
 
-         for (auto * pChild : vChildren) {
+         for (auto & pChild : vChildren) {
                 pChild->DepthFirstWalkEx(oHandler, oPostHandler);
          }
          oPostHandler(*this);
 }
 
-template <class ... TGeom >
+template <class ... TComponents >
         template <class THandler>
-                void SceneNode<TGeom ...>::BreadtFirstWalk(THandler && oHandler) {
+                void SceneNode<TComponents ...>::BreadtFirstWalk(THandler && oHandler) {
 
          bool res = oHandler(*this);
          if (res == false) { return; }
@@ -295,75 +308,181 @@ template <class ... TGeom >
 
 }
 
-template <class ... TGeom >
+template <class ... TComponents >
         template <class THandler>
-                void SceneNode<TGeom ...>::BreadtFirstWalkChild(THandler && oHandler) {
+                void SceneNode<TComponents ...>::BreadtFirstWalkChild(THandler && oHandler) {
 
-         for (auto * pChild : vChildren) {
+         for (auto pChild : vChildren) {
                 oHandler(*pChild);
          }
-         for (auto * pChild : vChildren) {
+         for (auto pChild : vChildren) {
                 pChild->BreadtFirstWalkChild(oHandler);
          }
 }
 
-template <class ... TGeom >
+template <class ... TComponents >
         template <class ... THandler>
-                void SceneNode<TGeom ...>::ForEachEntity(THandler && ... oHandlers) {
+                void SceneNode<TComponents ...>::ForEachComponent(THandler && ... oHandlers) {
 
-        for (auto & oEntity : vRenderEntity) {
-                MP::Visit(oEntity, oHandlers...);
+        for (auto & oComponent : vComponents) {
+                MP::Visit(oComponent, oHandlers...);
         }
 }
 
-template <class ... TGeom >
-        void SceneNode<TGeom ...>::SetCustomInfo(const std::string_view sInfo) {
+template <class ... TComponents >
+        void SceneNode<TComponents ...>::SetCustomInfo(const std::string_view sInfo) {
 
         sCustomInfo = sInfo;
 }
 
-template <class ... TGeom >
-        const std::string & SceneNode<TGeom ...>::GetCustomInfo() const {
+template <class ... TComponents >
+        const std::string & SceneNode<TComponents ...>::GetCustomInfo() const {
 
         return sCustomInfo;
 
 }
 
-template <class ... TGeom >
-        void SceneNode<TGeom ...>::RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles) {
+template <class ... TComponents >
+        void SceneNode<TComponents ...>::RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles) {
 
         oTransform.RotateAround(vPoint, vDegreeAngles);
         InvalidateChildren();
 }
 
-template <class ... TGeom >
-        void SceneNode<TGeom ...>::RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation) {
+template <class ... TComponents >
+        void SceneNode<TComponents ...>::RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation) {
         oTransform.RotateAround(vPoint, qDeltaRotation);
         InvalidateChildren();
 }
 
-template <class ... TGeom >
-        void  SceneNode<TGeom ...>::SetFlags(const uint8_t state) {
+template <class ... TComponents >
+        void  SceneNode<TComponents ...>::SetFlags(const uint8_t state) {
 
-        flags |= state;
+        user_flags |= state;
 }
 
-template <class ... TGeom >
-        uint8_t SceneNode<TGeom ...>::GetFlags() const {
+template <class ... TComponents >
+        uint8_t SceneNode<TComponents ...>::GetFlags() const {
 
-        return flags;
+        return user_flags;
 }
 
-template <class ... TGeom >
-        void SceneNode<TGeom ...>::ClearFlags() {
+template <class ... TComponents >
+        void SceneNode<TComponents ...>::ClearFlags() {
 
-        flags = 0;
+        user_flags = 0;
 }
 
-template <class ... TGeom >
-        void SceneNode<TGeom ...>::ClearFlags(const uint8_t state) {
+template <class ... TComponents >
+        void SceneNode<TComponents ...>::ClearFlags(const uint8_t state) {
 
-        flags ^= state;
+        user_flags ^= state;
+}
+
+template <class ... TComponents>
+        template <class TComponent, class ... TArgs>
+                ret_code_t SceneNode<TComponents...>::CreateComponent(TArgs && ... oArgs) {
+
+        if (HasComponent<TComponent>()) {
+                log_w("obj: '{}', component '{}' already exist",
+                                sName,
+                                typeid(TComponent).name());
+                return uWRONG_INPUT_DATA;
+        }
+
+        try {
+                vComponents.emplace_back(std::make_unique<TComponent>(this, std::forward <TArgs...>(oArgs...)));
+        }
+        catch(std::exception & ex) {
+                log_e("got exception, description = '{}', name: '{}'", ex.what(), sName);
+                return uWRONG_INPUT_DATA;
+        }
+        catch(...) {
+                log_e("got unknown exception, name: '{}'", sName);
+                return uWRONG_INPUT_DATA;
+        }
+
+        return uSUCCESS;
+}
+
+template <class ... TComponents>
+        template <class TComponent>
+                void SceneNode<TComponents...>::DestroyComponent() {
+
+        for (auto it = vComponents.begin(); it != vComponents.end(); ++it) {
+
+                if (std::holds_alternative<std::unique_ptr<TComponent>>(*it)) {
+                        vComponents.erase(it);
+                        break;
+                }
+        }
+}
+
+template <class ... TComponents>
+        template <class TComponent> bool SceneNode<TComponents...>::HasComponent() const {
+
+        bool result = false;
+
+        for (auto & oItem : vComponents) {
+                if (std::holds_alternative<std::unique_ptr<TComponent>>(oItem)) {
+                        result = true;
+                        break;
+                }
+        }
+
+        return result;
+}
+
+template <class ... TComponents>
+        template <class TComponent> TComponent * SceneNode<TComponents...>::GetComponent() {
+
+        //TODO return shared_ptr<Component> from Node;
+
+        for (auto & oItem : vComponents) {
+                if (std::holds_alternative<std::unique_ptr<TComponent>>(oItem)) {
+
+                        return std::get<std::unique_ptr<TComponent>>(oItem).get();
+                }
+        }
+
+        log_w("obj: '{}', failed to find component '{}'",
+                        sName,
+                        typeid(TComponent).name());
+        return nullptr;
+}
+
+template <class ... TComponents>
+        void SceneNode<TComponents...>::Disable() {
+
+        if (!(internal_flags & STATE_ENABLED)) { return; }
+        internal_flags ^= STATE_ENABLED;
+
+        for (auto & oItem : vComponents) {
+                std::visit([](auto & oComponent) {
+                        oComponent->Disable();
+                },
+                oItem);
+        }
+}
+
+template <class ... TComponents>
+        void SceneNode<TComponents...>::Enable() {
+
+        if (internal_flags & STATE_ENABLED) { return; }
+        internal_flags |= STATE_ENABLED;
+
+        for (auto & oItem : vComponents) {
+                std::visit([](auto & oComponent) {
+                        oComponent->Enable();
+                },
+                oItem);
+        }
+}
+
+
+template <class ... TComponents>
+        std::shared_ptr<SceneNode<TComponents...>> SceneNode<TComponents...>::GetShared() const {
+        return this->shared_from_this();
 }
 
 }

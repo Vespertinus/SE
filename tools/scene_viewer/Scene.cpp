@@ -34,11 +34,13 @@ void Scene::Process() {
 
         oImGui.NewFrame();
 
-        SE::HELPERS::DrawAxes(10);
+        SE::CheckOpenGLError();
+        //SE::HELPERS::DrawAxes(10);
 
         TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
         //pSceneTree->Draw();
+        /*
         pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
 
 
@@ -49,17 +51,17 @@ void Scene::Process() {
                 oNode.DrawSelf();
 
                 return true;
-        });
+        });*/
 
         if (oSettings.vdebug) {
 
-                pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
+                pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNodeExact & oNode) {
 
                         if (oNode.GetFlags() & NODE_HIDE) {
                                 return false;
                         }
 
-                        if (oNode.GetEntityCnt() == 0) {
+                        if (oNode.GetComponentsCnt() == 0) {
                                 return true;
                         }
 
@@ -70,27 +72,32 @@ void Scene::Process() {
                         return true;
                 });
 
-                pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
+                pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNodeExact & oNode) {
 
                         if (oNode.GetFlags() & NODE_HIDE) {
                                 return false;
                         }
 
-                        if (oNode.GetEntityCnt() == 0) {
+                        if (oNode.GetComponentsCnt() == 0) {
                                 return true;
                         }
 
 
+                        /*
                         auto * pMesh = oNode.GetEntity<TMesh>(0);
 
                         TRenderState::Instance().SetTransform(oNode.GetTransform().GetWorld());
                         TVisualHelpers::Instance().DrawBBox(pMesh->GetBBox());
-
+                        */
                         return true;
                 });
         }
 
         ShowGUI();
+
+}
+
+void Scene::PostRender() {
 
         oImGui.Render();
 }
@@ -126,7 +133,7 @@ void Scene::ShowGUI() {
         ImGui::End();
 
         //scene tree
-        static SE::TSceneTree::TSceneNode  * pCurNode = nullptr;
+        static SE::TSceneTree::TSceneNodeExact * pCurNode;
         ImGui::SetNextWindowBgAlpha(0.9);
         ImGui::Begin("Scene tree", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -193,7 +200,7 @@ void Scene::ShowGUI() {
         ImGui::Separator();
         if (ImGui::TreeNode("Nodes:")) {
 
-                pSceneTree->GetRoot()->DepthFirstWalkEx([](SE::TSceneTree::TSceneNode & oNode) {
+                pSceneTree->GetRoot()->DepthFirstWalkEx([](SE::TSceneTree::TSceneNodeExact & oNode) {
 
                         ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow |
                                                         ImGuiTreeNodeFlags_OpenOnDoubleClick |
@@ -209,18 +216,13 @@ void Scene::ShowGUI() {
                         }
 
 
-                        ImGui::Text("entity cnt: %u", oNode.GetEntityCnt());
-                        oNode.ForEachEntity(
-                                [&oNode](const TMesh * pMesh) {
+                        ImGui::Text("components cnt: %u", oNode.GetComponentsCnt());
 
-                                        ImGui::Text(pMesh->Str().c_str());
+                        oNode.ForEachComponent(
+                                [&oNode](const auto & pComponent) {
 
-                                        SE::BoundingBox oGlobalBBox = pMesh->GetBBox().Transformed(oNode.GetTransform().GetWorld());
-                                        ImGui::Text("global bbox: %s", oGlobalBBox.Str().c_str());
-                                },
-                                [] (const auto * pArg) {
+                                        ImGui::Text(pComponent->Str().c_str());
 
-                                        ImGui::Text("Entity type: '%s'", typeid(pArg).name());
                                 }
                         );
 
@@ -236,7 +238,7 @@ void Scene::ShowGUI() {
 
                         return true;
                 },
-                        [](SE::TSceneTree::TSceneNode & oNode) {
+                        [](SE::TSceneTree::TSceneNodeExact & oNode) {
 
                                 ImGui::TreePop();
                 });

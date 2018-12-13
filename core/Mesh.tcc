@@ -1,6 +1,6 @@
 
 #include <fstream>
-#include <GeometryUtil.h>
+#include <GeometryEntity.h>
 
 namespace SE  {
 
@@ -8,112 +8,72 @@ namespace SE  {
 Mesh::Mesh(
                 const std::string & sName,
                 const rid_t new_rid,
-                const SE::FlatBuffers::Mesh * pMesh,
-                const MeshSettings & oNewMeshSettings) :
+                const SE::FlatBuffers::Mesh * pMesh) :
         ResourceHolder(new_rid, sName),
-        oMeshCtx{},
-        oMeshSettings(oNewMeshSettings) {
+        vao_id(0) {
 
         Load(pMesh);
 }
 
 Mesh::Mesh(
                 const std::string & sName,
-                const rid_t new_rid,
-                const MeshSettings & oNewMeshSettings) :
+                const rid_t new_rid) :
         ResourceHolder(new_rid, sName),
-        oMeshCtx{},
-        oMeshSettings(oNewMeshSettings) {
+        vao_id(0) {
 
         Load();
 }
 
 Mesh::~Mesh() noexcept {
 
-        Clean();
+        if (vao_id) {
+                glDeleteVertexArrays(1, &vao_id);
+        }
 }
 
 uint32_t Mesh::GetShapesCnt() const {
-        return oMeshCtx.vShapes.size();
+        return vSubMeshes.size();
 }
 
-uint32_t Mesh::GetTrianglesCnt() const {
+uint32_t Mesh::GetIndicesCnt() const {
 
-        uint32_t total_triangles_cnt = 0;
-        for (auto item : oMeshCtx.vShapes) {
-                total_triangles_cnt += item.triangles_cnt;
+        uint32_t total_cnt = 0;
+        for (auto & item : vSubMeshes) {
+                total_cnt += item.GetIndicesCnt();
         }
-        return total_triangles_cnt;
+        return total_cnt;
 }
 
+const std::vector<GeometryEntity> & Mesh::GetShapes() const {
 
-void Mesh::DrawShape(const ShapeCtx & oShapeCtx) const {
-
-        if (!oMeshSettings.ext_material) {
-                TRenderState::Instance().SetShaderProgram(oShapeCtx.pShader);
-
-                //TODO move into material manipulation
-                if (oShapeCtx.pTex != nullptr) {
-                        //glBindTexture(GL_TEXTURE_2D, oShapeCtx.pTex->GetID());
-                        TRenderState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, oShapeCtx.pTex);
-                }
-        }
-
-        TRenderState::Instance().Draw(oShapeCtx.vao_id, oShapeCtx.triangles_cnt * 3, oShapeCtx.gl_index_type);
+        return vSubMeshes;
 }
 
-
-
-void Mesh::Draw() const {
-
-        for (auto & oShapeCtx : oMeshCtx.vShapes) {
-                DrawShape(oShapeCtx);
-        }
-}
-
-
-
-void Mesh::Draw(const size_t shape_ind) const {
-
-        if (shape_ind >= oMeshCtx.vShapes.size()) {
-                return;
-        }
-
-        DrawShape(oMeshCtx.vShapes[shape_ind]);
-}
-
-typename Mesh::TShapesInfo Mesh::GetShapesInfo() const {
-
-        TShapesInfo vInfo;
-        vInfo.reserve(oMeshCtx.vShapes.size());
-        for (uint32_t i = 0; i < oMeshCtx.vShapes.size(); ++i) {
-                vInfo.emplace_back(i, oMeshCtx.vShapes[i].sName);
-        }
-
-        return vInfo;
+const std::vector<BoundingBox> & Mesh::GetBBoxes() const {
+        return vBBoxes;
 }
 
 
 glm::vec3 Mesh::GetCenter(const size_t shape_ind) const {
 
-        if (shape_ind >= oMeshCtx.vShapes.size()) {
+        if (shape_ind >= vSubMeshes.size()) {
                 log_w("wrong shape ind = {}, mesh rid = {}", shape_ind, rid);
                 return glm::vec3();
         }
 
-        return oMeshCtx.vShapes[shape_ind].oBBox.Center();
+        return vBBoxes[shape_ind].Center();
 }
 
 
 glm::vec3 Mesh::GetCenter() const {
 
-        return oMeshCtx.oBBox.Center();
+        return vBBoxes.back().Center();
 }
 
 
 const BoundingBox & Mesh::GetBBox() const {
 
-        return oMeshCtx.oBBox;
+        return vBBoxes.back();
 }
 
 
@@ -153,37 +113,25 @@ void Mesh::Load() {
 
 void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
 
-        auto                  * pShapesFB        = pMesh->shapes();
-        size_t                  shapes_cnt       = pShapesFB->Length();
-
         uint32_t                index_buf_id;
-        std::vector<uint32_t>   vBuffersGLType;
-        std::vector<uint32_t>   vBuffersID;
+        /** |gl_type: 0 --> buffers_cnt| gl_id: buffers_cnt --> buffers_cnt * 2| stride: buffers_cnt * 2 --> buffers_cnt * 3 */
+        std::vector<uint32_t> vBuffers;
+        uint32_t buffers_cnt    = 0;
+        uint32_t * pGLTypes     = nullptr;
+        uint32_t * pGLID        = nullptr;
+        uint32_t * pStride      = nullptr;
 
-        oMeshCtx.oBBox = BoundingBox(
-                        *reinterpret_cast<const glm::vec3 *>(&pMesh->bbox()->min()),
-                        *reinterpret_cast<const glm::vec3 *>(&pMesh->bbox()->max())
-                        );
-
-        log_d("mesh: shape cnt = {}, min ({}, {}, {}), max({}, {}, {})",
-                        shapes_cnt,
-                        oMeshCtx.oBBox.Min().x,
-                        oMeshCtx.oBBox.Min().y,
-                        oMeshCtx.oBBox.Min().z,
-                        oMeshCtx.oBBox.Max().x,
-                        oMeshCtx.oBBox.Max().y,
-                        oMeshCtx.oBBox.Max().z);
-        log_d("ext_material = {}", oMeshSettings.ext_material);
-
-        auto LocalClean = [&index_buf_id, &vBuffersID](uint32_t cur_vao_id) {
+        auto LocalClean = [&index_buf_id, &pGLID, &buffers_cnt](uint32_t cur_vao_id) {
 
                 glBindVertexArray(0);
 
                 if (index_buf_id) {
                         glDeleteBuffers(1, &index_buf_id);
+
                 }
-                if (vBuffersID.size()) {
-                        glDeleteBuffers(vBuffersID.size(), &vBuffersID[0]);
+
+                if (buffers_cnt) {
+                        glDeleteBuffers(buffers_cnt, &pGLID[0]);
                 }
 
                 if (cur_vao_id) {
@@ -191,247 +139,236 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                 }
         };
 
-        for (size_t shape_num = 0; shape_num < shapes_cnt; ++shape_num) {
+        index_buf_id                    = 0;
+        uint32_t index_size             = 0;
+        uint32_t index_type_size        = 0;
+        uint32_t se_index_type;
+        const void * index_data         = nullptr;
+        SE::FlatBuffers::IndexBufferU index_type = pMesh->index()->buf_type();
 
-                ShapeCtx oShape{};
-                auto pCurShape          = pShapesFB->Get(shape_num);
-                auto * pNameFB          = pCurShape->name();
+        switch (index_type) {
 
-                oShape.sName            = (pNameFB != nullptr) ? pNameFB->c_str() : "";
-                oShape.triangles_cnt    = pCurShape->triangles_cnt();
-                oShape.oBBox = BoundingBox(
-                                *reinterpret_cast<const glm::vec3 *>(&pCurShape->bbox()->min()),
-                                *reinterpret_cast<const glm::vec3 *>(&pCurShape->bbox()->max())
-                                );
-
-                auto * pTexNameFB       = pCurShape->texture();
-                std::string sTexPath    = (pTexNameFB != nullptr) ? pTexNameFB->c_str() : "";
-
-                index_buf_id            = 0;
-                vBuffersID.clear();
-                vBuffersGLType.clear();
-
-                // ___Start___ FIXME basic material manipulation, move into separate class
-                if (!oMeshSettings.ext_material) {
-
-                        if (!sTexPath.empty()) {
-                                oShape.pTex     = CreateResource<SE::TTexture>(sTexPath);
-                                oShape.pShader  = CreateResource<SE::ShaderProgram>(
-                                                "resource/shader_program/simple_tex.sesp",
-                                                SE::ShaderProgram::Settings{"resource/shader/"}
-                                                );
+                case SE::FlatBuffers::IndexBufferU::Uint8Vector:
+                        {
+                                auto pIndexVec          = pMesh->index()->buf_as_Uint8Vector()->data();
+                                index_size              = pIndexVec->Length();
+                                index_type_size         = sizeof(uint8_t);
+                                index_data              = pIndexVec->Data();
+                                se_index_type           = VertexIndexType::BYTE;
                         }
-                        else {
-                                oShape.pShader  = CreateResource<SE::ShaderProgram>(
-                                                "resource/shader_program/wireframe.sesp",
-                                                //"resource/shader_program/simple.sesp",
-                                                SE::ShaderProgram::Settings{"resource/shader/"}
-                                                );
+                        break;
+                case SE::FlatBuffers::IndexBufferU::Uint16Vector:
+                        {
+                                auto pIndexVec          = pMesh->index()->buf_as_Uint16Vector()->data();
+                                index_size              = pIndexVec->Length();
+                                index_type_size         = sizeof(uint16_t);
+                                index_data              = pIndexVec->Data();
+                                se_index_type           = VertexIndexType::SHORT;
                         }
-                }
-                // ___End_____ FIXME basic material manipulation, move into separate class
+                        break;
+                case SE::FlatBuffers::IndexBufferU::Uint32Vector:
+                        {
+                                auto pIndexVec          = pMesh->index()->buf_as_Uint32Vector()->data();
+                                index_size              = pIndexVec->Length();
+                                index_type_size         = sizeof(uint32_t);
+                                index_data              = pIndexVec->Data();
+                                se_index_type           = VertexIndexType::INT;
+                        }
+                        break;
+                default:
+                        LocalClean(vao_id);
+                        throw(std::runtime_error("unknown IndexBuffer type: " +
+                                                std::to_string(static_cast<uint8_t>(index_type)) +
+                                                ", file: " +
+                                                sName));
+        }
 
-                uint32_t index_size             = 0;
-                uint32_t index_type_size        = 0;
-                const void * index_data         = nullptr;
-                SE::FlatBuffers::IndexBuffer index_type = pCurShape->index_type();
+        glGenVertexArrays(1, &vao_id);
+        glBindVertexArray(vao_id);
 
-                switch (index_type) {
+        glGenBuffers(1, &index_buf_id);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buf_id);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                        index_size * index_type_size,
+                        index_data,
+                        GL_STATIC_DRAW);
 
-                        case SE::FlatBuffers::IndexBuffer::Uint8Vector:
+        log_d("index size = {}, type size = {}", index_size, index_type_size);
+
+        buffers_cnt    = pMesh->vertices()->Length();
+
+        if (buffers_cnt == 0) {
+
+                LocalClean(vao_id);
+                throw(std::runtime_error("empty vertex buffers"));
+        }
+
+
+        vBuffers.resize(buffers_cnt * 3, 0);
+        pGLTypes = &vBuffers[0];
+        pGLID    = &vBuffers[buffers_cnt];
+        pStride  = &vBuffers[buffers_cnt * 2];
+
+        glGenBuffers(buffers_cnt, &pGLID[0]);
+
+        uint32_t buffer_size             = 0;
+        uint32_t buffer_type_size        = 0;
+        const void * buffer_data         = nullptr;
+
+        for (uint32_t i = 0; i < buffers_cnt; ++i) {
+                auto pBufferFB   = pMesh->vertices()->Get(i);
+                auto buffer_type = static_cast<SE::FlatBuffers::VertexBufferU>(pBufferFB->buf_type());
+                pStride[i] = pBufferFB->stride();
+
+                switch (buffer_type) {
+                        case SE::FlatBuffers::VertexBufferU::FloatVector:
                                 {
-                                        auto pIndexVec          = pCurShape->index_as_Uint8Vector()->data();
-                                        index_size              = pIndexVec->Length();
-                                        index_type_size         = sizeof(uint8_t);
-                                        index_data              = pIndexVec->Data();
-                                        oShape.gl_index_type    = GL_UNSIGNED_BYTE;
-                                }
-                                break;
-                        case SE::FlatBuffers::IndexBuffer::Uint16Vector:
-                                {
-                                        auto pIndexVec          = pCurShape->index_as_Uint16Vector()->data();
-                                        index_size              = pIndexVec->Length();
-                                        index_type_size         = sizeof(uint16_t);
-                                        index_data              = pIndexVec->Data();
-                                        oShape.gl_index_type    = GL_UNSIGNED_SHORT;
-                                }
-                                break;
-                        case SE::FlatBuffers::IndexBuffer::Uint32Vector:
-                                {
-                                        auto pIndexVec          = pCurShape->index_as_Uint32Vector()->data();
-                                        index_size              = pIndexVec->Length();
-                                        index_type_size         = sizeof(uint32_t);
-                                        index_data              = pIndexVec->Data();
-                                        oShape.gl_index_type    = GL_UNSIGNED_INT;
-                                }
-                                break;
-                        default:
-                                LocalClean(oShape.vao_id);
-                                Clean();
-                                throw(std::runtime_error("unknown IndexBuffer type: " +
-                                                        std::to_string(static_cast<uint8_t>(index_type)) +
-                                                        ", file: " +
-                                                        sName));
-                }
-
-                glGenVertexArrays(1, &oShape.vao_id);
-                glBindVertexArray(oShape.vao_id);
-
-                glGenBuffers(1, &index_buf_id);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buf_id);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                             index_size * index_type_size,
-                             index_data,
-                             GL_STATIC_DRAW);
-
-                log_d("index size = {}, type size = {}", index_size, index_type_size);
-
-                auto pVertices          = pCurShape->vertices();
-                auto pVerticesTypes     = pCurShape->vertices_type();
-                uint32_t buffers_cnt    = pVertices->Length();
-
-                if ((buffers_cnt != pVerticesTypes->Length()) || (buffers_cnt == 0)) {
-
-                        LocalClean(oShape.vao_id);
-                        Clean();
-                        throw(std::runtime_error("uneven vectors size, or empty vertex buffers, vertices size: " +
-                                                std::to_string(buffers_cnt) +
-                                                ", vertices types size: " +
-                                                 std::to_string(pVerticesTypes->Length()) ));
-                }
-
-                vBuffersGLType.resize(buffers_cnt, 0);
-                vBuffersID.resize(buffers_cnt, 0);
-                glGenBuffers(buffers_cnt, &vBuffersID[0]);
-
-                uint32_t buffer_size             = 0;
-                uint32_t buffer_type_size        = 0;
-                const void * buffer_data         = nullptr;
-
-                for (uint32_t i = 0; i < buffers_cnt; ++i) {
-                        auto buffer_type = static_cast<SE::FlatBuffers::VertexBuffer>(pVerticesTypes->Get(i));
-                        switch (buffer_type) {
-                                case SE::FlatBuffers::VertexBuffer::FloatVector:
-                                        {
-                                        auto pBufferVec  = static_cast<const SE::FlatBuffers::FloatVector *>(pVertices->Get(i))->data();
+                                        auto pBufferVec  = pBufferFB->buf_as_FloatVector()->data();
                                         buffer_size      = pBufferVec->Length();
                                         buffer_type_size = sizeof(float);
                                         buffer_data      = pBufferVec->Data();
-                                        vBuffersGLType[i] = GL_FLOAT;
-                                        }
-                                        break;
-                                case SE::FlatBuffers::VertexBuffer::ByteVector:
-                                        {
-                                        auto pBufferVec  = static_cast<const SE::FlatBuffers::ByteVector *>(pVertices->Get(i))->data();
+                                        pGLTypes[i]      = GL_FLOAT;
+                                }
+                                break;
+                        case SE::FlatBuffers::VertexBufferU::ByteVector:
+                                {
+                                        auto pBufferVec  = pBufferFB->buf_as_ByteVector()->data();
                                         buffer_size      = pBufferVec->Length();
                                         buffer_type_size = sizeof(uint8_t);
                                         buffer_data      = pBufferVec->Data();
-                                        vBuffersGLType[i] = GL_UNSIGNED_BYTE;
-                                        }
-                                        break;
+                                        pGLTypes[i]      = GL_UNSIGNED_BYTE;
+                                }
+                                break;
 
-                                case SE::FlatBuffers::VertexBuffer::Uint32Vector:
-                                        {
-                                        auto pBufferVec  = static_cast<const SE::FlatBuffers::Uint32Vector *>(pVertices->Get(i))->data();
+                        case SE::FlatBuffers::VertexBufferU::Uint32Vector:
+                                {
+                                        auto pBufferVec  = pBufferFB->buf_as_Uint32Vector()->data();
                                         buffer_size      = pBufferVec->Length();
                                         buffer_type_size = sizeof(uint32_t);
                                         buffer_data      = pBufferVec->Data();
-                                        vBuffersGLType[i] = GL_UNSIGNED_INT;
-                                        }
-                                        break;
-                                default:
-                                        LocalClean(oShape.vao_id);
-                                        Clean();
-                                        throw(std::runtime_error("unknown VertexBuffer type: " +
-                                                                std::to_string(static_cast<uint8_t>(buffer_type)) ));
-                        }
-
-                        /*
-                        if (buffer_size != index_size) {
-                                LocalClean(oShape.vao_id);
-                                Clean();
-                                throw(std::runtime_error("buffer[" +
-                                                        std::to_string(i) +
-                                                        "] size (" +
-                                                        std::to_string(buffer_size) +
-                                                        ") mismatch index size (" +
-                                                        std::to_string(index_size) +
-                                                        ")" ));
-                        }
-                        */
-
-                        glBindBuffer(GL_ARRAY_BUFFER, vBuffersID[i]);
-                        glBufferData(GL_ARRAY_BUFFER,
-                                        buffer_size * buffer_type_size,
-                                        buffer_data,
-                                        GL_STATIC_DRAW);
-
-                        log_d("buffer[{}] size = {}, type size = {}", i, buffer_size, buffer_type_size);
+                                        pGLTypes[i]      = GL_UNSIGNED_INT;
+                                }
+                                break;
+                        default:
+                                LocalClean(vao_id);
+                                throw(std::runtime_error("unknown VertexBuffer type: " +
+                                                        std::to_string(static_cast<uint8_t>(buffer_type)) ));
                 }
 
-                auto pAttributes = pCurShape->attributes();
+                glBindBuffer(GL_ARRAY_BUFFER, pGLID[i]);
+                glBufferData(GL_ARRAY_BUFFER,
+                                buffer_size * buffer_type_size,
+                                buffer_data,
+                                GL_STATIC_DRAW);
 
-                for (uint32_t i = 0; i < pAttributes->Length(); ++i) {
+                log_d("buffer[{}] size = {}, type size = {}", i, buffer_size, buffer_type_size);
+        }
 
-                        auto pCurAttrubute = pAttributes->Get(i);
-                        auto itLocation = mAttributeLocation.find(pCurAttrubute->name()->c_str());
-                        if (itLocation == mAttributeLocation.end()) {
-                                LocalClean(oShape.vao_id);
-                                Clean();
-                                throw(std::runtime_error("unknown vertex attribute name: '" +
-                                                        pCurAttrubute->name()->str() +
-                                                        "', shape num = " +
-                                                        std::to_string(shape_num) ));
-                        }
-                        std::uintptr_t offset = pCurAttrubute->offset();
-                        /*
-                        log_d("elem_size = {}, gl_type = {}, stride = {}, offset = {}",
-                                        pCurAttrubute->elem_size(),
-                                        vBuffersGLType[pCurAttrubute->buffer_ind()],
-                                        pCurShape->stride(),
-                                        offset);
-                        */
-                        glVertexAttribPointer(itLocation->second,
-                                        pCurAttrubute->elem_size(),
-                                        vBuffersGLType[pCurAttrubute->buffer_ind()],
-                                        false,
-                                        pCurShape->stride(), //FIXME move to buffer info after switching serialization from flatbuffers union to table
-                                        (const void *)offset);
-                        glEnableVertexAttribArray(itLocation->second);
+        auto pAttributes = pMesh->attributes();
 
+        for (uint32_t i = 0; i < pAttributes->Length(); ++i) {
+
+                auto pCurAttrubute = pAttributes->Get(i);
+                auto itLocation = mAttributeLocation.find(pCurAttrubute->name()->c_str());
+                if (itLocation == mAttributeLocation.end()) {
+                        LocalClean(vao_id);
+                        throw(std::runtime_error("unknown vertex attribute name: '" +
+                                                pCurAttrubute->name()->str() + "'" ));
                 }
+                std::uintptr_t offset = pCurAttrubute->offset();
+                /*
+                   log_d("elem_size = {}, gl_type = {}, stride = {}, offset = {}",
+                   pCurAttrubute->elem_size(),
+                   vBuffersGLType[pCurAttrubute->buffer_ind()],
+                   pCurShape->stride(),
+                   offset);
+                 */
+                glVertexAttribPointer(itLocation->second,
+                                pCurAttrubute->elem_size(),
+                                pGLTypes[pCurAttrubute->buffer_ind()],
+                                false,
+                                pStride[pCurAttrubute->buffer_ind()],
+                                (const void *)offset);
+                glEnableVertexAttribArray(itLocation->second);
 
-                glBindVertexArray(0);
-                glDeleteBuffers(1, &index_buf_id);
-                glDeleteBuffers(buffers_cnt, &vBuffersID[0]);
-
-                log_d("shape[{}] name = '{}', triangles cnt = {}, vao_id = {}, texture id = {}, buffers_cnt = {}, vert attributes cnt = {}, min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
-                                shape_num,
-                                oShape.sName,
-                                oShape.triangles_cnt,
-                                oShape.vao_id,
-                                (oShape.pTex) ? oShape.pTex->GetID() : 0,
-                                buffers_cnt,
-                                pAttributes->Length(),
-                                oShape.oBBox.Min().x, oShape.oBBox.Min().y, oShape.oBBox.Min().z,
-                                oShape.oBBox.Max().x, oShape.oBBox.Max().y, oShape.oBBox.Max().z);
-
-                oMeshCtx.vShapes.emplace_back(std::move(oShape));
         }
-}
 
+        glBindVertexArray(0);
+        glDeleteBuffers(1, &index_buf_id);
+        glDeleteBuffers(buffers_cnt, &pGLID[0]);
 
-void Mesh::Clean() {
+        //___Start___ fill sub meshes
+        auto                  * pShapesFB        = pMesh->shapes();
+        size_t                  shapes_cnt       = pShapesFB->Length();
+        uint32_t                primitive_type;
 
-        for (auto & oShape : oMeshCtx.vShapes) {
+        //TODO rewrite
+        switch (pMesh->primitive_type()) {
 
-                glDeleteVertexArrays(1, &oShape.vao_id);
+                case FlatBuffers::PrimitiveType::GEOM_TRIANGLES:
+                        primitive_type = GL_TRIANGLES;
+                        break;
+                case FlatBuffers::PrimitiveType::GEOM_LINES:
+                        primitive_type = GL_LINES;
+                        break;
+                case FlatBuffers::PrimitiveType::GEOM_POINTS:
+                        primitive_type = GL_POINTS;
+                        break;
+                default:
+                        LocalClean(vao_id);
+                        throw(std::runtime_error(
+                                                fmt::format("unknown primitive_type: {}, mesh: '{}'",
+                                                        FlatBuffers::EnumNamePrimitiveType(pMesh->primitive_type()),
+                                                        sName)
+                                                ));
+        };
+
+        for (size_t shape_num = 0; shape_num < shapes_cnt; ++shape_num) {
+
+                auto pCurShape = pShapesFB->Get(shape_num);
+
+                vSubMeshes.emplace_back(
+                                vao_id,
+                                pCurShape->index_elem_count(),
+                                pCurShape->index_elem_start(),
+                                se_index_type,
+                                primitive_type );
+
+                vBBoxes.emplace_back(
+                                *reinterpret_cast<const glm::vec3 *>(&pCurShape->bbox()->min()),
+                                *reinterpret_cast<const glm::vec3 *>(&pCurShape->bbox()->max())
+                                );
         }
+
+        /** if we have more than one sub mesh, we need to store concatenated bounding box for mesh */
+        if (shapes_cnt > 1) {
+                vBBoxes.emplace_back(
+                        *reinterpret_cast<const glm::vec3 *>(&pMesh->bbox()->min()),
+                        *reinterpret_cast<const glm::vec3 *>(&pMesh->bbox()->max())
+                                );
+        }
+        //___End_____ fill sub meshes
+
+        const BoundingBox & oMeshBBox = vBBoxes.back();
+        log_d("shapes cnt = {}, triangles cnt = {}, vao_id = {}, buffers cnt = {}, vert attributes cnt = {}, min ({}, {}, {}), max({}, {}, {})",
+                        shapes_cnt,
+                        index_size / 3,
+                        vao_id,
+                        buffers_cnt,
+                        pAttributes->Length(),
+                        oMeshBBox.Min().x,
+                        oMeshBBox.Min().y,
+                        oMeshBBox.Min().z,
+                        oMeshBBox.Max().x,
+                        oMeshBBox.Max().y,
+                        oMeshBBox.Max().z
+                        );
+
 }
 
 std::string Mesh::Str() const {
 
-        return fmt::format("Mesh name: '{}', shapes cnt: {}, bbox: {}", sName, oMeshCtx.vShapes.size(), oMeshCtx.oBBox.Str());
+        return fmt::format("Mesh name: '{}', triangles: {}, shapes: {}, bbox: {}", sName, GetIndicesCnt() / 3, vSubMeshes.size(), GetBBox().Str());
 }
 
 }

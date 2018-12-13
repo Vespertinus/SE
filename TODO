@@ -92,4 +92,9 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 - Добавить авто построение настроек для конкретных ресурсов.
 
 - заменить OIS на SDL2, или glfw...?
+- ResourceManager создает объекты по пути или из данных (процедурно)
+- ResourceMap (Cache\Dict) держит список package'й, директорий и т.п. откуда какой ресурс брать по rid
+-- вызывает ResourceManager::Create после того как по id нашел соответствующий путь и возвращает готовый Resource
+
+
 

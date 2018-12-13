@@ -15,6 +15,8 @@ int main(int argc, char **argv) {
         gLogger = spdlog::stdout_logger_mt("G");
         gLogger->set_level(spdlog::level::debug);
 
+        SE::TEngine::Instance().Init<SE::Config>();
+
         SE::SysSettings_t oSettings;
 
         oSettings.oCamSettings.width 			= 1024;
@@ -34,7 +36,7 @@ int main(int argc, char **argv) {
         oSettings.oWindowSettings.title       = "Simple Engine DEMO (2010.05.13)";
         oSettings.sResourceDir                = "resource/";
 
-
+        SE::GetSystem<SE::Config>().sResourceDir = "resource/";
 
         try {
 

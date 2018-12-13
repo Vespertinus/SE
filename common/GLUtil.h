@@ -5,33 +5,31 @@ namespace SE {
 //TODO move to graphics sub system
 static const uint8_t MAX_TEXTURE_IMAGE_UNITS = 16;
 
-enum class TextureUnit : int32_t {
-        DIFFUSE         = 0,
-        NORMAL          = 1,
-        SPECULAR        = 2,
-        ENV             = 3,
-        SHADOW          = 4,
-        CUSTOM          = 7,
-        //DEPTH
-        //etc
-        //MAX_TEXTURE_IMAGE_UNITS = 16
-};
 
 static std::unordered_map<std::string, uint32_t> mAttributeLocation = {
-        { "Position",   0 },
-        { "Normal",     1 },
-        { "TexCoord0",  2 },
-        { "TexCoord1",  3 },
-        { "TexCoord2",  4 },
-        { "TexCoord3",  5 },
-        { "JointW",     6 },
-        { "MorphW0",    7 },
-        { "MorphW1",    8 },
-        { "Color",      9 },
-        //tangent etc
-        { "Custom0",    14},
-        { "Custom1",    15}
+        { "Position",           0 },
+        { "Normal",             1 },
+        { "TexCoord0",          2 },
+        { "TexCoord1",          3 },
+        { "TexCoord2",          4 },
+        { "TexCoord3",          5 },
+        { "Tangent",            3},
+        { "JointWeights",       4 },
+        { "JointIndices",       5 },
+        { "MorphPos0",          6 },
+        { "MorphNormal0",       7 },
+        { "MorphPos1",          8 },
+        { "MorphNormal1",       9 },
+        { "MorphPos2",          10 },
+        { "MorphNormal2",       11 },
+        { "MorphPos3",          12 },
+        { "MorphNormal3",       13 },
+        { "Color",              6 },
+        { "Custom0",            14},
+        { "Custom1",            15}
 };
+
+
 
 
 #define CheckOpenGLError() CheckGLError(__FILE__, __LINE__)

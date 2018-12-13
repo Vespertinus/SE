@@ -1,12 +1,7 @@
 
-include "Mesh.fbs";
+include "Component.fbs";
 
 namespace SE.FlatBuffers;
-
-table Entity {
-        name:string (required);
-        data:Mesh (required);
-}
 
 table Node {
 
@@ -14,8 +9,8 @@ table Node {
         translation:Vec3;
         rotation:Vec3;
         scale:Vec3;
+        components:[Component];
         children:[Node];
-        render_entity:[Entity];
         info:string;
 }
 

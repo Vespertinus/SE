@@ -40,10 +40,11 @@ Scene::~Scene() throw() { ;; }
 
 void Scene::Process() {
 
-        SE::HELPERS::DrawAxes(10);
+        SE::TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
-        glEnable(GL_TEXTURE_2D);
+        //SE::HELPERS::DrawAxes(10);
 
+/*
         SE::HELPERS::DrawBox(2,
                              2,
                              2,
@@ -59,13 +60,11 @@ void Scene::Process() {
                              0,
                              0,
                              pTex02->GetID());
+*/
 
-
-        pSceneTree->Draw();
-
-        glDisable(GL_TEXTURE_2D);
 }
 
+void Scene::PostRender() {}
 
 } //namespace SAMPLES
 

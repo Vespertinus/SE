@@ -37,8 +37,9 @@ OrthoScene::OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera) :
         pBrickShader->SetVariable("BrickPct",      glm::vec2(0.9, 0.85));
         pBrickShader->SetVariable("LightPosition", glm::vec3(5, -5, 10));
 */
-        pBrickShader->SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
-        glUseProgram(0);
+        SE::TRenderState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
+        //pBrickShader->SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
+        //glUseProgram(0);
 }
 
 OrthoScene::~OrthoScene() throw() { ;; }
@@ -77,9 +78,9 @@ void OrthoScene::Process() {
 /*        pBrickShader->SetVariable("NormalMatrix", mNormal);
         pBrickShader->SetVariable("MVMatrix", mModelView);*/
         pBrickShader->SetVariable("MVPMatrix", mModelViewProjection);
-        pBrickShader->SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
+        //pBrickShader->SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
 
-        pTestMesh->Draw();
+        //pTestMesh->Draw();
 
         glDisable(GL_TEXTURE_2D);
 
@@ -107,6 +108,8 @@ void OrthoScene::Process() {
         glEnd();
 
 }
+
+void OrthoScene::PostRender() {}
 
 
 } //namespace FUNNY_TEX

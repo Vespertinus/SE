@@ -19,7 +19,6 @@ do
 
 echo " $i"
 flatc -b -o "$1/shader/" $2/misc/ShaderComponent.fbs $i
-
 done
 
 echo "convert shader programms to sesp"
@@ -28,5 +27,14 @@ do
 
 echo " $i"
 flatc -b -o "$1/shader_program/" -I "`realpath $2/misc/`" "$2/misc/ShaderProgram.fbs" $i
+done
+
+
+echo "convert materials to semt"
+for i in `ls $1/material/*.json`
+do
+
+echo " $i"
+flatc -b -o "$1/material/" -I "`realpath $2/misc/`" "$2/misc/Material.fbs" $i
 
 done

@@ -102,6 +102,23 @@ template <class ... Args, class TVariant> auto Visit(TVariant && oVar, Args && .
 }
 
 
+template <class TTuple, typename TAction, std::size_t ... Indices>
+constexpr void TupleForEachImpl(TTuple && oTuple, TAction && oAction, std::index_sequence<Indices...>) {
+        using TProxy = int[];
+        (void)TProxy{1,
+                (oAction(std::get<Indices>(std::forward<TTuple>(oTuple))), void(), int{})...
+        };
+}
+
+template <typename TTuple, typename TAction>
+constexpr void TupleForEach(TTuple && oTuple, TAction && oAction) {
+
+        constexpr std::size_t size = std::tuple_size<std::remove_reference_t<TTuple>>::value;
+
+        TupleForEachImpl(std::forward<TTuple>(oTuple), std::forward<TAction>(oAction), std::make_index_sequence<size>{});
+}
+
+
 } //namespace MP
 
 #endif
