@@ -34,6 +34,11 @@ struct SysSettings_t {
 
 template <class TLoop > class OffScreenApplication {
 
+        /** global initialization before user code (Loop)*/
+        struct PreInit {
+
+                PreInit();
+        };
 
         SysSettings_t   oSettings;
         Camera          oCamera;
@@ -42,11 +47,6 @@ template <class TLoop > class OffScreenApplication {
         TLoop		oLoop;
         DummyTransposer oTranspose;
 
-        /** global initialization before user code (Loop)*/
-        struct PreInit {
-
-                PreInit();
-        };
         void Init();
 
         public:
