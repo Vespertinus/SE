@@ -1,12 +1,12 @@
 {
         "vertex" : {
-                "name" : "simple_vertex.sesl"
+                "name" : "shader/simple_vertex.sesl"
         },
         "geometry" : {
-                "name" : "wireframe_geometry.sesl"
+                "name" : "shader/wireframe_geometry.sesl"
         },
         "fragment" : {
-                "name" : "wireframe_frag.sesl"
+                "name" : "shader/wireframe_frag.sesl"
         }
 }
 

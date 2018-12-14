@@ -1,9 +1,9 @@
 {
         "vertex" : {
-                "name" : "imgui_vert.sesl"
+                "name" : "shader/imgui_vert.sesl"
         },
         "fragment" : {
-                "name" : "imgui_frag.sesl"
+                "name" : "shader/imgui_frag.sesl"
         }
 }
 
