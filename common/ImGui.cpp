@@ -66,10 +66,7 @@ void ImGuiWrapper::InitWndData() {
 
 void ImGuiWrapper::InitGLData() {
 
-        pShader  = CreateResource<SE::ShaderProgram>(
-                        "resource/shader_program/imgui.sesp",
-                        SE::ShaderProgram::Settings{"resource/shader/"}
-                        );
+        pShader  = CreateResource<SE::ShaderProgram>(GetSystem<Config>().sResourceDir + "shader_program/imgui.sesp");
 
         uint32_t pos_location,
                  uv_location,

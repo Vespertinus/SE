@@ -9,32 +9,18 @@ namespace SE {
 
 class ShaderComponent : public ResourceHolder {
 
-        public:
-
-        struct Settings {
-
-                //TODO incapsulate resource path in some obj
-                //std::string_view        sDependenciesDir;
-                //char                    splitter;
-                std::string        sDependenciesDir;
-        };
-
-        private:
-
         std::vector <ShaderComponent *> vDependencies;
         uint32_t                        gl_id;
         SE::FlatBuffers::ShaderType     type;
 
-        void Load(const SE::FlatBuffers::ShaderComponent * pShader, const Settings & oSettings);
+        void Load(const SE::FlatBuffers::ShaderComponent * pShader);
 
         public:
         ShaderComponent(const std::string & sName,
-                        const rid_t         new_rid,
-                        const Settings    & oSettings =  {});
+                        const rid_t         new_rid);
         ShaderComponent(const std::string & sName,
                         const rid_t         new_rid,
-                        const SE::FlatBuffers::ShaderComponent * pShader,
-                        const Settings   & oSettings = {});
+                        const SE::FlatBuffers::ShaderComponent * pShader);
         ~ShaderComponent() noexcept;
 
         uint32_t Get() const;

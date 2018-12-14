@@ -5,8 +5,7 @@
 namespace SE {
 
 ShaderComponent::ShaderComponent(const std::string & sName,
-                                 const rid_t new_rid,
-                                 const Settings & oSettings) :
+                                 const rid_t new_rid) :
         ResourceHolder(new_rid, sName),
         gl_id(0) {
 
@@ -38,21 +37,20 @@ ShaderComponent::ShaderComponent(const std::string & sName,
                 throw(std::runtime_error("failed to verify data in: " + sName));
         }
 
-        Load(SE::FlatBuffers::GetShaderComponent(&vBuffer[0]), oSettings);
+        Load(SE::FlatBuffers::GetShaderComponent(&vBuffer[0]));
 }
 
 ShaderComponent::ShaderComponent(const std::string & sName,
                                  const rid_t new_rid,
-                                 const SE::FlatBuffers::ShaderComponent * pShader,
-                                 const Settings & oSettings) :
+                                 const SE::FlatBuffers::ShaderComponent * pShader) :
         ResourceHolder(new_rid, sName),
         gl_id(0) {
 
-        Load(pShader, oSettings);
+        Load(pShader);
 }
 
 
-void ShaderComponent::Load(const SE::FlatBuffers::ShaderComponent * pShader, const Settings & oSettings) {
+void ShaderComponent::Load(const SE::FlatBuffers::ShaderComponent * pShader) {
 
         int status;
 
@@ -61,11 +59,12 @@ void ShaderComponent::Load(const SE::FlatBuffers::ShaderComponent * pShader, con
                 size_t dependencies_cnt = pDependenciesFB->Length();
                 vDependencies.reserve(dependencies_cnt);
 
+                auto & oConfig = GetSystem<Config>();
+
                 for (size_t i = 0; i < dependencies_cnt; ++i) {
                         ShaderComponent * pDependShader = CreateResource<ShaderComponent>(
-                                        oSettings.sDependenciesDir +
-                                        pDependenciesFB->Get(i)->c_str(),
-                                        oSettings);
+                                        oConfig.sResourceDir +
+                                        pDependenciesFB->Get(i)->c_str());
                         vDependencies.emplace_back(pDependShader);
                 }
         }

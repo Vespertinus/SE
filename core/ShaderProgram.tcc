@@ -67,8 +67,7 @@ static bool IsTexture(uint32_t gl_type) {
 }
 
 ShaderProgram::ShaderProgram(const std::string & sName,
-                             const rid_t         new_rid,
-                             const Settings    & oSettings) :
+                             const rid_t         new_rid) :
         ResourceHolder(new_rid, sName) {
 
         static const size_t max_file_size = 1024 * 1024 * 10;
@@ -99,16 +98,15 @@ ShaderProgram::ShaderProgram(const std::string & sName,
                 throw(std::runtime_error("failed to verify data in: " + sName));
         }
 
-        Load(SE::FlatBuffers::GetShaderProgram(&vBuffer[0]), oSettings);
+        Load(SE::FlatBuffers::GetShaderProgram(&vBuffer[0]));
 }
 
 ShaderProgram::ShaderProgram(const std::string & sName,
                              const rid_t         new_rid,
-                             const SE::FlatBuffers::ShaderProgram * pShaderProgram,
-                             const Settings   & oSettings) :
+                             const SE::FlatBuffers::ShaderProgram * pShaderProgram) :
         ResourceHolder(new_rid, sName) {
 
-        Load(pShaderProgram, oSettings);
+        Load(pShaderProgram);
 }
 
 ShaderProgram::~ShaderProgram() noexcept {
@@ -118,10 +116,11 @@ ShaderProgram::~ShaderProgram() noexcept {
         }
 }
 
-void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, const Settings & oSettings) {
+void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
 
         uint32_t shader_cnt = 2;
         int      status;
+        auto   & oConfig = GetSystem<Config>();
 
         auto GetShader = [&](const SE::FlatBuffers::Shader * pShaderFB) -> ShaderComponent * {
                 if (pShaderFB == nullptr) { return nullptr; }
@@ -129,14 +128,11 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram, cons
                 auto * pShaderDataFB = pShaderFB->data();
                 if (pShaderDataFB != nullptr) {
                         return CreateResource<ShaderComponent>(
-                                        oSettings.sShadersDir + pShaderFB->name()->c_str(),
-                                        pShaderDataFB,
-                                        ShaderComponent::Settings{ oSettings.sShadersDir } );
+                                        oConfig.sResourceDir + pShaderFB->name()->c_str(),
+                                        pShaderDataFB);
                 }
 
-                return CreateResource<ShaderComponent>(
-                                oSettings.sShadersDir + pShaderFB->name()->c_str() ,
-                                ShaderComponent::Settings{ oSettings.sShadersDir } );
+                return CreateResource<ShaderComponent>(oConfig.sResourceDir + pShaderFB->name()->c_str());
         };
 
         auto * pVertexShader    = GetShader(pShaderProgram->vertex());

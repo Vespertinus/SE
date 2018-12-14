@@ -516,10 +516,7 @@ VisualHelpers::VisualHelpers() {
         PrepareBBox();
 
         //TODO rewrite path handling after switching on global app settings
-        pShader  = CreateResource<SE::ShaderProgram>(
-                        "resource/shader_program/simple_color.sesp",
-                        SE::ShaderProgram::Settings{"resource/shader/"}
-                        );
+        pShader  = CreateResource<SE::ShaderProgram>(GetSystem<Config>().sResourceDir + "shader_program/simple_color.sesp");
 
 }
 

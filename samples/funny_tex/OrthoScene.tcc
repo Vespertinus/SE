@@ -25,9 +25,9 @@ OrthoScene::OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera) :
 
 
 
-        pSimpleShader = SE::CreateResource<SE::ShaderProgram>("resource/shader_program/simple.sesp", SE::ShaderProgram::Settings{"resource/shader/"});
-        //pBrickShader  = SE::CreateResource<SE::ShaderProgram>("resource/shader_program/brick.sesp", SE::ShaderProgram::Settings{"resource/shader/"});
-        pBrickShader  = SE::CreateResource<SE::ShaderProgram>("resource/shader_program/simple_tex.sesp", SE::ShaderProgram::Settings{"resource/shader/"});
+        pSimpleShader = SE::CreateResource<SE::ShaderProgram>("resource/shader_program/simple.sesp");
+        //pBrickShader  = SE::CreateResource<SE::ShaderProgram>("resource/shader_program/brick.sesp");
+        pBrickShader  = SE::CreateResource<SE::ShaderProgram>("resource/shader_program/simple_tex.sesp");
 
         pBrickShader->Use();
 /*

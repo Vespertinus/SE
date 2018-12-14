@@ -86,8 +86,7 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
         //setup shader
         if (pMaterial->shader()->path() != nullptr) {
                 pShader  = CreateResource<ShaderProgram>(
-                                GetSystem<Config>().sResourceDir + pMaterial->shader()->path()->c_str(),
-                                SE::ShaderProgram::Settings{"resource/shader/"} );
+                                GetSystem<Config>().sResourceDir + pMaterial->shader()->path()->c_str() );
         }
         else if (pMaterial->shader()->shader() != nullptr) {
                 //TODO later

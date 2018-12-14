@@ -38,12 +38,6 @@ struct ShaderVariable {
 
 class ShaderProgram : public ResourceHolder {
 
-        public:
-        struct Settings {
-        //???
-                std::string        sShadersDir;
-        };
-
         private:
 
         std::unordered_map<StrID, ShaderVariable> mVariables;
@@ -52,16 +46,14 @@ class ShaderProgram : public ResourceHolder {
         uint32_t used_system_variables{};
         uint16_t used_texture_units{};
 
-        void Load(const FlatBuffers::ShaderProgram * pShaderProgram, const Settings & oSettings);
+        void Load(const FlatBuffers::ShaderProgram * pShaderProgram);
 
         public:
         ShaderProgram(const std::string & sName,
-                      const rid_t         new_rid,
-                      const Settings    & oSettings =  {});
+                      const rid_t         new_rid);
         ShaderProgram(const std::string & sName,
                       const rid_t         new_rid,
-                      const SE::FlatBuffers::ShaderProgram * pShaderProgram,
-                      const Settings   & oSettings = {});
+                      const SE::FlatBuffers::ShaderProgram * pShaderProgram);
         ~ShaderProgram() noexcept;
 
         void                    Use() const;
