@@ -46,6 +46,12 @@ Material::Material(
         Load(pMaterial);
 }
 
+Material::Material(const std::string & sName, const rid_t new_rid, SE::ShaderProgram * pNewShader) :
+        ResourceHolder(new_rid, sName),
+        pShader(pNewShader) {
+
+}
+
 std::string Material::Str() const {
 
         return fmt::format("Material name: '{}', shader: '{}', textures cnt: {}, variables cnt: {}",
@@ -164,9 +170,49 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
                 mTextures.emplace(static_cast<TextureUnit>(pTextureHolder->unit()), pTex);
         }
 
-        //fill shader variables
+        //TODO fill shader variables
 
 }
+
+ret_code_t Material::SetTexture(const StrID name, TTexture * pTex) {
+
+        auto oTexInfo = pShader->GetTextureInfo(name);
+
+        if (!oTexInfo) {
+                log_e("can't find texture with strid = '{}' in shader program: '{}'",
+                                name,
+                                pShader->Name());
+                return uWRONG_INPUT_DATA;
+        }
+
+        mTextures.emplace(oTexInfo->get().unit_index, pTex);
+
+        return uSUCCESS;
+}
+
+ret_code_t Material::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
+
+        if (!pShader->OwnTextureUnit(unit_index)) {
+                uint32_t unit_num = static_cast<uint32_t>(unit_index);
+                log_e("texture unit {} unused, shader program: '{}'",
+                                unit_num,
+                                pShader->Name());
+                return uWRONG_INPUT_DATA;
+        }
+
+        mTextures.emplace(unit_index, pTex);
+        return uSUCCESS;
+}
+
+TTexture * Material::GetTexture(const TextureUnit unit_index) const {
+
+        auto it = mTextures.find(unit_index);
+        if (it != mTextures.end()) {
+                return it->second;
+        }
+        return nullptr;
+}
+
 
 }
 

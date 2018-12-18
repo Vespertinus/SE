@@ -14,7 +14,8 @@ class Material : public ResourceHolder {
         SE::ShaderProgram                             * pShader;
         //TODO later rewrite on Uniform Buffer Object
         std::unordered_map<StrID, TVariant>             mShaderVariables;
-        std::unordered_map<TextureUnit, TTexture *>           mTextures;
+        //std::array<TTexture *, max texture units> vTextures; ...
+        std::unordered_map<TextureUnit, TTexture *>     mTextures;
 
         void Load(const SE::FlatBuffers::Material * pMaterial);
 
@@ -28,10 +29,11 @@ class Material : public ResourceHolder {
         //Material from input data (ctx\settings), like Texture
 
         void                            SetShader(SE::ShaderProgram * pNewShader);
-        ret_code_t                      SetTexture(const StrID name, const TTexture * pTex);
-        //ret_code_t                      SetTexture(const TextureUnit unit_index, const TTexture * pTex);
+        ret_code_t                      SetTexture(const StrID name, TTexture * pTex);
+        ret_code_t                      SetTexture(const TextureUnit unit_index, TTexture * pTex);
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
         void                            Apply() const;
+        TTexture *                      GetTexture(const TextureUnit unit_index) const;
 
         std::string     Str() const;
 };
