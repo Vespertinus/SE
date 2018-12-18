@@ -26,7 +26,7 @@ for i in `ls $1/shader_program/*.json`
 do
 
 echo " $i"
-flatc -b -o "$1/shader_program/" -I "`realpath $2/misc/`" "$2/misc/ShaderProgram.fbs" $i
+flatc -b -o "$1/shader_program/" -I "`readlink -f $2/misc/`" "$2/misc/ShaderProgram.fbs" $i
 done
 
 
@@ -35,6 +35,6 @@ for i in `ls $1/material/*.json`
 do
 
 echo " $i"
-flatc -b -o "$1/material/" -I "`realpath $2/misc/`" "$2/misc/Material.fbs" $i
+flatc -b -o "$1/material/" -I "`readlink -f $2/misc/`" "$2/misc/Material.fbs" $i
 
 done

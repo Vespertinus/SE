@@ -786,7 +786,7 @@ inline bool VerifySizePrefixedMaterialBuffer(
 }
 
 inline const char *MaterialExtension() {
-  return "semat";
+  return "semt";
 }
 
 inline void FinishMaterialBuffer(
