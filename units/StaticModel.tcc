@@ -109,7 +109,7 @@ void StaticModel::FillRenderCommands() {
         vRenderCommands.reserve(vShapes.size());
 
         for (auto & oSubMesh : vShapes) {
-                vRenderCommands.emplace_back(&oSubMesh, pMaterial, pNode->GetTransform().GetWorld());
+                vRenderCommands.emplace_back(&oSubMesh, pMaterial, pNode->GetTransform());
         }
 
         //THINK if already enabled -> invalidate render commands list???

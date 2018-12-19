@@ -6,10 +6,10 @@ namespace SE {
 RenderCommand::RenderCommand(
                 const GeometryEntity * pNewGeom,
                 const Material * pNewMaterial,
-                const glm::mat4 & oTransform) :
+                const Transform & oNewTransform) :
         pGeom(pNewGeom),
         pMaterial(pNewMaterial),
-        oWorldTransform(oTransform)  {
+        oTransform(oNewTransform)  {
 
 
         //TEMP, FIXME
@@ -26,7 +26,7 @@ RenderCommand::RenderCommand(
 void RenderCommand::Draw() const {
 
         pMaterial->Apply();
-        TRenderState::Instance().SetTransform(oWorldTransform);
+        TRenderState::Instance().SetTransform(oTransform.GetWorld());
         pGeom->Draw();
 }
 
