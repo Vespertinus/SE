@@ -2,8 +2,8 @@
 namespace SE {
 
 StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode, bool enabled) :
-        pMesh(CreateResource<SE::TMesh>("resource/mesh/default-01.sems")),
-        pMaterial(CreateResource<SE::Material>("resource/material/wireframe.semt")),
+        pMesh(CreateResource<SE::TMesh>(GetSystem<Config>().sResourceDir + "mesh/default-01.sems")),
+        pMaterial(CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/wireframe.semt")),
         pNode(pNewNode) {
 
         FillRenderCommands();
@@ -19,6 +19,7 @@ StaticModel::StaticModel(
                 const SE::FlatBuffers::StaticModel * pModel) : pNode(pNewNode) {
 
         //TODO
+        const auto & oConfig = GetSystem<Config>();
 
         if (pModel->mesh()->path() != nullptr) {
                 pMesh = CreateResource<TMesh>(pModel->mesh()->path()->c_str());
@@ -36,7 +37,7 @@ StaticModel::StaticModel(
 
         if (pModel->material()) {
                 if (pModel->material()->path() != nullptr) {
-                        pMaterial = CreateResource<Material>(pModel->material()->path()->c_str());
+                        pMaterial = CreateResource<Material>(oConfig.sResourceDir + pModel->material()->path()->c_str());
                 }
                 else if (pModel->material()->name() != nullptr && pModel->material()->material() != nullptr) {
                         pMaterial = CreateResource<Material>(
@@ -51,7 +52,7 @@ StaticModel::StaticModel(
                 }
         }
         else {
-                pMaterial = CreateResource<SE::Material>("resource/material/wireframe.semt");
+                pMaterial = CreateResource<SE::Material>(oConfig.sResourceDir + "material/wireframe.semt");
         }
 
         FillRenderCommands();
