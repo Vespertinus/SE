@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
                         ("to_scene",     bpo::value<bool>()->default_value(false),              "write mesh as scene")
                         ("info_prop",    bpo::value<bool>()->default_value(true),               "import custom data from fbx node property ('info') as string")
                         ("blendshape",   bpo::value<bool>()->default_value(false),              "import blend shape (morph target)")
+                        ("disable_nodes", bpo::value<bool>()->default_value(false),             "all scene nodes stored in disabled state")
 
                         ;
 
@@ -129,6 +130,9 @@ int main(int argc, char **argv) {
                 }
                 {
                         oCtx.import_blend_shape = vm["blendshape"].as<bool>();
+                }
+                {
+                        oCtx.disable_nodes = vm["disable_nodes"].as<bool>();
                 }
         }
         catch (std::exception & ex) {

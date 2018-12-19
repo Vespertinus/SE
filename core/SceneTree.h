@@ -55,20 +55,23 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
         SceneTree(const std::string & sName, const rid_t new_rid);
         ~SceneTree() noexcept;
 
-        TSceneNode Create(const std::string_view sNewName = "");
-        TSceneNode Create(TSceneNode pParent, const std::string_view sNewName = "");
+        TSceneNode      Create(const std::string_view sNewName = "", const bool enabled = true);
+        TSceneNode      Create(TSceneNode pParent, const std::string_view sNewName = "", const bool enabled = true);
         //TSceneNode * CloneNode(TSceneNode * pNode);
-        TSceneNode FindFullName(const StrID sid) const;
-        const std::vector <TSceneNode> * FindLocalName(const StrID sid) const;
-        TSceneNode GetRoot();
+        TSceneNode      FindFullName(const StrID sid) const;
+        const std::vector <TSceneNode> *
+                        FindLocalName(const StrID sid) const;
+        TSceneNode      GetRoot();
         //TODO Destroy recursive
-        void         HandleNodeUnlink(TSceneNodeExact * pNode);
+        void            HandleNodeUnlink(TSceneNodeExact * pNode);
         //HandleNodeAdd ??? call in AddChild
-        void         Print();
-        bool         UpdateNodeName(TSceneNode pNode,
-                                    const std::string_view sNewName,
-                                    const std::string_view sNewFullName);
+        void            Print();
+        bool            UpdateNodeName(TSceneNode pNode,
+                                       const std::string_view sNewName,
+                                       const std::string_view sNewFullName);
         //void         Draw() const;//???component based.. -> SFINAE check per component method Draw and DrawDDebug
+        void            EnableAll();
+        void            DisableAll();
 };
 
 

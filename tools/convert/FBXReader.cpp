@@ -697,6 +697,9 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
                 oNodeData.scale.z = scaling[2];
         }
 
+        if (oCtx.disable_nodes) {
+                oNodeData.enabled = false;
+        }
         oNodeData.sName = pNode->GetName();
 
         log_d("node translation: {}, {}, {}", oNodeData.translation.x, oNodeData.translation.y, oNodeData.translation.z);

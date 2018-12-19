@@ -56,7 +56,6 @@ StaticModel::StaticModel(
         }
 
         FillRenderCommands();
-        Enable();
 }
 
 StaticModel::~StaticModel() noexcept {

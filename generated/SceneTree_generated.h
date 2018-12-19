@@ -27,7 +27,8 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_SCALE = 10,
     VT_COMPONENTS = 12,
     VT_CHILDREN = 14,
-    VT_INFO = 16
+    VT_INFO = 16,
+    VT_ENABLED = 18
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -50,6 +51,9 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *info() const {
     return GetPointer<const flatbuffers::String *>(VT_INFO);
   }
+  bool enabled() const {
+    return GetField<uint8_t>(VT_ENABLED, 1) != 0;
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
@@ -65,6 +69,7 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyVectorOfTables(children()) &&
            VerifyOffset(verifier, VT_INFO) &&
            verifier.Verify(info()) &&
+           VerifyField<uint8_t>(verifier, VT_ENABLED) &&
            verifier.EndTable();
   }
 };
@@ -93,6 +98,9 @@ struct NodeBuilder {
   void add_info(flatbuffers::Offset<flatbuffers::String> info) {
     fbb_.AddOffset(Node::VT_INFO, info);
   }
+  void add_enabled(bool enabled) {
+    fbb_.AddElement<uint8_t>(Node::VT_ENABLED, static_cast<uint8_t>(enabled), 1);
+  }
   explicit NodeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -113,7 +121,8 @@ inline flatbuffers::Offset<Node> CreateNode(
     const Vec3 *scale = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Component>>> components = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Node>>> children = 0,
-    flatbuffers::Offset<flatbuffers::String> info = 0) {
+    flatbuffers::Offset<flatbuffers::String> info = 0,
+    bool enabled = true) {
   NodeBuilder builder_(_fbb);
   builder_.add_info(info);
   builder_.add_children(children);
@@ -122,6 +131,7 @@ inline flatbuffers::Offset<Node> CreateNode(
   builder_.add_rotation(rotation);
   builder_.add_translation(translation);
   builder_.add_name(name);
+  builder_.add_enabled(enabled);
   return builder_.Finish();
 }
 
@@ -133,7 +143,8 @@ inline flatbuffers::Offset<Node> CreateNodeDirect(
     const Vec3 *scale = 0,
     const std::vector<flatbuffers::Offset<Component>> *components = nullptr,
     const std::vector<flatbuffers::Offset<Node>> *children = nullptr,
-    const char *info = nullptr) {
+    const char *info = nullptr,
+    bool enabled = true) {
   return SE::FlatBuffers::CreateNode(
       _fbb,
       name ? _fbb.CreateString(name) : 0,
@@ -142,7 +153,8 @@ inline flatbuffers::Offset<Node> CreateNodeDirect(
       scale,
       components ? _fbb.CreateVector<flatbuffers::Offset<Component>>(*components) : 0,
       children ? _fbb.CreateVector<flatbuffers::Offset<Node>>(*children) : 0,
-      info ? _fbb.CreateString(info) : 0);
+      info ? _fbb.CreateString(info) : 0,
+      enabled);
 }
 
 inline const SE::FlatBuffers::Node *GetNode(const void *buf) {

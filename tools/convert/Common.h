@@ -118,6 +118,7 @@ struct NodeData {
         std::vector<NodeData>   vChildren;
         std::vector<TComponent> vComponents;
         std::string             sInfo;
+        bool                    enabled = true;
 };
 
 
@@ -149,6 +150,7 @@ struct ImportCtx {
         bool                    flip_yz;
         bool                    import_info_prop;
         bool                    import_blend_shape;
+        bool                    disable_nodes;
         /** stats */
         uint32_t                node_cnt;
         uint32_t                mesh_cnt;

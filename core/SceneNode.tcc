@@ -3,12 +3,12 @@ namespace SE  {
 
 
 template <class ... TComponents > SceneNode<TComponents ...>::
-        SceneNode(const std::string_view sNewName, TSceneTree * pNewScene) :
+        SceneNode(const std::string_view sNewName, TSceneTree * pNewScene, const bool enabled) :
                 pParent(nullptr),
                 sName(sNewName),
                 pScene(pNewScene),
                 user_flags(0),
-                internal_flags(STATE_ENABLED) {
+                internal_flags(enabled ? STATE_ENABLED : 0) {
 
         log_d("create node: '{}'", sName);
 }
@@ -391,7 +391,12 @@ template <class ... TComponents>
         }
 
         try {
-                vComponents.emplace_back(std::make_unique<TComponent>(this, std::forward <TArgs...>(oArgs...)));
+                auto pComponent = std::make_unique<TComponent>(this, std::forward <TArgs...>(oArgs...));
+                if (internal_flags & STATE_ENABLED) {
+                        pComponent->Enable();
+                }
+
+                vComponents.emplace_back(std::move(pComponent));
         }
         catch(std::exception & ex) {
                 log_e("got exception, description = '{}', name: '{}'", ex.what(), sName);

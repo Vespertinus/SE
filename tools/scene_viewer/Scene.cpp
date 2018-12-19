@@ -21,6 +21,10 @@ Scene::Scene(const Settings & oNewSettings, SE::Camera & oCurCamera) :
         oCamera.SetPos(8, 8, 4);
         oCamera.LookAt(0.1, 0.1, 0.1);
 
+        if (oSettings.enable_all) {
+                pSceneTree->EnableAll();
+        }
+
         pSceneTree->Print();
 }
 

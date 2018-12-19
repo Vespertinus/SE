@@ -13,6 +13,7 @@ class Scene {
         struct Settings {
                 const std::string & sScenePath;
                 bool  vdebug;
+                bool  enable_all;
         };
 
         private:

@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
         SE::SysSettings_t oSettings;
         string            sScenePath;
         bool              vdebug;
+        bool              enable_all;
 
 
         try {
@@ -35,6 +36,7 @@ int main(int argc, char **argv) {
                         ("ortho",        bpo::value<bool>()->default_value(false),              "orthogonal projection")
                         ("resource",     bpo::value<string>()->default_value("resource/"),      "resource dir (<dir path>)")
                         ("vdebug",       bpo::value<bool>()->default_value(false),              "visual debug helpers")
+                        ("enable_all",   bpo::value<bool>()->default_value(false),              "enable all disabled nodes")
                         ;
 
                 bpo::variables_map vm;
@@ -81,7 +83,8 @@ int main(int argc, char **argv) {
                 if (vm.count("scene") ) {
                         sScenePath  = vm["scene"].as<string>();
                 }
-                vdebug = vm["vdebug"].as<bool>();
+                vdebug     = vm["vdebug"].as<bool>();
+                enable_all = vm["enable_all"].as<bool>();
 
                 SE::TEngine::Instance().Init<SE::Config>();
 
@@ -126,7 +129,7 @@ int main(int argc, char **argv) {
 
 
         try {
-                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath, vdebug});
+                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath, vdebug, enable_all});
         }
         catch (std::exception & ex) {
                 log_e("exception catched = {}", ex.what());

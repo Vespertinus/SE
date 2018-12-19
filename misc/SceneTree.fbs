@@ -12,6 +12,7 @@ table Node {
         components:[Component];
         children:[Node];
         info:string;
+        enabled:bool = true;
 }
 
 root_type Node;

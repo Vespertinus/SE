@@ -39,7 +39,8 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
 
         protected:
         SceneNode(const std::string_view sNewName,
-                  TSceneTree * pNewScene);
+                  TSceneTree * pNewScene,
+                  const bool enabled);
         ~SceneNode() noexcept;
 
         ret_code_t              SetParent(TSceneNodeExact * pNewParent);
@@ -98,6 +99,8 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
                 -- public only AddChild and Unlink?
 
                 TODO UpdateNodeName on every link changes..
+
+                enable \ disable \ is enabled per component
         */
 
         void                    RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles);

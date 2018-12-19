@@ -7,7 +7,7 @@ template <class ... TComponents > SceneTree<TComponents ...>::SceneTree(
                 const std::string & sName,
                 const rid_t new_rid) :
         ResourceHolder(new_rid, sName),
-        pRoot(std::make_shared<NodeWrapper>("root", this)) {
+        pRoot(std::make_shared<NodeWrapper>("root", this, true)) {
 
         mNamedNodes.emplace(pRoot->GetName(), pRoot);
         mLocalNamedNodes.emplace(pRoot->GetName(), std::vector<TSceneNode>(1, pRoot) );
@@ -20,9 +20,9 @@ template <class ... TComponents > SceneTree<TComponents ...>::~SceneTree() noexc
 }
 
 template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
-         Create(TSceneNode pParent, const std::string_view sNewName) {
+         Create(TSceneNode pParent, const std::string_view sNewName, const bool enabled) {
 
-         TSceneNode pNode = std::make_shared<NodeWrapper>(sNewName, this);
+         TSceneNode pNode = std::make_shared<NodeWrapper>(sNewName, this, enabled);
          if (auto ret = pParent->AddChild(pNode); ret != uSUCCESS) {
                  return nullptr;
          }
@@ -32,9 +32,9 @@ template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode
 }
 
 template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
-         Create(const std::string_view sNewName) {
+         Create(const std::string_view sNewName, const bool enabled) {
 
-         return Create(pRoot, sNewName);
+         return Create(pRoot, sNewName, enabled);
 }
 
 template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
@@ -179,7 +179,7 @@ template <class ... TComponents > ret_code_t SceneTree<TComponents ...>::
                 log_d("root node name: {}", sSrcName);
         }
         else {
-                pDstNode = Create(pParent, sSrcName);
+                pDstNode = Create(pParent, sSrcName, pSrcNode->enabled());
                 if (!pDstNode) {
                         log_e("failed to create node: '{}'", sSrcName);
                         return uWRONG_INPUT_DATA;
@@ -322,6 +322,26 @@ template <class ... TComponents > bool SceneTree<TComponents ...>::
         }
 
         return true;
+}
+
+template <class ... TComponents > void SceneTree<TComponents ...>::EnableAll() {
+
+        pRoot->DepthFirstWalk([](auto & oNode) {
+
+                        oNode.Enable();
+                        return true;
+        });
+
+}
+
+template <class ... TComponents > void SceneTree<TComponents ...>::DisableAll() {
+
+        pRoot->DepthFirstWalk([](auto & oNode) {
+
+                        oNode.Disable();
+                        return true;
+        });
+
 }
 
 } //namespace SE

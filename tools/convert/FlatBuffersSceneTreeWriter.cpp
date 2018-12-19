@@ -58,7 +58,8 @@ static std::tuple<flatbuffers::Offset<Node>, ret_code_t> SerializeNode(
                           &scale_fb,
                           vComponents.size() ?   oBuilder.CreateVector(vComponents) : 0,
                           vChildren.size() ? oBuilder.CreateVector(vChildren) : 0,
-                          oNode.sInfo.empty() ? 0 : oBuilder.CreateString(oNode.sInfo) ),
+                          oNode.sInfo.empty() ? 0 : oBuilder.CreateString(oNode.sInfo),
+                          oNode.enabled),
                  uSUCCESS
         };
 
