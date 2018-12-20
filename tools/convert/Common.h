@@ -31,11 +31,12 @@ struct ShapeData {
 struct BlendShapeData {
         /*TODO currently only position stored*/
 
-        std::vector<float>       vBuffer;
-        std::vector<std::string> vNames;
-        std::vector<float>       vDefaultWeights;
-        uint32_t                 vertices_cnt;
+        std::vector<float>      vBuffer;
+        //std::vector<std::string> vNames;
+        std::vector<float>      vDefaultWeights;
+        //uint32_t                 vertices_cnt;
         //std::vector<VertexAttribute>    vAttributes ?? pos, normal, tangent
+        std::string             sName;
 };
 
 

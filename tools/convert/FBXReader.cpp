@@ -290,17 +290,12 @@ data layout inside buffer:
                                         pBlendShapeChannel->GetName(),
                                         pBlendShapeChannel->DeformPercent.Get());
 
-                        oBlendShapeData.vNames.emplace_back(pBlendShapeChannel->GetName());
                         oBlendShapeData.vDefaultWeights.emplace_back(pBlendShapeChannel->DeformPercent.Get());
-                        /*
-                        uint32_t target_shape_cnt = pBlendShapeChannel->GetTargetShapeCount();
-                        if (target_shape_cnt != 1) {
-                                log_e("BlendShape channel: '{}' got {} target shapes count, support only 1, without in between shapes",
-                                                pBlendShapeChannel->GetName(),
-                                                target_shape_cnt);
-                                return uWRONG_INPUT_DATA;
+                        if (!oBlendShapeData.sName.empty()) {
+                                oBlendShapeData.sName += "|";
                         }
-                        */
+                        oBlendShapeData.sName += pBlendShapeChannel->GetName();
+                        
                         FbxShape*       pShape            = pBlendShapeChannel->GetTargetShape(0);
                         int32_t         vertices_cnt      = pShape->GetControlPointsCount();
                         FbxVector4    * pBSControlPoints  = pShape->GetControlPoints();

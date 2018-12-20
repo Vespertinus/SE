@@ -44,7 +44,7 @@ TComponentOffset SerializeModel(
         using FBVariable = std::tuple<float, Vec2 *, Vec3 *, Vec4 *, UVec2 *, UVec3 *, UVec4 *>;
         std::tuple<Vec2, Vec3, Vec4, UVec2, UVec3, UVec4> oValueStorage;
 
-        if (oModel.oBlendShape.vNames.size() == 0) { //StaticModel
+        if (oModel.oBlendShape.vDefaultWeights.size() == 0) { //StaticModel
 
                 flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material_holder_fb = 0;
 

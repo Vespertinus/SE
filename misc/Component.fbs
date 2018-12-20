@@ -15,8 +15,9 @@ table StaticModel {
 
 table AnimatedModel {
         mesh:MeshHolder (required);
-        material:MaterialHolder (required);
-        tbo:TextureHolder (required);//or as vertex buffer
+        material:MaterialHolder;
+        blendshapes:TextureHolder (required);//or as vertex buffer
+        blendshapes_weights:[float] (required);
 }
 
 //Component wrappers
