@@ -126,6 +126,8 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
 
         void                    Disable();
         void                    Enable();
+        void                    DisableRecursive();
+        void                    EnableRecursive();
 };
 
 } //namespace SE

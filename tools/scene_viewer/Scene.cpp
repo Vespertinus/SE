@@ -199,6 +199,25 @@ void Scene::ShowGUI() {
                         cur_rot_around = glm::vec3(0);
                 }
 
+                //blendshape values:
+                if (auto * pComponent = pCurNode->GetComponent<SE::AnimatedModel>(); pComponent) {
+                        ImGui::Separator();
+                        static std::vector<float> vWeights;
+                        vWeights.clear();
+                        vWeights.reserve(pComponent->BlendShapesCnt());
+
+                        for (uint8_t i = 0; i < pComponent->BlendShapesCnt(); ++i) {
+                                vWeights.emplace_back(pComponent->GetWeight(i));
+                                ImGui::DragFloat(fmt::format("blendshape[{}]", i).c_str(),   &vWeights[i], 0.01, 0, 1);
+                        }
+
+                        for (uint8_t i = 0; i < pComponent->BlendShapesCnt(); ++i) {
+                                if (vWeights[i] != pComponent->GetWeight(i)) {
+                                        pComponent->SetWeight(i, vWeights[i]);
+                                }
+                        }
+                }
+
         }
 
         ImGui::Separator();
@@ -230,13 +249,15 @@ void Scene::ShowGUI() {
                                 }
                         );
 
-                        bool hided = oNode.GetFlags() & NODE_HIDE;
-                        if (ImGui::Button((hided) ? "show" : "hide")) {
-                                if (hided) {
+                        bool show = oNode.GetFlags() & NODE_HIDE;
+                        if (ImGui::Button((show) ? "show" : "hide")) {
+                                if (show) {
                                         oNode.ClearFlags(NODE_HIDE);
+                                        oNode.EnableRecursive();
                                 }
                                 else {
                                         oNode.SetFlags(NODE_HIDE);
+                                        oNode.DisableRecursive();
                                 }
                         }
 

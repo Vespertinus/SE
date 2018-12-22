@@ -1,0 +1,41 @@
+type: VERTEX
+source:
+ - |
+        #version 150
+
+        in vec4 Position;
+
+        uniform samplerBuffer BufferTex;
+        uniform mat4 MVPMatrix;
+        uniform mat4 MVMatrix;
+        //TODO rewrite after switching on uniform buffers
+        uniform float BS_1W;
+        uniform float BS_2W;
+
+        const int channels_cnt = 2;
+
+        out vec4        DiffuseColor;
+
+        void main() {
+
+                vec4 bs1;
+                vec4 bs2;
+
+                bs1.x = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 0).x;
+                bs1.y = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 1).x;
+                bs1.z = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 2).x;
+                bs1.w = 1;
+
+                bs2.x = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 3 + 0).x;
+                bs2.y = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 3 + 1).x;
+                bs2.z = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 3 + 2).x;
+                bs2.w = 1;
+
+                DiffuseColor = BS_1W * bs1;
+
+                float neutral_pos_weight = clamp(1.0 - BS_1W - BS_2W, 0.0, 1.0);
+                //vec4 BlendedPosition = BS_1W * bs1 + BS_2W * bs2 + neutral_pos_weight * Position;
+                vec4 BlendedPosition = BS_1W * (bs1 + Position) + BS_2W * (bs2 + Position) + neutral_pos_weight * Position;
+
+                gl_Position = MVPMatrix * (MVMatrix * BlendedPosition);
+        }

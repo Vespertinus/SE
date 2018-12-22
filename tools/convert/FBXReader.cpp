@@ -261,6 +261,8 @@ static ret_code_t ImportBlendShapes(
                 bs_total_cnt += bs_channel_cnt;
         }
 
+        if (bs_total_cnt == 0) { return uSUCCESS; }
+
         size_t total_elements_cnt = bs_total_cnt * remaped_vertices_cnt * 3 /* position */;
         if (total_elements_cnt * sizeof (float) >= (100 * 1024 * 1024)) {
                 log_e("do you really want to allocate > 100mb ({} bytes) for {} blend shapes channels, each {} vertices",
@@ -269,7 +271,10 @@ static ret_code_t ImportBlendShapes(
                                 remaped_vertices_cnt);
                 return uMEMORY_ALLOCATION_ERROR;
         }
-        log_d("total blend shape channels: {}, vertices cnt: {}", bs_total_cnt, remaped_vertices_cnt);
+        log_d("total blend shape channels: {}, vertices cnt: {}, bs buffer size: {}",
+                        bs_total_cnt,
+                        remaped_vertices_cnt,
+                        total_elements_cnt);
         oBlendShapeData.vBuffer.resize(total_elements_cnt);
 
 /**
@@ -295,7 +300,7 @@ data layout inside buffer:
                                 oBlendShapeData.sName += "|";
                         }
                         oBlendShapeData.sName += pBlendShapeChannel->GetName();
-                        
+
                         FbxShape*       pShape            = pBlendShapeChannel->GetTargetShape(0);
                         int32_t         vertices_cnt      = pShape->GetControlPointsCount();
                         FbxVector4    * pBSControlPoints  = pShape->GetControlPoints();
@@ -323,7 +328,7 @@ data layout inside buffer:
 
                                 for (auto new_index : it->second) {
 
-                                        cur_pos = new_index * bs_total_cnt + bs_cur * 3;
+                                        cur_pos = new_index * bs_total_cnt * 3 + bs_cur * 3;
                                         /*
                                         log_d("cur_pos: {}, diff: ({}, {}, {})",
                                                         cur_pos,

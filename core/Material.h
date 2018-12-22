@@ -34,21 +34,25 @@ class Material : public ResourceHolder {
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
         void                            Apply() const;
         TTexture *                      GetTexture(const TextureUnit unit_index) const;
+        ShaderProgram *                 GetShader() const;
 
         std::string     Str() const;
 };
 
 
-template <class T> ret_code_t   Material::SetVariable(const StrID name, const T & val) {
+template <class T> ret_code_t Material::SetVariable(const StrID name, const T & val) {
 
         //TODO check variable type
         if (!pShader->OwnVariable(name)) {
                 log_w("shader '{}' does not have variable: '{}'", pShader->Name(), name);
                 return uWRONG_INPUT_DATA;
         }
-        mShaderVariables.emplace(name, val);
+        mShaderVariables.insert_or_assign(name, val);
         return uSUCCESS;
 }
+
+
+TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTexHolder);
 
 
 } //namespace SE

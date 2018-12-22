@@ -76,6 +76,7 @@ namespace SE {
 
 //forward components
 class StaticModel;
+class AnimatedModel;
 
 
 //renderable components list
@@ -83,7 +84,7 @@ class StaticModel;
 //engine subsytem types
 
 //FIXME rewrite on custom component handling
-using TVisibilityManager = AllVisible<StaticModel>;
+using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 using TRenderer = Renderer<TVisibilityManager>;
 
 //singleton
@@ -96,14 +97,14 @@ using TEngine = Loki::SingletonHolder<Engine<Config, TRenderer/*, TRenderState, 
 
 namespace SE {
 
-using TSceneTree = SceneTree<StaticModel>;
+using TSceneTree = SceneTree<StaticModel, AnimatedModel>;
 
 }
 
 // ___Start___ include components headers
 
 #include <StaticModel.h>
-//#include <AnimatedModel.h>
+#include <AnimatedModel.h>
 // ___End_____ include components headers
 
 

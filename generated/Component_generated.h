@@ -135,7 +135,8 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_MESH = 4,
     VT_MATERIAL = 6,
-    VT_TBO = 8
+    VT_BLENDSHAPES = 8,
+    VT_BLENDSHAPES_WEIGHTS = 10
   };
   const MeshHolder *mesh() const {
     return GetPointer<const MeshHolder *>(VT_MESH);
@@ -143,17 +144,22 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const MaterialHolder *material() const {
     return GetPointer<const MaterialHolder *>(VT_MATERIAL);
   }
-  const TextureHolder *tbo() const {
-    return GetPointer<const TextureHolder *>(VT_TBO);
+  const TextureHolder *blendshapes() const {
+    return GetPointer<const TextureHolder *>(VT_BLENDSHAPES);
+  }
+  const flatbuffers::Vector<float> *blendshapes_weights() const {
+    return GetPointer<const flatbuffers::Vector<float> *>(VT_BLENDSHAPES_WEIGHTS);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_MESH) &&
            verifier.VerifyTable(mesh()) &&
-           VerifyOffsetRequired(verifier, VT_MATERIAL) &&
+           VerifyOffset(verifier, VT_MATERIAL) &&
            verifier.VerifyTable(material()) &&
-           VerifyOffsetRequired(verifier, VT_TBO) &&
-           verifier.VerifyTable(tbo()) &&
+           VerifyOffsetRequired(verifier, VT_BLENDSHAPES) &&
+           verifier.VerifyTable(blendshapes()) &&
+           VerifyOffsetRequired(verifier, VT_BLENDSHAPES_WEIGHTS) &&
+           verifier.Verify(blendshapes_weights()) &&
            verifier.EndTable();
   }
 };
@@ -167,8 +173,11 @@ struct AnimatedModelBuilder {
   void add_material(flatbuffers::Offset<MaterialHolder> material) {
     fbb_.AddOffset(AnimatedModel::VT_MATERIAL, material);
   }
-  void add_tbo(flatbuffers::Offset<TextureHolder> tbo) {
-    fbb_.AddOffset(AnimatedModel::VT_TBO, tbo);
+  void add_blendshapes(flatbuffers::Offset<TextureHolder> blendshapes) {
+    fbb_.AddOffset(AnimatedModel::VT_BLENDSHAPES, blendshapes);
+  }
+  void add_blendshapes_weights(flatbuffers::Offset<flatbuffers::Vector<float>> blendshapes_weights) {
+    fbb_.AddOffset(AnimatedModel::VT_BLENDSHAPES_WEIGHTS, blendshapes_weights);
   }
   explicit AnimatedModelBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -179,8 +188,8 @@ struct AnimatedModelBuilder {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<AnimatedModel>(end);
     fbb_.Required(o, AnimatedModel::VT_MESH);
-    fbb_.Required(o, AnimatedModel::VT_MATERIAL);
-    fbb_.Required(o, AnimatedModel::VT_TBO);
+    fbb_.Required(o, AnimatedModel::VT_BLENDSHAPES);
+    fbb_.Required(o, AnimatedModel::VT_BLENDSHAPES_WEIGHTS);
     return o;
   }
 };
@@ -189,12 +198,28 @@ inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<MeshHolder> mesh = 0,
     flatbuffers::Offset<MaterialHolder> material = 0,
-    flatbuffers::Offset<TextureHolder> tbo = 0) {
+    flatbuffers::Offset<TextureHolder> blendshapes = 0,
+    flatbuffers::Offset<flatbuffers::Vector<float>> blendshapes_weights = 0) {
   AnimatedModelBuilder builder_(_fbb);
-  builder_.add_tbo(tbo);
+  builder_.add_blendshapes_weights(blendshapes_weights);
+  builder_.add_blendshapes(blendshapes);
   builder_.add_material(material);
   builder_.add_mesh(mesh);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<MeshHolder> mesh = 0,
+    flatbuffers::Offset<MaterialHolder> material = 0,
+    flatbuffers::Offset<TextureHolder> blendshapes = 0,
+    const std::vector<float> *blendshapes_weights = nullptr) {
+  return SE::FlatBuffers::CreateAnimatedModel(
+      _fbb,
+      mesh,
+      material,
+      blendshapes,
+      blendshapes_weights ? _fbb.CreateVector<float>(*blendshapes_weights) : 0);
 }
 
 struct AppComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

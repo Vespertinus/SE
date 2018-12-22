@@ -312,10 +312,10 @@ template <class ... TComponents >
         template <class THandler>
                 void SceneNode<TComponents ...>::BreadtFirstWalkChild(THandler && oHandler) {
 
-         for (auto pChild : vChildren) {
+         for (auto & pChild : vChildren) {
                 oHandler(*pChild);
          }
-         for (auto pChild : vChildren) {
+         for (auto & pChild : vChildren) {
                 pChild->BreadtFirstWalkChild(oHandler);
          }
 }
@@ -450,9 +450,6 @@ template <class ... TComponents>
                 }
         }
 
-        log_w("obj: '{}', failed to find component '{}'",
-                        sName,
-                        typeid(TComponent).name());
         return nullptr;
 }
 
@@ -484,6 +481,23 @@ template <class ... TComponents>
         }
 }
 
+template <class ... TComponents>
+        void SceneNode<TComponents...>::EnableRecursive() {
+
+        for (auto & pChild : vChildren) {
+                pChild->EnableRecursive();
+        }
+        Enable();
+}
+
+template <class ... TComponents>
+        void SceneNode<TComponents...>::DisableRecursive() {
+
+        for (auto & pChild : vChildren) {
+                pChild->DisableRecursive();
+        }
+        Disable();
+}
 
 template <class ... TComponents>
         std::shared_ptr<SceneNode<TComponents...>> SceneNode<TComponents...>::GetShared() const {

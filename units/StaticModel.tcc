@@ -13,6 +13,23 @@ StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode, bool enabled) :
         }
 }
 
+StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
+                         bool enabled,
+                         TMesh * pNewMesh,
+                         Material * pNewMaterial) :
+        pMesh(pNewMesh),
+        pMaterial(pNewMaterial),
+        pNode(pNewNode) {
+
+        FillRenderCommands();
+
+        if (enabled) {
+                Enable();
+        }
+}
+
+StaticModel::StaticModel() { ;; }
+
 
 StaticModel::StaticModel(
                 TSceneTree::TSceneNodeExact * pNewNode,

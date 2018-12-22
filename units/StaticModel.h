@@ -12,17 +12,24 @@ TODO submesh meta for each used shape inside Mesh + material
 
 class StaticModel {
 
+        protected:
+
         TMesh                         * pMesh;
         Material                      * pMaterial;
         TSceneTree::TSceneNodeExact   * pNode;
         std::vector<RenderCommand>      vRenderCommands;
 
+        StaticModel();
         void FillRenderCommands();
 
         public:
         using TSerialized = FlatBuffers::StaticModel;
 
-        StaticModel(TSceneTree::TSceneNodeExact * pNewNode, bool enabled);//TODO default mesh and geometry;
+        StaticModel(TSceneTree::TSceneNodeExact * pNewNode, bool enabled);
+        StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
+                    bool enabled,
+                    TMesh * pNewMesh,
+                    Material * pNewMaterial);
         StaticModel(TSceneTree::TSceneNodeExact  * pNewNode,
                     const SE::FlatBuffers::StaticModel * pModel);
         ~StaticModel() noexcept;

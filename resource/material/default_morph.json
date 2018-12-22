@@ -1,0 +1,5 @@
+{
+        "shader": {
+                "path": "shader_program/morph.sesp"
+        }
+}

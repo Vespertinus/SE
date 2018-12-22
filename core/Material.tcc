@@ -106,61 +106,15 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
         }
 
         //fill textures vec
-        auto LoadTex = [](auto store_type, auto * pHolder, auto && ... args) {
-
-                switch (store_type) {
-
-                        case SE::FlatBuffers::StoreSettings::NONE:
-                        {
-                                return CreateResource<SE::TTexture>(args...);
-                        }
-
-                        case SE::FlatBuffers::StoreSettings::StoreTexture2D:
-                        {
-                                auto * pStore = pHolder->store_as_StoreTexture2D();
-                                StoreTexture2D::Settings oSettings(
-                                                pStore->mipmap(),
-                                                pStore->wrap(),
-                                                pStore->min_filter(),
-                                                pStore->mag_filter());
-
-                                return CreateResource<SE::TTexture>(args..., oSettings);
-                        }
-
-                        case SE::FlatBuffers::StoreSettings::StoreTextureBuffer:
-                        {
-                                return CreateResource<SE::TTexture>(args..., StoreTextureBufferObject::Settings{});
-                        }
-                        default:
-                                throw("unknown StoreSettings type: " + std::string(SE::FlatBuffers::EnumNameStoreSettings(store_type)));
-                }
-        };
-
         uint32_t textures_cnt = (pMaterial->textures()) ? pMaterial->textures()->Length() : 0;
 
         for (uint32_t i = 0; i < textures_cnt; ++i) {
 
                 auto * pTextureHolder = pMaterial->textures()->Get(i);
-                TTexture * pTex;
+                auto * pTex = LoadTexture(pTextureHolder);
 
-                if (pTextureHolder->path() != nullptr) {
-                        pTex = LoadTex(
-                                        pTextureHolder->store_type(),
-                                        pTextureHolder,
-                                        pTextureHolder->path()->c_str());
+                if (!pTex) {
 
-                }
-                else if (pTextureHolder->name() != nullptr && pTextureHolder->stock() != nullptr) {
-
-                        TextureStock oStock;
-                        pTex = LoadTex(
-                                        pTextureHolder->store_type(),
-                                        pTextureHolder,
-                                        pTextureHolder->name()->c_str(),
-                                        oStock);
-
-                }
-                else {
                         throw(std::runtime_error(fmt::format("wrong texture state, path {:p}, name {:p}, stock: {:p}, material name: '{}'",
                                                         (void *)pTextureHolder->path(),
                                                         (void *)pTextureHolder->name(),
@@ -171,7 +125,6 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
         }
 
         //TODO fill shader variables
-
 }
 
 ret_code_t Material::SetTexture(const StrID name, TTexture * pTex) {
@@ -211,6 +164,84 @@ TTexture * Material::GetTexture(const TextureUnit unit_index) const {
                 return it->second;
         }
         return nullptr;
+}
+
+ShaderProgram * Material::GetShader() const {
+
+        return pShader;
+}
+
+
+
+TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
+
+        TTexture * pTex;
+        auto LoadTex = [](auto store_type, auto * pHolder, auto && ... args) -> TTexture * {
+
+                switch (store_type) {
+
+                        case SE::FlatBuffers::StoreSettings::NONE:
+                                {
+                                        return CreateResource<SE::TTexture>(args...);
+                                }
+
+                        case SE::FlatBuffers::StoreSettings::StoreTexture2D:
+                                {
+                                        auto * pStore = pHolder->store_as_StoreTexture2D();
+                                        StoreTexture2D::Settings oSettings(
+                                                        pStore->mipmap(),
+                                                        pStore->wrap(),
+                                                        pStore->min_filter(),
+                                                        pStore->mag_filter());
+
+                                        return CreateResource<SE::TTexture>(args..., oSettings);
+                                }
+
+                        case SE::FlatBuffers::StoreSettings::StoreTextureBuffer:
+                                {
+                                        return CreateResource<SE::TTexture>(args..., StoreTextureBufferObject::Settings{});
+                                }
+                        default:
+                                log_e("unknown StoreSettings type: '{}'", SE::FlatBuffers::EnumNameStoreSettings(store_type));
+                                return nullptr;
+                }
+        };
+
+        if (pTextureHolder->path() != nullptr) {
+                pTex = LoadTex(
+                                pTextureHolder->store_type(),
+                                pTextureHolder,
+                                pTextureHolder->path()->c_str());
+
+        }
+        else if (pTextureHolder->name() != nullptr && pTextureHolder->stock() != nullptr) {
+
+                //TODO texture create from FlatBuffers::TextureStock
+                TextureStock oStock{
+                        pTextureHolder->stock()->image()->Data(),
+                        pTextureHolder->stock()->image()->Length(),
+                        pTextureHolder->stock()->format(),
+                        pTextureHolder->stock()->internal_format(),
+                        pTextureHolder->stock()->width(),
+                        pTextureHolder->stock()->height()
+                };
+
+                pTex = LoadTex(
+                                pTextureHolder->store_type(),
+                                pTextureHolder,
+                                pTextureHolder->name()->c_str(),
+                                oStock);
+
+        }
+        else {
+                log_e("wrong texture state, path {:p}, name {:p}, stock: {:p}",
+                                (void *)pTextureHolder->path(),
+                                (void *)pTextureHolder->name(),
+                                (void *)pTextureHolder->stock() );
+                return nullptr;
+        }
+
+        return pTex;
 }
 
 

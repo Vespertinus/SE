@@ -1,0 +1,10 @@
+{
+        "vertex" : {
+                "name" : "shader/morph_vertex.sesl"
+        },
+        "fragment" : {
+                "name" : "shader/simple_color_frag.sesl"
+        }
+}
+
+
