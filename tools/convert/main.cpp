@@ -51,9 +51,8 @@ int main(int argc, char **argv) {
                         ("replace",      bpo::value<string>(),                                  "string for replacing cuted path part (<path>)")
                         ("to_scene",     bpo::value<bool>()->default_value(false),              "write mesh as scene")
                         ("info_prop",    bpo::value<bool>()->default_value(true),               "import custom data from fbx node property ('info') as string")
-                        ("blendshape",   bpo::value<bool>()->default_value(false),              "import blend shape (morph target)")
+                        ("blendshapes",  bpo::value<bool>()->default_value(false),              "import blend shapes (morph target)")
                         ("disable_nodes", bpo::value<bool>()->default_value(false),             "all scene nodes stored in disabled state")
-
                         ;
 
                 bpo::variables_map vm;
@@ -129,7 +128,7 @@ int main(int argc, char **argv) {
                         oCtx.import_info_prop = vm["info_prop"].as<bool>();
                 }
                 {
-                        oCtx.import_blend_shape = vm["blendshape"].as<bool>();
+                        oCtx.import_blend_shapes = vm["blendshapes"].as<bool>();
                 }
                 {
                         oCtx.disable_nodes = vm["disable_nodes"].as<bool>();

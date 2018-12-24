@@ -130,6 +130,7 @@ void Scene::ShowGUI() {
         ImGui::Separator();
         ImGui::Text("Texture cnt: %zu", TResourceManager::Instance().Size<TTexture>());
         ImGui::Text("Mesh cnt: %zu", TResourceManager::Instance().Size<TMesh>());
+        ImGui::Text("Materials cnt: %zu", TResourceManager::Instance().Size<Material>());
         ImGui::Text("Shader component cnt: %zu", TResourceManager::Instance().Size<ShaderComponent>());
         ImGui::Text("Shader program cnt: %zu", TResourceManager::Instance().Size<ShaderProgram>());
         ImGui::Separator();

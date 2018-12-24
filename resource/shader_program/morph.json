@@ -2,8 +2,11 @@
         "vertex" : {
                 "name" : "shader/morph_vertex.sesl"
         },
+        "geometry" : {
+                "name" : "shader/wireframe_geometry.sesl"
+        },
         "fragment" : {
-                "name" : "shader/simple_color_frag.sesl"
+                "name" : "shader/wireframe_frag.sesl"
         }
 }
 

@@ -6,7 +6,7 @@ source:
         in vec2 TexCoord;
 
         uniform sampler2D DiffuseTex;
-    
+
         out vec4 FragColor;
 
         void main() {

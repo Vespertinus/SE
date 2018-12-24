@@ -2,7 +2,6 @@
 #include "Common.h"
 #include <Util.h>
 
-
 namespace SE {
 namespace TOOLS {
 

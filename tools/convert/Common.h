@@ -150,7 +150,7 @@ struct ImportCtx {
         bool                    skip_material;
         bool                    flip_yz;
         bool                    import_info_prop;
-        bool                    import_blend_shape;
+        bool                    import_blend_shapes;
         bool                    disable_nodes;
         /** stats */
         uint32_t                node_cnt;

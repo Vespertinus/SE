@@ -354,6 +354,23 @@ data layout inside buffer:
                 }
         }
 
+        /*
+        //print bs buf:
+        uint32_t vert_id = 0;
+        for (uint32_t i = 0; i < total_elements_cnt; i += bs_total_cnt * 3) {
+                for (uint32_t j = 0; j < bs_total_cnt; ++j) {
+                        log_d("blendshapes buf: vert: {}, bs: {}, pos diff: ({}, {}, {}), buf_pos: {}",
+                                        vert_id,
+                                        j,
+                                        oBlendShapeData.vBuffer[i + 0 + j * 3],
+                                        oBlendShapeData.vBuffer[i + 1 + j * 3],
+                                        oBlendShapeData.vBuffer[i + 2 + j * 3],
+                                        i
+                             );
+                }
+                ++vert_id;
+        }*/
+
         return uSUCCESS;
 }
 
@@ -465,8 +482,8 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
 
         std::unordered_map<uint32_t, std::unordered_set<uint32_t>> mRemapIndex;
-        int32_t polygon_cnt             = pMesh->GetPolygonCount();
-        int32_t polygon_size;
+        int32_t  polygon_cnt            = pMesh->GetPolygonCount();
+        int32_t  polygon_size;
         FbxGeometryElementUV * pUV      = pMesh->GetElementUV(0);
         log_d("polygons: cnt = {}", polygon_cnt);
 
@@ -552,7 +569,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                 }
 
                                 /*
-                                log_d("new index = {}, pos ({}, {}, {}), rot ({}, {}, {}), uv ({}, {})",
+                                log_d("new index = {}, pos ({}, {}, {}), normal ({}, {}, {}), uv ({}, {})",
                                                 cur_index,
                                                 vVertexData[0], vVertexData[1], vVertexData[2],
                                                 (oCtx.skip_normals) ? 0 : vVertexData[3],
@@ -563,9 +580,10 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
                                 vVertices.insert(vVertices.end(), vVertexData.begin(), vVertexData.end());
                                 ++oCtx.total_vertices_cnt;
+                                mRemapIndex[vertex_ind].emplace(cur_index);
                         }/*
                         else {
-                                log_d("old index = {}, pos ({}, {}, {}), rot ({}, {}, {}), uv ({}, {})",
+                                log_d("old index = {}, pos ({}, {}, {}), normal ({}, {}, {}), uv ({}, {})",
                                                 cur_index,
                                                 vVertexData[0], vVertexData[1], vVertexData[2],
                                                 (oCtx.skip_normals) ? 0 : vVertexData[3],
@@ -573,7 +591,6 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                                 (oCtx.skip_normals) ? 0 : vVertexData[5],
                                                 vVertexData[6], vVertexData[7]);
                         }*/
-                        mRemapIndex[vertex_ind].emplace(cur_index);
                         Pack(oModel.oMesh.oIndex, cur_index);
 /*
                         log_d("vertex {}, map to: {}, pos: ({}, {}, {}), normal: ({}, {}, {}), uv: ({}, {})",
@@ -593,10 +610,13 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                 }
         }
 
-        log_d("input vertex cnt: {}, output vertex cnt: {}", vertices_cnt, oVertexIndex.Size());
+        log_d("input vertex cnt: {}, output vertex cnt: {}, output estimated index cnt: {}",
+                        vertices_cnt,
+                        oVertexIndex.Size(),
+                        index_size);
 
         //import blend shapes
-        if (oCtx.import_blend_shape) {
+        if (oCtx.import_blend_shapes) {
                 ImportBlendShapes(pMesh, oModel.oBlendShape, mRemapIndex, oVertexIndex.Size());
         }
 
