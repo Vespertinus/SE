@@ -138,7 +138,7 @@ ret_code_t Material::SetTexture(const StrID name, TTexture * pTex) {
                 return uWRONG_INPUT_DATA;
         }
 
-        mTextures.emplace(oTexInfo->get().unit_index, pTex);
+        mTextures.insert_or_assign(oTexInfo->get().unit_index, pTex);
 
         return uSUCCESS;
 }
@@ -153,7 +153,7 @@ ret_code_t Material::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
                 return uWRONG_INPUT_DATA;
         }
 
-        mTextures.emplace(unit_index, pTex);
+        mTextures.insert_or_assign(unit_index, pTex);
         return uSUCCESS;
 }
 
