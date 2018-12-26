@@ -37,6 +37,7 @@ class AnimatedModel : public StaticModel {
 
         //Update... ?
         ret_code_t      SetMaterial(Material * pNewMaterial, const uint8_t blendshapes_cnt);
+        //SetBuffer..
         ret_code_t      SetWeight(const uint8_t index, const float weight);
         float           GetWeight(const uint8_t index);
         uint8_t         BlendShapesCnt() const;

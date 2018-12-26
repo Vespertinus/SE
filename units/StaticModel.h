@@ -37,6 +37,7 @@ class StaticModel {
         //Update... ?
         void            SetMesh(TMesh * pNewMesh);
         void            SetMaterial(Material * pNewMaterial);
+        Material *      GetMaterial() const;
         void            Enable();
         void            Disable();
         void            Print(const size_t indent);

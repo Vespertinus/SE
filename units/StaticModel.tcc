@@ -133,4 +133,9 @@ void StaticModel::FillRenderCommands() {
         //internal enabled state.. ? remove / add sequence
 }
 
+Material * StaticModel::GetMaterial() const {
+
+                return pMaterial;
+}
+
 }
