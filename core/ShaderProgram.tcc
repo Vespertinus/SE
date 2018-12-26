@@ -217,7 +217,7 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
                 PrintProgramInfoLog("link shader program", gl_id);
         }
 #endif
-
+/*TEMP
         glValidateProgram(gl_id);
         glGetProgramiv(gl_id, GL_VALIDATE_STATUS, &status);
         if (auto ret = CheckOpenGLError(); ret != uSUCCESS || !status) {
@@ -226,7 +226,7 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
                 glDeleteProgram(gl_id);
                 throw (std::runtime_error( "ShaderProgram::Load: failed to validate"));
         }
-
+*/
         glUseProgram(gl_id);
 
         //TODO configure uniform buffers
