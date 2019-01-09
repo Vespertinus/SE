@@ -96,6 +96,8 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 - ResourceMap (Cache\Dict) держит список package'й, директорий и т.п. откуда какой ресурс брать по rid
 -- вызывает ResourceManager::Create после того как по id нашел соответствующий путь и возвращает готовый Resource
 
+- маска uint32_t внутри mesh с битиками описывающими формат вершины - pos, normal, etc
+-- будет полезно при объединении нескольких vbo в один, с общим форматом.
 
 - план:
 -- material | instances
@@ -113,6 +115,4 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 --- id
 --- mem management
 --- custom components from list
-
-
 
