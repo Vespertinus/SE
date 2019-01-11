@@ -142,6 +142,9 @@ static inline void PrintGLInfo() {
         glGetIntegerv(GL_MAX_TEXTURE_SIZE, &val);
         log_d("GL_MAX_TEXTURE_SIZE: {}", val);
 
+        glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &val);
+        log_d("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT: {}", val);
+
         glGetIntegerv(GL_NUM_EXTENSIONS, &val);
         log_d("{} extensions supported", val);
 
