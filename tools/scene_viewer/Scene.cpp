@@ -41,7 +41,7 @@ void Scene::Process() {
         SE::CheckOpenGLError();
         //SE::HELPERS::DrawAxes(10);
 
-        TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
+        TGraphicsState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
         //pSceneTree->Draw();
         /*
@@ -70,7 +70,7 @@ void Scene::Process() {
                         }
 
 
-                        TRenderState::Instance().SetTransform(oNode.GetTransform().GetWorld());
+                        TGraphicsState::Instance().SetTransform(oNode.GetTransform().GetWorld());
                         TVisualHelpers::Instance().DrawLocalAxes();
 
                         return true;
@@ -90,7 +90,7 @@ void Scene::Process() {
                         /*
                         auto * pMesh = oNode.GetEntity<TMesh>(0);
 
-                        TRenderState::Instance().SetTransform(oNode.GetTransform().GetWorld());
+                        TGraphicsState::Instance().SetTransform(oNode.GetTransform().GetWorld());
                         TVisualHelpers::Instance().DrawBBox(pMesh->GetBBox());
                         */
                         return true;
@@ -126,7 +126,7 @@ void Scene::ShowGUI() {
                         ImGuiWindowFlags_NoSavedSettings |
                         ImGuiWindowFlags_NoFocusOnAppearing |
                         ImGuiWindowFlags_NoNav);
-        ImGui::Text("Frame time: %f, FPS: %f", TRenderState::Instance().GetLastFrameTime(), TSimpleFPS::Instance().GetFPS());
+        ImGui::Text("Frame time: %f, FPS: %f", TGraphicsState::Instance().GetLastFrameTime(), TSimpleFPS::Instance().GetFPS());
         ImGui::Separator();
         ImGui::Text("Texture cnt: %zu", TResourceManager::Instance().Size<TTexture>());
         ImGui::Text("Mesh cnt: %zu", TResourceManager::Instance().Size<TMesh>());

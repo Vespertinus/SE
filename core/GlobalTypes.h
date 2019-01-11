@@ -52,7 +52,7 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 
 #include <ShaderComponent.h>
 #include <ShaderProgram.h>
-#include <RenderState.h>
+#include <GraphicsState.h>
 #include <VisualHelpers.h>
 #include <Material.h>
 
@@ -88,7 +88,7 @@ using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 using TRenderer = Renderer<TVisibilityManager>;
 
 //singleton
-using TEngine = Loki::SingletonHolder<Engine<Config, TRenderer/*, TRenderState, TInputManager, ...*/>>;
+using TEngine = Loki::SingletonHolder<Engine<Config, TRenderer/*, TGraphicsState, TInputManager, ...*/>>;
 
 }
 

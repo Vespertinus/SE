@@ -63,15 +63,15 @@ std::string Material::Str() const {
 
 void Material::Apply() const {
 
-        TRenderState::Instance().SetShaderProgram(pShader);
+        TGraphicsState::Instance().SetShaderProgram(pShader);
         for (auto & oTexItem : mTextures) {
-                TRenderState::Instance().SetTexture(oTexItem.first, oTexItem.second);
+                TGraphicsState::Instance().SetTexture(oTexItem.first, oTexItem.second);
         }
 
         for (auto & oShaderVar : mShaderVariables) {
 
                 std::visit([&oShaderVar](auto & var) {
-                                TRenderState::Instance().SetVariable(oShaderVar.first, var);
+                                TGraphicsState::Instance().SetVariable(oShaderVar.first, var);
                                 },
                                 oShaderVar.second);
         }

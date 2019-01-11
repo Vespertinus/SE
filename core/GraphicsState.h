@@ -1,6 +1,6 @@
 
-#ifndef __RENDER_STATE_H__
-#define __RENDER_STATE_H__ 1
+#ifndef __GRAPHICS_STATE_H__
+#define __GRAPHICS_STATE_H__ 1
 
 #include <GLUtil.h>
 #include <Chrono.h>
@@ -13,7 +13,7 @@ namespace SE {
  all arguments for Set* must be alive until the end of frame
  so it is not acceptable to store local variables
  */
-class RenderState {
+class GraphicsState {
 
         const glm::mat4       * pModelViewProjection;
         const glm::mat4       * pTransformMat;
@@ -32,7 +32,7 @@ class RenderState {
 
         public:
 
-        RenderState();
+        GraphicsState();
 
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
         ret_code_t                      SetTexture(const TextureUnit unit_index, TTexture * pTex);
@@ -57,7 +57,7 @@ class RenderState {
 
 };
 
-template <class T> ret_code_t RenderState::SetVariable(const StrID name, const T & val) {
+template <class T> ret_code_t GraphicsState::SetVariable(const StrID name, const T & val) {
 
         if (pShader) {
                 return pShader->SetVariable(name, val);
@@ -67,13 +67,13 @@ template <class T> ret_code_t RenderState::SetVariable(const StrID name, const T
         return uLOGIC_ERROR;
 }
 
-typedef Loki::SingletonHolder < RenderState >   TRenderState;
+typedef Loki::SingletonHolder < GraphicsState >   TGraphicsState;
 
 } // namespace SE
 
 
 #ifdef SE_IMPL
-#include <RenderState.tcc>
+#include <GraphicsState.tcc>
 #endif
 
 #endif

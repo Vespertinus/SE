@@ -40,7 +40,7 @@ Scene::~Scene() throw() { ;; }
 
 void Scene::Process() {
 
-        SE::TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
+        SE::TGraphicsState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
         //SE::HELPERS::DrawAxes(10);
 

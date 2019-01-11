@@ -13,7 +13,7 @@ namespace SE {
 struct Config {
 
         /** configuration render surface size,
-            actual inside TRenderState */
+            actual inside TGraphicsState */
         uint32_t                width           = 1024,
                                 height          = 768;
 

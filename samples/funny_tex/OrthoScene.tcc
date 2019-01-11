@@ -37,7 +37,7 @@ OrthoScene::OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera) :
         pBrickShader->SetVariable("BrickPct",      glm::vec2(0.9, 0.85));
         pBrickShader->SetVariable("LightPosition", glm::vec3(5, -5, 10));
 */
-        SE::TRenderState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
+        SE::TGraphicsState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
         //pBrickShader->SetTexture(SE::TextureUnit::DIFFUSE, pShaderTex);
         //glUseProgram(0);
 }
@@ -72,7 +72,7 @@ void OrthoScene::Process() {
         auto & mModelView = oCamera.GetMVMatrix();
         glm::mat3 mNormal = glm::inverseTranspose(glm::mat3(mModelView));
         auto & mModelViewProjection = oCamera.GetMVPMatrix();
-        SE::TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
+        SE::TGraphicsState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
 
 /*        pBrickShader->SetVariable("NormalMatrix", mNormal);

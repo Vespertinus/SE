@@ -151,7 +151,7 @@ void ImGuiWrapper::Render() {
         pDrawData->ScaleClipRects(io.DisplayFramebufferScale);
 
         //save prev state
-        //TODO move to RenderState
+        //TODO move to GraphicsState
         GLint last_scissor_box[4]; glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
         GLenum last_blend_src_rgb; glGetIntegerv(GL_BLEND_SRC_RGB, (GLint*)&last_blend_src_rgb);
         GLenum last_blend_dst_rgb; glGetIntegerv(GL_BLEND_DST_RGB, (GLint*)&last_blend_dst_rgb);
@@ -182,9 +182,9 @@ void ImGuiWrapper::Render() {
                 { (R+L)/(L-R),  (T+B)/(B-T),  0.0f,   1.0f },
         };
 
-        TRenderState::Instance().SetVao(vao_id);
-        TRenderState::Instance().SetShaderProgram(pShader);
-        TRenderState::Instance().SetVariable(mat_id, mOrtho);
+        TGraphicsState::Instance().SetVao(vao_id);
+        TGraphicsState::Instance().SetShaderProgram(pShader);
+        TGraphicsState::Instance().SetVariable(mat_id, mOrtho);
 
         //gen buf to init gl
         ImVec2 pos = pDrawData->DisplayPos;
@@ -219,8 +219,8 @@ void ImGuiWrapper::Render() {
                                                   (int)(clip_rect.w - clip_rect.y));
 
                                         // Bind texture, Draw
-                                        TRenderState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, (TTexture *)pcmd->TextureId);
-                                        TRenderState::Instance().Draw(
+                                        TGraphicsState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, (TTexture *)pcmd->TextureId);
+                                        TGraphicsState::Instance().Draw(
                                                         vao_id,
                                                         GL_TRIANGLES,
                                                         sizeof(ImDrawIdx) == 2 ?
@@ -234,7 +234,7 @@ void ImGuiWrapper::Render() {
                 }
         }
 
-        //TODO move to RenderState
+        //TODO move to GraphicsState
         glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
         glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
         if (last_enable_blend)
@@ -259,14 +259,14 @@ void ImGuiWrapper::Render() {
 
 void ImGuiWrapper::NewFrame() {
 
-        const glm::uvec2 & screen_size  = TRenderState::Instance().GetScreenSize();
+        const glm::uvec2 & screen_size  = TGraphicsState::Instance().GetScreenSize();
         ImGuiIO          & io           = ImGui::GetIO();
         IM_ASSERT(io.Fonts->IsBuilt());
 
         io.DisplaySize                  = ImVec2((float)screen_size.x, (float)screen_size.y);
         io.DisplayFramebufferScale      = ImVec2(screen_size.x > 0 ? 1 : 0, screen_size.y > 0 ? 1 : 0);
 
-        io.DeltaTime = TRenderState::Instance().GetLastFrameTime();
+        io.DeltaTime = TGraphicsState::Instance().GetLastFrameTime();
 
         const auto & oMouseState = TInputManager::Instance().GetMouse()->getMouseState();
         io.MousePos = ImVec2((float)oMouseState.X.abs, (float)oMouseState.Y.abs);

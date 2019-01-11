@@ -20,7 +20,7 @@ Scene::~Scene() throw() { ;; }
 
 void Scene::Process() {
 
-        TRenderState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
+        TGraphicsState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
         HELPERS::DrawAxes(10);
         oSmallElipse.Draw();

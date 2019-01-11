@@ -80,7 +80,7 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
         glViewport(0, 0, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
         TInputManager::Instance().SetWindowExtents(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-        SE::TRenderState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        SE::TGraphicsState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 }
 
 
@@ -90,7 +90,7 @@ template <class TLoop> void Application<TLoop>::Run() {
         glClear(oSettings.clear_flag);
         oCamera.Adjust();
 
-        SE::TRenderState::Instance().FrameStart();
+        SE::TGraphicsState::Instance().FrameStart();
 
         //Update
         oLoop.Process();

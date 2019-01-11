@@ -26,7 +26,7 @@ RenderCommand::RenderCommand(
 void RenderCommand::Draw() const {
 
         pMaterial->Apply();
-        TRenderState::Instance().SetTransform(oTransform.GetWorld());
+        TGraphicsState::Instance().SetTransform(oTransform.GetWorld());
         pGeom->Draw();
 }
 

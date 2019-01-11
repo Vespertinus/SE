@@ -15,7 +15,7 @@ static std::array<VertexIndexType, 3> vVertexIndexTypes = {{
         { GL_UNSIGNED_INT,        sizeof(uint32_t) }
 }};
 
-RenderState::RenderState() :
+GraphicsState::GraphicsState() :
         pModelViewProjection(nullptr),
         pTransformMat(nullptr),
         pShader(nullptr),
@@ -25,7 +25,7 @@ RenderState::RenderState() :
         last_frame_time(1/60.) {
 }
 
-ret_code_t RenderState::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
+ret_code_t GraphicsState::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
 
         if (!pShader) {
                 log_w("shader not set, tex: '{}'", pTex->Name());
@@ -74,7 +74,7 @@ ret_code_t RenderState::SetTexture(const TextureUnit unit_index, TTexture * pTex
         return uSUCCESS;
 }
 
-ret_code_t RenderState::SetTexture(const StrID name, TTexture * pTex) {
+ret_code_t GraphicsState::SetTexture(const StrID name, TTexture * pTex) {
 
         if (!pShader) {
                 log_w("shader not set, tex: '{}'", pTex->Name());
@@ -126,7 +126,7 @@ ret_code_t RenderState::SetTexture(const StrID name, TTexture * pTex) {
         return uSUCCESS;
 }
 
-void RenderState::SetViewProjection(const glm::mat4 & oMat) {
+void GraphicsState::SetViewProjection(const glm::mat4 & oMat) {
 
         pModelViewProjection = &oMat;
         if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVPMatrix)) {
@@ -134,7 +134,7 @@ void RenderState::SetViewProjection(const glm::mat4 & oMat) {
         }
 }
 
-void RenderState::SetTransform(const glm::mat4 & oMat) {
+void GraphicsState::SetTransform(const glm::mat4 & oMat) {
 
         pTransformMat = &oMat;
         if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix)) {
@@ -143,7 +143,7 @@ void RenderState::SetTransform(const glm::mat4 & oMat) {
 }
 
 
-void RenderState::SetShaderProgram(ShaderProgram * pNewShader) {
+void GraphicsState::SetShaderProgram(ShaderProgram * pNewShader) {
 
         if (pShader == pNewShader) { return; }
 
@@ -162,7 +162,7 @@ void RenderState::SetShaderProgram(ShaderProgram * pNewShader) {
         }
 }
 
-void RenderState::FrameStart() {
+void GraphicsState::FrameStart() {
 
         time_point <micro> cur_time = std::chrono::time_point_cast<micro>(clock::now());
         last_frame_time = std::chrono::duration<float>(cur_time - frame_start_time).count();
@@ -179,7 +179,7 @@ void RenderState::FrameStart() {
 }
 
 //TODO later sort all draw objects |vao|shader|shader values| and apply only changes
-void RenderState::Draw(
+void GraphicsState::Draw(
                 const uint32_t vao_id,
                 const uint32_t mode,
                 const uint32_t index_type,
@@ -197,7 +197,7 @@ void RenderState::Draw(
         glDrawElements(mode, count, vVertexIndexTypes[index_type].type, reinterpret_cast<void*>(start * vVertexIndexTypes[index_type].size));
 }
 
-void RenderState::DrawArrays(
+void GraphicsState::DrawArrays(
                 const uint32_t vao_id,
                 const uint32_t mode,
                 const uint32_t start,
@@ -212,7 +212,7 @@ void RenderState::DrawArrays(
         glDrawArrays(mode, start, count);
 }
 
-void RenderState::SetScreenSize(const uint32_t width, const uint32_t height) {
+void GraphicsState::SetScreenSize(const uint32_t width, const uint32_t height) {
 
         screen_size.x = width;
         screen_size.y = height;
@@ -222,15 +222,15 @@ void RenderState::SetScreenSize(const uint32_t width, const uint32_t height) {
         }
 }
 
-const glm::uvec2 & RenderState::GetScreenSize() const {
+const glm::uvec2 & GraphicsState::GetScreenSize() const {
         return screen_size;
 }
 
-float RenderState::GetLastFrameTime() const {
+float GraphicsState::GetLastFrameTime() const {
         return last_frame_time;
 }
 
-void RenderState::SetVao(const uint32_t vao_id) {
+void GraphicsState::SetVao(const uint32_t vao_id) {
 
         if (vao_id != cur_vao) {
                 glBindVertexArray(vao_id);
