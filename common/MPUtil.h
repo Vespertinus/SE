@@ -119,6 +119,47 @@ constexpr void TupleForEach(TTuple && oTuple, TAction && oAction) {
 }
 
 
+template <int32_t key, int32_t value> struct IPair {
+        static const int        k = key,
+                                v = value;
+};
+
+template <class...> struct Int2IntDict;
+
+template <> struct Int2IntDict<> {
+        template<int32_t> struct Get {
+                static const int value = 0;
+        };
+};
+
+template<int32_t key, int32_t val, class ... rest> struct Int2IntDict<IPair<key, val>, rest...> {
+        template<int32_t key2> struct Get {
+                static const int32_t value =
+                        (key2 == key) ?
+                        val :
+                        Int2IntDict<rest...>::template Get<key2>::value;
+        };
+};
+
+
+
+template <class T, uint32_t val> struct TPair {
+        using Type = T;
+        static const uint32_t value = val;
+};
+
+template < class ...> struct Type2IntDict;
+
+template < class THolder, class ... rest> struct Type2IntDict<THolder, rest ...> {
+
+        template <class T, bool = std::is_same<T, typename THolder::Type>::value > struct Get {
+                static const uint32_t value = THolder::value;
+        };
+        template <class T> struct Get<T, false> {
+                static const uint32_t value = Type2IntDict<rest ...>::template Get<T>::value;
+        };
+};
+
 } //namespace MP
 
 #endif
