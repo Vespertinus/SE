@@ -1,5 +1,6 @@
 
 #include <GeometryEntity.h>
+#include <ShaderProgramState.h>
 
 namespace SE {
 
@@ -9,6 +10,7 @@ RenderCommand::RenderCommand(
                 const Transform & oNewTransform) :
         pGeom(pNewGeom),
         pMaterial(pNewMaterial),
+        oState(pMaterial->GetShader()),
         oTransform(oNewTransform)  {
 
 
@@ -20,13 +22,24 @@ RenderCommand::RenderCommand(
                                                 (void*)pMaterial)));
         }
 
+        if (auto * pBlock = pMaterial->GetUniformBlock()) {
+                auto res = oState.SetBlock(UniformUnitInfo::Type::MATERIAL, pBlock);
+                if (res != uSUCCESS) {
+                        throw(std::runtime_error(fmt::format(
+                                                "failed to set material block from '{}'",
+                                                pMaterial->Name())));
+                }
+        }
+
+
         //UpdateKey
 }
 
 void RenderCommand::Draw() const {
 
-        pMaterial->Apply();
-        TGraphicsState::Instance().SetTransform(oTransform.GetWorld());
+        //pMaterial->Apply();
+        oState.Apply();
+        TGraphicsState::Instance().SetTransform(oTransform.GetWorld()); //TEMP
         pGeom->Draw();
 }
 

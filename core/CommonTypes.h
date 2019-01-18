@@ -26,5 +26,25 @@ struct VertexIndexType {
         uint32_t        size;
 };
 
+struct UniformUnitInfo {
+        enum class Type : uint8_t {
+                TRANSFORM       = 0,
+                MATERIAL        = 1,
+                CAMERA          = 2,
+                ANIMATION       = 3,
+                OBJECT          = 4,
+                LIGHTING        = 5,
+                CUSTOM          = 7,
+
+                MAX             = CUSTOM,
+                UNKNOWN         = 255
+        };
+
+        //Type            id;
+        std::string     sName;
+        uint16_t        initial_block_cnt;
+        //THINK GL_DYNAMIC_DRAW | GL_STREAM_DRAW
+};
+
 }
 #endif

@@ -12,6 +12,7 @@ class Material : public ResourceHolder {
         using TVariant = std::variant<float, glm::vec2, glm::vec3, glm::vec4, glm::uvec2, glm::uvec3, glm::uvec4>;
 
         SE::ShaderProgram                             * pShader;
+        std::unique_ptr<UniformBlock>                   pBlock;
         //TODO later rewrite on Uniform Buffer Object
         std::unordered_map<StrID, TVariant>             mShaderVariables;
         //std::array<TTexture *, max texture units> vTextures; ...
@@ -28,13 +29,14 @@ class Material : public ResourceHolder {
                  const SE::FlatBuffers::Material * pMaterial);
         //Material from input data (ctx\settings), like Texture
 
-        void                            SetShader(SE::ShaderProgram * pNewShader);
+        //SetShader does not allow to change shader, ShaderProgramState and many other things would broken
         ret_code_t                      SetTexture(const StrID name, TTexture * pTex);
         ret_code_t                      SetTexture(const TextureUnit unit_index, TTexture * pTex);
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
         void                            Apply() const;
         TTexture *                      GetTexture(const TextureUnit unit_index) const;
         ShaderProgram *                 GetShader() const;
+        UniformBlock *                  GetUniformBlock() const;
 
         std::string     Str() const;
 };

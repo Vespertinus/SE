@@ -23,12 +23,33 @@ class GraphicsState {
         time_point <micro>      frame_start_time;
         float                   last_frame_time;
         uint32_t                active_tex_unit{};
+        uint32_t                active_ubo;
 
         //TODO initialize from GL limit, store in global graphics config
         std::array<TTexture *, 16> vTextureUnits{};
+        //std::array<UniformBuffer *, 16> vUniformUnits{};
+        //THINK possibly could use shader with binded but deleted ubo..
+        std::array<uint32_t, 16> vUniformUnits{};
+        std::array<uint32_t, 16> vUniformRanges{};
 
         //TODO
         //variables
+
+        std::unordered_map<
+                uint32_t,
+                std::weak_ptr<UniformBuffer> >  mUniformBuffers;
+
+        std::array<UniformUnitInfo, 16> vUniformUnitInfo = {{
+
+                {"Transform",  10 /*1000*/ },
+                {"Material",   2 },
+                {"Camera",     1 },
+                {"Animation",  2 },
+                {"Object",     2 /*100*/ },
+                {"Lighting",   10 },
+                {"Err",        0 },
+                {"CUSTOM",     10 }
+        }};
 
         public:
 
@@ -54,6 +75,24 @@ class GraphicsState {
         void                            FrameStart();
         const glm::uvec2 &              GetScreenSize() const;
         float                           GetLastFrameTime() const;
+        //TODO need to reset range in binded array
+        void                            UploadUniformBufferData(const uint32_t buf_id,
+                                                                const uint32_t buf_size,
+                                                                const void * pData);
+        void                            UploadUniformBufferSubData(const uint32_t buf_id,
+                                                                   const uint32_t block_size,
+                                                                   const void * pData);
+        void                            BindUniformBufferRange(const uint32_t buf_id,
+                                                               const UniformUnitInfo::Type unit_id,
+                                                               const uint32_t buf_offset,
+                                                               const uint32_t block_size);
+        std::shared_ptr<UniformBuffer>
+                                        GetUniformBuffer(
+                                                        const UniformUnitInfo::Type unit_id,
+                                                        const uint16_t block_size);
+        //void CleanUnused remove expired weak_ptr
+        const UniformUnitInfo         & GetUniformUnitInfo(const UniformUnitInfo::Type unit_id) const;
+        //Set UniformUnitInfo options
 
 };
 

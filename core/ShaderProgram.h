@@ -35,18 +35,34 @@ struct ShaderVariable {
         //buffer
 };
 
+struct UniformBlockDescriptor {
+
+        std::unordered_map<StrID, ShaderVariable> mVariables;
+        uint16_t                                  size;
+        uint16_t                                  aligned_size;
+};
+
 
 class ShaderProgram : public ResourceHolder {
 
         private:
 
-        std::unordered_map<StrID, ShaderVariable> mVariables;
-        std::unordered_map<StrID, ShaderVariable> mSamplers;
-        uint32_t gl_id{};
-        uint32_t used_system_variables{};
-        uint16_t used_texture_units{};
+        std::unordered_map<
+                StrID,
+                ShaderVariable>                 mVariables;
+        std::unordered_map<
+                StrID,
+                ShaderVariable>                 mSamplers;
+        std::unordered_map<
+                UniformUnitInfo::Type,
+                UniformBlockDescriptor>         mBlockDescriptors;
+        uint32_t                                gl_id{};
+        uint32_t                                used_system_variables{};
+        uint16_t                                used_texture_units{};
 
         void Load(const FlatBuffers::ShaderProgram * pShaderProgram);
+        void FillVariables(std::unordered_map<uint32_t, UniformUnitInfo::Type> & mBlockBinding);
+        void FillUniformBlocks(std::unordered_map<uint32_t, UniformUnitInfo::Type> & mBlockBinding);
 
         public:
         ShaderProgram(const std::string & sName,
@@ -76,6 +92,9 @@ class ShaderProgram : public ResourceHolder {
                                 GetTextureInfo(const StrID name) const;
         //ret_code_t              Validate() const; //check that all variables set via bitset + location, texture ???
         uint32_t                UsedSystemVariables() const;
+        //TODO return shared ptr on self block
+        const UniformBlockDescriptor *
+                                GetBlockDescriptor(const UniformUnitInfo::Type unit_id) const;
 };
 
 } //namespace SE

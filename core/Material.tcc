@@ -76,7 +76,7 @@ void Material::Apply() const {
                                 oShaderVar.second);
         }
 }
-
+/*
 void Material::SetShader(SE::ShaderProgram * pNewShader) {
 
         mShaderVariables.clear();
@@ -85,7 +85,8 @@ void Material::SetShader(SE::ShaderProgram * pNewShader) {
         pShader = pNewShader;
 
         //TODO fill variables list?;
-}
+        //FIXME reallocate block.. and ShaderProgramState
+}*/
 
 void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
 
@@ -244,6 +245,11 @@ TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
         return pTex;
 }
 
+UniformBlock * Material::GetUniformBlock() const {
+
+        if (pBlock) { return pBlock.get(); }
+        return nullptr;
+}
 
 }
 

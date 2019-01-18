@@ -176,6 +176,13 @@ void GraphicsState::FrameStart() {
         glBindVertexArray(0);
 
         //TODO reset all texture unit bindings
+        //TODO reset all uniform unit bindings
+
+        for (size_t i = 0; i < vUniformUnits.size(); ++i ) {
+                //vUniformUnits[i] = nullptr;
+                vUniformUnits[i]  = -1;
+                vUniformRanges[i] = -1;
+        }
 }
 
 //TODO later sort all draw objects |vao|shader|shader values| and apply only changes
@@ -236,6 +243,83 @@ void GraphicsState::SetVao(const uint32_t vao_id) {
                 glBindVertexArray(vao_id);
                 cur_vao = vao_id;
         }
+}
+
+void GraphicsState::UploadUniformBufferData(
+                const uint32_t buf_id,
+                const uint32_t buf_size,
+                const void * pData) {
+
+        if (active_ubo != buf_id) {
+                active_ubo = buf_id;
+                glBindBuffer(GL_UNIFORM_BUFFER, active_ubo);
+        }
+
+        glBufferData(GL_UNIFORM_BUFFER, buf_size, pData, GL_DYNAMIC_DRAW);
+}
+
+void GraphicsState::UploadUniformBufferSubData(
+                const uint32_t buf_id,
+                const uint32_t block_size,
+                const void * pData) {
+
+        if (active_ubo != buf_id) {
+                active_ubo = buf_id;
+                glBindBuffer(GL_UNIFORM_BUFFER, active_ubo);
+        }
+
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, block_size, pData);
+}
+
+void GraphicsState::BindUniformBufferRange(
+                const uint32_t buf_id,
+                const UniformUnitInfo::Type unit_id,
+                const uint32_t buf_offset,
+                const uint32_t block_size) {
+
+        uint8_t unit = static_cast<uint8_t>(unit_id);
+
+        if (vUniformUnits[unit] != buf_id) {
+                vUniformUnits[unit] = buf_id;
+                //bind
+        }
+        else if (vUniformRanges[unit] == buf_offset) {
+                //already binded
+                return;
+        }
+
+        glBindBufferRange(GL_UNIFORM_BUFFER, unit, buf_id, buf_offset, block_size);
+}
+
+std::shared_ptr<UniformBuffer> GraphicsState::GetUniformBuffer(
+                const UniformUnitInfo::Type unit_id,
+                const uint16_t block_size) {
+
+        uint32_t key = (static_cast<uint8_t>(unit_id) << 16) | block_size;
+
+        auto it = mUniformBuffers.find(key);
+
+        if (it == mUniformBuffers.end() || it->second.expired()) {
+                auto pItem = std::make_shared<UniformBuffer>(block_size, GetUniformUnitInfo(unit_id).initial_block_cnt);
+                mUniformBuffers.insert_or_assign(key, pItem);
+                log_d("create buffer: key: {}, unit: {}, block_size: {}",
+                                key,
+                                GetUniformUnitInfo(unit_id).sName,
+                                block_size);
+                return pItem;
+        }
+
+        if (auto pItem = it->second.lock()) {
+                return pItem;
+        }
+        log_e("failed to lock ptr for buffer key: {}, block_size: {} ", key, block_size);
+        return nullptr;
+}
+
+const UniformUnitInfo & GraphicsState::GetUniformUnitInfo(const UniformUnitInfo::Type unit_id) const {
+
+        se_assert(unit_id <= UniformUnitInfo::Type::MAX);
+        return vUniformUnitInfo[static_cast<uint8_t>(unit_id)];
 }
 
 } // namespace SE

@@ -6,14 +6,16 @@
 
 class GeometryEntity;
 class Material;
+class ShaderProgramState;
 
 namespace SE {
 
 class RenderCommand {
 
-        const GeometryEntity  * pGeom;
-        const Material        * pMaterial;
-        const Transform       & oTransform;
+        const GeometryEntity          * pGeom;
+        const Material                * pMaterial;//THINK remove after switching on state?
+        ShaderProgramState              oState;
+        const Transform               & oTransform;
 
         //uint64_t      sort_key;
 
@@ -28,6 +30,8 @@ class RenderCommand {
         //Update?
         uint64_t        GetSortKey() const;
         //SetMaterial SetGeom SetTransform;?
+        /** modify blocks via State().SetBlock() */
+        ShaderProgramState & State();
 
 };
 

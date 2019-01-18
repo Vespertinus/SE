@@ -21,6 +21,17 @@ static const std::unordered_map<StrID, uint32_t> mSystemVariables = {
         { "ScreenSize",         ShaderSystemVariables::ScreenSize }
 };
 
+
+static const std::unordered_map<StrID, UniformUnitInfo::Type> mUniformBlockMapping = {
+        {"Transform",           UniformUnitInfo::Type::TRANSFORM },
+        {"Material",            UniformUnitInfo::Type::MATERIAL },
+        {"Camera",              UniformUnitInfo::Type::CAMERA },
+        {"Animation",           UniformUnitInfo::Type::ANIMATION },
+        {"Object",              UniformUnitInfo::Type::OBJECT },
+        {"Lighting",            UniformUnitInfo::Type::LIGHTING },
+        {"CUSTOM",              UniformUnitInfo::Type::CUSTOM },
+};
+
 static const std::unordered_map<uint32_t, uint32_t> mSamplers2Textures = {
         { GL_SAMPLER_1D,                        GL_TEXTURE_1D},
         { GL_SAMPLER_2D,                        GL_TEXTURE_2D },
@@ -229,106 +240,9 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
 */
         glUseProgram(gl_id);
 
-        //TODO configure uniform buffers
-        int32_t uniforms_cnt = 0;
-        int32_t items_cnt;
-        int32_t name_len = 0;
-        static std::array<char, 512> oNameBuffer;
-
-        glGetProgramiv(gl_id, GL_ACTIVE_UNIFORMS, &uniforms_cnt);
-
-        for (int32_t i = 0; i < uniforms_cnt; ++i) {
-                ShaderVariable oVar;
-                glGetActiveUniform(
-                                gl_id,
-                                static_cast<uint32_t>(i),
-                                oNameBuffer.size(),
-                                &name_len,
-                                &items_cnt,
-                                &oVar.type,
-                                oNameBuffer.data());
-                oVar.location = glGetUniformLocation(gl_id, oNameBuffer.data());
-                if (oVar.location < 0) {
-                        glDeleteProgram(gl_id);
-                        throw (std::runtime_error(
-                                                "ShaderProgram::Load: failed to get uniform '" +
-                                                std::string(oNameBuffer.data(), name_len) +
-                                                "'location = " +
-                                                std::to_string(oVar.location) +
-                                                ", may be uniform stored inside block (unsupported currently), name: " +
-                                                sName));
-                }
-
-                oVar.sName = std::string_view(oNameBuffer.data(), name_len);
-                StrID key(oVar.sName);
-
-                if (IsTexture(oVar.type)) {
-
-                        auto it = mTextureUnitMapping.find(key);
-                        if (it == mTextureUnitMapping.end()) {
-
-                                glDeleteProgram(gl_id);
-                                throw (std::runtime_error(
-                                                        "ShaderProgram::Load: unknown texture variable name: '" +
-                                                        oVar.sName +
-                                                        "', can't find proper texture unit, shader program name: " +
-                                                        sName));
-                        }
-                        auto it2 = mSamplers2Textures.find(oVar.type);
-                        if (it2 == mSamplers2Textures.end()) {
-                                glDeleteProgram(gl_id);
-                                throw (std::runtime_error(
-                                                        "ShaderProgram::Load: unknown sampler type: " +
-                                                        std::to_string(oVar.type) +
-                                                        ", name: '" +
-                                                        oVar.sName +
-                                                        "', shader program name: " +
-                                                        sName));
-
-                        }
-                        oVar.type = it2->second;
-
-                        int32_t unit_num = static_cast<int32_t>(it->second);
-                        assert(unit_num < MAX_TEXTURE_IMAGE_UNITS);
-
-                        if (used_texture_units & (1 << unit_num) ) {
-                                glDeleteProgram(gl_id);
-                                throw (std::runtime_error(
-                                                        "ShaderProgram::Load: texture block: " +
-                                                        std::to_string(unit_num) +
-                                                        "already used, name: '" +
-                                                        oVar.sName +
-                                                        "', shader program name: " +
-                                                        sName));
-                        }
-
-                        used_texture_units |= 1 << unit_num;
-
-                        glUniform1iv(oVar.location, 1, reinterpret_cast<const int32_t *>(&it->second));
-                        oVar.unit_index = it->second;
-
-                        log_d("add tex sampler: '{}' to shader program: '{}'", oVar.sName, sName);
-                        mSamplers.emplace(key, std::move(oVar));
-                }
-                else {
-                        uint32_t mask    = 0;
-                        auto itSystemVar = mSystemVariables.find(key);
-                        if (itSystemVar != mSystemVariables.end()) {
-                                mask = itSystemVar->second;
-                        }
-
-                        log_d("add {} uniform: '{}', type: {}, size: {}, location: {}, to shader program: '{}'",
-                                        (mask) ? "system" : "custom",
-                                        oVar.sName,
-                                        oVar.type,
-                                        items_cnt,
-                                        oVar.location,
-                                        sName);
-                        mVariables.emplace(key, std::move(oVar));
-                        used_system_variables |= mask;
-                }
-
-        }
+        std::unordered_map<uint32_t, UniformUnitInfo::Type> mBlockBinding;
+        FillUniformBlocks(mBlockBinding);
+        FillVariables(mBlockBinding);
 
         CheckOpenGLError();
         log_d("shader program: '{}' link done", sName);
@@ -539,6 +453,228 @@ std::optional<std::reference_wrapper<const ShaderVariable>>
 
 uint32_t ShaderProgram::UsedSystemVariables() const {
         return used_system_variables;
+}
+
+const UniformBlockDescriptor * ShaderProgram::GetBlockDescriptor(const UniformUnitInfo::Type unit) const {
+
+        if  (auto it = mBlockDescriptors.find(unit); it != mBlockDescriptors.end()) {
+                return &(it->second);
+        }
+
+        return nullptr;
+}
+
+void ShaderProgram::FillVariables(std::unordered_map<uint32_t, UniformUnitInfo::Type> & mBlockBinding) {
+
+        uint32_t uniforms_cnt = 0;
+        int32_t items_cnt;//TODO array support
+        int32_t name_len = 0;
+        static std::array<char, 512> oNameBuffer;
+        int32_t block_index;
+
+        glGetProgramiv(gl_id, GL_ACTIVE_UNIFORMS, reinterpret_cast<int32_t *>(&uniforms_cnt));
+
+        for (uint32_t i = 0; i < uniforms_cnt; ++i) {
+
+                ShaderVariable oVar;
+                block_index = -1;
+
+                glGetActiveUniform(
+                                gl_id,
+                                i,
+                                oNameBuffer.size(),
+                                &name_len,
+                                &items_cnt,
+                                &oVar.type,
+                                oNameBuffer.data());
+                oVar.location = glGetUniformLocation(gl_id, oNameBuffer.data());
+                if (oVar.location < 0) {
+
+                        glGetActiveUniformsiv(
+                                        gl_id,
+                                        1,
+                                        &i,
+                                        GL_UNIFORM_BLOCK_INDEX,
+                                        &block_index);
+
+                        if (block_index < 0) {
+                                glDeleteProgram(gl_id);
+                                throw (std::runtime_error(
+                                                        "ShaderProgram::Load: failed to get uniform '" +
+                                                        std::string(oNameBuffer.data(), name_len) +
+                                                        "'location = " +
+                                                        std::to_string(oVar.location) +
+                                                        ", may be uniform stored inside block (unsupported currently), name: " +
+                                                        sName));
+                        }
+
+                        glGetActiveUniformsiv(
+                                        gl_id,
+                                        1,
+                                        static_cast<uint32_t *>(&i),
+                                        GL_UNIFORM_OFFSET,
+                                        &oVar.location);
+                }
+
+                oVar.sName = std::string_view(oNameBuffer.data(), name_len);
+                StrID key(oVar.sName);
+
+                if (IsTexture(oVar.type)) {
+
+                        auto it = mTextureUnitMapping.find(key);
+                        if (it == mTextureUnitMapping.end()) {
+
+                                glDeleteProgram(gl_id);
+                                throw (std::runtime_error(
+                                                        "ShaderProgram::Load: unknown texture variable name: '" +
+                                                        oVar.sName +
+                                                        "', can't find proper texture unit, shader program name: " +
+                                                        sName));
+                        }
+                        auto it2 = mSamplers2Textures.find(oVar.type);
+                        if (it2 == mSamplers2Textures.end()) {
+                                glDeleteProgram(gl_id);
+                                throw (std::runtime_error(
+                                                        "ShaderProgram::Load: unknown sampler type: " +
+                                                        std::to_string(oVar.type) +
+                                                        ", name: '" +
+                                                        oVar.sName +
+                                                        "', shader program name: " +
+                                                        sName));
+
+                        }
+                        oVar.type = it2->second;
+
+                        int32_t unit_num = static_cast<int32_t>(it->second);
+                        assert(unit_num < MAX_TEXTURE_IMAGE_UNITS);
+
+                        if (used_texture_units & (1 << unit_num) ) {
+                                glDeleteProgram(gl_id);
+                                throw (std::runtime_error(
+                                                        "ShaderProgram::Load: texture block: " +
+                                                        std::to_string(unit_num) +
+                                                        "already used, name: '" +
+                                                        oVar.sName +
+                                                        "', shader program name: " +
+                                                        sName));
+                        }
+
+                        used_texture_units |= 1 << unit_num;
+
+                        glUniform1iv(oVar.location, 1, reinterpret_cast<const int32_t *>(&it->second));
+                        oVar.unit_index = it->second;
+
+                        log_d("add tex sampler: '{}' to shader program: '{}'", oVar.sName, sName);
+                        mSamplers.emplace(key, std::move(oVar));
+                }
+                else { //uniform value
+                        if (block_index >= 0) {
+
+                                auto itBlock = mBlockBinding.find(block_index);
+                                if (itBlock == mBlockBinding.end()) {
+                                        glDeleteProgram(gl_id);
+                                        throw (std::runtime_error(fmt::format(
+                                                "wrong block index: {}, name: '{}', location: {},  shader program name: '{}'",
+                                                block_index,
+                                                oVar.sName,
+                                                oVar.location,
+                                                sName )));
+                                }
+
+                                auto itBlockDesc = mBlockDescriptors.find(itBlock->second);
+                                if (itBlockDesc == mBlockDescriptors.end()) {
+                                        glDeleteProgram(gl_id);
+                                        throw (std::runtime_error(fmt::format(
+                                                "wrong block descriptor: {}, name: '{}', location: {},  shader program name: '{}'",
+                                                static_cast<uint8_t>(itBlock->second),
+                                                oVar.sName,
+                                                oVar.location,
+                                                sName )));
+                                }
+                                log_d("add uniform: '{}' to block: {}, type: {}, size: {}, location: {}, to shader program: '{}'",
+                                                oVar.sName,
+                                                static_cast<uint8_t>(itBlock->second),
+                                                oVar.type,
+                                                items_cnt,
+                                                oVar.location,
+                                                sName);
+                                itBlockDesc->second.mVariables.emplace(key, std::move(oVar));
+                        }
+                        else {
+                                uint32_t mask    = 0;
+                                auto itSystemVar = mSystemVariables.find(key);
+                                if (itSystemVar != mSystemVariables.end()) {
+                                        mask = itSystemVar->second;
+                                }
+
+                                log_d("add {} uniform: '{}', type: {}, size: {}, location: {}, to shader program: '{}'",
+                                                (mask) ? "system" : "custom",
+                                                oVar.sName,
+                                                oVar.type,
+                                                items_cnt,
+                                                oVar.location,
+                                                sName);
+
+                                mVariables.emplace(key, std::move(oVar));
+                                used_system_variables |= mask;
+                        }
+                }
+        }
+}
+
+void ShaderProgram::FillUniformBlocks(std::unordered_map<uint32_t, UniformUnitInfo::Type> & mBlockBinding) {
+
+        int32_t         uniform_blocks_cnt = 0;
+        int32_t         name_len           = 0;
+        uint32_t        block_index;
+        int32_t         block_size;
+        uint32_t        alignment = GetSystem<GraphicsConfig>().GetValue(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
+        static std::array<char, 512> oNameBuffer;
+
+        glGetProgramiv(gl_id, GL_ACTIVE_UNIFORM_BLOCKS, &uniform_blocks_cnt);
+
+        for (int32_t i = 0; i < uniform_blocks_cnt; ++i) {
+
+                glGetActiveUniformBlockName(
+                                gl_id,
+                                static_cast<uint32_t>(i),
+                                oNameBuffer.size(),
+                                &name_len,
+                                oNameBuffer.data());
+
+                block_index = glGetUniformBlockIndex(gl_id, oNameBuffer.data());
+                StrID key(oNameBuffer.data());
+
+                auto it = mUniformBlockMapping.find(key);
+                if (it == mUniformBlockMapping.end()) {
+
+                        glDeleteProgram(gl_id);
+                        throw (std::runtime_error(fmt::format(
+                                "unknown uniform block name: '{}', shader program: '{}'",
+                                oNameBuffer.data(),
+                                sName )));
+                }
+
+                glGetActiveUniformBlockiv(gl_id, block_index, GL_UNIFORM_BLOCK_DATA_SIZE, &block_size);
+
+                if (!block_size) {
+                        log_w("skip empty block: '{}', shader program: '{}'", oNameBuffer.data(), sName);
+                        continue;
+                }
+
+                mBlockBinding[block_index] = it->second;
+                glUniformBlockBinding(gl_id, block_index, static_cast<int32_t>(it->second));
+
+
+                auto & oDesc = mBlockDescriptors.emplace(it->second, UniformBlockDescriptor{}).first->second;
+                oDesc.size = block_size;
+                oDesc.aligned_size = ((block_size + (alignment - 1)) & ~(alignment - 1));
+                log_d("add uniform block descriptor: '{}' size: {}, aligned_size: {}, to shader: '{}'",
+                                oNameBuffer.data(),
+                                oDesc.size,
+                                oDesc.aligned_size,
+                                sName);
+        }
 }
 
 

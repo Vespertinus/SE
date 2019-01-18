@@ -40,4 +40,12 @@ extern std::shared_ptr<spdlog::logger> gLogger;
                 gLogger->debug(format, ##__VA_ARGS__); \
         } while (0)
 
+#define se_assert(cond, ...) \
+        do { \
+                if (!(cond)) { \
+                        log_e_clean("("#cond") failed ({}:{})",  ##__VA_ARGS__, LOG_BASENAME, __LINE__); \
+                        abort(); \
+                } \
+        } while (0)
+
 #endif
