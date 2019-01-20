@@ -4,7 +4,7 @@
 
 namespace SE {
 
-struct UniformBuffer;
+class  UniformBuffer;
 struct UniformBlockDescriptor;
 
 class UniformBlock {
