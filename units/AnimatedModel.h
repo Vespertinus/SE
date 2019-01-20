@@ -47,9 +47,5 @@ class AnimatedModel : public StaticModel {
 
 }
 
-#ifdef SE_IMPL
-#include <AnimatedModel.tcc>
-#endif
-
 #endif
 

@@ -39,11 +39,6 @@ class GeometryEntity {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <GeometryEntity.tcc>
-#endif
-
 #endif
 
 

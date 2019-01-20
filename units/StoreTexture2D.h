@@ -45,9 +45,4 @@ class StoreTexture2D {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <StoreTexture2D.tcc>
-#endif
-
 #endif

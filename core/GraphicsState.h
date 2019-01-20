@@ -7,6 +7,8 @@
 
 namespace SE {
 
+class UniformBuffer;
+
 /*
  basic stub for render state managing
 
@@ -109,10 +111,5 @@ template <class T> ret_code_t GraphicsState::SetVariable(const StrID name, const
 typedef Loki::SingletonHolder < GraphicsState >   TGraphicsState;
 
 } // namespace SE
-
-
-#ifdef SE_IMPL
-#include <GraphicsState.tcc>
-#endif
 
 #endif

@@ -47,5 +47,4 @@ extern std::shared_ptr<spdlog::logger> gLogger;
                         abort(); \
                 } \
         } while (0)
-
 #endif

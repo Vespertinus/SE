@@ -59,11 +59,6 @@ class ShaderProgramState {
 
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <ShaderProgramState.tcc>
-#endif
-
 #endif
 
 

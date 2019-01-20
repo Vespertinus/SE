@@ -37,11 +37,6 @@ class RenderCommand {
 
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <RenderCommand.tcc>
-#endif
-
 #endif
 
 

@@ -91,7 +91,7 @@ ret_code_t UniformBlock::SetVariable(const StrID name, const glm::vec4 & val) {
 }
 
 void UniformBlock::Apply() const {
-        pBuffer->Apply(block_id, static_cast<uint8_t>(unit_id));
+        pBuffer->Apply(block_id, unit_id);
 }
 
 

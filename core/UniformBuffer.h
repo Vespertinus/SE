@@ -27,7 +27,7 @@ class UniformBuffer {
         void       UploadToDevice() const;
         uint16_t   AllocateBlock();
         void       ReleaseBlock(const uint16_t block_id);
-        void       Apply(const uint16_t block_id, const uint8_t uniform_buffer_unit) const;
+        void       Apply(const uint16_t block_id, const UniformUnitInfo::Type uniform_buffer_unit) const;
         //THINK store unit inside on creation
 
         std::string Str() const;
@@ -41,10 +41,5 @@ class UniformBuffer {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <UniformBuffer.tcc>
-#endif
-
 #endif
 

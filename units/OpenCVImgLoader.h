@@ -2,7 +2,9 @@
 #ifndef __OPEN_CV_IM_LOADER_H__
 #define __OPEN_CV_IM_LOADER_H__ 1
 
-#include <opencv2/opencv.hpp>
+namespace cv {
+struct Mat;
+}
 
 namespace SE {
 
@@ -21,9 +23,4 @@ class OpenCVImgLoader {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <OpenCVImgLoader.tcc>
-#endif
-
 #endif

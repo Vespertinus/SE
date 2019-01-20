@@ -37,9 +37,4 @@ class Mesh : public ResourceHolder {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <Mesh.tcc>
-#endif
-
 #endif

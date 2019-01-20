@@ -57,9 +57,4 @@ class Transform {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <Transform.tcc>
-#endif
-
 #endif

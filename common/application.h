@@ -3,24 +3,13 @@
 #ifndef __APPLICATION_H__
 #define __APPLICATION_H__ 1
 
-// OpenGL include
-//#include <GL/glut.h>
-//#include <GL/gl.h>	
-//#include <GL/glu.h>	
-
 // C include
 #include <unistd.h>
 
 // C++ include
 #include <map>
 
-// Loki include
-//#include <Singleton.h>
-
 // Internal include
-#include <Global.h>
-#include <GlobalTypes.h>
-
 #include <InputManager.h>
 #include <Camera.h>
 #include <FlyTransposer.h>

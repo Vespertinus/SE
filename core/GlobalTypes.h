@@ -13,9 +13,10 @@
 #include <ErrCode.h>
 #include <Util.h>
 #include <StrID.h>
-
+#include <Global.h>
+///*
 #include <Logging.h>
-
+///*
 #include <Chrono.h>
 #include <SimpleFPS.h>
 #include <MPUtil.h>
@@ -35,7 +36,7 @@
 #include <Texture.h>
 #include <StoreTexture2D.h>
 #include <StoreTextureBufferObject.h>
-
+//*/
 //TODO move to SE.h
 
 namespace SE {
@@ -51,10 +52,10 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 
 }
 
-#include <UniformBuffer.h>
 #include <ShaderComponent.h>
 #include <ShaderProgram.h>
 #include <GraphicsState.h>
+#include <UniformBuffer.h>
 #include <ShaderProgramState.h>
 #include <VisualHelpers.h>
 #include <Material.h>
@@ -125,6 +126,10 @@ typedef LOKI_TYPELIST_6(
                 TSceneTree,
                 ShaderComponent,
                 ShaderProgram)                                          TResourseList;
+//THINK
+#ifndef SE_IMPL
+extern template class ResourceManager<TResourseList>;
+#endif
 typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourceManager;
 
 
@@ -139,7 +144,9 @@ template <class TSystem> TSystem & GetSystem() {
         return TEngine::Instance().Get<TSystem>();
 }
 
-
 } //namespace SE
+
+
+#include <AllImpl.tcc>
 
 #endif

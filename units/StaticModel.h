@@ -48,8 +48,4 @@ class StaticModel {
 
 }
 
-#ifdef SE_IMPL
-#include <StaticModel.tcc>
-#endif
-
 #endif

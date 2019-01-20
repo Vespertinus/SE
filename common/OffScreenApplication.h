@@ -10,9 +10,6 @@
 
 
 // Internal include
-#include <Global.h>
-#include <GlobalTypes.h>
-
 #include <OSMesa.h>
 #include <Camera.h>
 #include <DummyTransposer.h>

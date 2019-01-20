@@ -98,9 +98,4 @@ class ShaderProgram : public ResourceHolder {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <ShaderProgram.tcc>
-#endif
-
 #endif

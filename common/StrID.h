@@ -1,6 +1,8 @@
 #ifndef __STR_ID_H__
 #define __STR_ID_H__ 1
 
+#include <fstream>
+
 namespace SE {
 
 //THINK std::hash calculate always in size_t... so, arch dependent

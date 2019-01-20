@@ -59,8 +59,4 @@ TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTexHolder);
 
 } //namespace SE
 
-#ifdef SE_IMPL
-#include <Material.tcc>
-#endif
-
 #endif

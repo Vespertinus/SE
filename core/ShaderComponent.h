@@ -31,9 +31,4 @@ class ShaderComponent : public ResourceHolder {
 
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <ShaderComponent.tcc>
-#endif
-
 #endif

@@ -33,9 +33,4 @@ class GraphicsConfig {
 
 } // namespace SE
 
-
-#ifdef SE_IMPL
-#include <GraphicsConfig.tcc>
-#endif
-
 #endif

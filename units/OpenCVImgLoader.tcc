@@ -1,4 +1,6 @@
 
+#include <opencv2/opencv.hpp>
+
 namespace SE {
 
 OpenCVImgLoader::OpenCVImgLoader(const Settings & oSettings) { ;; }

@@ -44,8 +44,4 @@ class BoundingBox {
 
 } //namespace SE
 
-#ifdef SE_IMPL
-#include <BoundingBox.tcc>
-#endif
-
 #endif

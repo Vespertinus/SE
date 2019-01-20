@@ -102,17 +102,17 @@ void UniformBuffer::UploadToDevice() const {
 
         if (size_changed || sDirty.size() > (allocated_blocks_cnt * 0.3) ) {
                 //copy full buffer
-                //TMP TGraphicsState::Instance().UploadUniformBufferData(gl_id, vShadowBuffer.size(), vShadowBuffer.data());
+                TGraphicsState::Instance().UploadUniformBufferData(gl_id, vShadowBuffer.size(), vShadowBuffer.data());
 
                 size_changed = false;
         }
         else {
                 //copy dirty
                 for (auto block_id : sDirty) {
-                        /* TMP TGraphicsState::Instance().UploadUniformBufferSubData(
+                        TGraphicsState::Instance().UploadUniformBufferSubData(
                                         gl_id,
                                         block_size,
-                                        &vShadowBuffer[block_id * block_size]); */
+                                        &vShadowBuffer[block_id * block_size]);
                 }
         }
 
@@ -120,7 +120,7 @@ void UniformBuffer::UploadToDevice() const {
 }
 
 
-void UniformBuffer::Apply(const uint16_t block_id, const uint8_t uniform_buffer_unit) const {
+void UniformBuffer::Apply(const uint16_t block_id, const UniformUnitInfo::Type uniform_buffer_unit) const {
 
 
         //TODO upload only if current block dirty
@@ -131,11 +131,11 @@ void UniformBuffer::Apply(const uint16_t block_id, const uint8_t uniform_buffer_
         //THINK call Graphics.UseBuffer();
         //glBindBufferRange(GL_UNIFORM_BUFFER, uniform_buffer_unit, gl_id, block_id * block_size, block_size);
 
-        /*TMP  TGraphicsState::Instance().BindUniformBufferRange(
+        TGraphicsState::Instance().BindUniformBufferRange(
                         gl_id,
                         uniform_buffer_unit,
                         block_id * block_size,
-                        block_size); */
+                        block_size);
 }
 
 }

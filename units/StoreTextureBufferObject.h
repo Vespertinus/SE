@@ -23,10 +23,5 @@ class StoreTextureBufferObject {
 };
 
 } //namespace SE
-
-#ifdef SE_IMPL
-#include <StoreTextureBufferObject.tcc>
-#endif
-
 #endif
 

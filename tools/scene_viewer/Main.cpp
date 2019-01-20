@@ -1,10 +1,14 @@
 
+#include <iostream>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
 #include <spdlog/sinks/rotating_file_sink.h>
 
+//#include <GlobalTypes.h> TODO later
 #define SE_IMPL
+#include <GlobalTypes.h>
 #include <application.h>
 #include "Scene.h"
 
