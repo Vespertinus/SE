@@ -10,6 +10,9 @@
 #include <GeometryUtil.h>
 #include <StrID.h>
 
+#include <BoundingBox.h>
+#include <BoundingBox.tcc>
+
 #include <Mesh_generated.h>
 
 /**

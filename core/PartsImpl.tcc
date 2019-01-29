@@ -1,6 +1,5 @@
 
 #ifdef SE_IMPL
-#include <BoundingBox.tcc>
 //#include <Frustum.tcc>
 
 #include <TGALoader.tcc>

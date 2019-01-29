@@ -129,8 +129,10 @@ void StaticModel::FillRenderCommands() {
                 vRenderCommands.emplace_back(&oSubMesh, pMaterial, pNode->GetTransform());
         }
 
-        //THINK if already enabled -> invalidate render commands list???
+        //TODO if already enabled -> invalidate render commands list!
+        //need to disable \ enable
         //internal enabled state.. ? remove / add sequence
+        //2 level state, node + component? Enable, Disable, UpdateState?
 }
 
 Material * StaticModel::GetMaterial() const {

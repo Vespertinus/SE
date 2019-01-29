@@ -6,6 +6,7 @@ namespace SE {
 
 class  UniformBuffer;
 struct UniformBlockDescriptor;
+class  Material;
 
 class UniformBlock {
 
@@ -15,10 +16,22 @@ class UniformBlock {
         UniformUnitInfo::Type           unit_id;
 
         template <class TArg> ret_code_t SetValueInternal(const StrID name, const TArg & val);
+        template <class TArg> ret_code_t SetArrayElementInternal(
+                        const StrID name,
+                        const uint16_t index,
+                        const TArg & val);
+        template <class TArg> ret_code_t GetValueInternal (
+                        const StrID name,
+                        const TArg *& pValue) const;
+        template <class TArg> ret_code_t GetArrayElementInternal(
+                        const StrID name,
+                        const uint16_t index,
+                        const TArg *& pValue) const;
 
         public:
 
         UniformBlock(ShaderProgram * pShader, const UniformUnitInfo::Type new_unit_id);
+
         ret_code_t              SetVariable(const StrID name, float val);
         ret_code_t              SetVariable(const StrID name, const glm::vec2 & val);
         ret_code_t              SetVariable(const StrID name, const glm::vec3 & val);
@@ -28,40 +41,72 @@ class UniformBlock {
         ret_code_t              SetVariable(const StrID name, const glm::uvec4 & val);
         ret_code_t              SetVariable(const StrID name, const glm::mat3 & val);
         ret_code_t              SetVariable(const StrID name, const glm::mat4 & val);
-        ret_code_t              SetVariable(const StrID name, const float * pValue, const uint32_t count);
-        //TODO SetVariable for int array
-        //and struct?
+        ret_code_t              SetVariable(const StrID name, const uint32_t val);
+        ret_code_t              SetVariable(const StrID name, const int32_t val);
+        ret_code_t              SetVariable(const StrID name, const float * pValue, const uint16_t count);
+        ret_code_t              SetVariable(const StrID name, const uint32_t * pValue, const uint16_t count);
+
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, float val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::vec2 & val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::vec3 & val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::vec4 & val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::uvec2 & val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::uvec3 & val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::uvec4 & val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::mat3 & val);
+        ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::mat4 & val);
+
+        ret_code_t              GetVariable(const StrID name, const float *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::vec2 *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::vec3 *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::vec4 *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::uvec2 *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::uvec3 *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::uvec4 *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::mat3 *& pValue) const;
+        ret_code_t              GetVariable(const StrID name, const glm::mat4 *& pValue) const;
+
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const float *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::vec2 *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::vec3 *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::vec4 *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::uvec2 *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::uvec3 *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::uvec4 *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::mat3 *& pValue) const;
+        ret_code_t              GetArrayElement(const StrID name, const uint16_t index, const glm::mat4 *& pValue) const;
+
         bool                    OwnVariable(const StrID name) const;
-        //TODO GetVariable
         void                    Apply() const;
 };
 
 class ShaderProgramState {
 
+        using TexturesMap = std::unordered_map<TextureUnit, TTexture *>;
+
         ShaderProgram         * pShader;
-        std::unordered_map<UniformUnitInfo::Type, UniformBlock *> mShaderBlocks;
-        //textures map, per unit info? or list
-        //uniform variables from material
-        uint64_t                hash; //from tex + uniform buf id + block_id
+        /** material also must contain render state settings (blending, depth, etc) */
+        const Material        * pMaterial;
+        //TODO later rewrite on std::array<, MAX_UNIT(16)>
+        std::unordered_map<UniformUnitInfo::Type, const UniformBlock *> mShaderBlocks;
+        std::unordered_map<UniformUnitInfo::Type, const TexturesMap * > mTextures;
+        TexturesMap             mDefaultTextures;
+        //uint64_t                hash; //from tex + uniform buf id + block_id
 
         public:
 
-        ShaderProgramState(ShaderProgram * pNewShader);
+        ShaderProgramState(const Material * pMaterial);
 
-        ret_code_t              SetBlock(const UniformUnitInfo::Type unit_id, UniformBlock * pBlock);
+        ret_code_t              SetBlock(const UniformUnitInfo::Type unit_id, const UniformBlock * pBlock);
+        ret_code_t              SetTextures(const UniformUnitInfo::Type unit_id, const TexturesMap * pTextures);
+        ret_code_t              SetTexture(const TextureUnit unit_index, TTexture * pTex);
         //GetBlock ?
-        //Set Tex?
-        //Set default uniform group
         ret_code_t              Validate() const;
         void                    Apply() const;
-        uint64_t                GetSortKey() const;
+        //uint64_t                GetSortKey() const;
 };
 
 
 } //namespace SE
 #endif
-
-
-
-
 

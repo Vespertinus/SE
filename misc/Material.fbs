@@ -66,6 +66,11 @@ table ShaderVariable {
         uvec2_val:UVec2;
         uvec3_val:UVec3;
         uvec4_val:UVec4;
+/*TODO
+  color_val (rgba float)
+  icolor_val (rgba, byte)
+
+*/
 }
 
 table Material {

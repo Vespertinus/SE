@@ -63,10 +63,7 @@ std::string Material::Str() const {
 
 void Material::Apply() const {
 
-        TGraphicsState::Instance().SetShaderProgram(pShader);
-        for (auto & oTexItem : mTextures) {
-                TGraphicsState::Instance().SetTexture(oTexItem.first, oTexItem.second);
-        }
+        //TODO set render state for material, alpha cut, blending, depth test etc
 
         for (auto & oShaderVar : mShaderVariables) {
 
@@ -106,6 +103,11 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
                                                         sName)));
         }
 
+        if (pShader->GetBlockDescriptor(UniformUnitInfo::Type::MATERIAL) ) {
+
+                pBlock = std::make_unique<UniformBlock>(pShader, UniformUnitInfo::Type::MATERIAL);
+        }
+
         //fill textures vec
         uint32_t textures_cnt = (pMaterial->textures()) ? pMaterial->textures()->Length() : 0;
 
@@ -125,7 +127,49 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
                 mTextures.emplace(static_cast<TextureUnit>(pTextureHolder->unit()), pTex);
         }
 
-        //TODO fill shader variables
+        ret_code_t res;
+        uint32_t mat_variables_cnt = (pMaterial->variables()) ? pMaterial->variables()->Length() : 0;
+
+        for (uint32_t i = 0; i < mat_variables_cnt; ++i) {
+
+                auto * pVar = pMaterial->variables()->Get(i);
+                StrID name(pVar->name()->c_str());
+
+                //THINK... bad union
+                if (auto * pValue = pVar->vec4_val()) {
+                        res = SetVariable(name, *reinterpret_cast<const glm::vec4 *>(pValue));
+                }
+                else if (auto * pValue = pVar->vec3_val()) {
+                        res = SetVariable(name, *reinterpret_cast<const glm::vec3 *>(pValue));
+                }
+                else if (auto * pValue = pVar->vec2_val()) {
+                        res = SetVariable(name, *reinterpret_cast<const glm::vec2 *>(pValue));
+                }
+                else if (auto * pValue = pVar->uvec4_val()) {
+                        res = SetVariable(name, *reinterpret_cast<const glm::uvec4 *>(pValue));
+                }
+                else if (auto * pValue = pVar->uvec3_val()) {
+                        res = SetVariable(name, *reinterpret_cast<const glm::uvec3 *>(pValue));
+                }
+                else if (auto * pValue = pVar->uvec2_val()) {
+                        res = SetVariable(name, *reinterpret_cast<const glm::uvec2 *>(pValue));
+                }
+                /* array float vec4, vec3, etc */
+                else { //float
+                        res = SetVariable(name, pVar->float_val());
+                }
+
+                if (res != uSUCCESS) {
+                        throw(std::runtime_error(fmt::format("failed to set variable: '{}', material: '{}', shader '{}'",
+                                                        pVar->name()->c_str(),
+                                                        sName,
+                                                        pShader->Name() )));
+
+                }
+
+                log_d("material: '{}' set variable: '{}'", sName, pVar->name()->c_str());
+        }
+
 }
 
 ret_code_t Material::SetTexture(const StrID name, TTexture * pTex) {
@@ -245,10 +289,15 @@ TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
         return pTex;
 }
 
-UniformBlock * Material::GetUniformBlock() const {
+const UniformBlock * Material::GetUniformBlock() const {
 
         if (pBlock) { return pBlock.get(); }
         return nullptr;
+}
+
+const Material::TexturesMap * Material::GetTextures() const {
+
+        return &mTextures;
 }
 
 }

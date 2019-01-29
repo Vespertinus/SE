@@ -31,8 +31,8 @@ struct ShaderVariable {
                 int             location;
                 TextureUnit     unit_index;
         };
-
-        //buffer
+        uint16_t        array_cnt;
+        uint16_t        array_stride;
 };
 
 struct UniformBlockDescriptor {

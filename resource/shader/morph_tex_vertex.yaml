@@ -9,28 +9,26 @@ source:
         uniform samplerBuffer BufferTex;
         uniform mat4 MVPMatrix;
         uniform mat4 MVMatrix;
-        //TODO rewrite after switching on uniform buffers
-        uniform float BS_1W;
-        uniform float BS_2W;
+
+        uniform Animation {
+                int     BlendShapesCnt;
+                float   BlendShapesWeights[12];
+        };
 
         out vec2      TexCoord;
 
-        const int channels_cnt = 2;
-
         void main() {
 
-                vec3 bs1;
-                vec3 bs2;
+                vec4 BlendedPosition = Position;
+                vec3 bs;
+                for (int i = 0; i < BlendShapesCnt; ++i) {
 
-                bs1.x = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 0).x;
-                bs1.y = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 1).x;
-                bs1.z = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 2).x;
+                        bs.x = texelFetch(BufferTex, (gl_VertexID * 3 * BlendShapesCnt) + i * 3 + 0).x;
+                        bs.y = texelFetch(BufferTex, (gl_VertexID * 3 * BlendShapesCnt) + i * 3 + 1).x;
+                        bs.z = texelFetch(BufferTex, (gl_VertexID * 3 * BlendShapesCnt) + i * 3 + 2).x;
 
-                bs2.x = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 3 + 0).x;
-                bs2.y = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 3 + 1).x;
-                bs2.z = texelFetch(BufferTex, (gl_VertexID * 3 * channels_cnt) + 3 + 2).x;
-
-                vec4 BlendedPosition = vec4(BS_1W * bs1, 0) + vec4(BS_2W * bs2, 0) + Position;
+                        BlendedPosition += vec4(BlendShapesWeights[i] * bs, 0);
+                }
 
                 gl_Position = MVPMatrix * (MVMatrix * BlendedPosition);
                 TexCoord    = TexCoord0;

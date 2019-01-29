@@ -24,6 +24,8 @@ class UniformBuffer {
         ~UniformBuffer() noexcept;
 
         ret_code_t SetValue(uint16_t block_id, uint16_t value_offset, const void * pValue, const uint32_t value_size);
+        /** temp pointer, could be changed on resize */
+        ret_code_t GetValue(uint16_t block_id, uint16_t value_offset, const void *& pValue, const uint32_t value_size);
         void       UploadToDevice() const;
         uint16_t   AllocateBlock();
         void       ReleaseBlock(const uint16_t block_id);

@@ -13,7 +13,7 @@ namespace SE {
 class RenderCommand {
 
         const GeometryEntity          * pGeom;
-        const Material                * pMaterial;//THINK remove after switching on state?
+        const Material                * pMaterial;
         ShaderProgramState              oState;
         const Transform               & oTransform;
 

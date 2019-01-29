@@ -1,23 +1,37 @@
 
 namespace SE {
 
+const StrID AnimatedModel::BS_WEIGHT            = "BlendShapesWeights";
+const StrID AnimatedModel::BS_WEIGHTS_CNT       = "BlendShapesCnt";
+
 AnimatedModel::AnimatedModel(TSceneTree::TSceneNodeExact * pNewNode,
                              bool enabled,
                              TMesh * pNewMesh,
                              Material * pNewMaterial,
-                             const uint8_t blendshapes_cnt) :
-        StaticModel(pNewNode, enabled, pNewMesh, pNewMaterial) {
+                             TTexture * pNewTexBuf,
+                             const uint8_t new_blendshapes_cnt) :
+        StaticModel(pNewNode, enabled, pNewMesh, pNewMaterial),
+        pTexBuffer(pNewTexBuf),
+        blendshapes_cnt(new_blendshapes_cnt) {
 
-        vWeights.resize(blendshapes_cnt, 0);
         if (!pMaterial->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
 
                 throw(std::runtime_error(fmt::format(
-                                                "wrong material: '{}', does not own TextureUnit::BUFFER, node: '{}'",
+                                                "wrong material: '{}', shader: '{}', does not own TextureUnit::BUFFER, node: '{}'",
                                                 pMaterial->Name(),
+                                                pMaterial->GetShader()->Name(),
                                                 pNode->GetFullName()
                                                 )));
         }
 
+        pBlock = std::make_unique<UniformBlock>(pMaterial->GetShader(), UniformUnitInfo::Type::ANIMATION);
+        auto res = pBlock->SetVariable(BS_WEIGHTS_CNT, blendshapes_cnt);
+        if (res != uSUCCESS) {
+                throw(std::runtime_error(fmt::format("failed to set blendshape cnt variable: '{}', shader: '{}', node: '{}'",
+                                                BS_WEIGHTS_CNT,
+                                                pMaterial->GetShader()->Name(),
+                                                pNode->GetFullName())));
+        }
 }
 
 
@@ -72,16 +86,11 @@ AnimatedModel::AnimatedModel(
                                                 )));
         }
 
-        FillRenderCommands();
+        pBlock = std::make_unique<UniformBlock>(pMaterial->GetShader(), UniformUnitInfo::Type::ANIMATION);
 
-        auto bs_weights = pModel->blendshapes_weights()->Length();
-        vWeights.reserve(bs_weights);
-        for (uint32_t i = 0; i < bs_weights; ++i) {
+        blendshapes_cnt = pModel->blendshapes_weights()->Length();
 
-                vWeights.emplace_back(pModel->blendshapes_weights()->Get(i));
-        }
-
-        auto * pTexBuffer = LoadTexture(pModel->blendshapes());
+        pTexBuffer = LoadTexture(pModel->blendshapes());
 
         if (!pTexBuffer || static_cast<TextureUnit>(pModel->blendshapes()->unit()) != TextureUnit::BUFFER) {
 
@@ -91,27 +100,30 @@ AnimatedModel::AnimatedModel(
                                                 pNode->GetFullName())));
         }
 
-        ret_code_t res = pMaterial->SetTexture(TextureUnit::BUFFER, pTexBuffer);
-        if (res != uSUCCESS) {
-                throw(std::runtime_error(fmt::format("failed to set texture buffer to material: '{}', node: '{}'",
-                                                pMaterial->Name(),
-                                                pNode->GetFullName())));
+        ret_code_t res;
+        for (size_t i = 0; i < blendshapes_cnt; ++i) {
 
-        }
-
-        for (size_t i = 0; i < vWeights.size(); ++i) {
-
-                res = pMaterial->SetVariable(vWeightsNames[i], vWeights[i]);
+                res = pBlock->SetArrayElement(BS_WEIGHT, i, pModel->blendshapes_weights()->Get(i));
                 if (res != uSUCCESS) {
-                        throw(std::runtime_error(fmt::format("failed to set weight variable: '{}' to material: '{}', node: '{}'",
-                                                        vWeightsNames[i],
-                                                        pMaterial->Name(),
+                        throw(std::runtime_error(fmt::format("failed to set blendshape weight variable: '{}', shader: '{}', node: '{}'",
+                                                        BS_WEIGHT,
+                                                        pMaterial->GetShader()->Name(),
                                                         pNode->GetFullName())));
                 }
         }
+
+        res = pBlock->SetVariable(BS_WEIGHTS_CNT, blendshapes_cnt);
+        if (res != uSUCCESS) {
+                throw(std::runtime_error(fmt::format("failed to set blendshape cnt variable: '{}', shader: '{}', node: '{}'",
+                                                BS_WEIGHTS_CNT,
+                                                pMaterial->GetShader()->Name(),
+                                                pNode->GetFullName())));
+        }
+
+        FillRenderCommands();
 }
 
-ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial, const uint8_t blendshapes_cnt) {
+ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
 
         if (!pNewMaterial->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
 
@@ -121,16 +133,36 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial, const uint8_t ble
                 return uWRONG_INPUT_DATA;
         }
 
-        vWeights.resize(blendshapes_cnt, 0);
+        try {
+                auto pNewBlock = std::make_unique<UniformBlock>(pNewMaterial->GetShader(), UniformUnitInfo::Type::ANIMATION);
+                pBlock = std::move(pNewBlock);
+        }
+        catch(std::exception & ex) {
+                log_e("failed to allocate Animation uniform block from new material: '{}', shader: '{}', reason: '{}'",
+                                pNewMaterial->Name(),
+                                pNewMaterial->GetShader()->Name(),
+                                ex.what());
+                return uWRONG_INPUT_DATA;
+        }
+        catch(...) {
+                log_e("failed to allocate Animation uniform block from new material: '{}', shader: '{}'",
+                                pNewMaterial->Name(),
+                                pNewMaterial->GetShader()->Name() );
+                return uWRONG_INPUT_DATA;
+        }
+
         pMaterial = pNewMaterial;
-
         FillRenderCommands();
-        /*
-        for (auto & oItem : vRenderCommands) {
-                oItem.SetMaterial(pNewMaterial);
-        }*/
-
         return uSUCCESS;
+}
+
+void AnimatedModel::FillRenderCommands() {
+
+        StaticModel::FillRenderCommands();
+        for (auto & oItem : vRenderCommands) {
+                oItem.State().SetBlock(UniformUnitInfo::Type::ANIMATION, pBlock.get());
+                oItem.State().SetTexture(TextureUnit::BUFFER, pTexBuffer);
+        }
 }
 
 std::string AnimatedModel::Str() const {
@@ -138,42 +170,44 @@ std::string AnimatedModel::Str() const {
         return fmt::format("AnimatedModel: Mesh: '{}', Material: '{}', bs cnt: {}",
                         pMesh->Name(),
                         pMaterial->Name(),
-                        vWeights.size());
+                        blendshapes_cnt);
 }
 
 ret_code_t AnimatedModel::SetWeight(const uint8_t index, const float weight) {
 
-        if (index >= vWeights.size()) {
+        if (index >= blendshapes_cnt) {
                 log_e("wrong weight index: {}, max allowed: {}, node: '{}'",
                                 index,
-                                vWeights.size(),
+                                blendshapes_cnt,
                                 pNode->GetFullName());
                 return uWRONG_INPUT_DATA;
         }
 
 //        log_d("index: {}, weight: {}", index, weight);
-
-        auto res = pMaterial->SetVariable(vWeightsNames[index], weight);
-        if (res == uSUCCESS) {
-                vWeights[index] = weight;
-        }
-        return res;
+        return pBlock->SetArrayElement(BS_WEIGHT, index, weight);
 }
 
 uint8_t AnimatedModel::BlendShapesCnt() const {
-        return vWeights.size();
+        return blendshapes_cnt;
 }
 
 float AnimatedModel::GetWeight(const uint8_t index) {
 
-        if (index >= vWeights.size()) {
+        const float * pValue = nullptr;
+
+        if (index >= blendshapes_cnt) {
                 log_e("wrong weight index: {}, max allowed: {}, node: '{}'",
                                 index,
-                                vWeights.size(),
+                                blendshapes_cnt,
                                 pNode->GetFullName());
                 return 0;
         }
-        return vWeights[index];
+
+        if (auto res = pBlock->GetArrayElement(BS_WEIGHT, index, pValue); res != uSUCCESS) {
+                return 0;
+        }
+
+        return *pValue;
 }
 
 }

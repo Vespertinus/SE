@@ -476,7 +476,7 @@ void ShaderProgram::FillVariables(std::unordered_map<uint32_t, UniformUnitInfo::
 
         for (uint32_t i = 0; i < uniforms_cnt; ++i) {
 
-                ShaderVariable oVar;
+                ShaderVariable oVar{};
                 block_index = -1;
 
                 glGetActiveUniform(
@@ -487,7 +487,10 @@ void ShaderProgram::FillVariables(std::unordered_map<uint32_t, UniformUnitInfo::
                                 &items_cnt,
                                 &oVar.type,
                                 oNameBuffer.data());
-                oVar.location = glGetUniformLocation(gl_id, oNameBuffer.data());
+
+                oVar.array_cnt = items_cnt;
+                oVar.location  = glGetUniformLocation(gl_id, oNameBuffer.data());
+
                 if (oVar.location < 0) {
 
                         glGetActiveUniformsiv(
@@ -514,9 +517,23 @@ void ShaderProgram::FillVariables(std::unordered_map<uint32_t, UniformUnitInfo::
                                         static_cast<uint32_t *>(&i),
                                         GL_UNIFORM_OFFSET,
                                         &oVar.location);
+
+                        if (oVar.array_cnt > 1) {
+                                int stride;
+                                glGetActiveUniformsiv(
+                                                gl_id,
+                                                1,
+                                                static_cast<uint32_t *>(&i),
+                                                GL_UNIFORM_ARRAY_STRIDE,
+                                                &stride);
+                                oVar.array_stride = stride;
+                        }
                 }
 
                 oVar.sName = std::string_view(oNameBuffer.data(), name_len);
+                if (auto name_ind = oVar.sName.find("[0]"); name_ind != std::string::npos) {
+                        oVar.sName.resize(name_ind);
+                }
                 StrID key(oVar.sName);
 
                 if (IsTexture(oVar.type)) {
@@ -591,12 +608,13 @@ void ShaderProgram::FillVariables(std::unordered_map<uint32_t, UniformUnitInfo::
                                                 oVar.location,
                                                 sName )));
                                 }
-                                log_d("add uniform: '{}' to block: {}, type: {}, size: {}, location: {}, to shader program: '{}'",
+                                log_d("add uniform: '{}' to block: {}, type: {}, count: {}, offset: {}, stride: {}, to shader program: '{}'",
                                                 oVar.sName,
                                                 static_cast<uint8_t>(itBlock->second),
                                                 oVar.type,
                                                 items_cnt,
                                                 oVar.location,
+                                                oVar.array_stride,
                                                 sName);
                                 itBlockDesc->second.mVariables.emplace(key, std::move(oVar));
                         }
@@ -607,7 +625,7 @@ void ShaderProgram::FillVariables(std::unordered_map<uint32_t, UniformUnitInfo::
                                         mask = itSystemVar->second;
                                 }
 
-                                log_d("add {} uniform: '{}', type: {}, size: {}, location: {}, to shader program: '{}'",
+                                log_d("add {} uniform: '{}', type: {}, count: {}, location: {}, to shader program: '{}'",
                                                 (mask) ? "system" : "custom",
                                                 oVar.sName,
                                                 oVar.type,

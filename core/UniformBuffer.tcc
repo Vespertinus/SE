@@ -3,6 +3,7 @@ namespace SE {
 
 UniformBuffer::UniformBuffer(const uint16_t new_block_size, const uint16_t initial_block_cnt) :
         block_size(new_block_size),
+        allocated_blocks_cnt(initial_block_cnt),
         vShadowBuffer(initial_block_cnt * block_size, 0),
         size_changed(true) {
 
@@ -42,7 +43,7 @@ ret_code_t UniformBuffer::SetValue(
                                 gl_id);
                 return uWRONG_INPUT_DATA;
         }
-        if ((value_offset + value_size) >= block_size) {
+        if ((value_offset + value_size) > block_size) {
                 log_e("too big value_offset: {}, or value size: {}, block_id: {}, block_size: {}, gl_id: {}",
                                 value_offset,
                                 value_size,
@@ -57,6 +58,36 @@ ret_code_t UniformBuffer::SetValue(
         memcpy(&vShadowBuffer[block_id * block_size + value_offset], pValue, value_size);
 
         sDirty.insert(block_id);
+        return uSUCCESS;
+}
+
+ret_code_t UniformBuffer::GetValue(
+                uint16_t block_id,
+                uint16_t value_offset,
+                const void *& pValue,
+                const uint32_t value_size) {
+
+        if (block_id >= allocated_blocks_cnt) {
+                log_e("wrong block_id: {}, allocated_blocks_cnt: {}, block_size: {}, gl_id: {}",
+                                block_id,
+                                allocated_blocks_cnt,
+                                block_size,
+                                gl_id);
+                return uWRONG_INPUT_DATA;
+        }
+        if ((value_offset + value_size) > block_size) {
+                log_e("too big value_offset: {}, or value size: {}, block_id: {}, block_size: {}, gl_id: {}",
+                                value_offset,
+                                value_size,
+                                block_id,
+                                block_size,
+                                gl_id);
+                return uWRONG_INPUT_DATA;
+        }
+
+        //TODO check that block used, not in free list
+
+        pValue = &vShadowBuffer[block_id * block_size + value_offset];
         return uSUCCESS;
 }
 
@@ -122,14 +153,9 @@ void UniformBuffer::UploadToDevice() const {
 
 void UniformBuffer::Apply(const uint16_t block_id, const UniformUnitInfo::Type uniform_buffer_unit) const {
 
-
-        //TODO upload only if current block dirty
         if (sDirty.count(block_id) == 1) {
                 UploadToDevice();
         }
-
-        //THINK call Graphics.UseBuffer();
-        //glBindBufferRange(GL_UNIFORM_BUFFER, uniform_buffer_unit, gl_id, block_id * block_size, block_size);
 
         TGraphicsState::Instance().BindUniformBufferRange(
                         gl_id,

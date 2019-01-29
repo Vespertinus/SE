@@ -10,7 +10,7 @@ RenderCommand::RenderCommand(
                 const Transform & oNewTransform) :
         pGeom(pNewGeom),
         pMaterial(pNewMaterial),
-        oState(pMaterial->GetShader()),
+        oState(pMaterial),
         oTransform(oNewTransform)  {
 
 
@@ -31,16 +31,24 @@ RenderCommand::RenderCommand(
                 }
         }
 
+        if (auto res = oState.SetTextures(UniformUnitInfo::Type::MATERIAL, pMaterial->GetTextures()); res != uSUCCESS) {
+                throw(std::runtime_error(fmt::format(
+                                                "failed to set textures for material block from '{}'",
+                                                pMaterial->Name())));
+        }
 
         //UpdateKey
 }
 
 void RenderCommand::Draw() const {
 
-        //pMaterial->Apply();
         oState.Apply();
         TGraphicsState::Instance().SetTransform(oTransform.GetWorld()); //TEMP
         pGeom->Draw();
+}
+
+ShaderProgramState & RenderCommand::State() {
+        return oState;
 }
 
 
