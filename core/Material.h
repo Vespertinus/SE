@@ -61,7 +61,8 @@ template <class T> ret_code_t Material::SetVariable(const StrID name, const T & 
                 return uSUCCESS;
         }
 
-        if (auto res = pBlock->SetVariable(name, val); res != uSUCCESS ) {
+        ret_code_t res = uWRONG_INPUT_DATA;
+        if (!pBlock || (res = pBlock->SetVariable(name, val)) != uSUCCESS ) {
                 log_w("shader '{}' does not have variable: '{}'", pShader->Name(), name);
                 return res;
         }

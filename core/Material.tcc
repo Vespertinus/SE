@@ -50,6 +50,10 @@ Material::Material(const std::string & sName, const rid_t new_rid, SE::ShaderPro
         ResourceHolder(new_rid, sName),
         pShader(pNewShader) {
 
+        if (pShader->GetBlockDescriptor(UniformUnitInfo::Type::MATERIAL) ) {
+
+                pBlock = std::make_unique<UniformBlock>(pShader, UniformUnitInfo::Type::MATERIAL);
+        }
 }
 
 std::string Material::Str() const {
