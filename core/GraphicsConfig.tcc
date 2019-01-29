@@ -30,7 +30,7 @@ GraphicsConfig::GraphicsConfig() {
 #define GET_GL_VAR(name) \
         glGetIntegerv(name, &val); \
         mVariables.emplace(name, val); \
-        log_d(#name": {}", val);
+        log_d_clean(#name": {}", val);
 
 void GraphicsConfig::FillVariables() {
 
@@ -52,8 +52,9 @@ void GraphicsConfig::FillVariables() {
         GET_GL_VAR(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
         GET_GL_VAR(GL_MAX_UNIFORM_LOCATIONS);
         GET_GL_VAR(GL_MAX_RENDERBUFFER_SIZE);
-        GET_GL_VAR(GL_MAX_FRAMEBUFFER_WIDTH);
-        GET_GL_VAR(GL_MAX_FRAMEBUFFER_HEIGHT);
+        //OpenGL 4
+        //GET_GL_VAR(GL_MAX_FRAMEBUFFER_WIDTH);
+        //GET_GL_VAR(GL_MAX_FRAMEBUFFER_HEIGHT);
         GET_GL_VAR(GL_MAX_ELEMENTS_INDICES);
         GET_GL_VAR(GL_MAX_ELEMENTS_VERTICES);
         GET_GL_VAR(GL_MAX_3D_TEXTURE_SIZE);

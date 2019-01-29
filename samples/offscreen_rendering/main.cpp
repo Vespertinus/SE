@@ -8,6 +8,7 @@
 #include <opencv2/opencv.hpp>
 
 #define SE_IMPL
+#include <GlobalTypes.h>
 #include <OffScreenApplication.h>
 #include "Scene.h"
 

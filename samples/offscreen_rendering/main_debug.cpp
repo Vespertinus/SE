@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #define SE_IMPL
+#include <GlobalTypes.h>
 #include <application.h>
 #include "Scene.h"
 
