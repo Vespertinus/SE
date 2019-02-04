@@ -260,6 +260,7 @@ void GraphicsState::UploadUniformBufferData(
 
 void GraphicsState::UploadUniformBufferSubData(
                 const uint32_t buf_id,
+                const uint32_t buf_offset,
                 const uint32_t block_size,
                 const void * pData) {
 
@@ -268,7 +269,7 @@ void GraphicsState::UploadUniformBufferSubData(
                 glBindBuffer(GL_UNIFORM_BUFFER, active_ubo);
         }
 
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, block_size, pData);
+        glBufferSubData(GL_UNIFORM_BUFFER, buf_offset, block_size, pData);
 }
 
 void GraphicsState::BindUniformBufferRange(
@@ -287,6 +288,7 @@ void GraphicsState::BindUniformBufferRange(
                 //already binded
                 return;
         }
+        vUniformRanges[unit] = buf_offset;
 
         glBindBufferRange(GL_UNIFORM_BUFFER, unit, buf_id, buf_offset, block_size);
 }

@@ -82,6 +82,7 @@ class GraphicsState {
                                                                 const uint32_t buf_size,
                                                                 const void * pData);
         void                            UploadUniformBufferSubData(const uint32_t buf_id,
+                                                                   const uint32_t buf_offset,
                                                                    const uint32_t block_size,
                                                                    const void * pData);
         void                            BindUniformBufferRange(const uint32_t buf_id,

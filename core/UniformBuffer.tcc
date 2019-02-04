@@ -139,11 +139,15 @@ void UniformBuffer::UploadToDevice() const {
         }
         else {
                 //copy dirty
+                uint32_t buf_offset;
                 for (auto block_id : sDirty) {
+
+                        buf_offset = block_id * block_size;
                         TGraphicsState::Instance().UploadUniformBufferSubData(
                                         gl_id,
+                                        buf_offset,
                                         block_size,
-                                        &vShadowBuffer[block_id * block_size]);
+                                        &vShadowBuffer[buf_offset]);
                 }
         }
 
