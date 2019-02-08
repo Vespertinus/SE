@@ -151,6 +151,14 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
                 return uWRONG_INPUT_DATA;
         }
 
+        if (auto res = pBlock->SetVariable(BS_WEIGHTS_CNT, blendshapes_cnt); res != uSUCCESS) {
+                log_e("failed to set blendshape cnt variable: '{}', shader: '{}', node: '{}'",
+                                                BS_WEIGHTS_CNT,
+                                                pNewMaterial->GetShader()->Name(),
+                                                pNode->GetFullName());
+                return res;
+        }
+
         pMaterial = pNewMaterial;
         FillRenderCommands();
         return uSUCCESS;
