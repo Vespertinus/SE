@@ -83,6 +83,7 @@ template <class TLoop > class Application {
         //private:	//TEMP
         void ResizeViewport(const int32_t & new_width, const int32_t & new_height);
         void Run();
+        TLoop & GetAppLogic();
 
 };
 

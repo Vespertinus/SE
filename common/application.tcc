@@ -105,6 +105,11 @@ template <class TLoop> void Application<TLoop>::Run() {
         TSimpleFPS::Instance().Update();
 }
 
+template <class TLoop> TLoop & Application<TLoop>::GetAppLogic() {
+
+        return oLoop;
+}
+
 
 } //namespace SE
 

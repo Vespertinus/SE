@@ -69,6 +69,11 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
         log_i("duration = {} ms", oLoopDuration.Get());
 }
 
+template <class TLoop> TLoop & OffScreenApplication<TLoop>::GetAppLogic() {
+
+        return oLoop;
+}
+
 
 } //namespace SE
 

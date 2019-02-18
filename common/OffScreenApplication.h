@@ -51,6 +51,7 @@ template <class TLoop > class OffScreenApplication {
         ~OffScreenApplication() throw();
 
         void Run();
+        TLoop & GetAppLogic();
 
 };
 
