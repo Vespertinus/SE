@@ -10,13 +10,10 @@ namespace FUNNY_TEX {
 
 class OrthoScene {
 
-        SE::TTexture    * pTex01;
-        SE::TTexture    * pShaderTex;
+        SE::Material    * pMaterial;
+        SE::StaticModel * pModel;
+        SE::TSceneTree  * pSceneTree;
         SE::Camera      & oCamera;
-        SE::TMesh       * pTestMesh;
-        SE::ShaderProgram * pBrickShader;
-        SE::ShaderProgram * pSimpleShader;
-
 
 	public:
         //empty settings

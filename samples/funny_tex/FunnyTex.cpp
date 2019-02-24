@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #define SE_IMPL
+#include <GlobalTypes.h>
 #include <application.h>
 #include "OrthoScene.h"
 
@@ -12,7 +13,7 @@ std::shared_ptr<spdlog::logger> gLogger;
 
 
 int main(int argc, char **argv) {
-        
+
         gLogger = spdlog::stdout_logger_mt("G");
         gLogger->set_level(spdlog::level::debug);
 
@@ -27,8 +28,8 @@ int main(int argc, char **argv) {
         oSettings.oCamSettings.oVolume.aspect           = (float)oSettings.oCamSettings.width / (float)oSettings.oCamSettings.height;
         oSettings.oCamSettings.oVolume.near_clip	= 0.1;
         oSettings.oCamSettings.oVolume.far_clip         = 2000;
-        //oSettings.oCamSettings.oVolume.projection     = SE::Frustum::uORTHO;
-        oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
+        oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uORTHO;
+        //oSettings.oCamSettings.oVolume.projection       = SE::Frustum::uPERSPECTIVE;
 
         oSettings.clear_flag			            = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
@@ -38,6 +39,10 @@ int main(int argc, char **argv) {
         oSettings.oWindowSettings.fullscreen  = 0;
         oSettings.oWindowSettings.title       = "Funny Textures";
         oSettings.sResourceDir                = "resource/";
+
+        //TEMP
+        SE::TEngine::Instance().Init<SE::Config>();
+        SE::GetSystem<SE::Config>().sResourceDir = "resource/";
 
         try {
 
