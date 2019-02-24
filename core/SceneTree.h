@@ -52,7 +52,7 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
 
         public:
 
-        SceneTree(const std::string & sName, const rid_t new_rid);
+        SceneTree(const std::string & sName, const rid_t new_rid, bool empty = false);
         ~SceneTree() noexcept;
 
         TSceneNode      Create(const std::string_view sNewName = "", const bool enabled = true);

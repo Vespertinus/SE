@@ -5,14 +5,17 @@ namespace SE {
 
 template <class ... TComponents > SceneTree<TComponents ...>::SceneTree(
                 const std::string & sName,
-                const rid_t new_rid) :
+                const rid_t new_rid,
+                bool empty) :
         ResourceHolder(new_rid, sName),
         pRoot(std::make_shared<NodeWrapper>("root", this, true)) {
 
         mNamedNodes.emplace(pRoot->GetName(), pRoot);
         mLocalNamedNodes.emplace(pRoot->GetName(), std::vector<TSceneNode>(1, pRoot) );
 
-        Load();
+        if (!empty) {
+                Load();
+        }
 }
 template <class ... TComponents > SceneTree<TComponents ...>::~SceneTree() noexcept {
 

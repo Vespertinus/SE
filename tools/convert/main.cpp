@@ -17,8 +17,10 @@
 #include "FlatBuffersSceneTreeWriter.h"
 
 
-
 std::shared_ptr<spdlog::logger> gLogger;
+
+const SE::TOOLS::MeshData * GetMesh(const SE::TOOLS::NodeData & oRoot);
+
 
 int main(int argc, char **argv) {
 
@@ -32,6 +34,7 @@ int main(int argc, char **argv) {
         string          sInput;
         string          sOutput;
         bool            to_scene;
+        bool            to_mesh;
 
         try {
                 namespace bpo = boost::program_options;
@@ -50,6 +53,7 @@ int main(int argc, char **argv) {
                         ("cut_path",     bpo::value<string>(),                                  "regex for cuting imported paths (<search substr>)")
                         ("replace",      bpo::value<string>(),                                  "string for replacing cuted path part (<path>)")
                         ("to_scene",     bpo::value<bool>()->default_value(false),              "write mesh as scene")
+                        ("to_mesh",      bpo::value<bool>()->default_value(false),              "write first mesh inside scene as mesh file")
                         ("info_prop",    bpo::value<bool>()->default_value(true),               "import custom data from fbx node property ('info') as string")
                         ("blendshapes",  bpo::value<bool>()->default_value(false),              "import blend shapes (morph target)")
                         ("disable_nodes", bpo::value<bool>()->default_value(false),             "all scene nodes stored in disabled state")
@@ -106,33 +110,21 @@ int main(int argc, char **argv) {
                 if (vm.count("input") ) {
                         sInput  = vm["input"].as<string>();
                 }
-                {
-                        oCtx.skip_normals = vm["skip_normals"].as<bool>();
-                }
-                {
-                        oCtx.skip_material = vm["skip_material"].as<bool>();
-                }
-                {
-                        oCtx.flip_yz = vm["flip_yz"].as<bool>();
-                }
                 if (vm.count("cut_path") ) {
                         oCtx.sCutPath = vm["cut_path"].as<string>();
                 }
                 if (vm.count("replace") ) {
                         oCtx.sReplace = vm["replace"].as<string>();
                 }
-                {
-                        to_scene = vm["to_scene"].as<bool>();
-                }
-                {
-                        oCtx.import_info_prop = vm["info_prop"].as<bool>();
-                }
-                {
-                        oCtx.import_blend_shapes = vm["blendshapes"].as<bool>();
-                }
-                {
-                        oCtx.disable_nodes = vm["disable_nodes"].as<bool>();
-                }
+
+                oCtx.skip_normals               = vm["skip_normals"].as<bool>();
+                oCtx.skip_material              = vm["skip_material"].as<bool>();
+                oCtx.flip_yz                    = vm["flip_yz"].as<bool>();
+                to_scene                        = vm["to_scene"].as<bool>();
+                to_mesh                         = vm["to_mesh"].as<bool>();
+                oCtx.import_info_prop           = vm["info_prop"].as<bool>();
+                oCtx.import_blend_shapes        = vm["blendshapes"].as<bool>();
+                oCtx.disable_nodes              = vm["disable_nodes"].as<bool>();
         }
         catch (std::exception & ex) {
                 log_e("parsing input exception catched, reason: '{}'", ex.what());
@@ -206,7 +198,17 @@ int main(int argc, char **argv) {
                                         oCtx.material_cnt,
                                         oCtx.textures_cnt);
 
-                        err_code = WriteSceneTree(sOutput + ".sesc", oRoot);
+                        if (to_mesh) {
+                                auto * pMeshData = GetMesh(oRoot);
+                                if (!pMeshData) {
+                                        throw(std::runtime_error("failed to find mesh inside scene"));
+                                }
+                                err_code = WriteMesh(sOutput + ".sems", *pMeshData);
+                        }
+                        else {
+                                err_code = WriteSceneTree(sOutput + ".sesc", oRoot);
+                        }
+
                         if (err_code) {
                                 throw (std::runtime_error("Write failed, err_code = " + std::to_string(err_code)) );
                         }
@@ -228,3 +230,22 @@ int main(int argc, char **argv) {
 
         return 0;
 }
+
+const SE::TOOLS::MeshData * GetMesh(const SE::TOOLS::NodeData & oRoot) {
+
+        for (auto & oComponent : oRoot.vComponents) {
+                if(auto pModelComponent = std::get_if<SE::TOOLS::ModelData>(&oComponent)) {
+                        return &pModelComponent->oMesh;
+                }
+        }
+
+        for (auto & oChild : oRoot.vChildren) {
+
+                if (auto * pMesh = GetMesh(oChild)) {
+                        return pMesh;
+                }
+        }
+
+        return nullptr;
+}
+

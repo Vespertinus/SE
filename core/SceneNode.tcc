@@ -391,7 +391,7 @@ template <class ... TComponents>
         }
 
         try {
-                auto pComponent = std::make_unique<TComponent>(this, std::forward <TArgs...>(oArgs...));
+                auto pComponent = std::make_unique<TComponent>(this, std::forward <TArgs>(oArgs)...);
                 if (internal_flags & STATE_ENABLED) {
                         pComponent->Enable();
                 }
