@@ -269,6 +269,25 @@ ret_code_t ShaderProgram::SetVariable(const StrID name, float val) {
         return uSUCCESS;
 }
 
+ret_code_t ShaderProgram::SetVariable(const StrID name, int32_t val) {
+
+        auto it = mVariables.find(name);
+        if (it == mVariables.end()) {
+                log_e("can't find variable with strid = '{}' in shader program: '{}'", name, sName);
+                return uWRONG_INPUT_DATA;
+        }
+
+        if (it->second.type != GL_INT) {
+                log_e("wrong type 'int', variable '{}' expect {}, in shader program: '{}'",
+                                it->second.sName,
+                                it->second.type,
+                                sName);
+                return uWRONG_INPUT_DATA;
+        }
+        glUniform1iv(it->second.location, 1, &val);
+        return uSUCCESS;
+}
+
 
 ret_code_t ShaderProgram::SetVariable(const StrID name, const glm::vec2 & val) {
 

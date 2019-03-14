@@ -158,6 +158,9 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
                 else if (auto * pValue = pVar->uvec2_val()) {
                         res = SetVariable(name, *reinterpret_cast<const glm::uvec2 *>(pValue));
                 }
+                else if (auto oValue = pVar->int_val()) {
+                        res = SetVariable(name, oValue);
+                }
                 /* array float vec4, vec3, etc */
                 else { //float
                         res = SetVariable(name, pVar->float_val());

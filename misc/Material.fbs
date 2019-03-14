@@ -60,6 +60,7 @@ table TextureHolder {
 table ShaderVariable {
         name:string (required);
         float_val:float;
+        int_val:int;
         vec2_val:Vec2;
         vec3_val:Vec3;
         vec4_val:Vec4;

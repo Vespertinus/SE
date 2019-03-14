@@ -12,6 +12,7 @@ class Material : public ResourceHolder {
         //TODO store in buffer, sizeof max TVariant item 16, but in general, 12?
         using TVariant    = std::variant<
                 float,
+                int32_t,
                 glm::vec2,
                 glm::vec3,
                 glm::vec4,

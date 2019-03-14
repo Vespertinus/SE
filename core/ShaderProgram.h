@@ -75,6 +75,7 @@ class ShaderProgram : public ResourceHolder {
         void                    Use() const;
         //TODO rewrite on template version
         ret_code_t              SetVariable(const StrID name, float val);
+        ret_code_t              SetVariable(const StrID name, int32_t val);
         ret_code_t              SetVariable(const StrID name, const glm::vec2 & val);
         ret_code_t              SetVariable(const StrID name, const glm::vec3 & val);
         ret_code_t              SetVariable(const StrID name, const glm::vec4 & val);
