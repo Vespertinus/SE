@@ -1,0 +1,38 @@
+type: FRAGMENT
+source:
+ - |
+        //based on http://nuclear.mutantstargoat.com/articles/sdr_fract/
+
+        #version 130
+
+        in vec2 TexCoord;
+        //TODO rewrite on Texture1D
+        uniform sampler2D DiffuseTex;
+        uniform vec2 CSeed;
+        uniform int Iter;
+
+        out vec4 FragColor;
+
+        void main() {
+
+                vec2 z;
+                z.x = 3.0 * (TexCoord.x - 0.5);
+                z.y = 2.0 * (TexCoord.y - 0.5);
+
+                int i;
+                for(i = 0; i < Iter; ++i) {
+
+                        float x = (z.x * z.x - z.y * z.y) + CSeed.x;
+                        float y = (z.y * z.x + z.x * z.y) + CSeed.y;
+
+                        if((x * x + y * y) > 4.0) break;
+                        z.x = x;
+                        z.y = y;
+                }
+
+                vec2 FinalCoord;
+                FinalCoord.x = (i == Iter ? 0.0 : float(i)) / 100.0;
+                FinalCoord.y = 0;
+
+                FragColor = texture(DiffuseTex, FinalCoord);
+        }

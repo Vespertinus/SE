@@ -1,0 +1,11 @@
+{
+        "shader": {
+                "path": "shader_program/simple_tex.sesp"
+        },
+        "textures" : [
+                {
+                        "path" : "resource/texture/checker02.png",
+                        "unit" : "UNIT_DIFFUSE"
+                }
+        ]
+}

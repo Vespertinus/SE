@@ -14,6 +14,7 @@ class OrthoScene {
         SE::StaticModel * pModel;
         SE::TSceneTree  * pSceneTree;
         SE::Camera      & oCamera;
+        SE::CalcDuration  oElapsed;
 
 	public:
         //empty settings

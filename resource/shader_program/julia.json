@@ -1,0 +1,10 @@
+{
+        "vertex" : {
+                "name" : "shader/simple_tex_vertex.sesl"
+        },
+        "fragment" : {
+                "name" : "shader/julia_frag.sesl"
+        }
+}
+
+

@@ -1,0 +1,18 @@
+{
+        "shader": {
+                "path": "shader_program/julia.sesp"
+        },
+        "textures" : [
+                {
+                        "path" : "resource/texture/pal04.png",
+                        "unit" : "UNIT_DIFFUSE"
+                }
+        ],
+        "variables" : [
+                {
+                        "name" : "Iter",
+                        "int_val" : 60
+                }
+        ]
+}
+

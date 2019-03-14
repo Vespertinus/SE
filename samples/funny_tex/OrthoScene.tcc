@@ -10,16 +10,7 @@ OrthoScene::OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera) :
 
 
         auto pPlaneMesh = CreateResource<TMesh>(GetSystem<Config>().sResourceDir + "mesh/unit_plane.sems");
-        pMaterial       = CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/wireframe.semt");
-
-
-        /*
-        pShaderTex = SE::CreateResource<SE::TTexture>(
-                                "resource/mesh/tests/checker02.png",
-                                SE::StoreTexture2D::Settings(false),
-                                SE::OpenCVImgLoader::Settings()
-                                );
-                                */
+        pMaterial       = CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/julia_fractal.semt");
 
         auto pPlaneNode = pSceneTree->Create("plane");
 
@@ -38,7 +29,6 @@ OrthoScene::OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera) :
         oCamera.SetRotation(0, 0, 0);
         oCamera.ZoomTo(cam_data.width / 100.0f);
         //oCamera.SetZoom(0.5);
-
 }
 
 OrthoScene::~OrthoScene() throw() { ;; }
@@ -48,6 +38,13 @@ void OrthoScene::Process() {
 
         SE::TGraphicsState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
+        float     t = oElapsed.Get() / 10000.0f;
+        glm::vec2 CSeed;
+        CSeed.x = (sin(cos(t / 10) * 10) + cos(t * 2.0) / 4.0 + sin(t * 3.0) / 6.0) * 0.8;
+        CSeed.y = (cos(sin(t / 10) * 10) + sin(t * 2.0) / 4.0 + cos(t * 3.0) / 6.0) * 0.8;
+
+        static SE::StrID seed_id("CSeed");
+        pMaterial->SetVariable(seed_id, CSeed);
 
 }
 
