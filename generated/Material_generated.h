@@ -446,18 +446,22 @@ struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_NAME = 4,
     VT_FLOAT_VAL = 6,
-    VT_VEC2_VAL = 8,
-    VT_VEC3_VAL = 10,
-    VT_VEC4_VAL = 12,
-    VT_UVEC2_VAL = 14,
-    VT_UVEC3_VAL = 16,
-    VT_UVEC4_VAL = 18
+    VT_INT_VAL = 8,
+    VT_VEC2_VAL = 10,
+    VT_VEC3_VAL = 12,
+    VT_VEC4_VAL = 14,
+    VT_UVEC2_VAL = 16,
+    VT_UVEC3_VAL = 18,
+    VT_UVEC4_VAL = 20
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
   }
   float float_val() const {
     return GetField<float>(VT_FLOAT_VAL, 0.0f);
+  }
+  int32_t int_val() const {
+    return GetField<int32_t>(VT_INT_VAL, 0);
   }
   const Vec2 *vec2_val() const {
     return GetStruct<const Vec2 *>(VT_VEC2_VAL);
@@ -482,6 +486,7 @@ struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.Verify(name()) &&
            VerifyField<float>(verifier, VT_FLOAT_VAL) &&
+           VerifyField<int32_t>(verifier, VT_INT_VAL) &&
            VerifyField<Vec2>(verifier, VT_VEC2_VAL) &&
            VerifyField<Vec3>(verifier, VT_VEC3_VAL) &&
            VerifyField<Vec4>(verifier, VT_VEC4_VAL) &&
@@ -500,6 +505,9 @@ struct ShaderVariableBuilder {
   }
   void add_float_val(float float_val) {
     fbb_.AddElement<float>(ShaderVariable::VT_FLOAT_VAL, float_val, 0.0f);
+  }
+  void add_int_val(int32_t int_val) {
+    fbb_.AddElement<int32_t>(ShaderVariable::VT_INT_VAL, int_val, 0);
   }
   void add_vec2_val(const Vec2 *vec2_val) {
     fbb_.AddStruct(ShaderVariable::VT_VEC2_VAL, vec2_val);
@@ -536,6 +544,7 @@ inline flatbuffers::Offset<ShaderVariable> CreateShaderVariable(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> name = 0,
     float float_val = 0.0f,
+    int32_t int_val = 0,
     const Vec2 *vec2_val = 0,
     const Vec3 *vec3_val = 0,
     const Vec4 *vec4_val = 0,
@@ -549,6 +558,7 @@ inline flatbuffers::Offset<ShaderVariable> CreateShaderVariable(
   builder_.add_vec4_val(vec4_val);
   builder_.add_vec3_val(vec3_val);
   builder_.add_vec2_val(vec2_val);
+  builder_.add_int_val(int_val);
   builder_.add_float_val(float_val);
   builder_.add_name(name);
   return builder_.Finish();
@@ -558,6 +568,7 @@ inline flatbuffers::Offset<ShaderVariable> CreateShaderVariableDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
     float float_val = 0.0f,
+    int32_t int_val = 0,
     const Vec2 *vec2_val = 0,
     const Vec3 *vec3_val = 0,
     const Vec4 *vec4_val = 0,
@@ -568,6 +579,7 @@ inline flatbuffers::Offset<ShaderVariable> CreateShaderVariableDirect(
       _fbb,
       name ? _fbb.CreateString(name) : 0,
       float_val,
+      int_val,
       vec2_val,
       vec3_val,
       vec4_val,
