@@ -26,12 +26,12 @@ class OSMesa {
         OSMesaContext   pMesaCtx;
 
         public:
-  
+
         OSMesa(const WindowSettings & oSettings);
-        ~OSMesa() throw();
+        ~OSMesa() noexcept;
 
-        void MakeCurrent(std::vector<GLubyte> & vRenderBuffer);
-
+        ret_code_t MakeCurrent(std::vector<GLubyte> & vRenderBuffer);
+        ret_code_t UpdateDimension(const int32_t new_width, const int32_t new_height);
 };
 
 } // namespace SE

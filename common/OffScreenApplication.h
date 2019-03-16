@@ -51,6 +51,7 @@ template <class TLoop > class OffScreenApplication {
         ~OffScreenApplication() throw();
 
         void Run();
+        void ResizeViewport(const int32_t new_width, const int32_t new_height);
         TLoop & GetAppLogic();
 
 };

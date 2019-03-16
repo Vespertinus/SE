@@ -2,7 +2,7 @@
 namespace SE {
 
 
-OSMesa::OSMesa(const WindowSettings & oNewSettings) : oSettings(oNewSettings) { 
+OSMesa::OSMesa(const WindowSettings & oNewSettings) : oSettings(oNewSettings) {
 
         int attribs[] = {
                 OSMESA_FORMAT,                  (int)oSettings.format,
@@ -20,10 +20,10 @@ OSMesa::OSMesa(const WindowSettings & oNewSettings) : oSettings(oNewSettings) {
         if (!pMesaCtx) {
                 throw (std::runtime_error("OSMesa::OSMesa: OSMesaCreateContext failed"));
         }
-        
+
         oSettings.vRenderBuffer.resize(oSettings.width * oSettings.height * 4 /*RGBA*/ * sizeof(GLubyte));
 
-        if (!OSMesaMakeCurrent( pMesaCtx, 
+        if (!OSMesaMakeCurrent( pMesaCtx,
                                 &oSettings.vRenderBuffer[0] ,
                                 GL_UNSIGNED_BYTE,
                                 oSettings.width,
@@ -34,24 +34,51 @@ OSMesa::OSMesa(const WindowSettings & oNewSettings) : oSettings(oNewSettings) {
 }
 
 
-OSMesa::~OSMesa() throw() { 
+OSMesa::~OSMesa() noexcept {
 
         OSMesaDestroyContext( pMesaCtx );
         log_d("destroyed");
 }
 
-void OSMesa::MakeCurrent(std::vector<GLubyte> & vRenderBuffer) {
+ret_code_t OSMesa::MakeCurrent(std::vector<GLubyte> & vRenderBuffer) {
+
+        /**
+         current implementation max width \ height == 16384
+         */
+
+        vRenderBuffer.resize(oSettings.width * oSettings.height * 4 /*RGBA*/ * sizeof(GLubyte));
+
+        if (!OSMesaMakeCurrent( pMesaCtx,
+                                &vRenderBuffer[0],
+                                GL_UNSIGNED_BYTE,
+                                oSettings.width,
+                                oSettings.height) ) {
+                log_e("OSMesaMakeCurrent failed!");
+                return uWRONG_INPUT_DATA;
+        }
 
         oSettings.vRenderBuffer = vRenderBuffer;
 
-        if (!OSMesaMakeCurrent( pMesaCtx, 
-                                &vRenderBuffer[0] , 
-                                GL_UNSIGNED_BYTE, 
-                                oSettings.width, 
-                                oSettings.height) ) {
-                throw(std::runtime_error("OSMesa::MakeCurrent OSMesaMakeCurrent failed!"));
-                //TODO rewrite on err code handling
+        return uSUCCESS;
+}
+
+ret_code_t OSMesa::UpdateDimension(const int32_t new_width, const int32_t new_height) {
+
+        oSettings.vRenderBuffer.resize(new_width * new_height * 4 /*RGBA*/ * sizeof(GLubyte));
+
+        if (!OSMesaMakeCurrent( pMesaCtx,
+                                &oSettings.vRenderBuffer[0],
+                                GL_UNSIGNED_BYTE,
+                                new_width,
+                                new_height) ) {
+                log_e("OSMesaMakeCurrent failed!");
+                return uWRONG_INPUT_DATA;
         }
+
+        oSettings.width  = new_width;
+        oSettings.height = new_height;
+
+        return uSUCCESS;
 }
 
 

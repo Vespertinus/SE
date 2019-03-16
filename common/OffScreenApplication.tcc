@@ -74,6 +74,19 @@ template <class TLoop> TLoop & OffScreenApplication<TLoop>::GetAppLogic() {
         return oLoop;
 }
 
+template <class TLoop> void OffScreenApplication<TLoop>::ResizeViewport(const int32_t new_width, const int32_t new_height) {
+
+        if (oSettings.oCamSettings.width == new_width && oSettings.oCamSettings.height == new_height) { return; }
+
+        oSettings.oCamSettings.width 	= new_width;
+        oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
+
+        oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        oRenderingCtx.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+
+        SE::TGraphicsState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+}
+
 
 } //namespace SE
 
