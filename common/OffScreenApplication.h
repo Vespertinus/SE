@@ -24,6 +24,15 @@ struct SysSettings_t {
         std::string             sResourceDir;
         std::vector<GLubyte>  & vRenderBuffer;
 
+        SysSettings_t(
+                const int new_clear_flag,
+                const Camera::CamSettings_t & oNewCamSettings,
+                std::vector<GLubyte>  & vNewRenderBuffer) :
+                        clear_flag(new_clear_flag),
+                        oCamSettings(oNewCamSettings),
+                        vRenderBuffer(vNewRenderBuffer) {
+        }
+
         SysSettings_t(std::vector<GLubyte> & vNewRenderBuffer) : vRenderBuffer(vNewRenderBuffer) { ;; }
 };
 
