@@ -41,7 +41,8 @@ TComponentOffset SerializeModel(
 
         using namespace SE::FlatBuffers;
 
-        using FBVariable = std::tuple<float, Vec2 *, Vec3 *, Vec4 *, UVec2 *, UVec3 *, UVec4 *>;
+        //FIXME types inside Material, flatbuffer scheme and asset importer out of sync
+        using FBVariable = std::tuple<float, int32_t, Vec2 *, Vec3 *, Vec4 *, UVec2 *, UVec3 *, UVec4 *>;
         std::tuple<Vec2, Vec3, Vec4, UVec2, UVec3, UVec4> oValueStorage;
 
         flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material_holder_fb = 0;
@@ -73,6 +74,10 @@ TComponentOffset SerializeModel(
 
                                         std::get<float>(oValue) = var;
                                         },
+                                        [&oBuilder, &oValue, &oValueStorage](const int32_t var) {
+
+                                        std::get<int32_t>(oValue) = var;
+                                        },
                                         [&oBuilder, &oValue, &oValueStorage](const glm::vec2 & vData) {
                                         std::get<Vec2>(oValueStorage) = Vec2(vData.x, vData.y);
                                         std::get<Vec2 *>(oValue) = &std::get<Vec2>(oValueStorage);
@@ -103,6 +108,7 @@ TComponentOffset SerializeModel(
                                                 oBuilder,
                                                 oBuilder.CreateString(oItem.first),
                                                 std::get<float>(oValue),
+                                                std::get<int32_t>(oValue),
                                                 std::get<Vec2 *>(oValue),
                                                 std::get<Vec3 *>(oValue),
                                                 std::get<Vec4 *>(oValue),

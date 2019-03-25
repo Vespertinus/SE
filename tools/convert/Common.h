@@ -86,6 +86,7 @@ struct MaterialData {
 
         using TVariant = std::variant<
                 float,
+                int32_t,
                 glm::vec2,
                 glm::vec3,
                 glm::vec4,
