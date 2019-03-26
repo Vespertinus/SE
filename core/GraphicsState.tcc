@@ -227,6 +227,8 @@ void GraphicsState::SetScreenSize(const uint32_t width, const uint32_t height) {
         if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize)) {
                 pShader->SetVariable(oScreenSizeID, screen_size);
         }
+
+        //THINK move glViewport here?
 }
 
 const glm::uvec2 & GraphicsState::GetScreenSize() const {

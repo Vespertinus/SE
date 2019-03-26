@@ -81,8 +81,9 @@ template <class TLoop> void OffScreenApplication<TLoop>::ResizeViewport(const in
         oSettings.oCamSettings.width 	= new_width;
         oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
 
-        oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
         oRenderingCtx.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        glViewport(0, 0, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
         SE::TGraphicsState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 }
