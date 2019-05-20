@@ -10,6 +10,7 @@ enum class TextureUnit : int32_t {
         ENV             = 3,
         SHADOW          = 4,
         BUFFER          = 5,
+        RENDER_BUFFER   = 6,
         CUSTOM          = 7,
         //DEPTH
         //etc
@@ -44,6 +45,16 @@ struct UniformUnitInfo {
         std::string     sName;
         uint16_t        initial_block_cnt;
         //THINK GL_DYNAMIC_DRAW | GL_STREAM_DRAW
+};
+
+enum class DepthFunc : uint32_t {
+        ALWAYS  = 0,
+        EQUAL,
+        NOTEQUAL,
+        LESS,
+        LEQUAL,
+        GREATER,
+        GEQUAL
 };
 
 }

@@ -38,10 +38,10 @@ template <class TLoop> void OffScreenApplication<TLoop>::Init() {
 
         log_i("app init");
 
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClearDepth(1.0);
-        glDepthFunc(GL_LESS);
-        glEnable(GL_DEPTH_TEST);
+        TGraphicsState::Instance().SetClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        TGraphicsState::Instance().SetClearDepth(1.0f);
+        TGraphicsState::Instance().SetDepthFunc(DepthFunc::LESS);
+        TGraphicsState::Instance().SetDepthTest(true);
 }
 
 

@@ -23,6 +23,10 @@ GraphicsState::GraphicsState() :
         screen_size(800, 600),
         frame_start_time(std::chrono::time_point_cast<micro>(clock::now())),//FIXME
         last_frame_time(1/60.) {
+
+        glClearColor(vClearColor.r, vClearColor.g, vClearColor.b, vClearColor.a);
+        glClearDepth(clear_depth);
+        SetDepthTest(true);
 }
 
 ret_code_t GraphicsState::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
@@ -325,5 +329,78 @@ const UniformUnitInfo & GraphicsState::GetUniformUnitInfo(const UniformUnitInfo:
         se_assert(unit_id <= UniformUnitInfo::Type::MAX);
         return vUniformUnitInfo[static_cast<uint8_t>(unit_id)];
 }
+
+void GraphicsState::SetClearColor(const glm::vec4 & vColor) {
+
+        if (glm::all(glm::equal(vColor, vClearColor))) { return; }
+
+        vClearColor = vColor;
+        glClearColor(vClearColor.r, vClearColor.g, vClearColor.b, vClearColor.a);
+}
+
+void GraphicsState::SetClearColor(const float r, const float g, const float b, const float a) {
+
+        glm::vec4 vColor(r, g, b, a);
+        SetClearColor(vColor);
+}
+
+void GraphicsState::SetClearDepth(const float value) {
+
+        if (value == clear_depth) { return; }
+
+        clear_depth = value;
+        glClearDepth(clear_depth);
+}
+
+void GraphicsState::SetDepthFunc(const DepthFunc value) {
+
+        static const uint32_t vDepthMapping[] = {
+                GL_ALWAYS,
+                GL_EQUAL,
+                GL_NOTEQUAL,
+                GL_LESS,
+                GL_LEQUAL,
+                GL_GREATER,
+                GL_GEQUAL
+        };
+
+        if (value == depth_func) { return; }
+
+        depth_func = value;
+        glDepthFunc(vDepthMapping[static_cast<uint32_t>(depth_func)]);
+}
+
+void GraphicsState::SetDepthTest(const bool enable) {
+
+        if (enable == depth_test) { return; }
+
+        if (enable) {
+                glEnable(GL_DEPTH_TEST);
+        }
+        else {
+                glDisable(GL_DEPTH_TEST);
+        }
+        depth_test = enable;
+}
+
+void GraphicsState::SetDepthMask(const bool enable) {
+
+        if (enable == depth_write) { return; }
+        depth_write = enable;
+        glDepthMask(depth_write);
+}
+
+void GraphicsState::SetColorMask(const bool enable) {
+
+        if (enable == color_write) { return; }
+        color_write = enable;
+        if (color_write) {
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        }
+        else {
+                glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        }
+}
+
 
 } // namespace SE

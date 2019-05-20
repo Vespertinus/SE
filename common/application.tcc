@@ -55,13 +55,10 @@ template <class TLoop> void Application<TLoop>::Init() {
 
         log_d("basic OpenGL options");
 
-        glClearColor(0.066f, 0.2235f, 0.3372f, 1.0f);
-        glClearDepth(1.0);
-        glDepthFunc(GL_LESS);
-        glEnable(GL_DEPTH_TEST);
-        //glShadeModel(GL_SMOOTH);
-
-        //glEnable(GL_LIGHTING);
+        TGraphicsState::Instance().SetClearColor(0.066f, 0.2235f, 0.3372f, 1.0f);
+        TGraphicsState::Instance().SetClearDepth(1.0f);
+        TGraphicsState::Instance().SetDepthFunc(DepthFunc::LESS);
+        TGraphicsState::Instance().SetDepthTest(true);
 
         if (SE::CheckOpenGLError() != uSUCCESS) {
                 throw("OpenGL Error after initial initialization");

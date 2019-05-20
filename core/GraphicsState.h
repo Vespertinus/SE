@@ -26,6 +26,12 @@ class GraphicsState {
         float                   last_frame_time;
         uint32_t                active_tex_unit{};
         uint32_t                active_ubo;
+        glm::vec4               vClearColor{0.0f};
+        float                   clear_depth{1.0f};
+        DepthFunc               depth_func{DepthFunc::LESS};
+        bool                    depth_test{false};
+        bool                    depth_write{true};
+        bool                    color_write{true};
 
         //TODO initialize from GL limit, store in global graphics config
         std::array<TTexture *, 16> vTextureUnits{};
@@ -96,6 +102,18 @@ class GraphicsState {
         //void CleanUnused remove expired weak_ptr
         const UniformUnitInfo         & GetUniformUnitInfo(const UniformUnitInfo::Type unit_id) const;
         //Set UniformUnitInfo options
+        void                            SetClearColor(const glm::vec4 & vColor);
+        void                            SetClearColor(const float r, const float g, const float b, const float a);
+        void                            SetClearDepth(const float value);
+
+        void                            SetDepthFunc(const DepthFunc value);
+        void                            SetDepthTest(const bool enable);
+        void                            SetDepthMask(const bool enable);
+        void                            SetColorMask(const bool enable);
+        /*
+        void                            Clear(const ClearBufferType flags);
+        void                            SetCullMode(const CullType value);*/
+        //void                            SetBlendMode(type, alpha to coverage?);
 
 };
 
