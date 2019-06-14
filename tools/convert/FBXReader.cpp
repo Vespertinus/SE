@@ -620,6 +620,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
         //import blend shapes
         if (oCtx.import_blend_shapes) {
+                oModel.oBlendShape.sName = oCtx.sPackName;
                 ImportBlendShapes(pMesh, oModel.oBlendShape, mRemapIndex, oVertexIndex.Size());
         }
 
