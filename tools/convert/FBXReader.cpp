@@ -298,7 +298,7 @@ data layout inside buffer:
                                         pBlendShapeChannel->GetName(),
                                         pBlendShapeChannel->DeformPercent.Get());
 
-                        oBlendShapeData.vDefaultWeights.emplace_back(pBlendShapeChannel->DeformPercent.Get());
+                        oBlendShapeData.vDefaultWeights.emplace_back(pBlendShapeChannel->DeformPercent.Get() / 100.0f);
                         if (!oBlendShapeData.sName.empty()) {
                                 oBlendShapeData.sName += "|";
                         }
