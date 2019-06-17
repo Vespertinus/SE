@@ -3,7 +3,7 @@ namespace SE {
 
 template <class TVisibilityManager>
         Renderer<TVisibilityManager>::Renderer(std::unique_ptr<TVisibilityManager> pNewManager) :
-        pManager(pNewManager) {
+        pManager(pNewManager) {//Release
 
         vRenderCommands.reserve(1000);
 }

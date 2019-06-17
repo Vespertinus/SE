@@ -31,6 +31,7 @@ class UniformBlock {
         public:
 
         UniformBlock(ShaderProgram * pShader, const UniformUnitInfo::Type new_unit_id);
+        ~UniformBlock() noexcept;
 
         ret_code_t              SetVariable(const StrID name, float val);
         ret_code_t              SetVariable(const StrID name, const glm::vec2 & val);

@@ -134,7 +134,33 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
         }
 
         try {
+                ret_code_t res;
                 auto pNewBlock = std::make_unique<UniformBlock>(pNewMaterial->GetShader(), UniformUnitInfo::Type::ANIMATION);
+
+                if (res = pNewBlock->SetVariable(BS_WEIGHTS_CNT, blendshapes_cnt); res != uSUCCESS) {
+                        log_e("failed to set blendshape cnt variable: '{}', shader: '{}', node: '{}'",
+                                        BS_WEIGHTS_CNT,
+                                        pNewMaterial->GetShader()->Name(),
+                                        pNode->GetFullName());
+                        return res;
+                }
+
+                for (size_t i = 0; i < blendshapes_cnt; ++i) {
+
+                        const float * pValue = nullptr;
+                        if (res = pBlock->GetArrayElement(BS_WEIGHT, i, pValue); res != uSUCCESS) {
+                                return res;
+                        }
+
+                        res = pNewBlock->SetArrayElement(BS_WEIGHT, i, *pValue);
+                        if (res != uSUCCESS) {
+                                log_e("failed to set blendshape weight variable: '{}', shader: '{}', node: '{}'",
+                                                                BS_WEIGHT,
+                                                                pNewMaterial->GetShader()->Name(),
+                                                                pNode->GetFullName());
+                        }
+                }
+
                 pBlock = std::move(pNewBlock);
         }
         catch(std::exception & ex) {
@@ -151,13 +177,6 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
                 return uWRONG_INPUT_DATA;
         }
 
-        if (auto res = pBlock->SetVariable(BS_WEIGHTS_CNT, blendshapes_cnt); res != uSUCCESS) {
-                log_e("failed to set blendshape cnt variable: '{}', shader: '{}', node: '{}'",
-                                                BS_WEIGHTS_CNT,
-                                                pNewMaterial->GetShader()->Name(),
-                                                pNode->GetFullName());
-                return res;
-        }
 
         pMaterial = pNewMaterial;
         FillRenderCommands();

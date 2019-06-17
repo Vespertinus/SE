@@ -36,6 +36,10 @@ UniformBlock::UniformBlock(ShaderProgram * pShader, const UniformUnitInfo::Type 
         block_id = pBuffer->AllocateBlock();
 }
 
+UniformBlock::~UniformBlock() noexcept {
+        pBuffer->ReleaseBlock(block_id);
+}
+
 bool UniformBlock::OwnVariable(const StrID name) const {
         return (pDesc->mVariables.find(name) != pDesc->mVariables.end());
 }

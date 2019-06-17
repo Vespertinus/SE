@@ -35,6 +35,10 @@ struct ShaderVariable {
         uint16_t        array_stride;
 };
 
+/**
+ TODO calc key from descriptor data or store all descriptors in one place - in graphic state
+ it would allow to compare uniform blocks across different shaders
+ */
 struct UniformBlockDescriptor {
 
         std::unordered_map<StrID, ShaderVariable> mVariables;

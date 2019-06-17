@@ -5,7 +5,10 @@
 
 namespace SE {
 
-//THINK std::hash calculate always in size_t... so, arch dependent
+/**
+  THINK std::hash calculate always in size_t... so, arch dependent
+  log_d to all constructors
+ */
 class StrID {
 
         uint64_t        hash;

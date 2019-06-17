@@ -116,3 +116,5 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 --- mem management
 --- custom components from list
 
+
+- различать name и path в ресурсах, path уникален, не нужно доп проверок, name уникален только в рамках файла, при создании ресурса нужно добавлять к нему уникальный префикс от имени файла..
