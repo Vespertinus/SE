@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
         gLogger->set_level(spdlog::level::info);
 
         SE::SysSettings_t oSettings;
+        SE::Camera::Settings oCamSettings;
         string            sScenePath;
         bool              vdebug;
         bool              enable_all;
@@ -92,25 +93,22 @@ int main(int argc, char **argv) {
 
                 SE::TEngine::Instance().Init<SE::Config>();
 
-                oSettings.oCamSettings.width 			= 1920;
-                oSettings.oCamSettings.height			= 1200;
-                oSettings.oCamSettings.up[0]                    = 0;
-                oSettings.oCamSettings.up[1]                    = 0;
-                oSettings.oCamSettings.up[2]                    = 1;
-                oSettings.oCamSettings.oVolume.fov		= 45;
-                oSettings.oCamSettings.oVolume.aspect           = (float)oSettings.oCamSettings.width / (float)oSettings.oCamSettings.height;
-                oSettings.oCamSettings.oVolume.near_clip	= 0.1;
-                oSettings.oCamSettings.oVolume.far_clip         = 2000;
-                oSettings.oCamSettings.oVolume.projection       = (vm["ortho"].as<bool>()) ?
-                        SE::Frustum::uORTHO :
-                        SE::Frustum::uPERSPECTIVE;
+                //oCamSettings.up[0]                    = 0;
+                //oCamSettings.up[1]                    = 0;
+                //oCamSettings.up[2]                    = 1;
+                oCamSettings.fov                      = 60;//45;
+                oCamSettings.near_clip	              = 0.1;
+                oCamSettings.far_clip                 = 2000;
+                oCamSettings.projection               = (vm["ortho"].as<bool>()) ?
+                        SE::Camera::Projection::ORTHO :
+                        SE::Camera::Projection::PERSPECTIVE;
 
-                oSettings.clear_flag                            = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-                oSettings.hide_mouse                            = false;
-                oSettings.grab_mouse                            = false;
+                oSettings.clear_flag                  = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+                oSettings.hide_mouse                  = false;
+                oSettings.grab_mouse                  = false;
 
-                oSettings.oWindowSettings.width       = oSettings.oCamSettings.width;
-                oSettings.oWindowSettings.height      = oSettings.oCamSettings.height;
+                oSettings.oWindowSettings.width       = 1920;
+                oSettings.oWindowSettings.height      = 1200;
                 oSettings.oWindowSettings.bpp         = 24;
                 oSettings.oWindowSettings.fullscreen  = false;
                 oSettings.oWindowSettings.title       = "Scene Viewer";
@@ -131,9 +129,8 @@ int main(int argc, char **argv) {
         }
 
 
-
         try {
-                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath, vdebug, enable_all});
+                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath, vdebug, enable_all, oCamSettings });
         }
         catch (std::exception & ex) {
                 log_e("exception catched = {}", ex.what());

@@ -1,5 +1,4 @@
 
-
 #ifndef __APPLICATION_H__
 #define __APPLICATION_H__ 1
 
@@ -10,9 +9,8 @@
 #include <map>
 
 // Internal include
-#include <InputManager.h>
-#include <Camera.h>
-#include <FlyTransposer.h>
+//#include <Camera.h>
+//#include <FlyTransposer.h>
 #include <X11Window.h>
 
 #include <stl_extension.h>
@@ -29,7 +27,7 @@ struct SysSettings_t {
         bool                    grab_mouse;
         bool                    hide_mouse;
 
-        Camera::CamSettings_t   oCamSettings;
+        //Camera::CamSettings_t   oCamSettings;
         WindowSettings          oWindowSettings;
 
         std::string             sResourceDir;
@@ -63,8 +61,8 @@ template <class TLoop > class Application {
 
         SysSettings_t		oSettings;
         int                     window_id;
-        FlyTransposer		oTranspose;
-        Camera			oCamera;
+        //FlyTransposer		oTranspose;
+        //Camera			oCamera;
 
         TRunFunctor             oRunFunctor;
         TResizeFunctor          oResizeFunctor;
@@ -75,7 +73,7 @@ template <class TLoop > class Application {
 
         public:
         Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings & oLoopSettings);
-        ~Application() throw();
+        ~Application() noexcept;
 
 
         public:		//TEMP

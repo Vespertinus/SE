@@ -54,6 +54,20 @@ template <class ... TComponents > void SceneNode<TComponents ...>::
         InvalidateChildren();
 }
 
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        SetWorldPos(const glm::vec3 & vWorldPos) {
+
+        oTransform.SetWorldPos(vWorldPos);
+        InvalidateChildren();
+}
+
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        SetWorldRotation(const glm::vec3 & vDegreeAngles) {
+
+        oTransform.SetWorldRotation(vDegreeAngles);
+        InvalidateChildren();
+}
+
 template <class ... TComponents > void SceneNode<TComponents ...>::Translate(const glm::vec3 & vPos) {
 
         oTransform.Translate(vPos);
@@ -69,6 +83,34 @@ template <class ... TComponents > void SceneNode<TComponents ...>::Rotate(const 
 template <class ... TComponents > void SceneNode<TComponents ...>::Scale(const glm::vec3 & new_scale) {
 
         oTransform.Scale(new_scale);
+        InvalidateChildren();
+}
+
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        LookAt(const glm::vec3 & vLocalPoint, const glm::vec3 & vUp) {
+
+        oTransform.LookAt(vLocalPoint, vUp);
+        InvalidateChildren();
+}
+
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        WorldLookAt(const glm::vec3 & vWorldPoint, const glm::vec3 & vUp) {
+
+        oTransform.WorldLookAt(vWorldPoint, vUp);
+        InvalidateChildren();
+}
+
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        TranslateLocal(const glm::vec3 & vPos) {
+
+        oTransform.TranslateLocal(vPos);
+        InvalidateChildren();
+}
+
+template <class ... TComponents > void SceneNode<TComponents ...>::
+        RotateLocal(const glm::vec3 & vDegreeAngles) {
+
+        oTransform.RotateLocal(vDegreeAngles);
         InvalidateChildren();
 }
 
@@ -186,7 +228,7 @@ template <class ... TComponents > void SceneNode<TComponents ...>::
         if (pParent) {
                 pParent->RemoveChild(this->shared_from_this());
         }
-        else if (!(internal_flags && STATE_UNLINKED)) {
+        else if (!(internal_flags & STATE_UNLINKED)) {
                 log_e("call Unlink on node without parent, and not unlinked previously, name: '{}'", sName);
         }
 }

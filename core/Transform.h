@@ -3,6 +3,15 @@
 
 namespace SE {
 
+/**
+ front  -> -z
+ up     -> +y
+ right  -> +x
+*/
+static const glm::vec3 TransformUp   { 0.0f, 1.0f, 0.0f };
+static const glm::vec3 TransformFront{ 0.0f, 0.0f, -1.0f };
+static const glm::vec3 TransformRight{ 1.0f, 0.0f, 0.0f };
+
 class Transform {
 
         Transform             * pParent;
@@ -19,6 +28,7 @@ class Transform {
 
         public:
 
+
         Transform();
         Transform(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale);
 
@@ -27,8 +37,11 @@ class Transform {
         void              SetRotation(const glm::vec3 & vDegreeAngles);
         void              SetRotation(const glm::quat & qNewRotation);
         void              SetScale(const glm::vec3 & new_scale);
+        void              SetWorldPos(const glm::vec3 & vWorldPos);
+        void              SetWorldRotation(const glm::vec3 & vDegreeAngles);
         const glm::mat4 & Get() const;
         const glm::mat4 & GetWorld() const;
+        const glm::mat4 & GetParentWorld() const;
         const glm::vec3 & GetPos() const;
         const glm::vec3   GetRotationDeg() const;
         const glm::quat & GetRotation() const;
@@ -39,11 +52,15 @@ class Transform {
         void              Translate(const glm::vec3 & vPos);
         void              Rotate(const glm::vec3 & vDegreeAngles);
         void              Scale(const glm::vec3 & vNewScale);
+        void              TranslateLocal(const glm::vec3 & vPos);
+        void              RotateLocal(const glm::vec3 & vDegreeAngles);
         /** @brief scale around point in local space */
         void              ScaleWithPivot(const glm::vec3 & vPoint, const glm::vec3 & vNewScale);
         /** @brief rotate around point in local space */
         void              RotateAround(const glm::vec3 & vPoint, const glm::vec3 & vDegreeAngles);
         void              RotateAround(const glm::vec3 & vPoint, const glm::quat & qDeltaRotation);
+        void              LookAt(const glm::vec3 & vLocalPoint, const glm::vec3 & vUp = TransformUp);
+        void              WorldLookAt(const glm::vec3 & vWorldPoint, const glm::vec3 & vUp = TransformUp);
         std::tuple<
                 glm::vec3,
                 glm::vec3,

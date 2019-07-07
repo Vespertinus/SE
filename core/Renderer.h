@@ -12,15 +12,18 @@
 
 namespace SE {
 
+class Camera;
+
 template <class TVisibilityManager> class Renderer {
 
-        std::unique_ptr<TVisibilityManager>        pManager;
+        std::unique_ptr<TVisibilityManager>     pManager;
         /** stat */
         //uint32_t                                rendered_cnt;
         //uint32_t                                total_elements_cnt;
         //??? pCurCamera, shader values?
-
-        std::vector<RenderCommand const *>              vRenderCommands;
+        glm::uvec2                              screen_size{1024, 1024};
+        Camera                                * pCurCamera{nullptr};
+        std::vector<RenderCommand const *>      vRenderCommands;
 
         void PrepareVisible();
 
@@ -30,6 +33,9 @@ template <class TVisibilityManager> class Renderer {
         void Render();
         template <class TRenderable > void AddRenderable(TRenderable * pComponent);
         template <class TRenderable > void RemoveRenderable(TRenderable * pComponent);
+        void                               SetScreenSize(const glm::uvec2 new_screen_size);
+        void                               SetCamera(Camera * pCamera);
+        Camera *                           GetCamera() const;
 
         /**
                 - set of all TRenderable
@@ -48,8 +54,6 @@ template <class TVisibilityManager> class Renderer {
 
 
 } //namespace SE
-
-#include <Renderer.tcc>
 
 #endif
 

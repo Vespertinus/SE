@@ -128,6 +128,48 @@ void Transform::ScaleWithPivot(const glm::vec3 & vPoint, const glm::vec3 & vNewS
         Scale(vNewScale);
 }
 
+void Transform::LookAt(const glm::vec3 & vLocalPoint, const glm::vec3 & vUp) {
+        qRotation       = glm::quatLookAt(glm::normalize(vLocalPoint - vTranslation), vUp);
+        local_dirty     = 1;
+}
+
+void Transform::WorldLookAt(const glm::vec3 & vWorldPoint, const glm::vec3 & vUp) {
+
+        glm::vec3 vLocalPoint = glm::inverse(GetWorld()) * glm::vec4(vWorldPoint, 1.0f);
+        LookAt(vLocalPoint, vUp);
+}
+
+void Transform::SetWorldPos(const glm::vec3 & vWorldPos) {
+
+        glm::vec3 vLocalPoint = glm::inverse(GetWorld()) * glm::vec4(vWorldPos, 1.0f);
+        SetPos(vLocalPoint);
+}
+
+void Transform::SetWorldRotation(const glm::vec3 & vDegreeAngles) {
+
+        ////qRotation       = glm::quat(glm::radians(vDegreeAngles));
+        //glm::vec3 vLocalPoint = glm::inverse(GetWorld()) * vWorldPos;
+        //SetRotation(vLocalPoint);
+
+        RecalcWorld();
+        glm::quat qWorldRotation        = glm::quat_cast(mWorldTransform);
+        glm::quat qNewWorldRotation     = glm::quat(glm::radians(vDegreeAngles));
+        qRotation                       = glm::normalize(glm::inverse(qWorldRotation) * qNewWorldRotation);
+        local_dirty                     = 1;
+}
+
+void Transform::TranslateLocal(const glm::vec3 & vPos) {
+
+        vTranslation    += qRotation * vPos;
+        local_dirty     = 1;
+}
+
+void Transform::RotateLocal(const glm::vec3 & vDegreeAngles) {
+
+        qRotation       = glm::normalize(qRotation * glm::quat(glm::radians(vDegreeAngles)) );
+        local_dirty     = 1;
+}
+
 const glm::mat4 & Transform::Get() const {
 
         Recalc();
@@ -149,6 +191,23 @@ const glm::mat4 & Transform::GetWorld() const {
         RecalcWorld();
         return mWorldTransform;
 }
+
+const glm::mat4 & Transform::GetParentWorld() const {
+
+        RecalcWorld();
+        if (pParent) {
+
+                return pParent->GetWorld();
+        }
+
+        static glm::mat4 mIdentity(     1,0,0,0,
+                                        0,1,0,0,
+                                        0,0,1,0,
+                                        0,0,0,1);
+
+        return mIdentity;
+}
+
 
 void Transform::SetParent(Transform * pNode) {
 

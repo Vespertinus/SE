@@ -7,9 +7,14 @@ namespace SE {
 class Frustum {
 
         public:
+
+        enum class Projection : uint8_t {
+                PERSPECTIVE     = 1,
+                ORTHO           = 2
+        }
   
-        static const uint8_t uPERSPECTIVE   = 1;
-        static const uint8_t uORTHO         = 2;
+        //static const uint8_t uPERSPECTIVE   = 1;
+        //static const uint8_t uORTHO         = 2;
 
         struct Volume {
                 //options for each type of camera
@@ -25,7 +30,8 @@ class Frustum {
                 float   aspect,
                         fov;
                 
-                uint8_t projection;
+                //uint8_t projection;
+                Projection projection;
         };
 /*
         struct Settings {
@@ -53,8 +59,13 @@ class Frustum {
 
         //Frustum();
 //        Frustum(const Settings & oNewSettings);
-        Frustum(const Volume & oNewVolume);
-        ~Frustum() throw();
+        //Frustum(const Volume & oNewVolume);
+        Frustum(
+                        Projection proj, 
+                        const float near_clip, 
+                        const float far_clip, 
+                        const float new_aspect);
+        ~Frustum() noexcept;
 
         void            SetFOV(const float new_fov);
 //        void            SetFOV(const float new_fov, const float new_aspect);

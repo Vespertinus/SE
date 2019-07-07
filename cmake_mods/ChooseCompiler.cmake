@@ -6,7 +6,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
                 message(FATAL_ERROR "Insufficient g++ version = '${CMAKE_CXX_COMPILER_VERSION}' but required at least '${MIN_CXX_VERSION}'")
         endif()
 else()        
-        message(FATAL_ERROR "Unsupported compiler (tested on GCC)")
+#message(FATAL_ERROR "Unsupported compiler (tested on GCC)")
 endif()
 
 

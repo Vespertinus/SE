@@ -9,6 +9,13 @@ namespace SE {
 
 class UniformBuffer;
 
+struct FrameState {
+        uint32_t                frame_num{0};
+        float                   last_frame_time{1/60};
+        //time_point <micro>      frame_start_time;
+        glm::uvec2              screen_size{800, 600};
+};
+
 /*
  basic stub for render state managing
 
@@ -21,9 +28,10 @@ class GraphicsState {
         const glm::mat4       * pTransformMat;
         ShaderProgram         * pShader;
         uint32_t                cur_vao;
-        glm::uvec2              screen_size;
+        FrameState              oFrame;
+        //glm::uvec2              screen_size;
         time_point <micro>      frame_start_time;
-        float                   last_frame_time;
+        //float                   last_frame_time;
         uint32_t                active_tex_unit{};
         uint32_t                active_ubo;
         glm::vec4               vClearColor{0.0f};
@@ -49,13 +57,13 @@ class GraphicsState {
 
         std::array<UniformUnitInfo, 16> vUniformUnitInfo = {{
 
-                {"Transform",  10 /*1000*/ },
-                {"Material",   2 },
-                {"Camera",     1 },
-                {"Animation",  2 },
-                {"Object",     2 /*100*/ },
+                {"Transform",  1000 },
+                {"Material",   100 },
+                {"Camera",     10 },
+                {"Animation",  100 },
+                {"Object",     100 },
                 {"Lighting",   10 },
-                {"Err",        0 },
+                {"Err",        10 },
                 {"CUSTOM",     10 }
         }};
 
@@ -70,6 +78,7 @@ class GraphicsState {
         void                            SetViewProjection(const glm::mat4 & oMat);
         void                            SetShaderProgram(ShaderProgram * pNewShader);
         void                            SetScreenSize(const uint32_t width, const uint32_t height);
+        void                            SetScreenSize(const glm::uvec2 new_screen_size);
         void                            SetVao(const uint32_t vao_id);
         void                            Draw(const uint32_t vao_id,
                                              const uint32_t mode,
@@ -83,6 +92,7 @@ class GraphicsState {
         void                            FrameStart();
         const glm::uvec2 &              GetScreenSize() const;
         float                           GetLastFrameTime() const;
+        const FrameState &              GetFrameState() const;
         //TODO need to reset range in binded array
         void                            UploadUniformBufferData(const uint32_t buf_id,
                                                                 const uint32_t buf_size,

@@ -81,7 +81,8 @@ namespace SE {
 //forward components
 class StaticModel;
 class AnimatedModel;
-
+class Camera;
+class BasicController;
 
 //renderable components list
 
@@ -101,7 +102,7 @@ using TEngine = Loki::SingletonHolder<Engine<Config, GraphicsConfig, TRenderer/*
 
 namespace SE {
 
-using TSceneTree = SceneTree<StaticModel, AnimatedModel>;
+using TSceneTree = SceneTree<StaticModel, AnimatedModel, Camera, BasicController>;
 
 }
 
@@ -109,6 +110,8 @@ using TSceneTree = SceneTree<StaticModel, AnimatedModel>;
 
 #include <StaticModel.h>
 #include <AnimatedModel.h>
+#include <Camera.h>
+#include <BasicController.h>
 // ___End_____ include components headers
 
 

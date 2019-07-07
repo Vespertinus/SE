@@ -21,10 +21,19 @@ void Frustum::RecalcVolume() {
 
         //if (oVolume.projection != uPERSPECTIVE || (oVolume.fov == 0)) { return; }
 
-        oVolume.top    = oVolume.near_clip  * tan(oVolume.fov * M_PI / 360.0); //TODO rewrite to internal math
-        oVolume.bottom = - oVolume.top;
-        oVolume.right  = oVolume.top * oVolume.aspect;
-        oVolume.left   = oVolume.bottom * oVolume.aspect;
+        if (oVolume.projection == Projection::PERSPECTIVE) {
+
+                oVolume.top    = oVolume.near_clip  * tan(oVolume.fov * M_PI / 360.0); //TODO rewrite to internal math
+                oVolume.bottom = - oVolume.top;
+                oVolume.right  = oVolume.top * oVolume.aspect;
+                oVolume.left   = oVolume.bottom * oVolume.aspect;
+        }
+        else {
+                oVolume.top     =;
+
+
+        
+        }
 
  /* reverse:
  * new_fov     = math.atan(top / near_clip) / (math.pi / 360.0)

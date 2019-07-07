@@ -20,10 +20,11 @@ GraphicsState::GraphicsState() :
         pTransformMat(nullptr),
         pShader(nullptr),
         cur_vao(0),
-        screen_size(800, 600),
-        frame_start_time(std::chrono::time_point_cast<micro>(clock::now())),//FIXME
-        last_frame_time(1/60.) {
+        //screen_size(800, 600),
+        frame_start_time(std::chrono::time_point_cast<micro>(clock::now()))//FIXME
+        /*last_frame_time(1/60.)*/ {
 
+        //oFrame.frame_start_time= std::chrono::time_point_cast<micro>(clock::now());
         glClearColor(vClearColor.r, vClearColor.g, vClearColor.b, vClearColor.a);
         glClearDepth(clear_depth);
         SetDepthTest(true);
@@ -162,15 +163,18 @@ void GraphicsState::SetShaderProgram(ShaderProgram * pNewShader) {
                 pShader->SetVariable("MVPMatrix", *pModelViewProjection);
         }
         if (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize) {
-                pShader->SetVariable(oScreenSizeID, screen_size);
+                pShader->SetVariable(oScreenSizeID, oFrame.screen_size);
         }
 }
 
 void GraphicsState::FrameStart() {
 
         time_point <micro> cur_time = std::chrono::time_point_cast<micro>(clock::now());
-        last_frame_time = std::chrono::duration<float>(cur_time - frame_start_time).count();
+        //last_frame_time = std::chrono::duration<float>(cur_time - frame_start_time).count();
+        oFrame.last_frame_time  = std::chrono::duration<float>(cur_time - frame_start_time).count();
         frame_start_time = cur_time;
+        //oFrame.frame_start_time = cur_time;
+        ++oFrame.frame_num;
 
         pModelViewProjection = nullptr;
         pTransformMat        = nullptr;
@@ -223,24 +227,34 @@ void GraphicsState::DrawArrays(
         glDrawArrays(mode, start, count);
 }
 
-void GraphicsState::SetScreenSize(const uint32_t width, const uint32_t height) {
+void GraphicsState::SetScreenSize(const glm::uvec2 new_screen_size) {
 
-        screen_size.x = width;
-        screen_size.y = height;
+        oFrame.screen_size = new_screen_size;
 
         if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize)) {
-                pShader->SetVariable(oScreenSizeID, screen_size);
+                pShader->SetVariable(oScreenSizeID, oFrame.screen_size);
+        }
+
+        //THINK move glViewport here?
+}
+void GraphicsState::SetScreenSize(const uint32_t width, const uint32_t height) {
+
+        oFrame.screen_size.x = width;
+        oFrame.screen_size.y = height;
+
+        if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize)) {
+                pShader->SetVariable(oScreenSizeID, oFrame.screen_size);
         }
 
         //THINK move glViewport here?
 }
 
 const glm::uvec2 & GraphicsState::GetScreenSize() const {
-        return screen_size;
+        return oFrame.screen_size;
 }
 
 float GraphicsState::GetLastFrameTime() const {
-        return last_frame_time;
+        return oFrame.last_frame_time;
 }
 
 void GraphicsState::SetVao(const uint32_t vao_id) {
@@ -400,6 +414,10 @@ void GraphicsState::SetColorMask(const bool enable) {
         else {
                 glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         }
+}
+
+const FrameState & GraphicsState::GetFrameState() const {
+        return oFrame;
 }
 
 

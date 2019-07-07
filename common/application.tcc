@@ -1,4 +1,5 @@
 
+#include <InputManager.h>
 
 namespace SE {
 
@@ -11,8 +12,8 @@ template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t 
 
         TInputManager::Instance().Initialise(
                         window_id,
-                        oSettings.oCamSettings.width,
-                        oSettings.oCamSettings.height,
+                        oSettings.oWindowSettings.width,
+                        oSettings.oWindowSettings.height,
                         oSettings.grab_mouse,
                         oSettings.hide_mouse);
 
@@ -20,20 +21,22 @@ template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t 
 
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
         oSettings(oNewSettings),
-        oCamera(oTranspose,	oSettings.oCamSettings), //TODO move to component
+        //oCamera(oTranspose,	oSettings.oCamSettings), //TODO move to component
         oRunFunctor   (*this, &Application<TLoop>::Run),
         oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
         oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
         oPreInit(oSettings, oMainWindow.GetWindowID()),
-        oLoop(oLoopSettings, oCamera) {
+        oLoop(oLoopSettings/*, oCamera*/) {
 
                 /*TODO
                  init all members as uniq pointers in specified order and destroy in reverse order
                  or, all depend sub systems inside Engine<>
                 */
 
-                TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
-                TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
+                //TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
+                //TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
+
+                ResizeViewport(oSettings.oWindowSettings.width, oSettings.oWindowSettings.height);
 
                 Init();
 
@@ -47,7 +50,7 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
 
 
 
-template <class TLoop> Application<TLoop>::~Application() throw() { ;; }
+template <class TLoop> Application<TLoop>::~Application() noexcept { ;; }
 
 
 
@@ -69,15 +72,18 @@ template <class TLoop> void Application<TLoop>::Init() {
 
 template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & new_width, const int32_t & new_height) {
 
-        oSettings.oCamSettings.width 	= new_width;
-        oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
+        glm::uvec2      screen_size(new_width, new_height);
+        //oSettings.oCamSettings.width 	= new_width;
+        //oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
 
-        oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        //oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
-        glViewport(0, 0, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        glViewport(0, 0, new_width, new_height);
 
-        TInputManager::Instance().SetWindowExtents(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-        SE::TGraphicsState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        TInputManager::Instance().SetWindowExtents(new_width, new_height);
+        //SE::TGraphicsState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        SE::TGraphicsState::Instance().SetScreenSize(screen_size);
+        TEngine::Instance().Get<TRenderer>().SetScreenSize(screen_size);
 }
 
 
@@ -85,9 +91,11 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 template <class TLoop> void Application<TLoop>::Run() {
 
         glClear(oSettings.clear_flag);
-        oCamera.Adjust();
+        //oCamera.Adjust();
 
         SE::TGraphicsState::Instance().FrameStart();
+
+        //TInputManager::Instance().Update(last_frame_time);
 
         //Update
         oLoop.Process();

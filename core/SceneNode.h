@@ -57,9 +57,15 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         void                    SetRotation(const glm::vec3 & vDegreeAngles);
         void                    SetRotation(const glm::quat & qNewRotation);
         void                    SetScale(const glm::vec3 & new_scale);
+        void                    SetWorldPos(const glm::vec3 & vWorldPos);
+        void                    SetWorldRotation(const glm::vec3 & vDegreeAngles);
         void                    Translate(const glm::vec3 & vPos);
         void                    Rotate(const glm::vec3 & vDegreeAngles);
         void                    Scale(const glm::vec3 & new_scale);
+        void                    LookAt(const glm::vec3 & vLocalPoint, const glm::vec3 & vUp = TransformUp);
+        void                    WorldLookAt(const glm::vec3 & vWorldPoint, const glm::vec3 & vUp = TransformUp);
+        void                    TranslateLocal(const glm::vec3 & vPos);
+        void                    RotateLocal(const glm::vec3 & vDegreeAngles);
         uint32_t                GetComponentsCnt() const;
         ret_code_t              AddChild(TSceneNode pNode);
         void                    RemoveChild(TSceneNode pNode);
@@ -117,7 +123,7 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
                                                         THandler && oHandler,
                                                         TPostHandler && oPostHandler);
         template <class ... THandler> void ForEachComponent(THandler && ... oHandler);
-        //TODO return created component
+        //TODO return created component, std tuple component, ret_code
         template <class TComponent, class ... TArgs>
                                         ret_code_t CreateComponent(TArgs && ... oArgs);
         template <class TComponent>     void DestroyComponent();

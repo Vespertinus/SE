@@ -197,7 +197,7 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
         log_i("Running in {} mode", oSettings.fullscreen ? "fullscreen" : "window");
 
-        oResizeHandler(oSettings.width, oSettings.height);
+        //oResizeHandler(oSettings.width, oSettings.height);
 }
 
 

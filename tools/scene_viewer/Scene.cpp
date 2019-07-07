@@ -9,17 +9,34 @@ namespace TOOLS {
 
 static const uint8_t NODE_HIDE = 0x1;
 
-Scene::Scene(const Settings & oNewSettings, SE::Camera & oCurCamera) :
-        oCamera(oCurCamera),
+Scene::Scene(const Settings & oNewSettings) :
         pSceneTree(SE::CreateResource<SE::TSceneTree>(oNewSettings.sScenePath)),
         oSettings(oNewSettings) {
 
         TInputManager::Instance().AddKeyListener   (&oImGui, "ImGui");
         TInputManager::Instance().AddMouseListener (&oImGui, "ImGui");
 
+        auto pCameraNode = pSceneTree->Create("MainCamera");
+        auto res = pCameraNode->CreateComponent<Camera>(true, oSettings.oCamSettings);
+        if (res != uSUCCESS) {
+                throw("failed to create Camera component");
+        }
+        pCamera = pCameraNode->GetComponent<Camera>();
+        se_assert(pCamera);
 
-        oCamera.SetPos(8, 8, 4);
-        oCamera.LookAt(0.1, 0.1, 0.1);
+        res = pCameraNode->CreateComponent<BasicController>(true);
+        if (res != uSUCCESS) {
+                throw("failed to create BasicController component");
+        }
+        pController = pCameraNode->GetComponent<BasicController>();
+        se_assert(pController);
+
+        //init cam
+        //pCamera->SetPos(8, 8, 4);
+        pCamera->SetPos(8, 4, 8);
+        pCamera->LookAt(0.1, 0.1, 0.1);
+
+        TEngine::Instance().Get<TRenderer>().SetCamera(pCamera);
 
         if (oSettings.enable_all) {
                 pSceneTree->EnableAll();
@@ -41,7 +58,15 @@ void Scene::Process() {
         SE::CheckOpenGLError();
         //SE::HELPERS::DrawAxes(10);
 
-        TGraphicsState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
+        //___Start___ FIXME
+        //pSceneTree->Update();
+
+        const auto & oFrame = TGraphicsState::Instance().GetFrameState();
+        pController->Update(oFrame);
+        //___End_____ FIXME
+
+        //move to renderer..
+        //TGraphicsState::Instance().SetViewProjection(pCamera->GetWorldMVP());
 
         //pSceneTree->Draw();
         /*
@@ -261,6 +286,9 @@ void Scene::ShowGUI() {
                                         oNode.DisableRecursive();
                                 }
                         }
+                        /*if (ImGui::Button("look at")) {
+                                pCamera->LookAt(oNode->Transform()->GetWorldPos());
+                        }*/
 
                         return true;
                 },

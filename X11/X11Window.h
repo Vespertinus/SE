@@ -17,39 +17,39 @@ namespace SE {
 
 struct WindowSettings {
 
-  int32_t     width,
-              height;
-  int32_t     bpp;
-  bool        fullscreen;
-  std::string title;
+        int32_t     width,
+                    height;
+        int32_t     bpp;
+        bool        fullscreen;
+        std::string title;
 };
 
 template <class ResizeHandler,  class DrawHandler> class X11Window {
 
-  Display             * display;
-  Window                window;
-  GLXContext            glx_context;
-	XSetWindowAttributes	wnd_attr;
-	XF86VidModeModeInfo		video_mode;
-  int32_t               screen;
+        Display             * display;
+        Window                window;
+        GLXContext            glx_context;
+        XSetWindowAttributes  wnd_attr;
+        XF86VidModeModeInfo   video_mode;
+        int32_t               screen;
 
-  WindowSettings        oSettings;
+        WindowSettings        oSettings;
 
-  ResizeHandler      & oResizeHandler;
-  DrawHandler        & oDrawHandler;
+        ResizeHandler      & oResizeHandler;
+        DrawHandler        & oDrawHandler;
 
 
-  void CreateWindow();
-  void DestroyWindow();
+        void CreateWindow();
+        void DestroyWindow();
 
-  public:
+        public:
 
-  // resize handler, draw handler, settings
-  X11Window(ResizeHandler & oNewResizeHandler, DrawHandler & oNewDrawHandler, const WindowSettings & oSettings);
-  ~X11Window() throw();
+        // resize handler, draw handler, settings
+        X11Window(ResizeHandler & oNewResizeHandler, DrawHandler & oNewDrawHandler, const WindowSettings & oSettings);
+        ~X11Window() throw();
 
-  uint32_t GetWindowID() const;
-  void Loop();
+        uint32_t GetWindowID() const;
+        void Loop();
 
 };
 

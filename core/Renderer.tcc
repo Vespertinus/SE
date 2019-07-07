@@ -43,8 +43,14 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::Render() 
 
         CalcDuration oDuration;
 
+        if (!pCamera) {
+                log_e("main camera was not set");
+                return;
+        }
+
         PrepareVisible();
 
+        TGraphicsState::Instance().SetViewProjection(pCamera->GetWorldMVP());
 
         for (auto * pRenderCommand : vRenderCommands) {
                 pRenderCommand->Draw();
@@ -65,6 +71,26 @@ template <class TVisibilityManager>
                 void Renderer<TVisibilityManager>::RemoveRenderable(TRenderable * pComponent) {
 
         pManager->RemoveRenderable(pComponent);
+}
+
+template <class TVisibilityManager> void Renderer<TVisibilityManager>::SetScreenSize(const glm::uvec2 new_screen_size) {
+
+        screen_size = new_screen_size;
+        if (pCurCamera) {
+                pCurCamera->UpdateDimension(screen_size);
+        }
+}
+
+template <class TVisibilityManager> void Renderer<TVisibilityManager>::SetCamera(Camera * pCamera) {
+
+        pCurCamera = pCamera;
+        if (pCurCamera) {
+                pCurCamera->UpdateDimension(screen_size);
+        }
+}
+
+template <class TVisibilityManager> Camera * Renderer<TVisibilityManager>::GetCamera() const {
+        return pCurCamera;
 }
 
 } //namespace SE
