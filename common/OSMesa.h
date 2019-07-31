@@ -14,7 +14,7 @@ struct WindowSettings {
                                 stencil,
                                 accum;
 
-        int32_t                 width,
+        uint32_t                width,
                                 height;
         std::vector<GLubyte>  & vRenderBuffer;
 };

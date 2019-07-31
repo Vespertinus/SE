@@ -23,6 +23,7 @@ table AnimatedModel {
 //Component wrappers
 
 table AppComponent {
+        sub_type:uint16_t;
         data:[ubyte] (flexbuffer);
 }
 

@@ -93,10 +93,7 @@ int main(int argc, char **argv) {
 
                 SE::TEngine::Instance().Init<SE::Config>();
 
-                //oCamSettings.up[0]                    = 0;
-                //oCamSettings.up[1]                    = 0;
-                //oCamSettings.up[2]                    = 1;
-                oCamSettings.fov                      = 60;//45;
+                oCamSettings.fov                      = 60;
                 oCamSettings.near_clip	              = 0.1;
                 oCamSettings.far_clip                 = 2000;
                 oCamSettings.projection               = (vm["ortho"].as<bool>()) ?

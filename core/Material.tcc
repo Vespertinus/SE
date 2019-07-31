@@ -72,7 +72,7 @@ void Material::Apply() const {
         for (auto & oShaderVar : mShaderVariables) {
 
                 std::visit([&oShaderVar](auto & var) {
-                                TGraphicsState::Instance().SetVariable(oShaderVar.first, var);
+                                GetSystem<GraphicsState>().SetVariable(oShaderVar.first, var);
                                 },
                                 oShaderVar.second);
         }

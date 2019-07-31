@@ -37,10 +37,10 @@ void GeometryEntity::Draw() const {
                                 count);
                  */
 
-                TGraphicsState::Instance().Draw(vao_id, primitive_type, index_type, start, count);
+                GetSystem<GraphicsState>().Draw(vao_id, primitive_type, index_type, start, count);
         }
         else {
-                TGraphicsState::Instance().DrawArrays(vao_id, primitive_type, start, count);
+                GetSystem<GraphicsState>().DrawArrays(vao_id, primitive_type, start, count);
         }
 }
 

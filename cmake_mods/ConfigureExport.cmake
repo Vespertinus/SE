@@ -13,11 +13,15 @@ set (                           CONFIG_PACKAGE_LOCATION "${CMAKE_INSTALL_LIBDIR}
 prepend_path(                   LOCAL_INC_DIRS
                                 ABS_LOCAL_INC_DIR
                                 "${CMAKE_INSTALL_PREFIX}/${INSTALLED_HEADERS_DIR}")
+prepend_path(                   THIRD_PARTY_INC_DIRS
+                                ABS_THIRD_PARTY_INC_DIRS
+                                "${CMAKE_INSTALL_PREFIX}/${INSTALLED_HEADERS_DIR}")
 
 target_include_directories(     SE
                                 INTERFACE
                                 ${ABS_LOCAL_INC_DIR}
                                 ${EXTERN_INC_DIRS}
+                                ${ABS_THIRD_PARTY_INC_DIRS}
                                 )
 
 target_link_libraries(          SE
@@ -34,6 +38,13 @@ write_basic_package_version_file(
 
 install(                        DIRECTORY ${LOCAL_INC_DIRS}
                                 DESTINATION ${INSTALLED_HEADERS_DIR}
+                                FILES_MATCHING
+                                PATTERN "*.h"
+                                PATTERN "*.tcc"
+                                )
+
+install(                        DIRECTORY ${THIRD_PARTY_INC_DIRS}
+                                DESTINATION "${INSTALLED_HEADERS_DIR}/third_party"
                                 FILES_MATCHING
                                 PATTERN "*.h"
                                 PATTERN "*.tcc"

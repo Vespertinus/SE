@@ -14,13 +14,11 @@ class Scene {
                 const std::string & sScenePath;
                 bool  vdebug;
                 bool  enable_all;
-                //bool  ortho {false};
                 Camera::Settings oCamSettings;
         };
 
         private:
         SE::Camera            * pCamera;
-        SE::BasicController   * pController;
         SE::TSceneTree        * pSceneTree;
         Settings                oSettings;
         SE::HELPERS::ImGuiWrapper            oImGui;
@@ -32,7 +30,6 @@ class Scene {
         ~Scene() throw();
 
         void Process();
-        void PostRender();
 };
 
 

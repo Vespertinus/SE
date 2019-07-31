@@ -78,6 +78,7 @@ void InputManager::Initialise(
         // Create inputsystem
         pInputSystem = OIS::InputManager::createInputSystem( paramList );
 
+///* disable keyboard capture
         if (pInputSystem->getNumberOfDevices(OIS::OISKeyboard) > 0) {
                 pKeyboard = static_cast<OIS::Keyboard*>( pInputSystem->createInputObject( OIS::OISKeyboard, true ) );
                 if (!pKeyboard) {
@@ -90,7 +91,7 @@ void InputManager::Initialise(
                 log_e("can't find Keyboard");
                 exit(-1);
         }
-
+//*/
         if (pInputSystem->getNumberOfDevices(OIS::OISMouse) > 0) {
                 pMouse = static_cast<OIS::Mouse*>( pInputSystem->createInputObject( OIS::OISMouse, true ) );
                 if (!pMouse) {

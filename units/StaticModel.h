@@ -25,9 +25,8 @@ class StaticModel {
         public:
         using TSerialized = FlatBuffers::StaticModel;
 
-        StaticModel(TSceneTree::TSceneNodeExact * pNewNode, bool enabled);
+        StaticModel(TSceneTree::TSceneNodeExact * pNewNode);
         StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
-                    bool enabled,
                     TMesh * pNewMesh,
                     Material * pNewMaterial);
         StaticModel(TSceneTree::TSceneNodeExact  * pNewNode,

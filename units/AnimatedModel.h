@@ -21,7 +21,6 @@ class AnimatedModel : public StaticModel {
         using TSerialized = FlatBuffers::AnimatedModel;
 
         AnimatedModel(TSceneTree::TSceneNodeExact * pNewNode,
-                      bool enabled,
                       TMesh * pNewMesh,
                       Material * pNewMaterial,
                       TTexture * pNewTexBuf,

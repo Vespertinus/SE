@@ -29,9 +29,7 @@ class GraphicsState {
         ShaderProgram         * pShader;
         uint32_t                cur_vao;
         FrameState              oFrame;
-        //glm::uvec2              screen_size;
         time_point <micro>      frame_start_time;
-        //float                   last_frame_time;
         uint32_t                active_tex_unit{};
         uint32_t                active_ubo;
         glm::vec4               vClearColor{0.0f};
@@ -89,7 +87,7 @@ class GraphicsState {
                                                    const uint32_t mode,
                                                    const uint32_t start,
                                                    const uint32_t count);
-        void                            FrameStart();
+        float                           FrameStart();
         const glm::uvec2 &              GetScreenSize() const;
         float                           GetLastFrameTime() const;
         const FrameState &              GetFrameState() const;
@@ -136,8 +134,6 @@ template <class T> ret_code_t GraphicsState::SetVariable(const StrID name, const
         log_w("shader not set, var: '{}'", name);
         return uLOGIC_ERROR;
 }
-
-typedef Loki::SingletonHolder < GraphicsState >   TGraphicsState;
 
 } // namespace SE
 

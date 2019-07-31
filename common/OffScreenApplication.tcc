@@ -9,26 +9,28 @@ template <class TLoop> OffScreenApplication<TLoop>::PreInit::PreInit() {
 
 template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
         oSettings(oNewSettings),
-        oCamera(oTranspose, oSettings.oCamSettings),
         oRenderingCtx(WindowSettings {
                         OSMESA_BGRA,
                         24,
                         0,
                         0,
-                        oSettings.oCamSettings.width,
-                        oSettings.oCamSettings.height,
+                        oSettings.width,
+                        oSettings.height,
                         oSettings.vRenderBuffer } ),
-        oLoop(oLoopSettings, oCamera) {
+        oLoop(oLoopSettings) {
 
-                Init();
+        ResizeViewport(oSettings.width, oSettings.height);
 
-                log_i("Inited");
+        Init();
 
+        GetSystem<EventManager>().TriggerEvent(EStartApp{});
+
+        log_i("Inited");
 }
 
 
 
-template <class TLoop> OffScreenApplication<TLoop>::~OffScreenApplication() throw() {
+template <class TLoop> OffScreenApplication<TLoop>::~OffScreenApplication() noexcept {
 
 }
 
@@ -38,10 +40,10 @@ template <class TLoop> void OffScreenApplication<TLoop>::Init() {
 
         log_i("app init");
 
-        TGraphicsState::Instance().SetClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        TGraphicsState::Instance().SetClearDepth(1.0f);
-        TGraphicsState::Instance().SetDepthFunc(DepthFunc::LESS);
-        TGraphicsState::Instance().SetDepthTest(true);
+        GetSystem<GraphicsState>().SetClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        GetSystem<GraphicsState>().SetClearDepth(1.0f);
+        GetSystem<GraphicsState>().SetDepthFunc(DepthFunc::LESS);
+        GetSystem<GraphicsState>().SetDepthTest(true);
 }
 
 
@@ -52,9 +54,13 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
         glClear(oSettings.clear_flag);
 
-        oCamera.Adjust();
+        auto & oEventManager = GetSystem<EventManager>();
+        oEventManager.TriggerEvent(EUpdate{0.0f});
 
+        oEventManager.Process();
         oLoop.Process();
+
+        oEventManager.TriggerEvent(EPostUpdate{0.0f});
 
         CalcDuration oRenderDuration;
 
@@ -62,7 +68,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
         log_i("renderer duration = {} ms", oRenderDuration.Get());
 
-        oLoop.PostRender();
+        oEventManager.TriggerEvent(EPostRenderUpdate{0.0f});
 
         glFinish();
 
@@ -76,16 +82,15 @@ template <class TLoop> TLoop & OffScreenApplication<TLoop>::GetAppLogic() {
 
 template <class TLoop> void OffScreenApplication<TLoop>::ResizeViewport(const int32_t new_width, const int32_t new_height) {
 
-        if (oSettings.oCamSettings.width == new_width && oSettings.oCamSettings.height == new_height) { return; }
+        oSettings.width 	= new_width;
+        oSettings.height	= (new_height) ? new_height : 1;
+        glm::uvec2 screen_size(oSettings.width, oSettings.height);
 
-        oSettings.oCamSettings.width 	= new_width;
-        oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
+        oRenderingCtx.UpdateDimension(oSettings.width, oSettings.height);
+        glViewport(0, 0, oSettings.width, oSettings.height);
 
-        oRenderingCtx.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-        oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-        glViewport(0, 0, oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-
-        SE::TGraphicsState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
+        GetSystem<GraphicsState>().SetScreenSize(screen_size);
+        GetSystem<TRenderer>().SetScreenSize(screen_size);
 }
 
 

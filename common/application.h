@@ -9,8 +9,6 @@
 #include <map>
 
 // Internal include
-//#include <Camera.h>
-//#include <FlyTransposer.h>
 #include <X11Window.h>
 
 #include <stl_extension.h>
@@ -19,15 +17,10 @@ namespace SE {
 
 struct SysSettings_t {
 
-        //int32_t 	        width;
-        //int32_t 	        height;
-        //float			fov;
-        //bool			fullscreen;
         int                     clear_flag;
         bool                    grab_mouse;
         bool                    hide_mouse;
 
-        //Camera::CamSettings_t   oCamSettings;
         WindowSettings          oWindowSettings;
 
         std::string             sResourceDir;
@@ -61,8 +54,6 @@ template <class TLoop > class Application {
 
         SysSettings_t		oSettings;
         int                     window_id;
-        //FlyTransposer		oTranspose;
-        //Camera			oCamera;
 
         TRunFunctor             oRunFunctor;
         TResizeFunctor          oResizeFunctor;

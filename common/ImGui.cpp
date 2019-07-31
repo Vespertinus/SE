@@ -1,5 +1,4 @@
 
-
 // Internal include
 #include <Global.h>
 #include <GlobalTypes.h>
@@ -21,6 +20,12 @@ ImGuiWrapper::ImGuiWrapper() {
         BuildFontTex();
 
         ImGui::StyleColorsDark();
+
+        TInputManager::Instance().AddKeyListener   (this, "ImGui");
+        TInputManager::Instance().AddMouseListener (this, "ImGui");
+
+        GetSystem<EventManager>().AddListener<EFrameStart, &ImGuiWrapper::NewFrame>(this);
+        GetSystem<EventManager>().AddListener<EPostRenderUpdate, &ImGuiWrapper::Render>(this);
 }
 
 ImGuiWrapper::~ImGuiWrapper() {
@@ -32,6 +37,12 @@ ImGuiWrapper::~ImGuiWrapper() {
         glDeleteBuffers(1, &vbo_id);
         glDeleteBuffers(1, &index_array_id);
         glDeleteVertexArrays(1, &vao_id);
+
+        TInputManager::Instance().RemoveKeyListener   ("ImGui");
+        TInputManager::Instance().RemoveMouseListener ("ImGui");
+
+        GetSystem<EventManager>().RemoveListener<EFrameStart, &ImGuiWrapper::NewFrame>(this);
+        GetSystem<EventManager>().RemoveListener<EPostRenderUpdate, &ImGuiWrapper::Render>(this);
 }
 
 void ImGuiWrapper::InitWndData() {
@@ -135,7 +146,7 @@ void ImGuiWrapper::BuildFontTex() {
         io.Fonts->TexID = (ImTextureID)pFontTex;
 }
 
-void ImGuiWrapper::Render() {
+void ImGuiWrapper::Render(const Event & oEvent [[maybe_unused]]) {
 
         ImGui::Render();
         ImDrawData * pDrawData = ImGui::GetDrawData();
@@ -182,9 +193,11 @@ void ImGuiWrapper::Render() {
                 { (R+L)/(L-R),  (T+B)/(B-T),  0.0f,   1.0f },
         };
 
-        TGraphicsState::Instance().SetVao(vao_id);
-        TGraphicsState::Instance().SetShaderProgram(pShader);
-        TGraphicsState::Instance().SetVariable(mat_id, mOrtho);
+        auto & oGraphicsState = GetSystem<GraphicsState>();
+
+        oGraphicsState.SetVao(vao_id);
+        oGraphicsState.SetShaderProgram(pShader);
+        oGraphicsState.SetVariable(mat_id, mOrtho);
 
         //gen buf to init gl
         ImVec2 pos = pDrawData->DisplayPos;
@@ -219,8 +232,8 @@ void ImGuiWrapper::Render() {
                                                   (int)(clip_rect.w - clip_rect.y));
 
                                         // Bind texture, Draw
-                                        TGraphicsState::Instance().SetTexture(SE::TextureUnit::DIFFUSE, (TTexture *)pcmd->TextureId);
-                                        TGraphicsState::Instance().Draw(
+                                        oGraphicsState.SetTexture(SE::TextureUnit::DIFFUSE, (TTexture *)pcmd->TextureId);
+                                        oGraphicsState.Draw(
                                                         vao_id,
                                                         GL_TRIANGLES,
                                                         sizeof(ImDrawIdx) == 2 ?
@@ -257,16 +270,19 @@ void ImGuiWrapper::Render() {
 
 }
 
-void ImGuiWrapper::NewFrame() {
+void ImGuiWrapper::NewFrame(const Event & oEvent [[maybe_unused]]) {
 
-        const glm::uvec2 & screen_size  = TGraphicsState::Instance().GetScreenSize();
+        auto & oGraphicsState = GetSystem<GraphicsState>();
+
+        auto & oFrame = oGraphicsState.GetFrameState();
+
         ImGuiIO          & io           = ImGui::GetIO();
         IM_ASSERT(io.Fonts->IsBuilt());
 
-        io.DisplaySize                  = ImVec2((float)screen_size.x, (float)screen_size.y);
-        io.DisplayFramebufferScale      = ImVec2(screen_size.x > 0 ? 1 : 0, screen_size.y > 0 ? 1 : 0);
+        io.DisplaySize                  = ImVec2((float)oFrame.screen_size.x, (float)oFrame.screen_size.y);
+        io.DisplayFramebufferScale      = ImVec2(oFrame.screen_size.x > 0 ? 1 : 0, oFrame.screen_size.y > 0 ? 1 : 0);
 
-        io.DeltaTime = TGraphicsState::Instance().GetLastFrameTime();
+        io.DeltaTime = oFrame.last_frame_time;
 
         const auto & oMouseState = TInputManager::Instance().GetMouse()->getMouseState();
         io.MousePos = ImVec2((float)oMouseState.X.abs, (float)oMouseState.Y.abs);

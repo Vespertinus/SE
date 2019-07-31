@@ -167,7 +167,7 @@ void GraphicsState::SetShaderProgram(ShaderProgram * pNewShader) {
         }
 }
 
-void GraphicsState::FrameStart() {
+float GraphicsState::FrameStart() {
 
         time_point <micro> cur_time = std::chrono::time_point_cast<micro>(clock::now());
         //last_frame_time = std::chrono::duration<float>(cur_time - frame_start_time).count();
@@ -191,6 +191,10 @@ void GraphicsState::FrameStart() {
                 vUniformUnits[i]  = -1;
                 vUniformRanges[i] = -1;
         }
+
+        TEngine::Instance().Get<EventManager>().TriggerEvent(EFrameStart{});
+
+        return oFrame.last_frame_time;
 }
 
 //TODO later sort all draw objects |vao|shader|shader values| and apply only changes

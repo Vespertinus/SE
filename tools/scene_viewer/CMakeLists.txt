@@ -9,7 +9,7 @@ list(APPEND TOOLS_LIBRARIES_LIST ${Boost_LIBRARIES})
 
 ###
 
-include_directories(${TOOLS_INC_DIRS})
+include_directories(${TOOLS_INC_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES     "Main.cpp"
                 "Scene.cpp"

@@ -35,7 +35,10 @@ if (UNIX AND NOT APPLE)
         if (GPU)
                 list(APPEND LOCAL_INC_DIRS X11)
                 link_X11()
+        add_definitions(-DSE_INTERACTIVE)
         endif()
+#if used dlopen or typeindex in libs, add linker option -rdynamic to main program
+        add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__GXX_MERGED_TYPEINFO_NAMES)
 else()
         message(FATAL_ERROR "OS unsupported yet")
 endif()
@@ -47,12 +50,11 @@ if (ASAN)
 endif()
 
 set(COMMON_C_FLAGS              "-std=gnu11 -fgnu89-inline")
-set(COMMON_CXX_FLAGS            "-std=gnu++17")
+set(COMMON_CXX_FLAGS            "-std=c++17")
 
 set(C_WARNING_FLAGS             "-Wignored-qualifiers -Wwrite-strings")
 set(CXX_WARNING_FLAGS           "-Wmissing-declarations -Winvalid-pch")
 
-add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64)
 if (OLD_ABI)
         add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif()
@@ -88,6 +90,8 @@ list(APPEND                     COMMON_SOURCES
                                 "${CMAKE_SOURCE_DIR}/core/InputManager.cpp")
 list(APPEND                     THIRD_PARTY_INC_DIRS "third_party/imgui")
 endif()
+
+list(APPEND                     THIRD_PARTY_INC_DIRS "third_party/cpp_delegates")
 
 prepend_path(                   LOCAL_INC_DIRS
                                 REL_LOCAL_INC_DIR

@@ -118,7 +118,7 @@ void ShaderComponent::Load(const SE::FlatBuffers::ShaderComponent * pShader) {
         log_d("shader '{}' compiled from {} source lines", sName, source_lines_cnt);
 }
 
-ShaderComponent::~ShaderComponent() {
+ShaderComponent::~ShaderComponent() noexcept {
 
         if (gl_id) {
                 glDeleteShader(gl_id);

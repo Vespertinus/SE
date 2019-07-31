@@ -50,7 +50,7 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::Render() 
 
         PrepareVisible();
 
-        TGraphicsState::Instance().SetViewProjection(pCamera->GetWorldMVP());
+        GetSystem<GraphicsState>().SetViewProjection(pCamera->GetWorldMVP());
 
         for (auto * pRenderCommand : vRenderCommands) {
                 pRenderCommand->Draw();
@@ -76,21 +76,21 @@ template <class TVisibilityManager>
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::SetScreenSize(const glm::uvec2 new_screen_size) {
 
         screen_size = new_screen_size;
-        if (pCurCamera) {
-                pCurCamera->UpdateDimension(screen_size);
+        if (pCamera) {
+                pCamera->UpdateDimension(screen_size);
         }
 }
 
-template <class TVisibilityManager> void Renderer<TVisibilityManager>::SetCamera(Camera * pCamera) {
+template <class TVisibilityManager> void Renderer<TVisibilityManager>::SetCamera(Camera * pCurCamera) {
 
-        pCurCamera = pCamera;
-        if (pCurCamera) {
-                pCurCamera->UpdateDimension(screen_size);
+        pCamera = pCurCamera;
+        if (pCamera) {
+                pCamera->UpdateDimension(screen_size);
         }
 }
 
 template <class TVisibilityManager> Camera * Renderer<TVisibilityManager>::GetCamera() const {
-        return pCurCamera;
+        return pCamera;
 }
 
 } //namespace SE

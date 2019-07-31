@@ -13,26 +13,20 @@ Scene::Scene(const Settings & oNewSettings) :
         pSceneTree(SE::CreateResource<SE::TSceneTree>(oNewSettings.sScenePath)),
         oSettings(oNewSettings) {
 
-        TInputManager::Instance().AddKeyListener   (&oImGui, "ImGui");
-        TInputManager::Instance().AddMouseListener (&oImGui, "ImGui");
-
         auto pCameraNode = pSceneTree->Create("MainCamera");
-        auto res = pCameraNode->CreateComponent<Camera>(true, oSettings.oCamSettings);
+        auto res = pCameraNode->CreateComponent<Camera>(oSettings.oCamSettings);
         if (res != uSUCCESS) {
                 throw("failed to create Camera component");
         }
         pCamera = pCameraNode->GetComponent<Camera>();
         se_assert(pCamera);
 
-        res = pCameraNode->CreateComponent<BasicController>(true);
+        res = pCameraNode->CreateComponent<BasicController>();
         if (res != uSUCCESS) {
                 throw("failed to create BasicController component");
         }
-        pController = pCameraNode->GetComponent<BasicController>();
-        se_assert(pController);
 
         //init cam
-        //pCamera->SetPos(8, 8, 4);
         pCamera->SetPos(8, 4, 8);
         pCamera->LookAt(0.1, 0.1, 0.1);
 
@@ -53,20 +47,8 @@ Scene::~Scene() throw() { ;; }
 
 void Scene::Process() {
 
-        oImGui.NewFrame();
-
         SE::CheckOpenGLError();
         //SE::HELPERS::DrawAxes(10);
-
-        //___Start___ FIXME
-        //pSceneTree->Update();
-
-        const auto & oFrame = TGraphicsState::Instance().GetFrameState();
-        pController->Update(oFrame);
-        //___End_____ FIXME
-
-        //move to renderer..
-        //TGraphicsState::Instance().SetViewProjection(pCamera->GetWorldMVP());
 
         //pSceneTree->Draw();
         /*
@@ -95,7 +77,7 @@ void Scene::Process() {
                         }
 
 
-                        TGraphicsState::Instance().SetTransform(oNode.GetTransform().GetWorld());
+                        GetSystem<GraphicsState>().SetTransform(oNode.GetTransform().GetWorld());
                         TVisualHelpers::Instance().DrawLocalAxes();
 
                         return true;
@@ -126,11 +108,6 @@ void Scene::Process() {
 
 }
 
-void Scene::PostRender() {
-
-        oImGui.Render();
-}
-
 void Scene::ShowGUI() {
 
         static const uint8_t NODE_HIDE = 0x1;
@@ -151,7 +128,7 @@ void Scene::ShowGUI() {
                         ImGuiWindowFlags_NoSavedSettings |
                         ImGuiWindowFlags_NoFocusOnAppearing |
                         ImGuiWindowFlags_NoNav);
-        ImGui::Text("Frame time: %f, FPS: %f", TGraphicsState::Instance().GetLastFrameTime(), TSimpleFPS::Instance().GetFPS());
+        ImGui::Text("Frame time: %f, FPS: %f", GetSystem<GraphicsState>().GetLastFrameTime(), TSimpleFPS::Instance().GetFPS());
         ImGui::Separator();
         ImGui::Text("Texture cnt: %zu", TResourceManager::Instance().Size<TTexture>());
         ImGui::Text("Mesh cnt: %zu", TResourceManager::Instance().Size<TMesh>());

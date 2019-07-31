@@ -5,7 +5,6 @@
 
 namespace SE {
 
-//TODO inc only in GPU builds (with OIS and X11)
 class BasicController : public OIS::KeyListener, public OIS::MouseListener {
 
         //static const glm::vec3 rot_right{0, 0,  5};
@@ -22,10 +21,7 @@ class BasicController : public OIS::KeyListener, public OIS::MouseListener {
 
         public:
 
-        using TSerialized = FlatBuffers::StaticModel; //FIXME
-
-        BasicController(TSceneTree::TSceneNodeExact * pNewNode, bool enabled);
-        //BasicController(TSceneTree::TSceneNodeExact * pNewNode, const SE::FlatBuffers::BasicController * pBasicController);
+        BasicController(TSceneTree::TSceneNodeExact * pNewNode);
         ~BasicController() noexcept;
 
         bool keyPressed( const OIS::KeyEvent &ev);
@@ -35,7 +31,7 @@ class BasicController : public OIS::KeyListener, public OIS::MouseListener {
         bool mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
         bool mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
 
-        void                    Update(const FrameState & oFrame);
+        void                    Update(const Event & oEvent);
         void                    Enable();
         void                    Disable();
         void                    Print(const size_t indent);

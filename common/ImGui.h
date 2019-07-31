@@ -32,8 +32,8 @@ class ImGuiWrapper : public OIS::KeyListener, public OIS::MouseListener {
         bool mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
         bool mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
 
-        void NewFrame();
-        void Render();
+        void NewFrame(const Event &);
+        void Render(const Event &);
 
 };
 

@@ -32,11 +32,6 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
                 }
         };
 
-        using TLoaderVariant    = std::variant<LoadWrapper<TComponents> ... >;
-        using TLoaderTuple      = std::tuple<LoadWrapper<TComponents> ... >;
-        using TLoaderMap        = std::map<FlatBuffers::ComponentU, TLoaderVariant>;
-
-
         TSceneNode                              pRoot;
         std::unordered_map<StrID, TSceneNode>   mNamedNodes;
         std::unordered_map<
@@ -46,9 +41,10 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
 
         void Load();
         void Load(const SE::FlatBuffers::Node * pRoot);
-        ret_code_t LoadNode(const SE::FlatBuffers::Node * pSrcNode,
-                            TSceneNode pParent,
-                            const TLoaderMap & mLoaders);
+        template <class TMap> ret_code_t LoadNode(
+                        const SE::FlatBuffers::Node * pSrcNode,
+                        TSceneNode pParent,
+                        const TMap & mLoaders);
 
         public:
 

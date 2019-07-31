@@ -160,6 +160,50 @@ template < class THolder, class ... rest> struct Type2IntDict<THolder, rest ...>
         };
 };
 
+
+
+template <class... T> struct TypelistWrapper {};
+
+template<template <class ...> class TContainer, class ... T> struct Typelist2TmplPack;
+
+template<template <class ...> class TContainer, class ... T> struct Typelist2TmplPack<TContainer, TypelistWrapper<T...> > {
+            using Type = TContainer<T...>;
+};
+
+
+
+template<template <class ...> class TContainer, template <class> class TWrapper, class ... T> struct Typelist2WrappedTmplPack;
+
+template<template <class ...> class TContainer, template <class> class TWrapper, class ... T> struct Typelist2WrappedTmplPack<TContainer, TWrapper, TypelistWrapper<T...> > {
+            static_assert(sizeof...(T) > 0);
+            using Type = TContainer<TWrapper<T> ... >;
+};
+
+
+
+template <class ... T1s, class ... T2s> constexpr auto TypelistConcatenate(TypelistWrapper<T1s...>, TypelistWrapper<T2s...>) {
+        return TypelistWrapper<T1s..., T2s...>{};
+}
+
+template <template <class> class TCondition, class TResult> constexpr auto TypelistFilter(TResult result, TypelistWrapper<>) {
+        return result;
+}
+
+template <template <class> class TCondition, class TResult, class T, class ... Ts>
+        constexpr auto TypelistFilter(TResult result, TypelistWrapper<T, Ts...>) {
+
+        if constexpr (TCondition<T>{}) {
+                return TypelistFilter<TCondition>(TypelistConcatenate(result, TypelistWrapper<T>{}), TypelistWrapper<Ts...>{});
+        }
+        else {
+                return TypelistFilter<TCondition>(result, TypelistWrapper<Ts...>{});
+        }
+}
+
+template <template <class> class TCondition, class ... Types>
+        using FilteredTypelist = std::decay_t<decltype(TypelistFilter<TCondition>(TypelistWrapper<>{}, TypelistWrapper<Types...>{}))>;
+
+
 } //namespace MP
 
 #endif

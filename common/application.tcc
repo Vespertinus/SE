@@ -1,5 +1,6 @@
 
 #include <InputManager.h>
+#include <CommonEvents.h>
 
 namespace SE {
 
@@ -21,30 +22,28 @@ template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t 
 
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
         oSettings(oNewSettings),
-        //oCamera(oTranspose,	oSettings.oCamSettings), //TODO move to component
         oRunFunctor   (*this, &Application<TLoop>::Run),
         oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
         oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
         oPreInit(oSettings, oMainWindow.GetWindowID()),
-        oLoop(oLoopSettings/*, oCamera*/) {
+        oLoop(oLoopSettings) {
 
-                /*TODO
-                 init all members as uniq pointers in specified order and destroy in reverse order
-                 or, all depend sub systems inside Engine<>
-                */
+        /*TODO
+         init all members as uniq pointers in specified order and destroy in reverse order
+         or, all depend sub systems inside Engine<>
+        */
 
-                //TInputManager::Instance().AddKeyListener   (&oTranspose, "Transpose");
-                //TInputManager::Instance().AddMouseListener (&oTranspose, "Transpose");
+        ResizeViewport(oSettings.oWindowSettings.width, oSettings.oWindowSettings.height);
 
-                ResizeViewport(oSettings.oWindowSettings.width, oSettings.oWindowSettings.height);
+        Init();
 
-                Init();
+        TEngine::Instance().Get<EventManager>().TriggerEvent(EStartApp{});
 
-                log_i("Start Loop");
+        log_i("Start Loop");
 
-                oMainWindow.Loop();
+        oMainWindow.Loop();
 
-                log_i("Stop Loop");
+        log_i("Stop Loop");
 
 }
 
@@ -58,10 +57,10 @@ template <class TLoop> void Application<TLoop>::Init() {
 
         log_d("basic OpenGL options");
 
-        TGraphicsState::Instance().SetClearColor(0.066f, 0.2235f, 0.3372f, 1.0f);
-        TGraphicsState::Instance().SetClearDepth(1.0f);
-        TGraphicsState::Instance().SetDepthFunc(DepthFunc::LESS);
-        TGraphicsState::Instance().SetDepthTest(true);
+        GetSystem<GraphicsState>().SetClearColor(0.066f, 0.2235f, 0.3372f, 1.0f);
+        GetSystem<GraphicsState>().SetClearDepth(1.0f);
+        GetSystem<GraphicsState>().SetDepthFunc(DepthFunc::LESS);
+        GetSystem<GraphicsState>().SetDepthTest(true);
 
         if (SE::CheckOpenGLError() != uSUCCESS) {
                 throw("OpenGL Error after initial initialization");
@@ -73,17 +72,12 @@ template <class TLoop> void Application<TLoop>::Init() {
 template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & new_width, const int32_t & new_height) {
 
         glm::uvec2      screen_size(new_width, new_height);
-        //oSettings.oCamSettings.width 	= new_width;
-        //oSettings.oCamSettings.height	= (new_height) ? new_height : 1;
-
-        //oCamera.UpdateDimension(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
 
         glViewport(0, 0, new_width, new_height);
 
         TInputManager::Instance().SetWindowExtents(new_width, new_height);
-        //SE::TGraphicsState::Instance().SetScreenSize(oSettings.oCamSettings.width, oSettings.oCamSettings.height);
-        SE::TGraphicsState::Instance().SetScreenSize(screen_size);
-        TEngine::Instance().Get<TRenderer>().SetScreenSize(screen_size);
+        GetSystem<GraphicsState>().SetScreenSize(screen_size);
+        GetSystem<TRenderer>().SetScreenSize(screen_size);
 }
 
 
@@ -91,19 +85,23 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 template <class TLoop> void Application<TLoop>::Run() {
 
         glClear(oSettings.clear_flag);
-        //oCamera.Adjust();
+        auto & oEventManager = TEngine::Instance().Get<EventManager>();
 
-        SE::TGraphicsState::Instance().FrameStart();
+        float last_frame_time = GetSystem<GraphicsState>().FrameStart();
 
-        //TInputManager::Instance().Update(last_frame_time);
+        oEventManager.TriggerEvent(EInputUpdate{last_frame_time});
 
-        //Update
+        oEventManager.TriggerEvent(EUpdate{last_frame_time});
+
+        oEventManager.Process();
         oLoop.Process();
+
+        oEventManager.TriggerEvent(EPostUpdate{last_frame_time});
 
         //Render
         TEngine::Instance().Get<TRenderer>().Render();
 
-        oLoop.PostRender();
+        oEventManager.TriggerEvent(EPostRenderUpdate{last_frame_time});
 
         TInputManager::Instance().Capture();
 

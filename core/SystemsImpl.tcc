@@ -5,3 +5,4 @@
 #endif
 //template class, so we need realization also
 #include <Renderer.tcc>
+#include <EventManager.tcc>

@@ -133,7 +133,7 @@ void UniformBuffer::UploadToDevice() const {
 
         if (size_changed || sDirty.size() > (allocated_blocks_cnt * 0.3) ) {
                 //copy full buffer
-                TGraphicsState::Instance().UploadUniformBufferData(gl_id, vShadowBuffer.size(), vShadowBuffer.data());
+                GetSystem<GraphicsState>().UploadUniformBufferData(gl_id, vShadowBuffer.size(), vShadowBuffer.data());
 
                 size_changed = false;
         }
@@ -143,7 +143,7 @@ void UniformBuffer::UploadToDevice() const {
                 for (auto block_id : sDirty) {
 
                         buf_offset = block_id * block_size;
-                        TGraphicsState::Instance().UploadUniformBufferSubData(
+                        GetSystem<GraphicsState>().UploadUniformBufferSubData(
                                         gl_id,
                                         buf_offset,
                                         block_size,
@@ -161,7 +161,7 @@ void UniformBuffer::Apply(const uint16_t block_id, const UniformUnitInfo::Type u
                 UploadToDevice();
         }
 
-        TGraphicsState::Instance().BindUniformBufferRange(
+        GetSystem<GraphicsState>().BindUniformBufferRange(
                         gl_id,
                         uniform_buffer_unit,
                         block_id * block_size,

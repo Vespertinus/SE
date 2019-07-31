@@ -18,17 +18,12 @@ Camera::Volume::Volume(
 
 }
 
-Camera::Camera(TSceneTree::TSceneNodeExact * pNewNode, bool enabled) : pNode(pNewNode) {
+Camera::Camera(TSceneTree::TSceneNodeExact * pNewNode) : pNode(pNewNode) {
 
-        if (enabled) {
-                Enable();
-        }
 }
 
-Camera::Camera(TSceneTree::TSceneNodeExact * pNewNode, bool enabled, const Settings & oSettings) :
+Camera::Camera(TSceneTree::TSceneNodeExact * pNewNode, const Settings & oSettings) :
         pNode(pNewNode),
-        //view_size(oSettings.view_size),
-        //up(oSettings.up),
         oVolume(
                         oSettings.projection,
                         oSettings.near_clip,
@@ -37,9 +32,6 @@ Camera::Camera(TSceneTree::TSceneNodeExact * pNewNode, bool enabled, const Setti
                         oSettings.fov
                ) {
 
-        if (enabled) {
-                Enable();
-        }
 }
 
 Camera::~Camera() noexcept {
@@ -61,15 +53,31 @@ void Camera::RecalcVolume() {
                         break;
 
                 case Projection::ORTHO:
-                        oVolume.left   = -view_size.x / 2;
-                        oVolume.right  =  view_size.x / 2;
-                        oVolume.bottom = -view_size.y / 2;
-                        oVolume.top    =  view_size.y / 2;
+                        oVolume.left   = -static_cast<float>(view_size.x) / 2;
+                        oVolume.right  =  static_cast<float>(view_size.x) / 2;
+                        oVolume.bottom = -static_cast<float>(view_size.y) / 2;
+                        oVolume.top    =  static_cast<float>(view_size.y) / 2;
                         break;
                 default:
                         log_e("wrong projection = {}", static_cast<uint8_t>(oVolume.projection));
                         abort();
         }
+
+        /*
+        log_d("projection: {}, near: {}, far: {}, fov: {}, view_size x: {}, y: {}",
+                        static_cast<uint8_t>(oVolume.projection),
+                        oVolume.near_clip,
+                        oVolume.far_clip,
+                        oVolume.fov,
+                        view_size.x,
+                        view_size.y
+                        );
+        log_d("volume: left: {}, right: {}, top: {}, bottom: {}",
+                        oVolume.left,
+                        oVolume.right,
+                        oVolume.top,
+                        oVolume.bottom
+                        );*/
 
         flags ^= Dirty::VOLUME;
         flags |= Dirty::PROJECTION;
@@ -197,7 +205,6 @@ void Camera::LookAt(const float x, const float y, const float z) {
 void Camera::LookAt(const glm::vec3 & center) {
 
         pNode->WorldLookAt(center);
-        //pNode->LookAt(center);
 }
 
 void Camera::SetPos(const float new_x, const float new_y, const float new_z) {

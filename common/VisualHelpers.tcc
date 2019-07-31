@@ -530,16 +530,16 @@ VisualHelpers::~VisualHelpers() noexcept {
 
 void VisualHelpers::DrawLocalAxes() {
 
-        TGraphicsState::Instance().SetShaderProgram(pShader);
-        TGraphicsState::Instance().DrawArrays(local_axes_vao, GL_LINES, 0, 6);
+        GetSystem<GraphicsState>().SetShaderProgram(pShader);
+        GetSystem<GraphicsState>().DrawArrays(local_axes_vao, GL_LINES, 0, 6);
 }
 
 void VisualHelpers::DrawBBox(const BoundingBox & oBBox) {
 
         UpdateBBox(oBBox);
 
-        TGraphicsState::Instance().SetShaderProgram(pShader);
-        TGraphicsState::Instance().DrawArrays(bbox_vao, GL_LINES, 0, 24);
+        GetSystem<GraphicsState>().SetShaderProgram(pShader);
+        GetSystem<GraphicsState>().DrawArrays(bbox_vao, GL_LINES, 0, 24);
 }
 
 } //namespace HELPERS

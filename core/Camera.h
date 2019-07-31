@@ -11,8 +11,6 @@ class Camera {
 
         public:
 
-        using TSerialized = FlatBuffers::StaticModel; //FIXME
-
         enum class Projection : uint8_t {
                 PERSPECTIVE     = 1,
                 ORTHO           = 2
@@ -48,8 +46,6 @@ class Camera {
 
         TSceneTree::TSceneNodeExact   * pNode;
         glm::uvec2                      view_size       {1024, 768};
-        //std::array<uint8_t, 3>          up              { 0, 0, 1 }; // x, y or z
-        //glm::vec3                       up              {0, 0, 1.0f };
         float                           zoom            {1},
                                         /** zooming target max size  */
                                         target_length   {20};
@@ -64,19 +60,17 @@ class Camera {
 
         public:
 
-        //using TSerialized = FlatBuffers::Camera;
+        //using TSerialized = FlatBuffers::Camera; TODO
 
         struct Settings {
-                //glm::uvec2              view_size;
-                //glm::vec3               up;
                 float                   near_clip,
                                         far_clip;
                 float                   fov;
                 Projection              projection;
         };
 	
-        Camera(TSceneTree::TSceneNodeExact * pNewNode, bool enabled);
-        Camera(TSceneTree::TSceneNodeExact * pNewNode, bool enabled, const Settings & oSettings);
+        Camera(TSceneTree::TSceneNodeExact * pNewNode);
+        Camera(TSceneTree::TSceneNodeExact * pNewNode, const Settings & oSettings);
         //Camera(TSceneTree::TSceneNodeExact * pNewNode, const SE::FlatBuffers::Camera * pCamera);
 	~Camera() noexcept;
 
@@ -104,17 +98,6 @@ class Camera {
         std::string             Str() const;
 };
 
-/*
- TODO split on 3 parts:
- - Node
- - Camera component with frustum
- - Controller component
- */
-
 } //namespace SE
-
-//#ifdef SE_IMPL
-//#include <Camera.tcc>
-//#endif
 
 #endif

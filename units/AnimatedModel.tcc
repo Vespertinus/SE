@@ -5,12 +5,11 @@ const StrID AnimatedModel::BS_WEIGHT            = "BlendShapesWeights";
 const StrID AnimatedModel::BS_WEIGHTS_CNT       = "BlendShapesCnt";
 
 AnimatedModel::AnimatedModel(TSceneTree::TSceneNodeExact * pNewNode,
-                             bool enabled,
                              TMesh * pNewMesh,
                              Material * pNewMaterial,
                              TTexture * pNewTexBuf,
                              const uint8_t new_blendshapes_cnt) :
-        StaticModel(pNewNode, enabled, pNewMesh, pNewMaterial),
+        StaticModel(pNewNode, pNewMesh, pNewMaterial),
         pTexBuffer(pNewTexBuf),
         blendshapes_cnt(new_blendshapes_cnt) {
 

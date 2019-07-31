@@ -1,5 +1,7 @@
 
 #include <fstream>
+#include <MPTraits.h>
+#include <MPUtil.h>
 
 namespace SE {
 
@@ -141,9 +143,28 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
         Load(SE::FlatBuffers::GetNode(&vBuffer[0]));
 }
 
+template <class T> using TSerializedCheck = typename T::TSerialized;
+template <class T> using THasSerialized   = typename std::experimental::is_detected<TSerializedCheck, T>::type;
 
 template <class ... TComponents > void SceneTree<TComponents ...>::
         Load(const SE::FlatBuffers::Node * pRoot) {
+
+
+        using TFilteredTypes    = MP::FilteredTypelist<THasSerialized, TComponents...>;
+        static_assert(!std::is_same<MP::TypelistWrapper<>, TFilteredTypes >::value, "not allowed empty componenents list");
+
+        using TLoaderVariant    = typename MP::Typelist2WrappedTmplPack<
+                std::variant,
+                LoadWrapper,
+                TFilteredTypes
+                        >::Type;
+        using TLoaderTuple      = typename MP::Typelist2WrappedTmplPack<
+                std::tuple,
+                LoadWrapper,
+                TFilteredTypes
+                        >::Type;
+
+        using TLoaderMap        = std::map<FlatBuffers::ComponentU, TLoaderVariant>;
 
         TLoaderTuple oLoaders;
         TLoaderMap mLoaders;
@@ -167,8 +188,10 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
         }
 }
 
-template <class ... TComponents > ret_code_t SceneTree<TComponents ...>::
-        LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode pParent, const TLoaderMap & mLoaders) {
+template <class ... TComponents >
+        template <class TMap>
+                ret_code_t SceneTree<TComponents ...>::
+                        LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode pParent, const TMap & mLoaders) {
 
         TSceneNode pDstNode;
         auto * pNameFB = pSrcNode->name();

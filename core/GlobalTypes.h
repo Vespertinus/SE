@@ -17,6 +17,7 @@
 ///*
 #include <Logging.h>
 ///*
+#include <CommonEvents.h>
 #include <Chrono.h>
 #include <SimpleFPS.h>
 #include <MPUtil.h>
@@ -29,6 +30,7 @@
 #include <Engine.h>
 #include <BasicConfig.h>
 #include <GraphicsConfig.h>
+#include <EventManager.h>
 
 #include <TextureStock.h>
 #include <TGALoader.h>
@@ -36,6 +38,8 @@
 #include <Texture.h>
 #include <StoreTexture2D.h>
 #include <StoreTextureBufferObject.h>
+
+
 //*/
 //TODO move to SE.h
 
@@ -74,15 +78,16 @@ typedef Mesh                                                            TMesh;
 //TEMP
 #include <AllVisible.h>
 
-//TODO forward custom components
+//forward components
+#define FORWARD_CORE_COMPONENTS
+#include <CoreComponents.h>
+#undef FORWARD_CORE_COMPONENTS
+//concreate application custom types and settings
+#define FORWARD_CUSTOM_COMPONENTS
+#include <App.h>
+#undef FORWARD_CUSTOM_COMPONENTS
 
 namespace SE {
-
-//forward components
-class StaticModel;
-class AnimatedModel;
-class Camera;
-class BasicController;
 
 //renderable components list
 
@@ -93,7 +98,7 @@ using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 using TRenderer = Renderer<TVisibilityManager>;
 
 //singleton
-using TEngine = Loki::SingletonHolder<Engine<Config, GraphicsConfig, TRenderer/*, TGraphicsState, TInputManager, ...*/>>;
+using TEngine = Loki::SingletonHolder<Engine<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer /*, TInputManager, ...*/>>;
 
 }
 
@@ -102,21 +107,20 @@ using TEngine = Loki::SingletonHolder<Engine<Config, GraphicsConfig, TRenderer/*
 
 namespace SE {
 
-using TSceneTree = SceneTree<StaticModel, AnimatedModel, Camera, BasicController>;
+using TSceneTree = typename MP::Typelist2TmplPack<
+        SceneTree,
+        decltype(MP::TypelistConcatenate(TCoreComponents{}, TCustomComponents{}))
+                >::Type;
 
 }
 
-// ___Start___ include components headers
+#define INC_CORE_COMPONENTS_HEADER
+#include <CoreComponents.h>
+#undef INC_CORE_COMPONENTS_HEADER
 
-#include <StaticModel.h>
-#include <AnimatedModel.h>
-#include <Camera.h>
-#include <BasicController.h>
-// ___End_____ include components headers
-
-
-//TODO include custom components
-
+#define INC_CUSTOM_COMPONENTS_HEADER
+#include <App.h>
+#undef INC_CUSTOM_COMPONENTS_HEADER
 
 //TODO forward custom resources
 
@@ -151,5 +155,11 @@ template <class TSystem> TSystem & GetSystem() {
 
 
 #include <AllImpl.tcc>
+#define INC_CORE_COMPONENTS_IMPL
+#include <CoreComponents.h>
+#undef INC_CORE_COMPONENTS_IMPL
+#define INC_CUSTOM_COMPONENTS_IMPL
+#include <App.h>
+#undef INC_CUSTOM_COMPONENTS_IMPL
 
 #endif

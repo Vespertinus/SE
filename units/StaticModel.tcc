@@ -1,20 +1,15 @@
 
 namespace SE {
 
-StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode, bool enabled) :
+StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode) :
         pMesh(CreateResource<SE::TMesh>(GetSystem<Config>().sResourceDir + "mesh/default-01.sems")),
         pMaterial(CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/wireframe.semt")),
         pNode(pNewNode) {
 
         FillRenderCommands();
-
-        if (enabled) {
-                Enable();
-        }
 }
 
 StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
-                         bool enabled,
                          TMesh * pNewMesh,
                          Material * pNewMaterial) :
         pMesh(pNewMesh),
@@ -23,9 +18,6 @@ StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
 
         FillRenderCommands();
 
-        if (enabled) {
-                Enable();
-        }
 }
 
 StaticModel::StaticModel() { ;; }

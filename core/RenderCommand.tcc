@@ -43,7 +43,7 @@ RenderCommand::RenderCommand(
 void RenderCommand::Draw() const {
 
         oState.Apply();
-        TGraphicsState::Instance().SetTransform(oTransform.GetWorld()); //TEMP
+        GetSystem<GraphicsState>().SetTransform(oTransform.GetWorld()); //TEMP
         pGeom->Draw();
 }
 

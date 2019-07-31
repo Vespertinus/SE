@@ -21,16 +21,16 @@ UniformBlock::UniformBlock(ShaderProgram * pShader, const UniformUnitInfo::Type 
         if (!pDesc) {
                 throw(std::runtime_error(fmt::format("shader: '{}' does not contain uniform unit: '{}'",
                                                 pShader->Name(),
-                                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName)));
+                                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName)));
 
         }
 
-        pBuffer = TGraphicsState::Instance().GetUniformBuffer(unit_id, pDesc->aligned_size);
+        pBuffer = GetSystem<GraphicsState>().GetUniformBuffer(unit_id, pDesc->aligned_size);
         if (!pBuffer) {
                 throw(std::runtime_error(fmt::format("failed to get buffer for block_size: {}, shader: '{}', unit: '{}'",
                                                 pDesc->aligned_size,
                                                 pShader->Name(),
-                                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName )));
+                                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName )));
         }
 
         block_id = pBuffer->AllocateBlock();
@@ -50,7 +50,7 @@ template <class TArg> ret_code_t UniformBlock::SetValueInternal(const StrID name
 
         if (it == pDesc->mVariables.end()) {
                 log_e("uniform block '{}' does not contain variable: '{}'",
-                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName,
+                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName,
                                 name);
                 return uWRONG_INPUT_DATA;
         }
@@ -71,7 +71,7 @@ template <class TArg> ret_code_t UniformBlock::SetArrayElementInternal(const Str
 
         if (it == pDesc->mVariables.end()) {
                 log_e("uniform block '{}' does not contain variable: '{}'",
-                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName,
+                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName,
                                 name);
                 return uWRONG_INPUT_DATA;
         }
@@ -139,7 +139,7 @@ ret_code_t UniformBlock::SetVariable(const StrID name, const float * pValue, con
 
         if (it == pDesc->mVariables.end()) {
                 log_e("uniform block '{}' does not contain variable: '{}'",
-                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName,
+                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName,
                                 name);
                 return uWRONG_INPUT_DATA;
         }
@@ -201,7 +201,7 @@ template <class TArg> ret_code_t UniformBlock::GetValueInternal (const StrID nam
 
         if (it == pDesc->mVariables.end()) {
                 log_e("uniform block '{}' does not contain variable: '{}'",
-                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName,
+                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName,
                                 name);
                 return uWRONG_INPUT_DATA;
         }
@@ -222,7 +222,7 @@ template <class TArg> ret_code_t UniformBlock::GetArrayElementInternal(const Str
 
         if (it == pDesc->mVariables.end()) {
                 log_e("uniform block '{}' does not contain variable: '{}'",
-                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName,
+                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName,
                                 name);
                 return uWRONG_INPUT_DATA;
         }
@@ -337,7 +337,7 @@ ret_code_t ShaderProgramState::SetBlock(const UniformUnitInfo::Type unit_id, con
         if (!pShader->GetBlockDescriptor(unit_id)) {
                 log_e("shader: '{}' does not contain block: '{}'",
                                 pShader->Name(),
-                                TGraphicsState::Instance().GetUniformUnitInfo(unit_id).sName);
+                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName);
                 return uWRONG_INPUT_DATA;
         }
         mShaderBlocks.insert_or_assign(unit_id, pBlock);
@@ -372,17 +372,19 @@ ret_code_t ShaderProgramState::SetTexture(const TextureUnit unit_index, TTexture
 
 void ShaderProgramState::Apply() const {
 
-        TGraphicsState::Instance().SetShaderProgram(pShader);
+        auto & oGraphicsState = GetSystem<GraphicsState>();
+
+        oGraphicsState.SetShaderProgram(pShader);
 
         pMaterial->Apply();
 
         for (auto oTexMapItem : mTextures) {
                 for (auto & oTexItem : *(oTexMapItem.second)) {
-                        TGraphicsState::Instance().SetTexture(oTexItem.first, oTexItem.second);
+                        oGraphicsState.SetTexture(oTexItem.first, oTexItem.second);
                 }
         }
         for (auto & oTexItem : mDefaultTextures) {
-                TGraphicsState::Instance().SetTexture(oTexItem.first, oTexItem.second);
+                oGraphicsState.SetTexture(oTexItem.first, oTexItem.second);
         }
 
         for (auto & oItem : mShaderBlocks) {

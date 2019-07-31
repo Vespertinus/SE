@@ -234,7 +234,8 @@ template <class ResizeHandler,  class DrawHandler> void X11Window<ResizeHandler,
 
                                         switch(XLookupKeysym(&event.xkey, 0)) {
 
-                                                case XK_Escape:									/* Quit application */
+                                                case XK_Escape:
+                                                        log_i("quit application");
                                                         running = 0;
                                                         break;
                                                         /*
