@@ -6,20 +6,21 @@ namespace SAMPLES {
 
 class Scene {
 
-        SE::Camera      & oCamera;
+        SE::Camera      * pCamera;
         SE::TTexture    * pTex01;
         SE::TTexture    * pTex02;
         SE::TSceneTree  * pSceneTree;
 
         public:
-        //empty settings
-        struct Settings {};
+        struct Settings {
 
-        Scene(const Settings & oSettings, SE::Camera & oCurCamera);
-        ~Scene() throw();
+                SE::Camera::Settings oCamSettings;
+        };
+
+        Scene(const Settings & oSettings);
+        ~Scene() noexcept;
 
         void Process();
-        void PostRender();
 };
 
 

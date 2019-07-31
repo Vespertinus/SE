@@ -6,31 +6,30 @@
 #include <VisualHelpers.h>
 
 
-
 namespace SE {
 
 class Scene {
 
-  //DEBUG code ___Start___
-  HELPERS::Elipse   oSmallElipse;
-  HELPERS::Elipse   oBigElipse;
-  //DEBUG code ___End_____
+        //DEBUG code ___Start___
+        HELPERS::Elipse   oSmallElipse;
+        HELPERS::Elipse   oBigElipse;
+        //DEBUG code ___End_____
 
-  Camera          & oCamera;
-  TSceneTree      * pSceneTree;
+        Camera          * pCamera;
+        TSceneTree      * pSceneTree;
 
-	public:
-  //empty settings
-  struct Settings {};
-	
-	Scene(const Settings & oSettings, Camera & oCurCamera);
-	~Scene() throw();
-	
-	void Process();
-	void PostRender();
+        public:
+        //empty settings
+        struct Settings {
+                SE::Camera::Settings oCamSettings;
+        };
+
+        Scene(const Settings & oSettings);
+        ~Scene() noexcept;
+
+        void Process();
 
 };
-
 
 } //namespace SE
 

@@ -9,12 +9,30 @@
 namespace SAMPLES {
 
 
-Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
-        oCamera(oCurCamera),
+Scene::Scene(const Settings & oSettings) :
         pTex01(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.tga")),
         pTex02(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.png")),
         pSceneTree(SE::CreateResource<SE::TSceneTree>("resource/scene/test-01.sesc")) {
 
+        auto pCameraNode = pSceneTree->Create("MainCamera");
+        auto res = pCameraNode->CreateComponent<SE::Camera>(oSettings.oCamSettings);
+        if (res != SE::uSUCCESS) {
+                throw("failed to create Camera component");
+        }
+        pCamera = pCameraNode->GetComponent<SE::Camera>();
+        se_assert(pCamera);
+
+        pCamera->SetPos(8, 4, 8);
+        pCamera->LookAt(0.1, 0.1, 0.1);
+
+        SE::GetSystem<SE::TRenderer>().SetCamera(pCamera);
+
+#ifdef SE_INTERACTIVE
+        res = pCameraNode->CreateComponent<SE::BasicController>();
+        if (res != SE::uSUCCESS) {
+                throw("failed to create BasicController component");
+        }
+#endif
 
         /*
         const glm::vec3 & center = pTestMesh->GetCenter();
@@ -34,13 +52,11 @@ Scene::Scene(const Settings & oSettings, SE::Camera & oCurCamera) :
 
 
 
-Scene::~Scene() throw() { ;; }
+Scene::~Scene() noexcept { ;; }
 
 
 
 void Scene::Process() {
-
-        SE::TGraphicsState::Instance().SetViewProjection(oCamera.GetMVPMatrix());
 
         //SE::HELPERS::DrawAxes(10);
 
@@ -63,8 +79,6 @@ void Scene::Process() {
 */
 
 }
-
-void Scene::PostRender() {}
 
 } //namespace SAMPLES
 

@@ -1,5 +1,4 @@
 
-
 #ifndef __ORTHO_SCENE_H__
 #define __ORTHO_SCENE_H__ 1
 
@@ -13,18 +12,18 @@ class OrthoScene {
         SE::Material    * pMaterial;
         SE::StaticModel * pModel;
         SE::TSceneTree  * pSceneTree;
-        SE::Camera      & oCamera;
+        SE::Camera      * pCamera;
         SE::CalcDuration  oElapsed;
 
 	public:
-        //empty settings
-        struct Settings {};
+        struct Settings {
+                SE::Camera::Settings oCamSettings;
+        };
 
-        OrthoScene(const Settings & oSettings, SE::Camera & oCurCamera);
+        OrthoScene(const Settings & oSettings);
         ~OrthoScene() throw();
 
         void Process();
-        void PostRender();
 };
 
 
