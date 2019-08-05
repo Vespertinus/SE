@@ -78,7 +78,7 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         const Transform       & GetTransform() const;
         void                    SetCustomInfo(const std::string_view sInfo);
         const std::string     & GetCustomInfo() const;
-        TSceneNode              GetShared() const;
+        TSceneNode              GetShared();
 
         /*      TODO
                 SetRotation(glm::quaternion)

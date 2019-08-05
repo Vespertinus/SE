@@ -91,7 +91,7 @@ class Camera {
         //Rotate
         //Translate
 
-        //TSceneTree::TSceneNode  Node() const;
+        TSceneTree::TSceneNode  Node() const;
         void                    Enable();
         void                    Disable();
         void                    Print(const size_t indent);

@@ -542,7 +542,7 @@ template <class ... TComponents>
 }
 
 template <class ... TComponents>
-        std::shared_ptr<SceneNode<TComponents...>> SceneNode<TComponents...>::GetShared() const {
+        std::shared_ptr<SceneNode<TComponents...>> SceneNode<TComponents...>::GetShared() {
         return this->shared_from_this();
 }
 

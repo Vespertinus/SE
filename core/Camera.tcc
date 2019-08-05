@@ -251,5 +251,10 @@ void Camera::SetProjection(const Projection proj) {
 void Camera::Enable() { ;; }
 void Camera::Disable() { ;; }
 
+TSceneTree::TSceneNode Camera::Node() const {
+
+        return pNode->GetShared();
+}
+
 } //namhespace SE
 
