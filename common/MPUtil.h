@@ -101,6 +101,13 @@ template <class ... Args, class TVariant> auto Visit(TVariant && oVar, Args && .
         return std::visit(overloaded { args... }, oVar);
 }
 
+template <size_t ... Is> constexpr auto IndexSequenceReverse (std::index_sequence<Is...> const &)
+        -> decltype( std::index_sequence<sizeof...(Is) - 1U - Is...>{} );
+
+template <size_t N> using MakeIndexSequenceReverse = decltype(IndexSequenceReverse(std::make_index_sequence<N>{}));
+
+
+
 
 template <class TTuple, typename TAction, std::size_t ... Indices>
 constexpr void TupleForEachImpl(TTuple && oTuple, TAction && oAction, std::index_sequence<Indices...>) {
@@ -116,6 +123,14 @@ constexpr void TupleForEach(TTuple && oTuple, TAction && oAction) {
         constexpr std::size_t size = std::tuple_size<std::remove_reference_t<TTuple>>::value;
 
         TupleForEachImpl(std::forward<TTuple>(oTuple), std::forward<TAction>(oAction), std::make_index_sequence<size>{});
+}
+
+template <typename TTuple, typename TAction>
+constexpr void TupleForEachRev(TTuple && oTuple, TAction && oAction) {
+
+        constexpr std::size_t size = std::tuple_size<std::remove_reference_t<TTuple>>::value;
+
+        TupleForEachImpl(std::forward<TTuple>(oTuple), std::forward<TAction>(oAction), MakeIndexSequenceReverse<size>{});
 }
 
 
@@ -179,6 +194,13 @@ template<template <class ...> class TContainer, template <class> class TWrapper,
             using Type = TContainer<TWrapper<T> ... >;
 };
 
+template<template <class ...> class TContainer, template <class> class TWrapper, class ... T> struct Typelist2WrappedTypeTmplPack;
+
+template<template <class ...> class TContainer, template <class> class TWrapper, class ... T> struct Typelist2WrappedTypeTmplPack<TContainer, TWrapper, TypelistWrapper<T...> > {
+            static_assert(sizeof...(T) > 0);
+            using Type = TContainer<typename TWrapper<T>::type ... >;
+};
+
 
 
 template <class ... T1s, class ... T2s> constexpr auto TypelistConcatenate(TypelistWrapper<T1s...>, TypelistWrapper<T2s...>) {
@@ -203,6 +225,8 @@ template <template <class> class TCondition, class TResult, class T, class ... T
 template <template <class> class TCondition, class ... Types>
         using FilteredTypelist = std::decay_t<decltype(TypelistFilter<TCondition>(TypelistWrapper<>{}, TypelistWrapper<Types...>{}))>;
 
+template <template <class> class TCondition, class TL>
+        using FilteredTypelistFromTL = std::decay_t<decltype(TypelistFilter<TCondition>(TypelistWrapper<>{}, TL{}))>;
 
 } //namespace MP
 

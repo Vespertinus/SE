@@ -36,6 +36,7 @@ class BasicController : public OIS::KeyListener, public OIS::MouseListener {
         void                    Disable();
         void                    Print(const size_t indent);
         std::string             Str() const;
+        void                    DrawDebug() const;
 };
 
 

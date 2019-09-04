@@ -36,6 +36,8 @@ class GeometryEntity {
         //uint32_t GetPrimitiveCnt() const;//TODO
         uint32_t GetIndicesCnt() const;
         uint32_t GetVAO() const;//THINK
+        void     SetVAO(const uint32_t new_vao_id);
+        void     SetRange(const uint32_t vertex_count, const uint32_t vertex_start);
 };
 
 } //namespace SE

@@ -6,5 +6,6 @@
 #include <Material.tcc>
 #include <ShaderComponent.tcc>
 #include <ShaderProgram.tcc>
+#include <Skeleton.tcc>
 
 #endif

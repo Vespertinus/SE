@@ -3,8 +3,10 @@ source:
  - |
         #version 150
 
-        in vec4 Position;
-        in vec2 TexCoord0;
+        in vec4  Position;
+        in vec2  TexCoord0;
+        in vec4  JointWeights;
+        in uvec4 JointIndices;
 
         uniform samplerBuffer BufferTex;
         uniform mat4 MVPMatrix;
@@ -13,6 +15,8 @@ source:
         uniform Animation {
                 int     BlendShapesCnt;
                 float   BlendShapesWeights[12];
+                uint    JointsPerVertex;
+                mat4    JointsMatrices[100];
         };
 
         out vec2      TexCoord;
@@ -30,7 +34,19 @@ source:
                         BlendedPosition += vec4(BlendShapesWeights[i] * bs, 0);
                 }
 
-                gl_Position = MVPMatrix * (MVMatrix * BlendedPosition);
+                mat4 Model = MVMatrix;
+
+                if (JointsPerVertex > 0u) { //FIXME TEMP
+                        mat4 SkinMatrix = JointsMatrices[JointIndices[0] ] * JointWeights[0];;
+
+                        for (uint j = 1u; j < JointsPerVertex; ++j) {
+                                SkinMatrix += JointsMatrices[JointIndices[j] ] * JointWeights[j];
+                        }
+
+                        Model *= SkinMatrix;
+                }
+
+                gl_Position = MVPMatrix * (Model * BlendedPosition);
                 TexCoord    = TexCoord0;
         }
 

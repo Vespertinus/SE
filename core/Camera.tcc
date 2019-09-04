@@ -256,5 +256,11 @@ TSceneTree::TSceneNode Camera::Node() const {
         return pNode->GetShared();
 }
 
+void Camera::DrawDebug() const {
+
+        //TODO
+        //GetSystem<DebugRenderer>().Draw ...;
+}
+
 } //namhespace SE
 

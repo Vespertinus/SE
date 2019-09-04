@@ -24,6 +24,7 @@ template <class TVisibilityManager> class Renderer {
         glm::uvec2                              screen_size{1024, 1024};
         Camera                                * pCamera{nullptr};
         std::vector<RenderCommand const *>      vRenderCommands;
+        std::vector<RenderCommand const *>      vRenderInstantCommands;
 
         void PrepareVisible();
 
@@ -33,6 +34,7 @@ template <class TVisibilityManager> class Renderer {
         void Render();
         template <class TRenderable > void AddRenderable(TRenderable * pComponent);
         template <class TRenderable > void RemoveRenderable(TRenderable * pComponent);
+        void                               AddRenderCmd(RenderCommand const * pCmd);
         void                               SetScreenSize(const glm::uvec2 new_screen_size);
         void                               SetCamera(Camera * pCurCamera);
         Camera *                           GetCamera() const;

@@ -1,4 +1,15 @@
 
+//#include <MPTraits.h>
+#include <experimental/type_traits>
+
+
+namespace {
+
+template <class T> using TCheck = decltype( &T::TargetTransformChanged );
+template <class T> constexpr bool TEvaluateCond = std::experimental::is_detected_v<TCheck, T>;
+
+}
+
 namespace SE  {
 
 
@@ -7,6 +18,7 @@ template <class ... TComponents > SceneNode<TComponents ...>::
                 pParent(nullptr),
                 sName(sNewName),
                 pScene(pNewScene),
+                name_id(sNewName),
                 user_flags(0),
                 internal_flags(enabled ? STATE_ENABLED : 0) {
 
@@ -182,14 +194,91 @@ template <class ... TComponents > ret_code_t SceneNode<TComponents ...>::
         return uSUCCESS;
 }
 
+
 template <class ... TComponents > void SceneNode<TComponents ...>::
         InvalidateChildren() {
+
+
+        //childs already notified
+        if (oTransform.CDirty()) { return; }
+        oTransform.SetCDirty();
+
+        //TODO call self listeners
+        for (auto & oListener : vListeners) {
+                std::visit([this](auto * pComponent) {
+
+                        if constexpr (TEvaluateCond< typename std::remove_pointer<decltype(pComponent)>::type >) {
+                                pComponent->TargetTransformChanged(this);
+                        }
+                        else {
+                                log_e("wrong component: '{}', node: '{}'", typeid(pComponent).name(), sName);
+                                se_assert(0);
+                        }
+                },
+                oListener);
+        }
 
         for (auto & item : vChildren) {
                 item->oTransform.Invalidate();
                 item->InvalidateChildren();
         }
 }
+
+template <class ... TComponents >
+        template <class TComponent>
+                void SceneNode<TComponents ...>::AddListener(TComponent * pComponent) {
+
+        static_assert(TEvaluateCond< TComponent >, "concreate Component must have 'TargetTransformChanged' method");//FIXME
+
+        bool found = true;
+
+        for (auto & oItem : vListeners) {
+
+                std::visit([&found, pComponent](auto * pComponentItem) {
+
+                        if constexpr (std::is_same_v<TComponent, std::decay<decltype(pComponentItem)>>) {
+                                if (pComponentItem == pComponent) {
+                                        found = true;
+                                }
+                        }
+                },
+                oItem);
+
+                if (found) { return; }
+        }
+
+        vListeners.emplace_back(pComponent);
+
+        if (oTransform.CDirty()) {
+                pComponent->TargetTransformChanged(this);
+        }
+}
+
+template <class ... TComponents >
+        template <class TComponent>
+                void SceneNode<TComponents ...>::RemoveListener(TComponent * pComponent) {
+
+        static_assert(TEvaluateCond< TComponent >, "concreate Component must have 'TargetTransformChanged' method");//FIXME
+
+        if (vListeners.empty()) {
+                return;
+        }
+
+        auto it = std::find_if(vListeners.begin(), vListeners.end(),
+                        [pComponent](auto & oItem) {
+                                auto pVal = std::get_if<TComponent *>(&oItem);
+
+                                return pVal && (*pVal == pComponent);
+                        });
+
+        if (it != vListeners.end()) {
+                if (*it != vListeners.back()) {
+                        *it = vListeners.back();
+                }
+                vListeners.pop_back();
+        }
+}
+
 
 template <class ... TComponents > const std::string & SceneNode<TComponents ...>::
         GetName() const {
@@ -268,6 +357,7 @@ template <class ... TComponents > bool SceneNode<TComponents ...>::
         if (res) {
                 sName     = sNewName;
                 sFullName = std::move(sNewFullName);
+                name_id   = sNewName;
         }
 
         return res;
@@ -542,8 +632,63 @@ template <class ... TComponents>
 }
 
 template <class ... TComponents>
+        bool SceneNode<TComponents...>::Enabled() const {
+
+        return internal_flags & STATE_ENABLED;
+}
+
+template <class ... TComponents>
+        void SceneNode<TComponents...>::ToggleEnabled() {
+
+        if (Enabled()) {
+                Disable();
+        }
+        else {
+                Enable();
+        }
+}
+
+template <class ... TComponents>
         std::shared_ptr<SceneNode<TComponents...>> SceneNode<TComponents...>::GetShared() {
         return this->shared_from_this();
+}
+
+template <class ... TComponents>
+        std::shared_ptr<SceneNode<TComponents...>> SceneNode<TComponents...>::FindChild(
+                        const StrID target_name_id, bool recursive) const {
+
+        TSceneNode      pResult;
+
+        for (auto & pChild : vChildren) {
+
+                if (pChild->name_id == target_name_id) {
+                        pResult = pChild;
+                        break;
+                }
+
+                if (recursive) {
+                        pResult = pChild->FindChild(target_name_id, recursive);
+                        if (pResult) {
+                                break;
+                        }
+                }
+        }
+
+        return pResult;
+}
+
+template <class ... TComponents>
+        void SceneNode<TComponents...>::DrawDebug() const {
+
+        GetSystem<DebugRenderer>().DrawLocalAxes(oTransform);
+
+        for (auto & oComponent : vComponents) {
+
+                std::visit([](auto && arg) {
+                        arg->DrawDebug();
+                },
+                oComponent);
+        }
 }
 
 }

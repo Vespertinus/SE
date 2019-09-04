@@ -21,7 +21,8 @@ class Transform {
         glm::vec3               vScale;
         glm::quat               qRotation;
         mutable uint8_t         local_dirty : 1,
-                                world_dirty : 1;
+                                world_dirty : 1,
+                                childs_notified : 1;//THINK
 
         void              Recalc() const;
         void              RecalcWorld() const;
@@ -71,6 +72,9 @@ class Transform {
                 glm::quat,
                 glm::vec3>
                           GetWorldDecomposedQuat() const;
+        void SetCDirty();
+        bool CDirty() const;
+        glm::vec3         GetWorldPos() const;
 };
 
 } //namespace SE

@@ -19,6 +19,10 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         //TODO rewrite on separate per component storage
         using TVariant          = std::variant<std::unique_ptr<TComponents> ...>;
         using TSceneTree        = SceneTree<TComponents...>;
+        //TODO might be weak_ptr<TComponents>
+        using TListenersVariant = std::variant<TComponents * ...>;
+
+        //using TWeakVariant = std::variant<std::weak_ptr<TComponents> ...>;
 
         template <class ... TArgs> friend class SceneTree;
 
@@ -28,11 +32,13 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         std::vector<TVariant>                   vComponents;
         TSceneNodeExact                       * pParent;
         std::vector<TSceneNode>                 vChildren;
+        std::vector<TListenersVariant>          vListeners;
         Transform                               oTransform;
         std::string                             sName;
         std::string                             sFullName;
         std::string                             sCustomInfo; //TODO as custom info component
         TSceneTree                            * pScene;
+        StrID                                   name_id;
         /** user state flags */
         uint8_t                                 user_flags;
         uint8_t                                 internal_flags;
@@ -79,6 +85,7 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         void                    SetCustomInfo(const std::string_view sInfo);
         const std::string     & GetCustomInfo() const;
         TSceneNode              GetShared();
+        TSceneNode              FindChild(const StrID target_name_id, bool recursive = false) const;
 
         /*      TODO
                 SetRotation(glm::quaternion)
@@ -130,10 +137,17 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         template <class TComponent>     TComponent * GetComponent();
         template <class TComponent>     bool HasComponent() const;
 
+        template <class TComponent>     void AddListener(TComponent * pComponent);
+        template <class TComponent>     void RemoveListener(TComponent * pComponent);
+
+
         void                    Disable();
         void                    Enable();
         void                    DisableRecursive();
         void                    EnableRecursive();
+        bool                    Enabled() const;
+        void                    ToggleEnabled();
+        void                    DrawDebug() const;
 };
 
 } //namespace SE

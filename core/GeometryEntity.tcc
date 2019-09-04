@@ -27,15 +27,16 @@ GeometryEntity::GeometryEntity(
 
 void GeometryEntity::Draw() const {
 
+        /*
+           log_d("vao: {}, primitive_type: {}, index_type: {}, start: {}, count: {}",
+           vao_id,
+           primitive_type,
+           index_type,
+           start,
+           count);
+         */
+
         if (index_type != WITHOUT_INDEX) {
-                /*
-                log_d("vao: {}, primitive_type: {}, index_type: {}, start: {}, count: {}",
-                                vao_id,
-                                primitive_type,
-                                index_type,
-                                start,
-                                count);
-                 */
 
                 GetSystem<GraphicsState>().Draw(vao_id, primitive_type, index_type, start, count);
         }
@@ -47,6 +48,16 @@ void GeometryEntity::Draw() const {
 uint32_t GeometryEntity::GetIndicesCnt() const {
 
         return count;
+}
+
+void GeometryEntity::SetVAO(const uint32_t new_vao_id) {
+        vao_id = new_vao_id;
+}
+
+void GeometryEntity::SetRange(const uint32_t vertex_count, const uint32_t vertex_start) {
+
+        count = vertex_count;
+        start = vertex_start;
 }
 
 }

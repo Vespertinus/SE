@@ -96,6 +96,7 @@ class Camera {
         void                    Disable();
         void                    Print(const size_t indent);
         std::string             Str() const;
+        void                    DrawDebug() const;
 };
 
 } //namespace SE

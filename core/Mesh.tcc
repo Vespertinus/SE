@@ -264,6 +264,7 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                 log_d("buffer[{}] size = {}, type size = {}", i, buffer_size, buffer_type_size);
         }
 
+        uint32_t last_binded_buffer = buffers_cnt - 1;
         auto pAttributes = pMesh->attributes();
 
         for (uint32_t i = 0; i < pAttributes->Length(); ++i) {
@@ -276,21 +277,47 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                                                 pCurAttrubute->name()->str() + "'" ));
                 }
                 std::uintptr_t offset = pCurAttrubute->offset();
-                /*
-                   log_d("elem_size = {}, gl_type = {}, stride = {}, offset = {}",
-                   pCurAttrubute->elem_size(),
-                   vBuffersGLType[pCurAttrubute->buffer_ind()],
-                   pCurShape->stride(),
-                   offset);
-                 */
-                glVertexAttribPointer(itLocation->second,
-                                pCurAttrubute->elem_size(),
-                                pGLTypes[pCurAttrubute->buffer_ind()],
-                                false,
-                                pStride[pCurAttrubute->buffer_ind()],
-                                (const void *)offset);
+
+                if (pCurAttrubute->buffer_ind() != last_binded_buffer) {
+                        last_binded_buffer = pCurAttrubute->buffer_ind();
+                        glBindBuffer(GL_ARRAY_BUFFER, pGLID[last_binded_buffer]);
+                }
+
+                if (pCurAttrubute->destination() == SE::FlatBuffers::AttribDestType::DEST_FLOAT) {
+                        /*
+                           log_d("elem_size = {}, gl_type = {}, stride = {}, offset = {}",
+                           pCurAttrubute->elem_size(),
+                           vBuffersGLType[pCurAttrubute->buffer_ind()],
+                           pCurShape->stride(),
+                           offset);
+                         */
+                        glVertexAttribPointer(
+                                        itLocation->second,
+                                        pCurAttrubute->elem_size(),
+                                        pGLTypes[pCurAttrubute->buffer_ind()],
+                                        false,
+                                        pStride[pCurAttrubute->buffer_ind()],
+                                        (const void *)offset);
+                }
+                else if (pCurAttrubute->destination() == SE::FlatBuffers::AttribDestType::DEST_INT) {
+                        glVertexAttribIPointer(
+                                        itLocation->second,
+                                        pCurAttrubute->elem_size(),
+                                        pGLTypes[pCurAttrubute->buffer_ind()],
+                                        pStride[pCurAttrubute->buffer_ind()],
+                                        (const void *)offset);
+
+                }
+                else {
+                        LocalClean(vao_id);
+                        throw(std::runtime_error(fmt::format("wrong destination: '{}' in vertex attribute name: '",
+                                                        static_cast<uint8_t>(pCurAttrubute->destination()),
+                                                        pCurAttrubute->name()->str()) ));
+                }
+
                 glEnableVertexAttribArray(itLocation->second);
 
+                vAttrInfo.emplace_back(pCurAttrubute->name()->c_str(), pCurAttrubute->custom());
         }
 
         glBindVertexArray(0);
@@ -369,6 +396,12 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
 std::string Mesh::Str() const {
 
         return fmt::format("Mesh name: '{}', triangles: {}, shapes: {}, bbox: {}", sName, GetIndicesCnt() / 3, vSubMeshes.size(), GetBBox().Str());
+}
+
+
+const std::vector <std::pair<StrID, uint32_t>> & Mesh::GetAttrInfo() const {
+
+        return vAttrInfo;
 }
 
 }

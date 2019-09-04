@@ -4,4 +4,5 @@
 #include <RenderCommand.tcc>
 #include <UniformBuffer.tcc>
 #include <ShaderProgramState.tcc>
+#include <VertexBuffer.tcc>
 #endif

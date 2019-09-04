@@ -12,7 +12,7 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
 
         using TSceneNodeExact   = SceneNode<TComponents...>;
         using TSceneNode        = std::shared_ptr<TSceneNodeExact>;
-        //using TSceneNodeWeak    = std::weak_ptr<TSceneNodeExact>;
+        using TSceneNodeWeak    = std::weak_ptr<TSceneNodeExact>;
 
         private:
 
@@ -21,16 +21,6 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
                 template <class ... TArgs> NodeWrapper(TArgs && ... oArgs) : TSceneNodeExact(oArgs...) { ;; }
         };
 
-        template <class TComponent> struct LoadWrapper {
-
-                using TExactSerialized = typename TComponent::TSerialized;
-
-                static ret_code_t Load(const void * const pData, TSceneNode & pNode) {
-
-                        const TExactSerialized * pSerialized = static_cast<const TExactSerialized *>(pData);
-                        return pNode->template CreateComponent<TComponent>(pSerialized);
-                }
-        };
 
         TSceneNode                              pRoot;
         std::unordered_map<StrID, TSceneNode>   mNamedNodes;
@@ -41,10 +31,11 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
 
         void Load();
         void Load(const SE::FlatBuffers::Node * pRoot);
-        template <class TMap> ret_code_t LoadNode(
+        template <class TMap, class TVec> ret_code_t LoadNode(
                         const SE::FlatBuffers::Node * pSrcNode,
                         TSceneNode pParent,
-                        const TMap & mLoaders);
+                        const TMap & mLoaders,
+                        TVec & vPostLoadComponents);
 
         public:
 

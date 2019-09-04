@@ -15,9 +15,10 @@ Transform::Transform(const glm::vec3 & pos, const glm::vec3 & rotation, const gl
         vScale(new_scale),
         qRotation(glm::radians(rotation)),
         local_dirty(1),
-        world_dirty(0) {
+        world_dirty(0),
+        childs_notified(0) {
 
-                Recalc();
+                RecalcWorld();
 
 }
 
@@ -57,6 +58,7 @@ void Transform::RecalcWorld() const {
                 mWorldTransform = pParent->GetWorld() * mTransform;
         }
         world_dirty = 0;
+        childs_notified = 0;
 }
 
 void Transform::Set(const glm::vec3 & pos, const glm::vec3 & rotation, const glm::vec3 & new_scale) {
@@ -307,6 +309,22 @@ std::tuple<glm::vec3, glm::vec3, glm::vec3> Transform::GetWorldDecomposedEuler()
         glm::vec3 vWorldRotation = glm::degrees(glm::eulerAngles(qWorlRotation));
 
         return std::make_tuple(vWorldTranslation, vWorldRotation, vWorldScale);
+}
+
+bool Transform::CDirty() const {
+
+        return childs_notified;
+}
+
+void Transform::SetCDirty() {
+
+        childs_notified = 1;
+}
+
+glm::vec3 Transform::GetWorldPos() const {
+
+        RecalcWorld();
+        return glm::vec3(mWorldTransform[3]);
 }
 
 }

@@ -180,4 +180,6 @@ std::string BasicController::Str() const {
                         rotation_speed.z);
 }
 
+void BasicController::DrawDebug() const { ;; }
+
 }

@@ -3,7 +3,7 @@ namespace SE {
 
 template <class ... TSystems> Engine<TSystems...>::~Engine() noexcept {
 
-        MP::TupleForEach(oSystems, [](auto * pSystem) {
+        MP::TupleForEachRev(oSystems, [](auto * pSystem) {
                 delete pSystem;
         });
 }

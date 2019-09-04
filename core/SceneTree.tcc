@@ -146,6 +146,36 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
 template <class T> using TSerializedCheck = typename T::TSerialized;
 template <class T> using THasSerialized   = typename std::experimental::is_detected<TSerializedCheck, T>::type;
 
+template <class T> using TPostLoadCheck = decltype( &T::PostLoad );
+template <class T> using THasPostLoad = typename std::experimental::is_detected<TPostLoadCheck, T>::type;
+template <class T> constexpr bool THasPostLoadVal = std::experimental::is_detected_v<TPostLoadCheck, T>;
+
+template <class TComponent> struct LoadWrapper {
+
+        using TExactSerialized = typename TComponent::TSerialized;
+
+        template <class TNode, class TPostLoadVec> ret_code_t Load(
+                        const void * const pData,
+                        TNode & pNode,
+                        TPostLoadVec & vPostLoadComponents) const {
+
+                const TExactSerialized * pSerialized = static_cast<const TExactSerialized *>(pData);
+                auto res = pNode->template CreateComponent<TComponent>(pSerialized);
+
+                if constexpr (THasPostLoadVal<TComponent>) {
+
+                        if (res != uSUCCESS) { return res; }
+
+                        auto * pComponent = pNode->template GetComponent<TComponent>();
+                        se_assert(pComponent);
+
+                        vPostLoadComponents.emplace_back(pComponent, pSerialized);
+                }
+
+                return res;
+        }
+};
+
 template <class ... TComponents > void SceneTree<TComponents ...>::
         Load(const SE::FlatBuffers::Node * pRoot) {
 
@@ -153,18 +183,27 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
         using TFilteredTypes    = MP::FilteredTypelist<THasSerialized, TComponents...>;
         static_assert(!std::is_same<MP::TypelistWrapper<>, TFilteredTypes >::value, "not allowed empty componenents list");
 
-        using TLoaderVariant    = typename MP::Typelist2WrappedTmplPack<
+        using TLoaderVariant            = typename MP::Typelist2WrappedTmplPack<
                 std::variant,
                 LoadWrapper,
                 TFilteredTypes
                         >::Type;
-        using TLoaderTuple      = typename MP::Typelist2WrappedTmplPack<
+        using TLoaderTuple              = typename MP::Typelist2WrappedTmplPack<
                 std::tuple,
                 LoadWrapper,
                 TFilteredTypes
                         >::Type;
 
-        using TLoaderMap        = std::map<FlatBuffers::ComponentU, TLoaderVariant>;
+        using TLoaderMap                = std::map<FlatBuffers::ComponentU, TLoaderVariant>;
+
+        using TPostLoadComponents       = MP::FilteredTypelistFromTL<THasPostLoad, TFilteredTypes>;
+        using TPostLoadVariant          = typename MP::Typelist2WrappedTypeTmplPack<
+                std::variant,
+                std::add_pointer,
+                TPostLoadComponents
+                        >::Type;
+
+        std::vector <std::pair<TPostLoadVariant, const void * const> > vPostLoadComponents;
 
         TLoaderTuple oLoaders;
         TLoaderMap mLoaders;
@@ -180,18 +219,41 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
         //init loaders map
         MP::TupleForEach(oLoaders, InitMap);
 
-        if (auto res = LoadNode(pRoot, nullptr, mLoaders); res != uSUCCESS) {
+        if (auto res = LoadNode(pRoot, nullptr, mLoaders, vPostLoadComponents); res != uSUCCESS) {
                 throw (std::runtime_error("failed to load tree, reason: " +
                                           std::to_string(res) +
                                           ", from: " +
                                           sName));
         }
+
+        for (auto & oEntry : vPostLoadComponents) {
+
+                std::visit([&oEntry, this](auto * pComponent) {
+
+                        using TExactSerialized = typename std::remove_pointer<decltype(pComponent)>::type::TSerialized;
+
+                        const TExactSerialized * pSerialized = static_cast<const TExactSerialized *>(oEntry.second);
+
+                        auto res = pComponent->PostLoad(pSerialized);
+
+                        if (res != uSUCCESS) {
+
+                                throw (std::runtime_error(fmt::format("failed to process post load component, loading tree",
+                                                                sName)));
+                        }
+                },
+                oEntry.first);
+        }
 }
 
 template <class ... TComponents >
-        template <class TMap>
+        template <class TMap, class TVec>
                 ret_code_t SceneTree<TComponents ...>::
-                        LoadNode(const SE::FlatBuffers::Node * pSrcNode, TSceneNode pParent, const TMap & mLoaders) {
+                        LoadNode(
+                                        const SE::FlatBuffers::Node * pSrcNode,
+                                        TSceneNode pParent,
+                                        const TMap & mLoaders,
+                                        TVec & vPostLoadComponents) {
 
         TSceneNode pDstNode;
         auto * pNameFB = pSrcNode->name();
@@ -238,9 +300,9 @@ template <class ... TComponents >
 
                         if (it != mLoaders.end()) {
 
-                                res = std::visit([pCurComponentFB, &pDstNode](auto & oLoader) {
+                                res = std::visit([pCurComponentFB, &pDstNode, &vPostLoadComponents](auto & oLoader) {
 
-                                                return oLoader.Load(pCurComponentFB->component(), pDstNode);
+                                                return oLoader.Load(pCurComponentFB->component(), pDstNode, vPostLoadComponents);
 
 
                                                 },
@@ -274,7 +336,7 @@ template <class ... TComponents >
 
         ret_code_t res = uSUCCESS;
         for (size_t i = 0; i < children_cnt; ++i) {
-                res = LoadNode(pChildrenFB->Get(i), pDstNode, mLoaders);
+                res = LoadNode(pChildrenFB->Get(i), pDstNode, mLoaders, vPostLoadComponents);
                 if (res != uSUCCESS) { return res; }
         }
 

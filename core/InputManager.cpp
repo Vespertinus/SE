@@ -75,6 +75,9 @@ void InputManager::Initialise(
                 paramList.emplace("x11_mouse_hide", "false");
         }
 
+        paramList.emplace("x11_keyboard_grab", "false");
+        paramList.emplace("XAutoRepeatOn", "true");
+
         // Create inputsystem
         pInputSystem = OIS::InputManager::createInputSystem( paramList );
 

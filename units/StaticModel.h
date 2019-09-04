@@ -43,6 +43,7 @@ class StaticModel {
         std::string     Str() const;
 
         const std::vector<RenderCommand> & GetRenderCommands() const;
+        void            DrawDebug() const;
 };
 
 }

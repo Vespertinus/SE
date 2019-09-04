@@ -14,6 +14,7 @@ class Mesh : public ResourceHolder {
         std::vector <GeometryEntity>    vSubMeshes;//THINK?
         /** last stored BoundingBox inside vector used as combined Mesh BoundingBox */
         std::vector <BoundingBox>       vBBoxes;
+        std::vector <std::pair<StrID, uint32_t>> vAttrInfo;
 
         void Load();
         void Load(const SE::FlatBuffers::Mesh * pMesh);
@@ -34,6 +35,7 @@ class Mesh : public ResourceHolder {
         std::string     Str() const; //one line only
         //std::string     Str(const size_t shape_ind) const; TODO
         std::string     StrDump() const; //multi line full info dump with child objects state
+        const std::vector <std::pair<StrID, uint32_t>> & GetAttrInfo() const;
 };
 
 } //namespace SE

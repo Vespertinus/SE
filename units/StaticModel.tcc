@@ -132,4 +132,9 @@ Material * StaticModel::GetMaterial() const {
                 return pMaterial;
 }
 
+void StaticModel::DrawDebug() const {
+
+        GetSystem<DebugRenderer>().DrawBBox(pMesh->GetBBox(), pNode->GetTransform());
+}
+
 }

@@ -56,6 +56,12 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::Render() 
                 pRenderCommand->Draw();
         }
 
+        for (auto * pRenderCommand : vRenderInstantCommands) {
+                pRenderCommand->Draw();
+        }
+
+        vRenderInstantCommands.clear();
+
         //log_d("rendered: {} cmd, duration = {} ms", vRenderCommands.size(), oDuration.Get());
 }
 
@@ -91,6 +97,11 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::SetCamera
 
 template <class TVisibilityManager> Camera * Renderer<TVisibilityManager>::GetCamera() const {
         return pCamera;
+}
+
+template <class TVisibilityManager> void Renderer<TVisibilityManager>::AddRenderCmd(RenderCommand const * pCmd) {
+
+        vRenderInstantCommands.emplace_back(pCmd);
 }
 
 } //namespace SE

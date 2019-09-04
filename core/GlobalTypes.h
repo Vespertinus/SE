@@ -38,6 +38,7 @@
 #include <Texture.h>
 #include <StoreTexture2D.h>
 #include <StoreTextureBufferObject.h>
+#include <Skeleton.h>
 
 
 //*/
@@ -75,6 +76,7 @@ typedef Mesh                                                            TMesh;
 }
 
 #include <Renderer.h>
+#include <DebugRenderer.h>
 //TEMP
 #include <AllVisible.h>
 
@@ -98,7 +100,7 @@ using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 using TRenderer = Renderer<TVisibilityManager>;
 
 //singleton
-using TEngine = Loki::SingletonHolder<Engine<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer /*, TInputManager, ...*/>>;
+using TEngine = Loki::SingletonHolder<Engine<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer /*, TInputManager, ...*/>>;
 
 }
 
@@ -126,13 +128,14 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 
 namespace SE {
 
-typedef LOKI_TYPELIST_6(
+typedef LOKI_TYPELIST_7(
                 TTexture,
                 Material,
                 TMesh,
                 TSceneTree,
                 ShaderComponent,
-                ShaderProgram)                                          TResourseList;
+                ShaderProgram,
+                Skeleton)                                               TResourseList;
 //THINK
 #ifndef SE_IMPL
 extern template class ResourceManager<TResourseList>;
