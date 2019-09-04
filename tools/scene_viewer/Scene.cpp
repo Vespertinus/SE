@@ -13,7 +13,7 @@ Scene::Scene(const Settings & oNewSettings) :
         pSceneTree(SE::CreateResource<SE::TSceneTree>(oNewSettings.sScenePath)),
         oSettings(oNewSettings) {
 
-        auto pCameraNode = pSceneTree->Create("MainCamera");
+        pCameraNode = pSceneTree->Create("MainCamera");
         auto res = pCameraNode->CreateComponent<Camera>(oSettings.oCamSettings);
         if (res != uSUCCESS) {
                 throw("failed to create Camera component");
@@ -37,51 +37,33 @@ Scene::Scene(const Settings & oNewSettings) :
         }
 
         pSceneTree->Print();
+
+        TInputManager::Instance().AddMouseListener (this, "SceneViewer");
+
 }
 
 
 
-Scene::~Scene() throw() { ;; }
+Scene::~Scene() noexcept {
+
+        TInputManager::Instance().RemoveMouseListener ("SceneViewer");
+}
 
 
 
 void Scene::Process() {
 
         SE::CheckOpenGLError();
-        //SE::HELPERS::DrawAxes(10);
 
-        //pSceneTree->Draw();
-        /*
-        pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNode & oNode) {
-
-
-                if (oNode.GetFlags() & NODE_HIDE) {
-                        return false;
-                }
-
-                oNode.DrawSelf();
-
-                return true;
-        });*/
+        if (toggle_controller) {
+                pCameraNode->ToggleEnabled();
+                toggle_controller = false;
+        }
 
         if (oSettings.vdebug) {
 
-                pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNodeExact & oNode) {
-
-                        if (oNode.GetFlags() & NODE_HIDE) {
-                                return false;
-                        }
-
-                        if (oNode.GetComponentsCnt() == 0) {
-                                return true;
-                        }
-
-
-                        GetSystem<GraphicsState>().SetTransform(oNode.GetTransform().GetWorld());
-                        TVisualHelpers::Instance().DrawLocalAxes();
-
-                        return true;
-                });
+                auto & oDebugRenderer = GetSystem<DebugRenderer>();
+                oDebugRenderer.DrawGrid(pSceneTree->GetRoot()->GetTransform());
 
                 pSceneTree->GetRoot()->DepthFirstWalk([](SE::TSceneTree::TSceneNodeExact & oNode) {
 
@@ -93,13 +75,8 @@ void Scene::Process() {
                                 return true;
                         }
 
+                        oNode.DrawDebug();
 
-                        /*
-                        auto * pMesh = oNode.GetEntity<TMesh>(0);
-
-                        TGraphicsState::Instance().SetTransform(oNode.GetTransform().GetWorld());
-                        TVisualHelpers::Instance().DrawBBox(pMesh->GetBBox());
-                        */
                         return true;
                 });
         }
@@ -226,7 +203,7 @@ void Scene::ShowGUI() {
         ImGui::Separator();
         if (ImGui::TreeNode("Nodes:")) {
 
-                pSceneTree->GetRoot()->DepthFirstWalkEx([](SE::TSceneTree::TSceneNodeExact & oNode) {
+                pSceneTree->GetRoot()->DepthFirstWalkEx([this](SE::TSceneTree::TSceneNodeExact & oNode) {
 
                         ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow |
                                                         ImGuiTreeNodeFlags_OpenOnDoubleClick |
@@ -263,9 +240,9 @@ void Scene::ShowGUI() {
                                         oNode.DisableRecursive();
                                 }
                         }
-                        /*if (ImGui::Button("look at")) {
-                                pCamera->LookAt(oNode->Transform()->GetWorldPos());
-                        }*/
+                        if (ImGui::Button("look at")) {
+                                pCamera->LookAt(oNode.GetTransform().GetWorldPos());
+                        }
 
                         return true;
                 },
@@ -278,6 +255,29 @@ void Scene::ShowGUI() {
         }
 
         ImGui::End();
+}
+
+bool Scene::mouseMoved( const OIS::MouseEvent &ev [[maybe_unused]]) {
+        return true;
+}
+
+bool Scene::mousePressed( const OIS::MouseEvent &ev [[maybe_unused]], OIS::MouseButtonID id [[maybe_unused]]) {
+
+        return true;
+}
+
+
+bool Scene::mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
+
+        switch (id) {
+                case OIS::MB_Right:
+                        toggle_controller = true;
+                        break;
+                default:
+                        break;
+        }
+
+        return true;
 }
 
 
