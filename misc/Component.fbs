@@ -13,17 +13,39 @@ table StaticModel {
         material:MaterialHolder;
 }
 
+table Joint {
+        name:string (required);
+        bind_rot:Vec4;
+        bind_pos:Vec3;
+        bind_scale:Vec3;
+        parent_index:uint8;
+}
+
+table Skeleton {
+//        root_node_name:string (required);
+        joints:[Joint] (required);
+}
+
+table SkeletonHolder {
+        skeleton:Skeleton;
+        path:string;
+        name:string;
+}
+
 table AnimatedModel {
         mesh:MeshHolder (required);
         material:MaterialHolder;
-        blendshapes:TextureHolder (required);//or as vertex buffer
-        blendshapes_weights:[float] (required);
+        //blendshapes or skeleton must exist
+        blendshapes:TextureHolder;//or as vertex buffer
+        blendshapes_weights:[float];
+        skeleton_root_node:string;
+        skeleton:SkeletonHolder;
 }
 
 //Component wrappers
 
 table AppComponent {
-        sub_type:uint16_t;
+        sub_type:uint16;
         data:[ubyte] (flexbuffer);
 }
 

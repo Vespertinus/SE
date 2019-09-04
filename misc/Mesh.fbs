@@ -8,11 +8,18 @@ struct BoundingBox {
         max:Vec3;
 }
 
+enum AttribDestType : uint8 {
+        DEST_FLOAT = 1,
+        DEST_INT   = 2,
+}
+
 table VertexAttribute {
         name:string (required);
         offset:uint16 = 0;
         elem_size:uint8 = 3;
         buffer_ind:uint8 = 0;
+        custom:uint32 = 0;
+        destination:AttribDestType = DEST_FLOAT;
 }
 
 table FloatVector {

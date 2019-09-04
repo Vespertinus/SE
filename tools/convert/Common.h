@@ -39,6 +39,23 @@ struct BlendShapeData {
         std::string             sName;
 };
 
+struct JointData {
+
+        static const uint8_t    ROOT_PARENT_IND = -1;
+
+        std::string             sName;
+        glm::vec4               bind_rot;
+        glm::vec3               bind_pos;
+        glm::vec3               bind_scale;
+        uint8_t                 parent_index{};
+};
+
+struct Skeleton {
+
+        std::string             sName;
+        std::vector<JointData>  vJoints;
+};
+
 
 struct MeshData {
 
@@ -53,10 +70,17 @@ struct MeshData {
                 std::vector<uint32_t> >;
 
         struct VertexAttribute {
+                enum Type : uint8_t {
+                        DEST_FLOAT = 1,
+                        DEST_INT   = 2
+                };
+
                 std::string     sName;
                 uint16_t        offset;
                 uint8_t         elem_size;
                 uint8_t         buffer_ind;
+                uint32_t        custom{};
+                Type            destination{Type::DEST_FLOAT};
         };
 
         struct VertexBuffer {
@@ -107,6 +131,8 @@ struct ModelData {
         MeshData        oMesh;
         MaterialData    oMaterial;
         BlendShapeData  oBlendShape{};
+        Skeleton        oSkeleton;
+        std::string     sRootNode;
 };
 
 using TComponent = std::variant<ModelData/*, Camera, Light, CustomComponent etc*/>;
@@ -152,6 +178,7 @@ struct ImportCtx {
         bool                    flip_yz;
         bool                    import_info_prop;
         bool                    import_blend_shapes;
+        bool                    import_skin;
         bool                    disable_nodes;
         /** stats */
         uint32_t                node_cnt;

@@ -118,7 +118,12 @@ std::tuple<flatbuffers::Offset<SE::FlatBuffers::Mesh>, ret_code_t> SerializeMesh
                                         oBuilder.CreateString(oVertexAttribute.sName),
                                         oVertexAttribute.offset,
                                         oVertexAttribute.elem_size,
-                                        oVertexAttribute.buffer_ind)
+                                        oVertexAttribute.buffer_ind,
+                                        oVertexAttribute.custom,
+                                        static_cast<SE::FlatBuffers::AttribDestType>(
+                                                oVertexAttribute.destination
+                                                )
+                                        )
                                 );
         }
 

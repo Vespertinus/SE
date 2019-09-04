@@ -148,7 +148,7 @@ TComponentOffset SerializeModel(
                         oBuilder.CreateString(oModel.oMesh.sName)
                         );
 
-        if (oModel.oBlendShape.vDefaultWeights.size() == 0) { //StaticModel
+        if (oModel.oBlendShape.vDefaultWeights.size() == 0 && oModel.oSkeleton.vJoints.size() == 0) { //StaticModel
 
 
                 auto model_fb = CreateStaticModel(
@@ -162,31 +162,84 @@ TComponentOffset SerializeModel(
 //FIXME
 #define SE_GL_R32F 0x822E
 
-                auto tex_stock_fb = CreateTextureStock(
-                                oBuilder,
-                                oBuilder.CreateVector(
-                                        reinterpret_cast<const uint8_t *>(&oModel.oBlendShape.vBuffer[0]),
-                                        oModel.oBlendShape.vBuffer.size() * sizeof(float)),
-                                0,
-                                SE_GL_R32F,
-                                oModel.oBlendShape.vBuffer.size(),
-                                0);
+                flatbuffers::Offset<TextureHolder>      blendshapes_fb          = 0;
+                flatbuffers::Offset<
+                        flatbuffers::Vector<float>
+                        >                               default_weights_fb      = 0;
+                flatbuffers::Offset<
+                        SkeletonHolder
+                        >                               skeleton_holder_fb      = 0;
+                flatbuffers::Offset<
+                        flatbuffers::String
+                        >                               skeleton_root_node_fb   = 0;
 
-                auto blendshapes_fb = CreateTextureHolder(
-                                oBuilder,
-                                tex_stock_fb,
-                                0,
-                                oBuilder.CreateString(oModel.oBlendShape.sName),
-                                StoreSettings::StoreTextureBuffer,
-                                CreateStoreTextureBuffer(oBuilder).Union(),
-                                SE::FlatBuffers::TextureUnit::UNIT_BUFFER);
+
+                //___Start___ bs
+                if (oModel.oBlendShape.vDefaultWeights.size() != 0) {
+                        auto tex_stock_fb = CreateTextureStock(
+                                        oBuilder,
+                                        oBuilder.CreateVector(
+                                                reinterpret_cast<const uint8_t *>(&oModel.oBlendShape.vBuffer[0]),
+                                                oModel.oBlendShape.vBuffer.size() * sizeof(float)),
+                                        0,
+                                        SE_GL_R32F,
+                                        oModel.oBlendShape.vBuffer.size(),
+                                        0);
+
+                        blendshapes_fb = CreateTextureHolder(
+                                        oBuilder,
+                                        tex_stock_fb,
+                                        0,
+                                        oBuilder.CreateString(oModel.oBlendShape.sName),
+                                        StoreSettings::StoreTextureBuffer,
+                                        CreateStoreTextureBuffer(oBuilder).Union(),
+                                        SE::FlatBuffers::TextureUnit::UNIT_BUFFER);
+
+                        default_weights_fb = oBuilder.CreateVector(oModel.oBlendShape.vDefaultWeights);
+                }
+                //___End_____ bs
+
+                //___Start___ skeleton
+                if (oModel.oSkeleton.vJoints.size() != 0) {
+
+                        std::vector<flatbuffers::Offset<SE::FlatBuffers::Joint>>        vJoints;
+                        vJoints.reserve(oModel.oSkeleton.vJoints.size());
+
+                        for (auto & oItem : oModel.oSkeleton.vJoints) {
+                                vJoints.emplace_back(
+                                                CreateJoint(
+                                                        oBuilder,
+                                                        oBuilder.CreateString(oItem.sName),
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec4 *>(&oItem.bind_rot[0]),
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_pos[0]),
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_scale[0]),
+                                                        oItem.parent_index)
+                                                );
+                        }
+
+                        skeleton_root_node_fb = oBuilder.CreateString(oModel.sRootNode);
+
+                        auto skeleton_fb = CreateSkeleton(
+                                        oBuilder,
+                                        oBuilder.CreateVector(vJoints));
+
+                        skeleton_holder_fb = CreateSkeletonHolder(
+                                        oBuilder,
+                                        skeleton_fb,
+                                        0,
+                                        oBuilder.CreateString(oModel.oSkeleton.sName)
+                                        );
+                }
+                //___End_____ skeleton
 
                 auto model_fb = CreateAnimatedModel(
                                 oBuilder,
                                 mesh_holder_fb,
                                 material_holder_fb,
                                 blendshapes_fb,
-                                oBuilder.CreateVector(oModel.oBlendShape.vDefaultWeights)
+                                default_weights_fb,
+                                skeleton_root_node_fb,
+                                skeleton_holder_fb
                                 ).Union();
                 return { CreateComponent(oBuilder, ComponentU::AnimatedModel, model_fb), uSUCCESS };
         }

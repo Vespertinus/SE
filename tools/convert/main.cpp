@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
                         ("info_prop",    bpo::value<bool>()->default_value(true),               "import custom data from fbx node property ('info') as string")
                         ("blendshapes",  bpo::value<bool>()->default_value(false),              "import blend shapes (morph target)")
                         ("disable_nodes", bpo::value<bool>()->default_value(false),             "all scene nodes stored in disabled state")
+                        ("skin",        bpo::value<bool>()->default_value(false),               "import mesh skin")
                         ;
 
                 bpo::variables_map vm;
@@ -125,6 +126,7 @@ int main(int argc, char **argv) {
                 oCtx.import_info_prop           = vm["info_prop"].as<bool>();
                 oCtx.import_blend_shapes        = vm["blendshapes"].as<bool>();
                 oCtx.disable_nodes              = vm["disable_nodes"].as<bool>();
+                oCtx.import_skin                = vm["skin"].as<bool>();
         }
         catch (std::exception & ex) {
                 log_e("parsing input exception catched, reason: '{}'", ex.what());

@@ -39,6 +39,67 @@ namespace TOOLS {
 ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx);
 
 
+struct SkinVertInfo {
+        glm::vec4       weights{0};
+        uint8_t         indices[4]{0};
+        uint8_t         cur_joint{0};
+
+        uint8_t AddJoint(const uint8_t joint_id, const float weight, const uint32_t vert_id);
+        void    Normalize();
+};
+
+uint8_t SkinVertInfo::AddJoint(const uint8_t joint_id, const float weight, const uint32_t vert_id) {
+
+        /** exceed allowed joints cnt per vertex
+            drop joint with smallest weight
+            later re normalize weights
+        */
+        if (cur_joint >= 4) {
+                float   min_w   = weights[0];
+                uint8_t min_ind = 0;
+
+                for (uint8_t i = 1; i < 4; ++i) {
+                        if (weights[i] < min_w) {
+                                min_w   = weights[i];
+                                min_ind = i;
+                        }
+                }
+
+                if (weight < min_w) {
+                        log_w("drop {} joint info (only 4 allowed) for vertex: {}, joint id: {}, weight: {}",
+                                        cur_joint + 1,
+                                        vert_id,
+                                        joint_id,
+                                        weight);
+                        return ++cur_joint;
+                }
+
+                log_w("drop {} joint info (only 4 allowed) for vertex: {}, joint id: {}, weight: {}",
+                                cur_joint + 1,
+                                vert_id,
+                                indices[min_ind],
+                                weights[min_ind]);
+
+                weights[min_ind] = weight;
+                indices[min_ind] = joint_id;
+        }
+        else {
+                weights[cur_joint] = weight;
+                indices[cur_joint] = joint_id;
+        }
+
+        return ++cur_joint;
+}
+
+void SkinVertInfo::Normalize() {
+
+        if (cur_joint <= 4) { return; }
+
+        float sum_w = weights.x + weights.y + weights.z + weights.w;
+        weights *= 1 / sum_w;
+}
+
+
 FBXReader::FBXReader() {
 
         pManager = FbxManager::Create();
@@ -377,6 +438,214 @@ data layout inside buffer:
         return uSUCCESS;
 }
 
+static ret_code_t ImportSkin(
+                FbxMesh * pMesh,
+                ModelData & oModel,
+                const std::unordered_map<uint32_t, std::unordered_set<uint32_t>> & mRemapIndex,
+                const uint32_t remaped_vertices_cnt) {
+
+        uint32_t skin_cnt               = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+        int32_t  input_vertices_cnt     = pMesh->GetControlPointsCount();
+
+        if (!skin_cnt) { return uSUCCESS; }
+        else if (skin_cnt > 1) {
+                log_w("import only first skin deformer per mesh");
+        }
+
+        uint8_t  joints_per_vertex{0};
+        uint8_t  cur_joints_per_vertes{0};
+        uint32_t cluster_cnt       = ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetClusterCount();
+        uint32_t cur_pos;
+        std::unordered_map<std::string, uint8_t> mJoints;
+
+        std::vector<SkinVertInfo> vSkinInfo(input_vertices_cnt);
+        FbxCluster * pCluster;
+        oModel.oSkeleton.vJoints.reserve(cluster_cnt);
+
+        //find max joints per vertex
+        for (uint32_t i = 0; i < cluster_cnt; ++i) {
+
+                pCluster = ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(i);
+                if (pCluster->GetLinkMode() != FbxCluster::ELinkMode::eNormalize) {
+                        log_e("unsupported cluster link mode: '{}'", pCluster->GetLinkMode());
+                }
+
+                uint32_t indices_cnt    = pCluster->GetControlPointIndicesCount();
+                int32_t * pIndices      = pCluster->GetControlPointIndices();
+                double  * pWeights      = pCluster->GetControlPointWeights();
+
+                log_d("cluster({}) link node: '{}', vert indices cnt: {}",
+                                i,
+                                pCluster->GetLink()->GetName(),
+                                indices_cnt);
+
+                //FIXME sort names
+                oModel.oSkeleton.sName += pCluster->GetLink()->GetName();
+
+                for (uint32_t j = 0; j < indices_cnt; ++j) {
+                        se_assert(static_cast<uint32_t>(pIndices[j]) < vSkinInfo.size());
+                        cur_joints_per_vertes = vSkinInfo[pIndices[j]].AddJoint(i, pWeights[j], pIndices[j]);
+                        if (cur_joints_per_vertes > joints_per_vertex) {
+                                joints_per_vertex = cur_joints_per_vertes;
+                        }
+                }
+
+                //fill joint info
+                JointData oCurJoint;
+                oCurJoint.sName = pCluster->GetLink()->GetName();
+
+                if (pCluster->GetLink()->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
+
+                        log_e("wrong joint node: '{}', attribute type != FbxNodeAttribute::eSkeleton", oCurJoint.sName);
+                        return uWRONG_INPUT_DATA;
+                }
+
+                FbxSkeleton* pJoint = (FbxSkeleton*) pCluster->GetLink()->GetNodeAttribute();
+                if (pJoint->IsSkeletonRoot()) {
+                        oCurJoint.parent_index = JointData::ROOT_PARENT_IND;
+                        if (auto * pParent = pCluster->GetLink()->GetParent()) {
+                                oModel.sRootNode = pParent->GetName();
+                        }
+                }
+
+                FbxAMatrix pLinkTransformMatrix;
+                pLinkTransformMatrix = pCluster->GetTransformLinkMatrix(pLinkTransformMatrix);
+
+                FbxVector4 vBindPos     = pLinkTransformMatrix.GetT();
+                FbxVector4 vBindScale   = pLinkTransformMatrix.GetS();
+                FbxQuaternion qRot      = pLinkTransformMatrix.GetQ();
+
+                oCurJoint.bind_pos      = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
+                oCurJoint.bind_scale    = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
+                oCurJoint.bind_rot      = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
+
+                mJoints.emplace(oCurJoint.sName, oModel.oSkeleton.vJoints.size());
+                oModel.oSkeleton.vJoints.emplace_back(std::move(oCurJoint));
+        }
+
+        oModel.oSkeleton.sName = fmt::format("sk:{}:{}", cluster_cnt, StrID(oModel.oSkeleton.sName));
+
+        //fill joints parent index
+        for (uint32_t i = 0; i < cluster_cnt; ++i) {
+
+                //log_d("joint: '{}', parent_index: {}", oModel.oSkeleton.vJoints[i].sName, oModel.oSkeleton.vJoints[i].parent_index);
+
+                pCluster = ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(i);
+                auto * pParent = pCluster->GetLink()->GetParent();
+                if (!pParent) { continue; }
+
+                auto itParentInd = mJoints.find(pParent->GetName());
+                if (itParentInd == mJoints.end()) {
+                        //root node, it's ok
+                        if (oModel.oSkeleton.vJoints[i].parent_index == JointData::ROOT_PARENT_IND) {
+                                continue;
+                        }
+
+                        auto * pInitialParent = pParent;
+                        pParent = pParent->GetParent();
+                        while (pParent) {
+
+                                itParentInd = mJoints.find(pParent->GetName());
+                                if (itParentInd == mJoints.end()) {
+                                        pParent = pParent->GetParent();
+                                }
+                                else {
+                                        log_d("joint '{}' forward parent from '{}' to '{}'",
+                                                        oModel.oSkeleton.vJoints[i].sName,
+                                                        pInitialParent->GetName(),
+                                                        pParent->GetName());
+                                        break;
+                                }
+                        }
+
+                        if (!pParent) {
+
+                                log_e("joint '{}' parent ({}) outside joints hierarchy",
+                                                oModel.oSkeleton.vJoints[i].sName,
+                                                pInitialParent->GetName());
+                                return uWRONG_INPUT_DATA;
+                        }
+                }
+
+                oModel.oSkeleton.vJoints[i].parent_index = itParentInd->second;
+        }
+
+
+        if (joints_per_vertex == 0) {
+                log_e("empty cluster, no one vertex weight found");
+                return uWRONG_INPUT_DATA;
+        }
+        else if (joints_per_vertex > 4) {
+
+                log_w("some joint weights were dropped, too much clusters per vertex: {}, max 4 allowed",
+                                joints_per_vertex);
+                joints_per_vertex = 4;
+
+                /** we need to renormalize only if some joints were dropped */
+                for (auto & item : vSkinInfo) {
+                        item.Normalize();
+                }
+        }
+
+        /* DEBUG
+        for (uint32_t i = 0; i < vSkinInfo.size(); ++i) {
+
+                log_d("vert: {} weights: ({:<10}, {:<10}, {:<10}, {:<10})",
+                                i,
+                                vSkinInfo[i].weights.x,
+                                vSkinInfo[i].weights.y,
+                                vSkinInfo[i].weights.z,
+                                vSkinInfo[i].weights.w);
+        }*/
+
+        //remap vertices, compress and write into output buffer
+        std::vector<float>      vWeightsBuffer(remaped_vertices_cnt * joints_per_vertex);
+        std::vector<uint8_t>    vIndicesBuffer(remaped_vertices_cnt * joints_per_vertex);
+
+        for (uint32_t i = 0; i < vSkinInfo.size(); ++i) {
+
+                auto it = mRemapIndex.find(i);
+                if (it == mRemapIndex.end()) {
+                        log_w("vertex {} unused in vertex index");
+                        continue;
+                }
+
+                for (auto new_index : it->second) {
+
+                        cur_pos = new_index * joints_per_vertex;
+                        memcpy(&vWeightsBuffer[cur_pos], &vSkinInfo[i].weights[0], sizeof(float) * joints_per_vertex);
+                        memcpy(&vIndicesBuffer[cur_pos], &vSkinInfo[i].indices[0], sizeof(uint8_t) * joints_per_vertex);
+                }
+        }
+
+        log_d("skeleton: '{}', root node: '{}', cluster cnt: {}, joints_per_vertex: {}", oModel.oSkeleton.sName, oModel.sRootNode, cluster_cnt, joints_per_vertex);
+
+        uint8_t stride = joints_per_vertex * sizeof(float);
+        uint8_t weights_buffer_ind = oModel.oMesh.vVertexBuffers.size();
+        oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vWeightsBuffer), stride});
+        //TODO write indices and weights in one buffer
+        stride = joints_per_vertex * sizeof(uint8_t);
+        uint8_t indices_buffer_ind = oModel.oMesh.vVertexBuffers.size();
+        oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vIndicesBuffer), stride});
+
+        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+                        "JointWeights",
+                        0,
+                        joints_per_vertex,
+                        weights_buffer_ind });
+
+        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+                        "JointIndices",
+                        0,
+                        joints_per_vertex,
+                        indices_buffer_ind,
+                        joints_per_vertex,
+                        MeshData::VertexAttribute::Type::DEST_INT});
+
+
+        return uSUCCESS;
+}
+
 //TODO import sub meshes by materials
 static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
 
@@ -618,12 +887,6 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                         oVertexIndex.Size(),
                         index_size);
 
-        //import blend shapes
-        if (oCtx.import_blend_shapes) {
-                oModel.oBlendShape.sName = oCtx.sPackName;
-                ImportBlendShapes(pMesh, oModel.oBlendShape, mRemapIndex, oVertexIndex.Size());
-        }
-
         oCtx.total_triangles_cnt += polygon_cnt;
         ++oCtx.mesh_cnt;
 
@@ -632,6 +895,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
         oBBox.Calc(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE);
         oModel.oMesh.vShapes.emplace_back(0, index_size, std::move(oBBox));
 
+        uint8_t buffer_ind = oModel.oMesh.vVertexBuffers.size();
         oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vVertices), stride});
 
         uint16_t next_offset = 3;
@@ -640,20 +904,31 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                         "Position",
                         0,
                         3,
-                        0 });
+                        buffer_ind });
         if (!oCtx.skip_normals) {
                 oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
                                 "Normal",
                                 static_cast<uint16_t>(3 * sizeof(float)),
                                 3,
-                                0 });
+                                buffer_ind });
                 next_offset = 6;
         }
         oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
                         "TexCoord0",
                         static_cast<uint16_t>(next_offset * sizeof(float)),
                         2,
-                        0 });
+                        buffer_ind });
+
+        //import vertex deformers
+        if (oCtx.import_blend_shapes) {
+                oModel.oBlendShape.sName = oCtx.sPackName;
+                auto res = ImportBlendShapes(pMesh, oModel.oBlendShape, mRemapIndex, oVertexIndex.Size());
+                if (res != uSUCCESS) { return res; }
+        }
+        if (oCtx.import_skin) {
+                auto res = ImportSkin(pMesh, oModel, mRemapIndex, oVertexIndex.Size());
+                if (res != uSUCCESS) { return res; }
+        }
 
 
         //currently only one shape per mesh
