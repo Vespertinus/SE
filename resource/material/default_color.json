@@ -1,0 +1,6 @@
+{
+        "shader": {
+                "path": "shader_program/simple_color.sesp"
+        }
+}
+
