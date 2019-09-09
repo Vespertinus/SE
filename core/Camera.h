@@ -87,6 +87,8 @@ class Camera {
         void                    SetRotation(const float new_x, const float new_y, const float new_z);
         void                    SetFOV(const float new_fov);
         void                    SetProjection(const Projection proj);
+        Projection              GetProjection() const;
+        void                    ToggleProjection();
 
         //Rotate
         //Translate

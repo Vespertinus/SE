@@ -101,7 +101,7 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 
 - план:
 -- material | instances
---- blocks: material, transform (obj), lighting, etc..
++++ blocks: material, transform (obj), lighting, etc..
 ---- кто проставляет остальные блоки.
 --- для clone можно хранить uint16_t clone_call_cnt внутри resource base - и делать +1 каждый вызов clone, затем использовать его как имя ресурса.
 -- EGL
@@ -122,4 +122,4 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 - GTEST
 
 - Transform forward -> +X
-- хорошо бы что бы Update Camera выполнялся раньше остальных компонентов.. или неважно
++ хорошо бы что бы Update Camera выполнялся раньше остальных компонентов.. или неважно

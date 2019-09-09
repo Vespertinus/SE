@@ -86,6 +86,7 @@ void Camera::RecalcVolume() {
 void Camera::RecalcProjection() {
 
         RecalcVolume();
+        UpdateZoom();
 
         if (!(flags & Dirty::PROJECTION)) { return; }
 
@@ -103,7 +104,6 @@ void Camera::RecalcProjection() {
                         break;
 
                 case Projection::ORTHO:
-                        UpdateZoom();
                         mProjection = glm::ortho (
                                         oVolume.left / zoom,
                                         oVolume.right / zoom,
@@ -245,6 +245,22 @@ void Camera::SetProjection(const Projection proj) {
 
         oVolume.projection = proj;
         flags |= Dirty::PROJECTION;
+}
+
+Camera::Projection Camera::GetProjection() const {
+
+        return oVolume.projection;
+}
+
+void Camera::ToggleProjection() {
+
+        if (oVolume.projection == Projection::PERSPECTIVE) {
+                oVolume.projection = Projection::ORTHO;
+        }
+        else {
+                oVolume.projection = Projection::PERSPECTIVE;
+        }
+        flags |= Dirty::VOLUME;
 }
 
 //THINK
