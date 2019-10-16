@@ -382,7 +382,9 @@ data layout inside buffer:
 
                                 auto it = mRemapIndex.find(i);
                                 if (it == mRemapIndex.end()) {
-                                        log_w("BlendShape channel: '{}' vertex {} unused in vertex index");
+                                        log_w("BlendShape channel: '{}' vertex {} unused in vertex index",
+                                                        bs_channel_ind,
+                                                        i);
                                         continue;
                                 }
 
@@ -438,6 +440,121 @@ data layout inside buffer:
         return uSUCCESS;
 }
 
+static ret_code_t ImportSkeleton(
+                ModelData & oModel,
+                FbxNode * pJointNode,
+                std::unordered_map<std::string, uint8_t> & mJoints) {
+
+        if (!oModel.oShell.oSkeleton.sName.empty()) { return uSUCCESS; }
+
+        FbxNode * pCurNode = pJointNode;
+        FbxNode * pRootNode{};
+        std::vector<FbxNode *> vJointFbxNodes;
+        //std::unordered_map<std::string, uint8_t> mJoints;
+
+        while (pCurNode) {
+        
+                if (pCurNode->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
+
+                        log_e("wrong joint node: '{}', attribute type != FbxNodeAttribute::eSkeleton", pCurNode->GetName());
+                        return uWRONG_INPUT_DATA;
+                }
+
+                FbxSkeleton * pJoint = (FbxSkeleton*) pCurNode->GetNodeAttribute();
+                if (pJoint->IsSkeletonRoot()) {
+                        /*
+                        oCurJoint.parent_index = JointData::ROOT_PARENT_IND;
+                        if (auto * pParent = pCluster->GetLink()->GetParent()) {
+                                oModel.sRootNode = pParent->GetName();
+                        }*/
+                        pRootNode = pCurNode;
+                        break;
+                }
+                pCurNode = pCurNode->GetParent();
+        }
+
+        if (!pRootNode) {
+                log_e("failed to find skeleton root node for joint node: '{}'", pJointNode->GetName());
+                return uWRONG_INPUT_DATA;
+        }
+
+        mJoints.emplace(pRootNode->GetName(), 0);
+        vJointFbxNodes.emplace_back(pRootNode);
+
+        std::function<ret_code_t (FbxNode * pCurNode) > ProcessSkeletonNode;
+        ProcessSkeletonNode = [pRootNode, &oModel, &vJointFbxNodes, &mJoints, &ProcessSkeletonNode](FbxNode * pCurNode) {
+                
+                auto child_cnt = pCurNode->GetChildCount();
+                for (auto i = 0; i < child_cnt; ++i) {
+                        FbxNode * pChild = pCurNode->GetChild(i);
+                        
+                        if (pChild->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
+                                continue;
+                        }
+
+                        log_d("append joint node: '{}' to skeleton", pChild->GetName() );
+                        mJoints.emplace(pChild->GetName(), vJointFbxNodes.size());
+                        vJointFbxNodes.emplace_back(pChild);
+
+                        if (auto res = ProcessSkeletonNode(pChild); res != uSUCCESS) {
+                                return res;
+                        }
+                }
+
+                return uSUCCESS;
+        };
+
+        ProcessSkeletonNode(pRootNode);
+
+        log_d("build skeleton with {} joints", vJointFbxNodes.size());
+
+        if (auto * pParent = vJointFbxNodes[0]->GetParent()) {
+                oModel.oShell.sRootNode = pParent->GetName();
+        }
+        else {
+                oModel.oShell.sRootNode = vJointFbxNodes[0]->GetName();
+        };
+
+        //THINK duplication in differet fbx..
+        //same with skeleton?
+        oModel.oShell.sName = fmt::format("cs:{}", StrID(oModel.oShell.sRootNode));
+        
+        oModel.oShell.oSkeleton.sName = vJointFbxNodes[0]->GetName();
+        oModel.oShell.oSkeleton.vJoints.emplace_back(JointData{vJointFbxNodes[0]->GetName(), JointData::ROOT_PARENT_IND});
+
+        for (uint8_t i = 1; i < vJointFbxNodes.size(); ++i) {
+        
+                auto * pParent = vJointFbxNodes[i]->GetParent();
+                //if (!pParent) { continue; }//THINK
+                se_assert(pParent);
+
+                auto itParentInd = mJoints.find(pParent->GetName());
+                if (itParentInd == mJoints.end()) {
+
+                        log_e("joint '{}' parent ({}) outside joints hierarchy",
+                                        vJointFbxNodes[i]->GetName(),
+                                        pParent->GetName());
+                        return uWRONG_INPUT_DATA;
+                }
+                
+                oModel.oShell.oSkeleton.sName += vJointFbxNodes[i]->GetName();
+
+                JointData oCurJoint;
+                oCurJoint.sName         = vJointFbxNodes[i]->GetName();
+                oCurJoint.parent_index  = itParentInd->second;
+
+                oModel.oShell.oSkeleton.vJoints.emplace_back(std::move(oCurJoint));
+        }
+        
+        oModel.oShell.oSkeleton.sName = fmt::format("sk:{}:{}", 
+                        oModel.oShell.oSkeleton.vJoints.size(), 
+                        StrID(oModel.oShell.oSkeleton.sName));
+
+        //TODO set oShell.sName
+
+        return uSUCCESS;
+}
+
 static ret_code_t ImportSkin(
                 FbxMesh * pMesh,
                 ModelData & oModel,
@@ -458,9 +575,21 @@ static ret_code_t ImportSkin(
         uint32_t cur_pos;
         std::unordered_map<std::string, uint8_t> mJoints;
 
+        if (!cluster_cnt) { 
+                log_w("zero clusters");
+                return uSUCCESS;
+        }
+
+        auto * pInitialJointNode =  ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(0)->GetLink();
+        if (auto res = ImportSkeleton(oModel, pInitialJointNode, mJoints); res != uSUCCESS) {
+                return res;
+        }
+
         std::vector<SkinVertInfo> vSkinInfo(input_vertices_cnt);
         FbxCluster * pCluster;
-        oModel.oSkeleton.vJoints.reserve(cluster_cnt);
+        oModel.oShell.oSkeleton.vJoints.reserve(cluster_cnt);
+
+        log_d("node: '{}', try to import {} clusters", oModel.oMesh.sName, cluster_cnt);
 
         //find max joints per vertex
         for (uint32_t i = 0; i < cluster_cnt; ++i) {
@@ -479,9 +608,6 @@ static ret_code_t ImportSkin(
                                 pCluster->GetLink()->GetName(),
                                 indices_cnt);
 
-                //FIXME sort names
-                oModel.oSkeleton.sName += pCluster->GetLink()->GetName();
-
                 for (uint32_t j = 0; j < indices_cnt; ++j) {
                         se_assert(static_cast<uint32_t>(pIndices[j]) < vSkinInfo.size());
                         cur_joints_per_vertes = vSkinInfo[pIndices[j]].AddJoint(i, pWeights[j], pIndices[j]);
@@ -489,23 +615,25 @@ static ret_code_t ImportSkin(
                                 joints_per_vertex = cur_joints_per_vertes;
                         }
                 }
+                
+                auto itJointInd = mJoints.find(pCluster->GetLink()->GetName());
+                if (itJointInd == mJoints.end()) {
 
-                //fill joint info
-                JointData oCurJoint;
-                oCurJoint.sName = pCluster->GetLink()->GetName();
-
-                if (pCluster->GetLink()->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
-
-                        log_e("wrong joint node: '{}', attribute type != FbxNodeAttribute::eSkeleton", oCurJoint.sName);
+                        log_e("joint '{}' not found in skeleton: '{}'",
+                                        pCluster->GetLink()->GetName(),
+                                        oModel.oShell.oSkeleton.sName);
                         return uWRONG_INPUT_DATA;
                 }
 
-                FbxSkeleton* pJoint = (FbxSkeleton*) pCluster->GetLink()->GetNodeAttribute();
-                if (pJoint->IsSkeletonRoot()) {
-                        oCurJoint.parent_index = JointData::ROOT_PARENT_IND;
-                        if (auto * pParent = pCluster->GetLink()->GetParent()) {
-                                oModel.sRootNode = pParent->GetName();
-                        }
+                //fill joint info
+                JointBindPoseData oCurJoint;
+                //oCurJoint.sName = pCluster->GetLink()->GetName();
+
+                if (pCluster->GetLink()->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
+
+                        log_e("wrong joint node: '{}', attribute type != FbxNodeAttribute::eSkeleton", 
+                                        pCluster->GetLink()->GetName());
+                        return uWRONG_INPUT_DATA;
                 }
 
                 FbxAMatrix pLinkTransformMatrix;
@@ -519,56 +647,14 @@ static ret_code_t ImportSkin(
                 oCurJoint.bind_scale    = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
                 oCurJoint.bind_rot      = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
 
-                mJoints.emplace(oCurJoint.sName, oModel.oSkeleton.vJoints.size());
-                oModel.oSkeleton.vJoints.emplace_back(std::move(oCurJoint));
+                //mJoints.emplace(oCurJoint.sName, oModel.oSkeleton.vJoints.size());
+                //--> oModel.oSkeleton.vJoints.emplace_back(std::move(oCurJoint));
+                //TODO match cluser link with current;
+                oModel.vJointIndexes.emplace_back(itJointInd->second);
+                oModel.vJointBindPose.emplace_back(std::move(oCurJoint));
         }
 
-        oModel.oSkeleton.sName = fmt::format("sk:{}:{}", cluster_cnt, StrID(oModel.oSkeleton.sName));
-
-        //fill joints parent index
-        for (uint32_t i = 0; i < cluster_cnt; ++i) {
-
-                //log_d("joint: '{}', parent_index: {}", oModel.oSkeleton.vJoints[i].sName, oModel.oSkeleton.vJoints[i].parent_index);
-
-                pCluster = ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(i);
-                auto * pParent = pCluster->GetLink()->GetParent();
-                if (!pParent) { continue; }
-
-                auto itParentInd = mJoints.find(pParent->GetName());
-                if (itParentInd == mJoints.end()) {
-                        //root node, it's ok
-                        if (oModel.oSkeleton.vJoints[i].parent_index == JointData::ROOT_PARENT_IND) {
-                                continue;
-                        }
-
-                        auto * pInitialParent = pParent;
-                        pParent = pParent->GetParent();
-                        while (pParent) {
-
-                                itParentInd = mJoints.find(pParent->GetName());
-                                if (itParentInd == mJoints.end()) {
-                                        pParent = pParent->GetParent();
-                                }
-                                else {
-                                        log_d("joint '{}' forward parent from '{}' to '{}'",
-                                                        oModel.oSkeleton.vJoints[i].sName,
-                                                        pInitialParent->GetName(),
-                                                        pParent->GetName());
-                                        break;
-                                }
-                        }
-
-                        if (!pParent) {
-
-                                log_e("joint '{}' parent ({}) outside joints hierarchy",
-                                                oModel.oSkeleton.vJoints[i].sName,
-                                                pInitialParent->GetName());
-                                return uWRONG_INPUT_DATA;
-                        }
-                }
-
-                oModel.oSkeleton.vJoints[i].parent_index = itParentInd->second;
-        }
+        //oModel.oSkeleton.sName = fmt::format("sk:{}:{}", cluster_cnt, StrID(oModel.oSkeleton.sName));
 
 
         if (joints_per_vertex == 0) {
@@ -618,7 +704,11 @@ static ret_code_t ImportSkin(
                 }
         }
 
-        log_d("skeleton: '{}', root node: '{}', cluster cnt: {}, joints_per_vertex: {}", oModel.oSkeleton.sName, oModel.sRootNode, cluster_cnt, joints_per_vertex);
+        log_d("skeleton: '{}', root node: '{}', cluster cnt: {}, joints_per_vertex: {}", 
+                        oModel.oShell.oSkeleton.sName,
+                        oModel.oShell.sRootNode,
+                        cluster_cnt,
+                        joints_per_vertex);
 
         uint8_t stride = joints_per_vertex * sizeof(float);
         uint8_t weights_buffer_ind = oModel.oMesh.vVertexBuffers.size();

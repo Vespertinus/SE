@@ -7,22 +7,7 @@
 namespace SE {
 
 class Skeleton;
-
-struct SkeletonData {
-
-        Skeleton      * pSkeleton{};
-        std::vector<TSceneTree::TSceneNodeWeak> vJointNodes;
-        std::vector<glm::mat4> vJointBaseMat;
-
-        ret_code_t FillData(const SE::FlatBuffers::SkeletonHolder * pSkeletonHolder,
-                     std::string_view sSkeletonRootNode,
-                     TSceneTree::TSceneNodeExact * pTargetNode);
-
-        /**
-         build from new root node
-         re assign skeleton
-         */
-};
+class CharacterShell;
 
 class AnimatedModel : public StaticModel {
 
@@ -32,9 +17,25 @@ class AnimatedModel : public StaticModel {
         static const StrID JOINTS_PER_VERTEX;
         static const StrID JOINTS_MATRICES;
 
+        struct SkeletonPart {
+        
+                std::vector<glm::mat4>  vJointBaseMat;
+                std::vector<uint8_t>    vJointIndexes;
+                CharacterShell        * pShell{};
+                
+                /*ret_code_t FillData(
+                                const SE::FlatBuffers::CharacterShellHolder * pHolder,
+                                const flatbuffers::Vector<uint8_t> * pJointIndices,
+                                TSceneTree::TSceneNodeExact * pTargetNode);*/
+                ret_code_t FillData(
+                                const SE::FlatBuffers::AnimatedModel * pModel,
+                                TSceneTree::TSceneNodeExact * pTargetNode);
+        };
+
         TTexture                      * pTexBuffer{};
         std::unique_ptr<UniformBlock>   pBlock;
-        SkeletonData                    oSkeleton;
+        //CharacterShell                    oSkeleton;
+        SkeletonPart                    oSkeletonMeta;
         uint8_t                         blendshapes_cnt{};
         /** supported max 4 */ //THINK inside Mesh
         uint8_t                         joints_per_vertex{};

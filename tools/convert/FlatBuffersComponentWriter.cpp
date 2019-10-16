@@ -148,7 +148,7 @@ TComponentOffset SerializeModel(
                         oBuilder.CreateString(oModel.oMesh.sName)
                         );
 
-        if (oModel.oBlendShape.vDefaultWeights.size() == 0 && oModel.oSkeleton.vJoints.size() == 0) { //StaticModel
+        if (oModel.oBlendShape.vDefaultWeights.size() == 0 && oModel.vJointIndexes.size() == 0) { //StaticModel
 
 
                 auto model_fb = CreateStaticModel(
@@ -169,9 +169,18 @@ TComponentOffset SerializeModel(
                 flatbuffers::Offset<
                         SkeletonHolder
                         >                               skeleton_holder_fb      = 0;
+
                 flatbuffers::Offset<
-                        flatbuffers::String
-                        >                               skeleton_root_node_fb   = 0;
+                        flatbuffers::Vector<uint8_t>
+                        >                               joint_indexes_fb        = 0;
+                flatbuffers::Offset<
+                        flatbuffers::Vector<
+                                flatbuffers::Offset<JointBind>
+                                >
+                        >                               joint_bind_mat_fb       = 0;
+                flatbuffers::Offset<
+                        CharacterShellHolder
+                        >                               shell_fb                = 0;
 
 
                 //___Start___ bs
@@ -200,24 +209,22 @@ TComponentOffset SerializeModel(
                 //___End_____ bs
 
                 //___Start___ skeleton
-                if (oModel.oSkeleton.vJoints.size() != 0) {
+                if (oModel.vJointIndexes.size() != 0) {
+
 
                         std::vector<flatbuffers::Offset<SE::FlatBuffers::Joint>>        vJoints;
-                        vJoints.reserve(oModel.oSkeleton.vJoints.size());
+                        vJoints.reserve(oModel.oShell.oSkeleton.vJoints.size());
 
-                        for (auto & oItem : oModel.oSkeleton.vJoints) {
+                        for (auto & oItem : oModel.oShell.oSkeleton.vJoints) {
                                 vJoints.emplace_back(
                                                 CreateJoint(
                                                         oBuilder,
                                                         oBuilder.CreateString(oItem.sName),
-                                                        reinterpret_cast<const SE::FlatBuffers::Vec4 *>(&oItem.bind_rot[0]),
-                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_pos[0]),
-                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_scale[0]),
                                                         oItem.parent_index)
                                                 );
                         }
 
-                        skeleton_root_node_fb = oBuilder.CreateString(oModel.sRootNode);
+                        //skeleton_root_node_fb = oBuilder.CreateString(oModel.sRootNode);
 
                         auto skeleton_fb = CreateSkeleton(
                                         oBuilder,
@@ -227,8 +234,38 @@ TComponentOffset SerializeModel(
                                         oBuilder,
                                         skeleton_fb,
                                         0,
-                                        oBuilder.CreateString(oModel.oSkeleton.sName)
+                                        oBuilder.CreateString(oModel.oShell.oSkeleton.sName)
                                         );
+
+                        //--->
+                        auto shell_base_fb = CreateCharacterShell(
+                                        oBuilder,
+                                        oBuilder.CreateString(oModel.oShell.sRootNode),
+                                        skeleton_holder_fb);
+
+                        shell_fb = CreateCharacterShellHolder(
+                                        oBuilder,
+                                        shell_base_fb,
+                                        0,
+                                        oBuilder.CreateString(oModel.oShell.sName)
+                                        );
+                        //--->
+                        std::vector<flatbuffers::Offset<SE::FlatBuffers::JointBind>> vJointsBind;
+                        vJointsBind.reserve(oModel.vJointBindPose.size());
+
+                        for (auto & oItem : oModel.vJointBindPose) {
+                                vJointsBind.emplace_back(
+                                                CreateJointBind(
+                                                        oBuilder,
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec4 *>(&oItem.bind_rot[0]),
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_pos[0]),
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_scale[0])
+                                                        )
+                                                );
+                        }
+
+                        joint_indexes_fb        = oBuilder.CreateVector(oModel.vJointIndexes);
+                        joint_bind_mat_fb       = oBuilder.CreateVector(vJointsBind);
                 }
                 //___End_____ skeleton
 
@@ -238,8 +275,11 @@ TComponentOffset SerializeModel(
                                 material_holder_fb,
                                 blendshapes_fb,
                                 default_weights_fb,
-                                skeleton_root_node_fb,
-                                skeleton_holder_fb
+                                //skeleton_root_node_fb,
+                                //skeleton_holder_fb
+                                shell_fb,
+                                joint_indexes_fb,
+                                joint_bind_mat_fb
                                 ).Union();
                 return { CreateComponent(oBuilder, ComponentU::AnimatedModel, model_fb), uSUCCESS };
         }

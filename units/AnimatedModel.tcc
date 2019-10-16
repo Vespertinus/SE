@@ -7,73 +7,76 @@ const StrID AnimatedModel::JOINTS_CNT           = "JointsCnt";
 const StrID AnimatedModel::JOINTS_PER_VERTEX    = "JointsPerVertex";
 const StrID AnimatedModel::JOINTS_MATRICES      = "JointsMatrices";
 
-ret_code_t SkeletonData::FillData(
-                const SE::FlatBuffers::SkeletonHolder * pSkeletonHolder,
-                std::string_view sSkeletonRootNode,
+
+/*ret_code_t AnimatedModel::SkeletonPart::FillData(
+                const SE::FlatBuffers::CharacterShellHolder * pHolder,
+                const flatbuffers::Vector<uint8_t> * pJointIndices,
+                const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::JointBind>>> * pJointBindMat,
+                TSceneTree::TSceneNodeExact * pTargetNode) */
+
+ret_code_t AnimatedModel::SkeletonPart::FillData(
+                const SE::FlatBuffers::AnimatedModel * pModel,
                 TSceneTree::TSceneNodeExact * pTargetNode) {
 
-        if (!pSkeletonHolder) { return uSUCCESS; }
+        const auto * pHolder            = pModel->shell();
+        const auto * pJointIndices      = pModel->joint_indexes();
+        const auto * pJointBindMat      = pModel->joint_bind_mat();
+        
+        if (!pHolder || !pJointIndices || ! pJointBindMat || (pJointIndices->Length() != pJointBindMat->Length())) { return uSUCCESS; }
 
-        if (pSkeletonHolder->path() != nullptr) {
-                pSkeleton = CreateResource<Skeleton>(GetSystem<Config>().sResourceDir + pSkeletonHolder->path()->c_str());
+        if (pHolder->path() != nullptr) {
+                pShell = CreateResource<CharacterShell>(GetSystem<Config>().sResourceDir + pHolder->path()->c_str(), pTargetNode);
         }
-        else if (pSkeletonHolder->name() != nullptr && pSkeletonHolder->skeleton() != nullptr) {
-                pSkeleton = CreateResource<Skeleton>(
-                                pSkeletonHolder->name()->c_str(),
-                                pSkeletonHolder->skeleton());
+        else if (pHolder->name() != nullptr && pHolder->shell() != nullptr) {
+                pShell = CreateResource<CharacterShell>(
+                                pHolder->name()->c_str(),
+                                pHolder->shell(),
+                                pTargetNode);
         }
         else {
-                log_e("wrong skeleton holder state, skeleton {:p}, name {:p}",
-                                                (void *)pSkeletonHolder->skeleton(),
-                                                (void *)pSkeletonHolder->name()
+                log_e("wrong character shell holder state, skeleton {:p}, name {:p}",
+                                                (void *)pHolder->shell(),
+                                                (void *)pHolder->name()
                                                 );
                 return uWRONG_INPUT_DATA;
         }
+        
+        //auto & vSkeletonJointsInfo = pShell->GetSkeleton()->Joints();
+        vJointBaseMat.reserve(pJointIndices->Length());
+        vJointIndexes.reserve(pJointIndices->Length());
 
-        auto * pScene = pTargetNode->GetScene();
-        se_assert(pScene);
+        for (uint8_t joint_ind = 0; joint_ind < pJointIndices->Length(); ++joint_ind) {
 
-        auto * vNodes = pScene->FindLocalName(sSkeletonRootNode);
-
-        if (!vNodes || vNodes->size() != 1) {
-
-                log_e("failed to find skeleton root node ('{}'), skeleton name: '{}', target node: '{}'",
-                                                sSkeletonRootNode,
-                                                pSkeleton->Name(),
-                                                pTargetNode->GetName() );
-                return uWRONG_INPUT_DATA;
-        }
-
-        auto & pRootNode = (*vNodes)[0];
-
-        auto & vJoints = pSkeleton->Joints();
-        vJointNodes.reserve(vJointNodes.size());
-        for (auto & oJoint : vJoints) {
-                auto pJointNode = pRootNode->FindChild(oJoint.sName, true);
-                if (!pJointNode) {
-
-                        log_e("failed to find skeleton node ('{}') inside root '{}', skeleton name: '{}', target node: '{}'",
-                                                        oJoint.sName,
-                                                        sSkeletonRootNode,
-                                                        pSkeleton->Name(),
-                                                        pTargetNode->GetName()
-                                                        );
+                uint8_t cur_joint_ind = pJointIndices->Get(joint_ind);
+                if (cur_joint_ind >= pShell->JointNodes().size()) {
+                        log_e("wrong joint index: {}, max allowed: {}, shell: '{}', node: '{}'",
+                                        cur_joint_ind,
+                                        pShell->JointNodes().size(),
+                                        pShell->Name(),
+                                        pTargetNode->GetFullName());
                         return uWRONG_INPUT_DATA;
                 }
 
-                vJointNodes.emplace_back(pJointNode);
+                //auto & oJoint = vSkeletonJointsInfo[cur_joint_ind];
+                auto * pJoint = pJointBindMat->Get(joint_ind);
+                glm::quat bind_qrot     = *reinterpret_cast<const glm::quat *>(pJoint->bind_rot());
+                glm::vec3 bind_pos      = *reinterpret_cast<const glm::vec3 *>(pJoint->bind_pos());
+                glm::vec3 bind_scale    = *reinterpret_cast<const glm::vec3 *>(pJoint->bind_scale());
+
                 //TODO serialize mJointBind on asset import
                 glm::mat4 mJointBind;
-                glm::mat4 mTranslate    = glm::translate(glm::mat4(1.0), oJoint.bind_pos);
-                glm::mat4 mScale        = glm::scale (glm::mat4(1.0), oJoint.bind_scale);
-                glm::mat4 mRotation     = glm::toMat4(oJoint.bind_qrot);
+                glm::mat4 mTranslate    = glm::translate(glm::mat4(1.0), bind_pos);
+                glm::mat4 mScale        = glm::scale (glm::mat4(1.0), bind_scale);
+                glm::mat4 mRotation     = glm::toMat4(bind_qrot);
                 mJointBind  = mTranslate * mRotation * mScale;
 
                 vJointBaseMat.emplace_back(glm::inverse(mJointBind) * pTargetNode->GetTransform().GetWorld());
+                vJointIndexes.emplace_back(cur_joint_ind);
         }
 
         return uSUCCESS;
 }
+
 
 AnimatedModel::AnimatedModel(TSceneTree::TSceneNodeExact * pNewNode,
                              TMesh * pNewMesh,
@@ -202,9 +205,11 @@ AnimatedModel::~AnimatedModel() noexcept {
         Disable();
 
         //THINK move to enable \ disable ???
-        if (oSkeleton.vJointNodes.size()) {
+        if (oSkeletonMeta.pShell) {
+                auto & vJointNodes = oSkeletonMeta.pShell->JointNodes();
 
-                for (auto & pWeakJointNode : oSkeleton.vJointNodes) {
+                for (auto cur_joint : oSkeletonMeta.vJointIndexes) {
+                        auto & pWeakJointNode = vJointNodes[cur_joint];
                         if (auto pJointNode = pWeakJointNode.lock()) {
                                 pJointNode->RemoveListener(this);
                         }
@@ -215,16 +220,19 @@ AnimatedModel::~AnimatedModel() noexcept {
 
 ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel) {
 
-        auto res = oSkeleton.FillData(
-                        pModel->skeleton(),
-                        pModel->skeleton_root_node() ? pModel->skeleton_root_node()->c_str() : "",
+        auto res = oSkeletonMeta.FillData(
+                        pModel,
+                        /*pModel->shell(),
+                        //pModel->skeleton_root_node() ? pModel->skeleton_root_node()->c_str() : "",
+                        pModel->joint_indexes(),
+                        pModel->joint_bind_mat(),*/
                         pNode);
 
         if (res != uSUCCESS) { return res; }
 
         static StrID IndAttrID("JointIndices");
 
-        if (oSkeleton.vJointNodes.size()) {
+        if (oSkeletonMeta.pShell && oSkeletonMeta.pShell->JointNodes().size()) {
 
 
                 for (auto & oAttrInfo : pMesh->GetAttrInfo()) {
@@ -257,12 +265,23 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
                         return res;
                 }
 
-                for (auto & pWeakJointNode : oSkeleton.vJointNodes) {
+                auto & vJointNodes = oSkeletonMeta.pShell->JointNodes();
+
+                for (auto cur_joint : oSkeletonMeta.vJointIndexes) {
+                        if (cur_joint >= vJointNodes.size()) {
+                                log_e("wrong joint ind: {}, count: {}, current node: '{}'",
+                                                cur_joint,
+                                                vJointNodes.size(),
+                                                pNode->GetFullName());
+                                return uWRONG_INPUT_DATA;
+                        }
+
+                        auto & pWeakJointNode = vJointNodes[cur_joint];
                         if (auto pJointNode = pWeakJointNode.lock()) {
                                 pJointNode->AddListener(this);
                         }
                         else {
-                               log_e("failed to get joint node, current node: '{}'", pNode->GetFullName());
+                               log_e("failed to get joint node, current node: '{}', joint ind: {}", pNode->GetFullName(), cur_joint);
                                return uLOGIC_ERROR;
                         }
                 }
@@ -400,13 +419,18 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
 
         if (!skinning_dirty) { return; }
 
-        log_d("need to update skinning: node: '{}', skeleton: '{}'", pNode->GetName(), oSkeleton.pSkeleton->Name());
+        log_d("need to update skinning: node: '{}', shell: '{}', skeleton: '{}'",
+                        pNode->GetName(),
+                        oSkeletonMeta.pShell->Name(),
+                        oSkeletonMeta.pShell->GetSkeleton()->Name());
 
-        for (size_t i = 0; i < oSkeleton.vJointNodes.size(); ++i) {
+        auto & vJointNodes = oSkeletonMeta.pShell->JointNodes();
 
-                if (auto pJointNode = oSkeleton.vJointNodes[i].lock()) {
+        for (size_t i = 0; i < oSkeletonMeta.vJointIndexes.size(); ++i) {
+                
+                if (auto pJointNode = vJointNodes[oSkeletonMeta.vJointIndexes[i]].lock()) {
 
-                        pBlock->SetArrayElement(JOINTS_MATRICES, i, pJointNode->GetTransform().GetWorld() * oSkeleton.vJointBaseMat[i]);
+                        pBlock->SetArrayElement(JOINTS_MATRICES, i, pJointNode->GetTransform().GetWorld() * oSkeletonMeta.vJointBaseMat[i]);
                 }
                 else {
                         pBlock->SetArrayElement(JOINTS_MATRICES, i, pNode->GetTransform().GetWorld());
@@ -431,18 +455,21 @@ void AnimatedModel::Disable() {
 void AnimatedModel::DrawDebug() const {
 
         StaticModel::DrawDebug();
-        if (!oSkeleton.vJointNodes.size()) { return; }
+        if (!oSkeletonMeta.pShell) { return; }
+        
+        auto & vJointNodes      = oSkeletonMeta.pShell->JointNodes();
+        auto pSkeleton          = oSkeletonMeta.pShell->GetSkeleton();
 
-        for (uint32_t i = 0; i < oSkeleton.vJointNodes.size(); ++i) {
+        for (uint32_t i = 0; i < oSkeletonMeta.vJointIndexes.size(); ++i) {
 
-                if (oSkeleton.pSkeleton->Joints()[i].parent_ind == 255) {
+                if (pSkeleton->Joints()[oSkeletonMeta.vJointIndexes[i]].parent_ind == 255) {
                         continue;
                 }
 
-                auto j = oSkeleton.pSkeleton->Joints()[i].parent_ind;
+                auto j = pSkeleton->Joints()[oSkeletonMeta.vJointIndexes[i]].parent_ind;
 
-                if (auto pStart = oSkeleton.vJointNodes[i].lock()) {
-                        if (auto pEnd = oSkeleton.vJointNodes[j].lock()) {
+                if (auto pStart = vJointNodes[oSkeletonMeta.vJointIndexes[i]].lock()) {
+                        if (auto pEnd = vJointNodes[j].lock()) {
 
                                 GetSystem<DebugRenderer>().DrawLine(
                                                 pStart->GetTransform().GetWorldPos(),

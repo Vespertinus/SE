@@ -87,10 +87,10 @@ class ShaderProgramState {
 
         ShaderProgram         * pShader;
         /** material also must contain render state settings (blending, depth, etc) */
-        const Material        * pMaterial;
+        const Material        * pMaterial;//TODO remove material
         //TODO later rewrite on std::array<, MAX_UNIT(16)>
         std::unordered_map<UniformUnitInfo::Type, const UniformBlock *> mShaderBlocks;
-        std::unordered_map<UniformUnitInfo::Type, const TexturesMap * > mTextures;
+        std::unordered_map<UniformUnitInfo::Type, const TexturesMap * > mTextures;//THINK remove mapping for each Uniform Block store only
         TexturesMap             mDefaultTextures;
         //uint64_t                hash; //from tex + uniform buf id + block_id
 

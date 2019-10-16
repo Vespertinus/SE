@@ -38,7 +38,7 @@
 #include <Texture.h>
 #include <StoreTexture2D.h>
 #include <StoreTextureBufferObject.h>
-#include <Skeleton.h>
+//#include <Skeleton.h>
 
 
 //*/
@@ -116,6 +116,10 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 
 }
 
+//TODO INC Resource list
+//TSceneTree dependent resources
+#include <Skeleton.h>
+
 #define INC_CORE_COMPONENTS_HEADER
 #include <CoreComponents.h>
 #undef INC_CORE_COMPONENTS_HEADER
@@ -128,14 +132,15 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 
 namespace SE {
 
-typedef LOKI_TYPELIST_7(
+typedef LOKI_TYPELIST_8(
                 TTexture,
                 Material,
                 TMesh,
                 TSceneTree,
                 ShaderComponent,
                 ShaderProgram,
-                Skeleton)                                               TResourseList;
+                Skeleton,
+                CharacterShell)                                         TResourseList;
 //THINK
 #ifndef SE_IMPL
 extern template class ResourceManager<TResourseList>;

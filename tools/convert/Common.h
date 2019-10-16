@@ -44,16 +44,35 @@ struct JointData {
         static const uint8_t    ROOT_PARENT_IND = -1;
 
         std::string             sName;
-        glm::vec4               bind_rot;
+        /*glm::vec4               bind_rot;
         glm::vec3               bind_pos;
-        glm::vec3               bind_scale;
+        glm::vec3               bind_scale;*/
         uint8_t                 parent_index{};
 };
 
+struct JointBindPoseData {
+
+        glm::vec4               bind_rot;
+        glm::vec3               bind_pos;
+        glm::vec3               bind_scale;
+};
+
+/** FIXME temporary Skeleton and CharacterShellData duplicate each time in result files
+  load only one, using ResourceManager feature
+  rewrite on resource map that handle <name, std::variant<std::tuple<obj, fb::offset<fb::obj> > > >
+  and store ony once
+  */
 struct Skeleton {
 
         std::string             sName;
         std::vector<JointData>  vJoints;
+};
+
+struct CharacterShellData {
+
+        std::string             sName;
+        Skeleton                oSkeleton;
+        std::string             sRootNode;
 };
 
 
@@ -128,11 +147,14 @@ struct MaterialData {
 
 struct ModelData {
 
-        MeshData        oMesh;
-        MaterialData    oMaterial;
-        BlendShapeData  oBlendShape{};
-        Skeleton        oSkeleton;
-        std::string     sRootNode;
+        MeshData                oMesh;
+        MaterialData            oMaterial;
+        BlendShapeData          oBlendShape{};
+        //Skeleton        oSkeleton;
+        //std::string     sRootNode;
+        CharacterShellData      oShell;
+        std::vector<uint8_t>    vJointIndexes;
+        std::vector<JointBindPoseData> vJointBindPose;
 };
 
 using TComponent = std::variant<ModelData/*, Camera, Light, CustomComponent etc*/>;

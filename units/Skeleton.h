@@ -14,9 +14,9 @@ struct Joint {
 
         //StrID                           name_id;
         std::string     sName;
-        glm::quat       bind_qrot;
+/*        glm::quat       bind_qrot;
         glm::vec3       bind_pos;
-        glm::vec3       bind_scale;
+        glm::vec3       bind_scale;*/
         uint8_t         parent_ind{0};
 };
 
@@ -36,6 +36,29 @@ class Skeleton : public ResourceHolder {
         uint8_t GetJointsCnt() const;
         const std::vector<Joint> & Joints() const;
         //Compare
+};
+
+class CharacterShell : public ResourceHolder {
+
+        Skeleton      * pSkeleton{};
+        std::vector<TSceneTree::TSceneNodeWeak> vJointNodes;
+
+        public:
+        CharacterShell(const std::string & sName,
+                       const rid_t new_rid,
+                       const SE::FlatBuffers::CharacterShell * pShell,
+                       TSceneTree::TSceneNodeExact * pTargetNode);
+        CharacterShell(
+                       const std::string & sName,
+                       const rid_t new_rid,
+                       TSceneTree::TSceneNodeExact * pTargetNode );
+
+        Skeleton * GetSkeleton() const;
+        const std::vector<TSceneTree::TSceneNodeWeak> & JointNodes();
+        /** TODO
+         build from new root node
+         re assign skeleton
+         */
 };
 
 }
