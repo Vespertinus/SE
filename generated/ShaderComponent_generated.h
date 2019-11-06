@@ -19,8 +19,8 @@ enum class ShaderType : uint8_t {
   MAX = GEOMETRY
 };
 
-inline const ShaderType (&EnumValuesShaderType())[3] {
-  static const ShaderType values[] = {
+inline ShaderType (&EnumValuesShaderType())[3] {
+  static ShaderType values[] = {
     ShaderType::VERTEX,
     ShaderType::FRAGMENT,
     ShaderType::GEOMETRY
@@ -28,8 +28,8 @@ inline const ShaderType (&EnumValuesShaderType())[3] {
   return values;
 }
 
-inline const char * const *EnumNamesShaderType() {
-  static const char * const names[] = {
+inline const char **EnumNamesShaderType() {
+  static const char *names[] = {
     "VERTEX",
     "FRAGMENT",
     "GEOMETRY",
@@ -124,10 +124,6 @@ inline const SE::FlatBuffers::ShaderComponent *GetShaderComponent(const void *bu
   return flatbuffers::GetRoot<SE::FlatBuffers::ShaderComponent>(buf);
 }
 
-inline const SE::FlatBuffers::ShaderComponent *GetSizePrefixedShaderComponent(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::ShaderComponent>(buf);
-}
-
 inline const char *ShaderComponentIdentifier() {
   return "SESL";
 }
@@ -142,11 +138,6 @@ inline bool VerifyShaderComponentBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::ShaderComponent>(ShaderComponentIdentifier());
 }
 
-inline bool VerifySizePrefixedShaderComponentBuffer(
-    flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::ShaderComponent>(ShaderComponentIdentifier());
-}
-
 inline const char *ShaderComponentExtension() {
   return "sesl";
 }
@@ -155,12 +146,6 @@ inline void FinishShaderComponentBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> root) {
   fbb.Finish(root, ShaderComponentIdentifier());
-}
-
-inline void FinishSizePrefixedShaderComponentBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> root) {
-  fbb.FinishSizePrefixed(root, ShaderComponentIdentifier());
 }
 
 }  // namespace FlatBuffers

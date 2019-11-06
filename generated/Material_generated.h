@@ -35,8 +35,8 @@ enum class StoreSettings : uint8_t {
   MAX = StoreTextureBuffer
 };
 
-inline const StoreSettings (&EnumValuesStoreSettings())[3] {
-  static const StoreSettings values[] = {
+inline StoreSettings (&EnumValuesStoreSettings())[3] {
+  static StoreSettings values[] = {
     StoreSettings::NONE,
     StoreSettings::StoreTexture2D,
     StoreSettings::StoreTextureBuffer
@@ -44,8 +44,8 @@ inline const StoreSettings (&EnumValuesStoreSettings())[3] {
   return values;
 }
 
-inline const char * const *EnumNamesStoreSettings() {
-  static const char * const names[] = {
+inline const char **EnumNamesStoreSettings() {
+  static const char *names[] = {
     "NONE",
     "StoreTexture2D",
     "StoreTextureBuffer",
@@ -86,8 +86,8 @@ enum class TextureUnit : uint8_t {
   MAX = UNIT_CUSTOM
 };
 
-inline const TextureUnit (&EnumValuesTextureUnit())[7] {
-  static const TextureUnit values[] = {
+inline TextureUnit (&EnumValuesTextureUnit())[7] {
+  static TextureUnit values[] = {
     TextureUnit::UNIT_DIFFUSE,
     TextureUnit::UNIT_NORMAL,
     TextureUnit::UNIT_SPECULAR,
@@ -99,8 +99,8 @@ inline const TextureUnit (&EnumValuesTextureUnit())[7] {
   return values;
 }
 
-inline const char * const *EnumNamesTextureUnit() {
-  static const char * const names[] = {
+inline const char **EnumNamesTextureUnit() {
+  static const char *names[] = {
     "UNIT_DIFFUSE",
     "UNIT_NORMAL",
     "UNIT_SPECULAR",
@@ -759,7 +759,6 @@ inline bool VerifyStoreSettings(flatbuffers::Verifier &verifier, const void *obj
 }
 
 inline bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
-  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyStoreSettings(
@@ -772,10 +771,6 @@ inline bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const fla
 
 inline const SE::FlatBuffers::Material *GetMaterial(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::Material>(buf);
-}
-
-inline const SE::FlatBuffers::Material *GetSizePrefixedMaterial(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Material>(buf);
 }
 
 inline const char *MaterialIdentifier() {
@@ -792,11 +787,6 @@ inline bool VerifyMaterialBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::Material>(MaterialIdentifier());
 }
 
-inline bool VerifySizePrefixedMaterialBuffer(
-    flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::Material>(MaterialIdentifier());
-}
-
 inline const char *MaterialExtension() {
   return "semt";
 }
@@ -805,12 +795,6 @@ inline void FinishMaterialBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::Material> root) {
   fbb.Finish(root, MaterialIdentifier());
-}
-
-inline void FinishSizePrefixedMaterialBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::Material> root) {
-  fbb.FinishSizePrefixed(root, MaterialIdentifier());
 }
 
 }  // namespace FlatBuffers
