@@ -18,11 +18,11 @@ class AnimatedModel : public StaticModel {
         static const StrID JOINTS_MATRICES;
 
         struct SkeletonPart {
-        
+
                 std::vector<glm::mat4>  vJointBaseMat;
                 std::vector<uint8_t>    vJointIndexes;
                 CharacterShell        * pShell{};
-                
+
                 /*ret_code_t FillData(
                                 const SE::FlatBuffers::CharacterShellHolder * pHolder,
                                 const flatbuffers::Vector<uint8_t> * pJointIndices,

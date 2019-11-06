@@ -224,7 +224,6 @@ TComponentOffset SerializeModel(
                                                 );
                         }
 
-                        //skeleton_root_node_fb = oBuilder.CreateString(oModel.sRootNode);
 
                         auto skeleton_fb = CreateSkeleton(
                                         oBuilder,
@@ -275,8 +274,6 @@ TComponentOffset SerializeModel(
                                 material_holder_fb,
                                 blendshapes_fb,
                                 default_weights_fb,
-                                //skeleton_root_node_fb,
-                                //skeleton_holder_fb
                                 shell_fb,
                                 joint_indexes_fb,
                                 joint_bind_mat_fb

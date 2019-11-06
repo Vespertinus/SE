@@ -15,9 +15,6 @@ Skeleton::Skeleton(
                 auto pCurJoint = pSkeleton->joints()->Get(i);
                 vJoints.emplace_back(Joint{
                                 pCurJoint->name()->c_str(),
-/*                                *reinterpret_cast<const glm::quat *>(pCurJoint->bind_rot()),
-                                *reinterpret_cast<const glm::vec3 *>(pCurJoint->bind_pos()),
-                                *reinterpret_cast<const glm::vec3 *>(pCurJoint->bind_scale()),*/
                                 pCurJoint->parent_index()
                                 }
                                 );
@@ -56,10 +53,8 @@ CharacterShell::CharacterShell(
                 const std::string & sName,
                 const rid_t new_rid,
                 const SE::FlatBuffers::CharacterShell * pShell,
-                TSceneTree::TSceneNodeExact * pTargetNode) : 
+                TSceneTree::TSceneNodeExact * pTargetNode) :
         ResourceHolder(new_rid, sName) {
-
-        //TODO throw instead of return;
 
         //if (!pSkeletonHolder) { return uSUCCESS; }
 
@@ -113,7 +108,7 @@ CharacterShell::CharacterShell(
                 }
                 vJointNodes.emplace_back(pJointNode);
         }
-        
+
 }
 
 
@@ -126,74 +121,5 @@ const std::vector<TSceneTree::TSceneNodeWeak> & CharacterShell::JointNodes() {
         return vJointNodes;
 }
 
-/*
-ret_code_t CharacterShell::FillData(
-                const SE::FlatBuffers::SkeletonHolder * pSkeletonHolder,
-                std::string_view sSkeletonRootNode,
-                TSceneTree::TSceneNodeExact * pTargetNode) {
-
-        if (!pSkeletonHolder) { return uSUCCESS; }
-
-        if (pSkeletonHolder->path() != nullptr) {
-                pSkeleton = CreateResource<Skeleton>(GetSystem<Config>().sResourceDir + pSkeletonHolder->path()->c_str());
-        }
-        else if (pSkeletonHolder->name() != nullptr && pSkeletonHolder->skeleton() != nullptr) {
-                pSkeleton = CreateResource<Skeleton>(
-                                pSkeletonHolder->name()->c_str(),
-                                pSkeletonHolder->skeleton());
-        }
-        else {
-                log_e("wrong skeleton holder state, skeleton {:p}, name {:p}",
-                                                (void *)pSkeletonHolder->skeleton(),
-                                                (void *)pSkeletonHolder->name()
-                                                );
-                return uWRONG_INPUT_DATA;
-        }
-
-        auto * pScene = pTargetNode->GetScene();
-        se_assert(pScene);
-
-        auto * vNodes = pScene->FindLocalName(sSkeletonRootNode);
-
-        if (!vNodes || vNodes->size() != 1) {
-
-                log_e("failed to find skeleton root node ('{}'), skeleton name: '{}', target node: '{}'",
-                                                sSkeletonRootNode,
-                                                pSkeleton->Name(),
-                                                pTargetNode->GetName() );
-                return uWRONG_INPUT_DATA;
-        }
-
-        auto & pRootNode = (*vNodes)[0];
-
-        auto & vJoints = pSkeleton->Joints();
-        vJointNodes.reserve(vJointNodes.size());
-        for (auto & oJoint : vJoints) {
-                auto pJointNode = pRootNode->FindChild(oJoint.sName, true);
-                if (!pJointNode) {
-
-                        log_e("failed to find skeleton node ('{}') inside root '{}', skeleton name: '{}', target node: '{}'",
-                                                        oJoint.sName,
-                                                        sSkeletonRootNode,
-                                                        pSkeleton->Name(),
-                                                        pTargetNode->GetName()
-                                                        );
-                        return uWRONG_INPUT_DATA;
-                }
-                vJointNodes.emplace_back(pJointNode);
-
-                //TODO serialize mJointBind on asset import
-                glm::mat4 mJointBind;
-                glm::mat4 mTranslate    = glm::translate(glm::mat4(1.0), oJoint.bind_pos);
-                glm::mat4 mScale        = glm::scale (glm::mat4(1.0), oJoint.bind_scale);
-                glm::mat4 mRotation     = glm::toMat4(oJoint.bind_qrot);
-                mJointBind  = mTranslate * mRotation * mScale;
-
-                vJointBaseMat.emplace_back(glm::inverse(mJointBind) * pTargetNode->GetTransform().GetWorld());
-                
-        }
-        
-        return uSUCCESS;
-}*/
 
 }

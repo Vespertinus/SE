@@ -120,6 +120,7 @@ void Scene::ShowGUI() {
         static SE::TSceneTree::TSceneNodeExact * pCurNode;
         ImGui::SetNextWindowBgAlpha(0.9);
         ImGui::Begin("Scene tree", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+        //ImGui::SetWindowFontScale(2); //for 4K resolution
 
         if (pCurNode) {
 

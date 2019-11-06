@@ -43,7 +43,8 @@ source:
                                 SkinMatrix += JointsMatrices[JointIndices[j] ] * JointWeights[j];
                         }
 
-                        Model *= SkinMatrix;
+                        //Model *= SkinMatrix;
+                        Model = SkinMatrix;
                 }
 
                 gl_Position = MVPMatrix * (Model * BlendedPosition);

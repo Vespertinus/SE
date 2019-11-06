@@ -15,9 +15,6 @@ table StaticModel {
 
 table Joint {
         name:string (required);
-/*        bind_rot:Vec4;
-        bind_pos:Vec3;
-        bind_scale:Vec3;*/
         parent_index:uint8;
 }
 
@@ -29,7 +26,6 @@ table JointBind {
 }
 
 table Skeleton {
-//        root_node_name:string (required);
         joints:[Joint] (required);
 }
 
@@ -56,8 +52,6 @@ table AnimatedModel {
         //blendshapes or skeleton must exist
         blendshapes:TextureHolder;//or as vertex buffer
         blendshapes_weights:[float];
-        //skeleton_root_node:string;
-        //skeleton:SkeletonHolder;
         shell:CharacterShellHolder;
         joint_indexes:[uint8];
         joint_bind_mat:[JointBind];

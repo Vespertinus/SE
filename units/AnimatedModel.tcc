@@ -21,7 +21,7 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
         const auto * pHolder            = pModel->shell();
         const auto * pJointIndices      = pModel->joint_indexes();
         const auto * pJointBindMat      = pModel->joint_bind_mat();
-        
+
         if (!pHolder || !pJointIndices || ! pJointBindMat || (pJointIndices->Length() != pJointBindMat->Length())) { return uSUCCESS; }
 
         if (pHolder->path() != nullptr) {
@@ -40,7 +40,7 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                                                 );
                 return uWRONG_INPUT_DATA;
         }
-        
+
         //auto & vSkeletonJointsInfo = pShell->GetSkeleton()->Joints();
         vJointBaseMat.reserve(pJointIndices->Length());
         vJointIndexes.reserve(pJointIndices->Length());
@@ -279,6 +279,7 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
                         auto & pWeakJointNode = vJointNodes[cur_joint];
                         if (auto pJointNode = pWeakJointNode.lock()) {
                                 pJointNode->AddListener(this);
+                                log_d("node '{}' listen to '{}'", pNode->GetName(), pJointNode->GetName());
                         }
                         else {
                                log_e("failed to get joint node, current node: '{}', joint ind: {}", pNode->GetFullName(), cur_joint);
@@ -295,6 +296,8 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
 }
 
 void AnimatedModel::TargetTransformChanged(TSceneTree::TSceneNodeExact * pTargetNode [[maybe_unused]]) {
+
+        log_d("target node '{}', listener node: '{}'", pTargetNode->GetName(), pNode->GetName());
 
         skinning_dirty = true;
 }
@@ -319,6 +322,17 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
                                         pNewMaterial->GetShader()->Name(),
                                         pNode->GetFullName());
                         return res;
+                }
+
+                if (oSkeletonMeta.vJointIndexes.size()) {
+                        res = pNewBlock->SetVariable(JOINTS_PER_VERTEX, static_cast<uint32_t>(joints_per_vertex));
+                        if (res != uSUCCESS) {
+                                log_e("failed to set joints per vertex var: '{}', shader: '{}', node: '{}'",
+                                                joints_per_vertex,
+                                                pNewMaterial->GetShader()->Name(),
+                                                pNode->GetFullName());
+                                return res;
+                        }
                 }
 
                 for (size_t i = 0; i < blendshapes_cnt; ++i) {
@@ -355,6 +369,9 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
 
 
         pMaterial = pNewMaterial;
+        if (oSkeletonMeta.vJointIndexes.size()) {
+                skinning_dirty = true;
+        }
         FillRenderCommands();
         return uSUCCESS;
 }
@@ -372,10 +389,12 @@ void AnimatedModel::FillRenderCommands() {
 
 std::string AnimatedModel::Str() const {
 
-        return fmt::format("AnimatedModel: Mesh: '{}', Material: '{}', bs cnt: {}",
+        return fmt::format("AnimatedModel: Mesh: '{}', bs cnt: {}, joints: {}, Material: '{}'",
                         pMesh->Name(),
-                        pMaterial->Name(),
-                        blendshapes_cnt);
+                        blendshapes_cnt,
+                        oSkeletonMeta.vJointIndexes.size(),
+                        pMaterial->Name()
+                        );
 }
 
 ret_code_t AnimatedModel::SetWeight(const uint8_t index, const float weight) {
@@ -427,8 +446,15 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
         auto & vJointNodes = oSkeletonMeta.pShell->JointNodes();
 
         for (size_t i = 0; i < oSkeletonMeta.vJointIndexes.size(); ++i) {
-                
+
                 if (auto pJointNode = vJointNodes[oSkeletonMeta.vJointIndexes[i]].lock()) {
+
+                        /*log_d("joint[{}] world pos: ({}, {}, {})",
+                                        i,
+                                        pJointNode->GetTransform().GetWorldPos().x,
+                                        pJointNode->GetTransform().GetWorldPos().y,
+                                        pJointNode->GetTransform().GetWorldPos().z
+                                        );*/
 
                         pBlock->SetArrayElement(JOINTS_MATRICES, i, pJointNode->GetTransform().GetWorld() * oSkeletonMeta.vJointBaseMat[i]);
                 }
@@ -456,7 +482,7 @@ void AnimatedModel::DrawDebug() const {
 
         StaticModel::DrawDebug();
         if (!oSkeletonMeta.pShell) { return; }
-        
+
         auto & vJointNodes      = oSkeletonMeta.pShell->JointNodes();
         auto pSkeleton          = oSkeletonMeta.pShell->GetSkeleton();
 

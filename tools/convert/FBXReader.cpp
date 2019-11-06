@@ -453,7 +453,7 @@ static ret_code_t ImportSkeleton(
         //std::unordered_map<std::string, uint8_t> mJoints;
 
         while (pCurNode) {
-        
+
                 if (pCurNode->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
 
                         log_e("wrong joint node: '{}', attribute type != FbxNodeAttribute::eSkeleton", pCurNode->GetName());
@@ -483,11 +483,11 @@ static ret_code_t ImportSkeleton(
 
         std::function<ret_code_t (FbxNode * pCurNode) > ProcessSkeletonNode;
         ProcessSkeletonNode = [pRootNode, &oModel, &vJointFbxNodes, &mJoints, &ProcessSkeletonNode](FbxNode * pCurNode) {
-                
+
                 auto child_cnt = pCurNode->GetChildCount();
                 for (auto i = 0; i < child_cnt; ++i) {
                         FbxNode * pChild = pCurNode->GetChild(i);
-                        
+
                         if (pChild->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
                                 continue;
                         }
@@ -518,12 +518,12 @@ static ret_code_t ImportSkeleton(
         //THINK duplication in differet fbx..
         //same with skeleton?
         oModel.oShell.sName = fmt::format("cs:{}", StrID(oModel.oShell.sRootNode));
-        
+
         oModel.oShell.oSkeleton.sName = vJointFbxNodes[0]->GetName();
         oModel.oShell.oSkeleton.vJoints.emplace_back(JointData{vJointFbxNodes[0]->GetName(), JointData::ROOT_PARENT_IND});
 
         for (uint8_t i = 1; i < vJointFbxNodes.size(); ++i) {
-        
+
                 auto * pParent = vJointFbxNodes[i]->GetParent();
                 //if (!pParent) { continue; }//THINK
                 se_assert(pParent);
@@ -536,7 +536,7 @@ static ret_code_t ImportSkeleton(
                                         pParent->GetName());
                         return uWRONG_INPUT_DATA;
                 }
-                
+
                 oModel.oShell.oSkeleton.sName += vJointFbxNodes[i]->GetName();
 
                 JointData oCurJoint;
@@ -545,9 +545,9 @@ static ret_code_t ImportSkeleton(
 
                 oModel.oShell.oSkeleton.vJoints.emplace_back(std::move(oCurJoint));
         }
-        
-        oModel.oShell.oSkeleton.sName = fmt::format("sk:{}:{}", 
-                        oModel.oShell.oSkeleton.vJoints.size(), 
+
+        oModel.oShell.oSkeleton.sName = fmt::format("sk:{}:{}",
+                        oModel.oShell.oSkeleton.vJoints.size(),
                         StrID(oModel.oShell.oSkeleton.sName));
 
         //TODO set oShell.sName
@@ -575,7 +575,7 @@ static ret_code_t ImportSkin(
         uint32_t cur_pos;
         std::unordered_map<std::string, uint8_t> mJoints;
 
-        if (!cluster_cnt) { 
+        if (!cluster_cnt) {
                 log_w("zero clusters");
                 return uSUCCESS;
         }
@@ -615,7 +615,7 @@ static ret_code_t ImportSkin(
                                 joints_per_vertex = cur_joints_per_vertes;
                         }
                 }
-                
+
                 auto itJointInd = mJoints.find(pCluster->GetLink()->GetName());
                 if (itJointInd == mJoints.end()) {
 
@@ -631,7 +631,7 @@ static ret_code_t ImportSkin(
 
                 if (pCluster->GetLink()->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
 
-                        log_e("wrong joint node: '{}', attribute type != FbxNodeAttribute::eSkeleton", 
+                        log_e("wrong joint node: '{}', attribute type != FbxNodeAttribute::eSkeleton",
                                         pCluster->GetLink()->GetName());
                         return uWRONG_INPUT_DATA;
                 }
@@ -704,7 +704,7 @@ static ret_code_t ImportSkin(
                 }
         }
 
-        log_d("skeleton: '{}', root node: '{}', cluster cnt: {}, joints_per_vertex: {}", 
+        log_d("skeleton: '{}', root node: '{}', cluster cnt: {}, joints_per_vertex: {}",
                         oModel.oShell.oSkeleton.sName,
                         oModel.oShell.sRootNode,
                         cluster_cnt,

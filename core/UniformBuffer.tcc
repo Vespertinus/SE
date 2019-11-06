@@ -55,6 +55,24 @@ ret_code_t UniformBuffer::SetValue(
 
         //TODO check that block used, not in free list
 
+        /* DEBUG
+        std::vector<char> vOut;
+
+        for (uint16_t i = 0; i < value_size; ++i) {
+                fmt::format_to(std::back_inserter(vOut), "{0:x}:", (static_cast<const uint8_t *>(pValue))[i]);
+        }
+        vOut.emplace_back(0);
+
+        log_d("block: {}, gl_id: {}, block_size: {}, val offset: {}, val size: {}, value: '{}'",
+                        block_id,
+                        gl_id,
+                        block_size,
+                        value_offset,
+                        value_size,
+                        vOut.data()
+                        );
+        */
+
         memcpy(&vShadowBuffer[block_id * block_size + value_offset], pValue, value_size);
 
         sDirty.insert(block_id);
@@ -109,6 +127,8 @@ uint16_t UniformBuffer::AllocateBlock() {
                 }
                 size_changed = true;
         }
+
+        //memset(&vShadowBuffer[block_id * block_size], 0, block_size);
 
         return block_id;
 }

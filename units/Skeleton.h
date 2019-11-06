@@ -14,9 +14,6 @@ struct Joint {
 
         //StrID                           name_id;
         std::string     sName;
-/*        glm::quat       bind_qrot;
-        glm::vec3       bind_pos;
-        glm::vec3       bind_scale;*/
         uint8_t         parent_ind{0};
 };
 
