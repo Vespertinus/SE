@@ -180,8 +180,10 @@ float GraphicsState::FrameStart() {
         pTransformMat        = nullptr;
         pShader              = nullptr;
         cur_vao              = 0;
+        active_ubo           = 0;
         glUseProgram(0);
         glBindVertexArray(0);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         //TODO reset all texture unit bindings
         //TODO reset all uniform unit bindings

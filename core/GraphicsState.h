@@ -31,7 +31,7 @@ class GraphicsState {
         FrameState              oFrame;
         time_point <micro>      frame_start_time;
         uint32_t                active_tex_unit{};
-        uint32_t                active_ubo;
+        uint32_t                active_ubo{};
         glm::vec4               vClearColor{0.0f};
         float                   clear_depth{1.0f};
         DepthFunc               depth_func{DepthFunc::LESS};
