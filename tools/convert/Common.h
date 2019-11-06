@@ -44,9 +44,6 @@ struct JointData {
         static const uint8_t    ROOT_PARENT_IND = -1;
 
         std::string             sName;
-        /*glm::vec4               bind_rot;
-        glm::vec3               bind_pos;
-        glm::vec3               bind_scale;*/
         uint8_t                 parent_index{};
 };
 
@@ -150,8 +147,6 @@ struct ModelData {
         MeshData                oMesh;
         MaterialData            oMaterial;
         BlendShapeData          oBlendShape{};
-        //Skeleton        oSkeleton;
-        //std::string     sRootNode;
         CharacterShellData      oShell;
         std::vector<uint8_t>    vJointIndexes;
         std::vector<JointBindPoseData> vJointBindPose;

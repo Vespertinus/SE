@@ -125,3 +125,4 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 + хорошо бы что бы Update Camera выполнялся раньше остальных компонентов.. или неважно
 
 - active вкл \ выкл под дерево, первично относительно enabled
+- добавить имена блендшейпов и GetBlendShapeName by ind и GetInd by Name
