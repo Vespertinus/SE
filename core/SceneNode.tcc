@@ -230,7 +230,7 @@ template <class ... TComponents >
 
         static_assert(TEvaluateCond< TComponent >, "concreate Component must have 'TargetTransformChanged' method");//FIXME
 
-        bool found = true;
+        bool found = false;
 
         for (auto & oItem : vListeners) {
 
@@ -244,7 +244,9 @@ template <class ... TComponents >
                 },
                 oItem);
 
-                if (found) { return; }
+                if (found) {
+                        return;
+                }
         }
 
         vListeners.emplace_back(pComponent);
