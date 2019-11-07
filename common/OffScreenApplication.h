@@ -12,7 +12,6 @@
 // Internal include
 #include <OSMesa.h>
 #include <Camera.h>
-#include <DummyTransposer.h>
 
 #include <stl_extension.h>
 
