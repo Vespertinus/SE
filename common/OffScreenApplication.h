@@ -52,7 +52,6 @@ template <class TLoop > class OffScreenApplication {
         OSMesa          oRenderingCtx;
         PreInit         oPreInit;
         TLoop		oLoop;
-        DummyTransposer oTranspose;
 
         void Init();
 
