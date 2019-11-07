@@ -445,7 +445,7 @@ static ret_code_t ImportSkeleton(
                 FbxNode * pJointNode,
                 std::unordered_map<std::string, uint8_t> & mJoints) {
 
-        if (!oModel.oShell.oSkeleton.sName.empty()) { return uSUCCESS; }
+        //if (!oModel.oShell.oSkeleton.sName.empty()) { return uSUCCESS; }
 
         FbxNode * pCurNode = pJointNode;
         FbxNode * pRootNode{};
@@ -517,9 +517,9 @@ static ret_code_t ImportSkeleton(
 
         //THINK duplication in differet fbx..
         //same with skeleton?
-        oModel.oShell.sName = fmt::format("cs:{}", StrID(oModel.oShell.sRootNode));
+        oModel.oShell.sName += fmt::format("cs:{}", StrID(oModel.oShell.sRootNode));
 
-        oModel.oShell.oSkeleton.sName = vJointFbxNodes[0]->GetName();
+        oModel.oShell.oSkeleton.sName += vJointFbxNodes[0]->GetName();
         oModel.oShell.oSkeleton.vJoints.emplace_back(JointData{vJointFbxNodes[0]->GetName(), JointData::ROOT_PARENT_IND});
 
         for (uint8_t i = 1; i < vJointFbxNodes.size(); ++i) {
@@ -1016,6 +1016,8 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                 if (res != uSUCCESS) { return res; }
         }
         if (oCtx.import_skin) {
+                oModel.oShell.sName = oCtx.sPackName;
+                oModel.oShell.oSkeleton.sName = oCtx.sPackName;
                 auto res = ImportSkin(pMesh, oModel, mRemapIndex, oVertexIndex.Size());
                 if (res != uSUCCESS) { return res; }
         }

@@ -9,6 +9,7 @@
 
 #define SE_IMPL
 #include <GeometryUtil.h>
+#include <StrID.h>
 
 #include "OBJReader.h"
 #include "FlatBuffersMeshWriter.h"
@@ -145,7 +146,7 @@ int main(int argc, char **argv) {
                 if (sOutput.empty()) {
                         sOutput = oPath.stem().string();
                 }
-                oCtx.sPackName = sInput + "|";
+                oCtx.sPackName = "hs:" + std::to_string(SE::StrID(sInput)) + "|";
 
                 if (sExt == ".obj") {
                         log_d("file '{}' ext '{}', call OBJLoader", sInput, sExt);
