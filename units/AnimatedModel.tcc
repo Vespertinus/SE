@@ -70,7 +70,7 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                 glm::mat4 mRotation     = glm::toMat4(bind_qrot);
                 mJointBind  = mTranslate * mRotation * mScale;
 
-                vJointBaseMat.emplace_back(glm::inverse(mJointBind) * pTargetNode->GetTransform().GetWorld());
+                vJointBaseMat.emplace_back(mJointBind);
                 vJointIndexes.emplace_back(cur_joint_ind);
         }
 
@@ -286,6 +286,7 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
                                return uLOGIC_ERROR;
                         }
                 }
+                pNode->AddListener(this);
 
                 skinning_dirty = true;
         }
@@ -306,9 +307,9 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
 
         if (!pNewMaterial->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
 
-        log_e("wrong material: '{}', does not own TextureUnit::BUFFER, node: '{}'",
-                        pNewMaterial->Name(),
-                        pNode->GetFullName());
+                log_e("wrong material: '{}', does not own TextureUnit::BUFFER, node: '{}'",
+                                pNewMaterial->Name(),
+                                pNode->GetFullName());
                 return uWRONG_INPUT_DATA;
         }
 
@@ -449,14 +450,46 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
 
                 if (auto pJointNode = vJointNodes[oSkeletonMeta.vJointIndexes[i]].lock()) {
 
-                        /*log_d("joint[{}] world pos: ({}, {}, {})",
+                        /*
+                           log_d("joint[{}] world pos: ({}, {}, {})",
                                         i,
                                         pJointNode->GetTransform().GetWorldPos().x,
                                         pJointNode->GetTransform().GetWorldPos().y,
                                         pJointNode->GetTransform().GetWorldPos().z
-                                        );*/
+                                        );
+                         */
 
-                        pBlock->SetArrayElement(JOINTS_MATRICES, i, pJointNode->GetTransform().GetWorld() * oSkeletonMeta.vJointBaseMat[i]);
+                        //pBlock->SetArrayElement(JOINTS_MATRICES, i, pJointNode->GetTransform().GetWorld() * oSkeletonMeta.vJointBaseMat[i]);
+
+                        glm::mat4 mResTransform =
+                                        glm::inverse(pNode->GetTransform().GetWorld())
+                                        *
+                                        pJointNode->GetTransform().GetWorld()
+                                        *
+                                        oSkeletonMeta.vJointBaseMat[i];
+                        auto res_world_pos = glm::vec3(mResTransform[3]);
+                        /*
+                        glm::vec3 scale;
+                        glm::quat rotation;
+                        glm::vec3 translation;
+                        glm::vec3 skew;
+                        glm::vec4 perspective;
+                        glm::decompose(mResTransform, scale, rotation, translation, skew,perspective);
+
+
+                        log_d("node: '{}', joint: '{}', pos: ({}, {}, {}), scale: ({}, {}, {})",
+                                        pNode->GetName(),
+                                        pJointNode->GetName(),
+                                        res_world_pos[0],
+                                        res_world_pos[1],
+                                        res_world_pos[2],
+                                        scale[0],
+                                        scale[1],
+                                        scale[2]
+                                        );
+                        */
+
+                        pBlock->SetArrayElement(JOINTS_MATRICES, i, mResTransform );
                 }
                 else {
                         pBlock->SetArrayElement(JOINTS_MATRICES, i, pNode->GetTransform().GetWorld());

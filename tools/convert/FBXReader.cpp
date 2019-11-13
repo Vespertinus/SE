@@ -450,7 +450,6 @@ static ret_code_t ImportSkeleton(
         FbxNode * pCurNode = pJointNode;
         FbxNode * pRootNode{};
         std::vector<FbxNode *> vJointFbxNodes;
-        //std::unordered_map<std::string, uint8_t> mJoints;
 
         while (pCurNode) {
 
@@ -556,6 +555,7 @@ static ret_code_t ImportSkeleton(
 }
 
 static ret_code_t ImportSkin(
+                FbxNode * pNode,
                 FbxMesh * pMesh,
                 ModelData & oModel,
                 const std::unordered_map<uint32_t, std::unordered_set<uint32_t>> & mRemapIndex,
@@ -567,6 +567,14 @@ static ret_code_t ImportSkin(
         if (!skin_cnt) { return uSUCCESS; }
         else if (skin_cnt > 1) {
                 log_w("import only first skin deformer per mesh");
+        }
+
+        auto pSkinDeformer = (FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin);
+        auto skinning_type = pSkinDeformer->GetSkinningType();
+
+        if ((skinning_type != FbxSkin::eLinear) && (skinning_type != FbxSkin::eRigid) ) {
+                log_e("unsupportes skinning type: '{}', only linear supported", pSkinDeformer->GetSkinningType());
+                return uWRONG_INPUT_DATA;
         }
 
         uint8_t  joints_per_vertex{0};
@@ -591,13 +599,41 @@ static ret_code_t ImportSkin(
 
         log_d("node: '{}', try to import {} clusters", oModel.oMesh.sName, cluster_cnt);
 
+        auto GetGeometry = [](FbxNode* pNode) {//TODO calc once
+
+                const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
+                const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
+                const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
+
+                //
+                log_d("get from node: '{}', pos: ({}, {}, {}, {}), rot: ({}, {}, {}), scale: ({}, {}, {})",
+                                pNode->GetName(),
+                                lT[0],
+                                lT[1],
+                                lT[2],
+                                lT[3],
+                                lR[0],
+                                lR[1],
+                                lR[2],
+                                lS[0],
+                                lS[1],
+                                lS[2]
+                                );
+                                //
+
+                return FbxAMatrix(lT, lR, lS);
+        };
+
+
         //find max joints per vertex
         for (uint32_t i = 0; i < cluster_cnt; ++i) {
 
-                pCluster = ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(i);
+                pCluster = pSkinDeformer->GetCluster(i);
                 if (pCluster->GetLinkMode() != FbxCluster::ELinkMode::eNormalize) {
                         log_e("unsupported cluster link mode: '{}'", pCluster->GetLinkMode());
+                        return uWRONG_INPUT_DATA;
                 }
+
 
                 uint32_t indices_cnt    = pCluster->GetControlPointIndicesCount();
                 int32_t * pIndices      = pCluster->GetControlPointIndices();
@@ -636,19 +672,65 @@ static ret_code_t ImportSkin(
                         return uWRONG_INPUT_DATA;
                 }
 
+                FbxAMatrix pTransformMatrix;
                 FbxAMatrix pLinkTransformMatrix;
+                FbxAMatrix pResTransformMatrix;
+                FbxAMatrix pReferenceGeomMatrix;
+
+
+
+                if (pNode == pMesh->GetNode()) {//initial object node
+
+                        pCluster->GetTransformMatrix(pTransformMatrix);
+                }
+                else {//instance node
+                        pTransformMatrix = pNode->EvaluateGlobalTransform();
+                }
+
+                //pReferenceGeomMatrix = GetGeometry(pMesh->GetNode());
+                //-->pReferenceGeomMatrix = GetGeometry(pCluster->GetLink());
+                pReferenceGeomMatrix = GetGeometry(pNode);
                 pLinkTransformMatrix = pCluster->GetTransformLinkMatrix(pLinkTransformMatrix);
 
-                FbxVector4 vBindPos     = pLinkTransformMatrix.GetT();
-                FbxVector4 vBindScale   = pLinkTransformMatrix.GetS();
-                FbxQuaternion qRot      = pLinkTransformMatrix.GetQ();
+                //log_d("current node name: {}", pCluster->GetLink()->GetName());
+
+                pTransformMatrix   *= pReferenceGeomMatrix;
+                pResTransformMatrix = pLinkTransformMatrix.Inverse() * pTransformMatrix;
+
+                FbxVector4 vBindPos     = pResTransformMatrix.GetT();
+                FbxVector4 vBindScale   = pResTransformMatrix.GetS();
+                FbxQuaternion qRot      = pResTransformMatrix.GetQ();
 
                 oCurJoint.bind_pos      = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
                 oCurJoint.bind_scale    = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
                 oCurJoint.bind_rot      = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
 
-                //mJoints.emplace(oCurJoint.sName, oModel.oSkeleton.vJoints.size());
-                //--> oModel.oSkeleton.vJoints.emplace_back(std::move(oCurJoint));
+                /*
+                log_d("orig node: '{}' global transform pos: ({}, {}, {})",
+                                pNode->GetName(),
+                                pTransformMatrix.GetT()[0],
+                                pTransformMatrix.GetT()[1],
+                                pTransformMatrix.GetT()[2]
+                                );
+                log_d("result for joint node: '{}', mesh node: '{}', orig node: '{}', link pos: ({}, {}, {}, {}), qrot: ({}, {}, {}, {}), scale: ({}, {}, {})",
+                                pCluster->GetLink()->GetName(),
+                                pMesh->GetNode()->GetName(),
+                                pNode->GetName(),
+                                vBindPos[0],
+                                vBindPos[1],
+                                vBindPos[2],
+                                vBindPos[3],
+                                qRot[0],
+                                qRot[1],
+                                qRot[2],
+                                qRot[3],
+                                vBindScale[0],
+                                vBindScale[1],
+                                vBindScale[2]
+                                );
+
+                */
+
                 //TODO match cluser link with current;
                 oModel.vJointIndexes.emplace_back(itJointInd->second);
                 oModel.vJointBindPose.emplace_back(std::move(oCurJoint));
@@ -1018,7 +1100,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
         if (oCtx.import_skin) {
                 oModel.oShell.sName = oCtx.sPackName;
                 oModel.oShell.oSkeleton.sName = oCtx.sPackName;
-                auto res = ImportSkin(pMesh, oModel, mRemapIndex, oVertexIndex.Size());
+                auto res = ImportSkin(pNode, pMesh, oModel, mRemapIndex, oVertexIndex.Size());
                 if (res != uSUCCESS) { return res; }
         }
 

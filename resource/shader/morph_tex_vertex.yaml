@@ -34,20 +34,22 @@ source:
                         BlendedPosition += vec4(BlendShapesWeights[i] * bs, 0);
                 }
 
-                mat4 Model = MVMatrix;
+                //mat4 Model = MVMatrix;
 
                 if (JointsPerVertex > 0u) { //FIXME TEMP
-                        mat4 SkinMatrix = JointsMatrices[JointIndices[0] ] * JointWeights[0];;
+                        mat4 SkinMatrix = JointsMatrices[JointIndices[0] ] * JointWeights[0];
 
                         for (uint j = 1u; j < JointsPerVertex; ++j) {
                                 SkinMatrix += JointsMatrices[JointIndices[j] ] * JointWeights[j];
                         }
 
                         //Model *= SkinMatrix;
-                        Model = SkinMatrix;
+                        //Model = SkinMatrix;
+                        BlendedPosition = SkinMatrix * BlendedPosition;
                 }
 
-                gl_Position = MVPMatrix * (Model * BlendedPosition);
+                //gl_Position = MVPMatrix * (Model * BlendedPosition);
+                gl_Position = MVPMatrix * (MVMatrix * BlendedPosition);
                 TexCoord    = TexCoord0;
         }
 
