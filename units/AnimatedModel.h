@@ -71,6 +71,11 @@ class AnimatedModel : public StaticModel {
         void            Disable();
         void            PostUpdate(const Event & oEvent);
         void            DrawDebug() const;
+        const CharacterShell * GetShell() const;
+        const std::vector<glm::mat4> & GetJointOffsetMat() const;
+        const std::vector<uint8_t> & GetJointIndexes() const;
+        std::vector<glm::mat4> & GetJointOffsetMat();
+        std::vector<uint8_t> & GetJointIndexes();
 };
 
 }

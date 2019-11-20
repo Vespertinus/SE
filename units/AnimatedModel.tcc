@@ -539,6 +539,29 @@ void AnimatedModel::DrawDebug() const {
         }
 }
 
+const CharacterShell * AnimatedModel::GetShell() const {
+        return oSkeletonMeta.pShell;
+}
+
+const std::vector<glm::mat4> & AnimatedModel::GetJointOffsetMat() const {
+
+        return oSkeletonMeta.vJointBaseMat;
+}
+
+const std::vector<uint8_t> & AnimatedModel::GetJointIndexes() const {
+
+        return oSkeletonMeta.vJointIndexes;
+}
+
+std::vector<glm::mat4> & AnimatedModel::GetJointOffsetMat() {
+
+        return oSkeletonMeta.vJointBaseMat;
+}
+
+std::vector<uint8_t> & AnimatedModel::GetJointIndexes() {
+
+        return oSkeletonMeta.vJointIndexes;
+}
 
 }
 
