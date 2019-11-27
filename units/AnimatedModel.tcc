@@ -28,8 +28,17 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                 pShell = CreateResource<CharacterShell>(GetSystem<Config>().sResourceDir + pHolder->path()->c_str(), pTargetNode);
         }
         else if (pHolder->name() != nullptr && pHolder->shell() != nullptr) {
-                pShell = CreateResource<CharacterShell>(
+                /**TODO
+                   create clone + reload
+                 */
+
+                //HACK -->
+                std::string sShellName = fmt::format("{}|scn:{}",
                                 pHolder->name()->c_str(),
+                                StrID(pTargetNode->GetScene()->Name()) );
+
+                pShell = CreateResource<CharacterShell>(
+                                sShellName,
                                 pHolder->shell(),
                                 pTargetNode);
         }
