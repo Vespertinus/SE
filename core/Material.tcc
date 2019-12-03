@@ -307,5 +307,89 @@ const Material::TexturesMap * Material::GetTextures() const {
         return &mTextures;
 }
 
+std::string Material::StrDump(const size_t indent) const {
+
+        std::string sResult = fmt::format("{:>{}} Material: shader: '{}'\n", ">", indent, pShader->Name());
+        sResult += pBlock->StrDump(indent + 2) + "\n";
+
+        sResult += fmt::format("{:>{}} Shader variables cnt: {}\n", ">", indent + 2, mShaderVariables.size());
+        for (auto & oItem : mShaderVariables) {
+                sResult += fmt::format("{:{}} Name id: {}\n",
+                                ">",
+                                indent + 4,
+                                oItem.first);
+                auto cur_indent = indent + 4;
+
+                MP::Visit(oItem.second,
+                                [&sResult, cur_indent ](const float oVar) {
+                                        sResult += fmt::format("{:>{}} value: {}\n", ">", cur_indent, oVar);
+                                },
+                                [&sResult, cur_indent](const int32_t oVar) {
+                                        sResult += fmt::format("{:>{}} value: {}\n", ">", cur_indent, oVar);
+                                },
+                                [&sResult, cur_indent](const glm::vec2 & oVar) {
+                                        sResult += fmt::format("{:>{}} value: ({}, {})\n",
+                                                        ">",
+                                                        cur_indent,
+                                                        oVar[0],
+                                                        oVar[1]);
+                                },
+                                [&sResult, cur_indent](const glm::vec3 & oVar) {
+                                        sResult += fmt::format("{:>{}} value: ({}, {}, {})\n",
+                                                        ">",
+                                                        cur_indent,
+                                                        oVar[0],
+                                                        oVar[1],
+                                                        oVar[2]);
+                                },
+                                [&sResult, cur_indent](const glm::vec4 & oVar) {
+                                        sResult += fmt::format("{:>{}} value: ({}, {}, {}, {})\n",
+                                                        ">",
+                                                        cur_indent,
+                                                        oVar[0],
+                                                        oVar[1],
+                                                        oVar[2],
+                                                        oVar[3]);
+                                },
+                                [&sResult, cur_indent](const glm::uvec2 & oVar) {
+                                        sResult += fmt::format("{:>{}} value: ({}, {})\n",
+                                                        ">",
+                                                        cur_indent,
+                                                        oVar[0],
+                                                        oVar[1]);
+                                },
+                                [&sResult, cur_indent](const glm::uvec3 & oVar) {
+                                        sResult += fmt::format("{:>{}} value: ({}, {}, {})\n",
+                                                        ">",
+                                                        cur_indent,
+                                                        oVar[0],
+                                                        oVar[1],
+                                                        oVar[2]);
+                                },
+                                [&sResult, cur_indent](const glm::uvec4 & oVar) {
+                                        sResult += fmt::format("{:>{}} value: ({}, {}, {}, {})\n",
+                                                        ">",
+                                                        cur_indent,
+                                                        oVar[0],
+                                                        oVar[1],
+                                                        oVar[2],
+                                                        oVar[3]);
+                                }
+                );
+
+        }
+
+        sResult += fmt::format("{:>{}} Textures cnt: {}\n", ">", indent + 2, mTextures.size());
+        for (auto & oTexItem : mTextures) {
+                sResult += fmt::format("{:{}} TextureUnit: {}\n",
+                                ">",
+                                indent + 4,
+                                static_cast<int32_t>(oTexItem.first));
+                sResult += oTexItem.second->StrDump(indent + 4) + "\n";
+        }
+
+        return sResult;
+}
+
 }
 

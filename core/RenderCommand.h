@@ -32,6 +32,7 @@ class RenderCommand {
         //SetMaterial SetGeom SetTransform;?
         /** modify blocks via State().SetBlock() */
         ShaderProgramState & State();
+        std::string     StrDump(const size_t indent) const;
 
 };
 

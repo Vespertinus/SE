@@ -715,4 +715,30 @@ void ShaderProgram::FillUniformBlocks(std::unordered_map<uint32_t, UniformUnitIn
 }
 
 
+std::string ShaderVariable::StrDump(const size_t indent, const bool sampler) const {
+
+        return fmt::format("{:>{}} name: '{}', type: {}, {}: {}, array cnt: {}, stride: {}",
+                        ">",
+                        indent,
+                        sName,
+                        type,
+                        (sampler) ? "TextureUnit" : "Location",
+                        (sampler) ? static_cast<uint32_t>(unit_index) : location,
+                        array_cnt,
+                        array_stride);
+}
+
+std::string UniformBlockDescriptor::StrDump(const size_t indent) const {
+
+        std::string sResult = fmt::format("{:>{}} UniformBlockDescriptor: size: {}\n", ">", indent, size);
+        sResult += fmt::format("{:>{}} Variable cnt: {}", ">", indent, mVariables.size());
+        for (auto & oItem : mVariables) {
+
+                sResult += oItem.second.StrDump(indent + 2);
+        }
+
+        return sResult;
+}
+
+
 } //namespace SE

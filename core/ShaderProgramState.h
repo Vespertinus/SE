@@ -79,6 +79,7 @@ class UniformBlock {
 
         bool                    OwnVariable(const StrID name) const;
         void                    Apply() const;
+        std::string             StrDump(const size_t indent) const;
 };
 
 class ShaderProgramState {
@@ -105,6 +106,7 @@ class ShaderProgramState {
         ret_code_t              Validate() const;
         void                    Apply() const;
         //uint64_t                GetSortKey() const;
+        std::string             StrDump(const size_t indent) const;
 };
 
 

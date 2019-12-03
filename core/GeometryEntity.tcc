@@ -60,4 +60,19 @@ void GeometryEntity::SetRange(const uint32_t vertex_count, const uint32_t vertex
         start = vertex_start;
 }
 
+std::string GeometryEntity::Str() const {
+
+        return fmt::format("GeometryEntity: vao: {}, ptype: {}, itype: {}, start: {}, count: {}",
+                        vao_id,
+                        primitive_type,
+                        index_type,
+                        start,
+                        count);
+}
+
+std::string GeometryEntity::StrDump(const size_t indent) const {
+
+        return fmt::format("{:>{}} {}", ">", indent, Str());
+}
+
 }

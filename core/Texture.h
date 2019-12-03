@@ -65,6 +65,7 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
         uint32_t Type() const;
         const Dimensions & GetDimensions() const;
         //Bind() const;
+        std::string StrDump(const size_t indent) const;
 
 
 };

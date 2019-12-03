@@ -159,4 +159,19 @@ template <class StoreStrategyList, class LoadStrategyList> uint32_t Texture<Stor
   return 0;
 }
 */
+
+template <class StoreStrategyList, class LoadStrategyList>
+        std::string Texture<StoreStrategyList, LoadStrategyList>::StrDump(const size_t indent) const {
+
+        std::string sResult = fmt::format("{:>{}} Texture: name: '{}', id: {}, type: {}, size: ({}, {})",
+                        ">",
+                        sName,
+                        indent,
+                        id,
+                        gl_type,
+                        oDimensions.first,
+                        oDimensions.second);
+        return sResult;
+}
+
 }

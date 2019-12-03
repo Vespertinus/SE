@@ -50,7 +50,8 @@ class Material : public ResourceHolder {
         const UniformBlock *            GetUniformBlock() const;
         const TexturesMap *             GetTextures() const;
 
-        std::string     Str() const;
+        std::string                     Str() const;
+        std::string                     StrDump(const size_t indent) const;
 };
 
 

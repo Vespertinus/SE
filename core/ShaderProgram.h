@@ -33,6 +33,8 @@ struct ShaderVariable {
         };
         uint16_t        array_cnt;
         uint16_t        array_stride;
+
+        std::string  StrDump(const size_t indent, const bool sampler = false) const;
 };
 
 /**
@@ -44,6 +46,8 @@ struct UniformBlockDescriptor {
         std::unordered_map<StrID, ShaderVariable> mVariables;
         uint16_t                                  size;
         uint16_t                                  aligned_size;
+
+        std::string  StrDump(const size_t indent) const;
 };
 
 

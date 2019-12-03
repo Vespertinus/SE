@@ -104,4 +104,13 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::AddRender
         vRenderInstantCommands.emplace_back(pCmd);
 }
 
+template <class TVisibilityManager> void Renderer<TVisibilityManager>::Print(const size_t indent) {
+
+        log_d_clean("{:>{}} '{}': resolution: ({}, {})\n", ">", indent, screen_size[0], screen_size[1]);
+        for (const auto * pItem : vRenderCommands) {
+
+                log_d_clean("{}", pItem->StrDump(indent));
+        }
+}
+
 } //namespace SE

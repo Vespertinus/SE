@@ -327,4 +327,72 @@ glm::vec3 Transform::GetWorldPos() const {
         return glm::vec3(mWorldTransform[3]);
 }
 
+std::string Transform::Str() const {
+
+        glm::vec3 vRotation = glm::degrees(glm::eulerAngles(qRotation));
+
+        return fmt::format("world: pos: ({}, {}, {}), rot: ({}, {}, {}), scale: ({}, {}, {}), parent: '{:p}'",
+                        vTranslation[0],
+                        vTranslation[1],
+                        vTranslation[2],
+                        vRotation[0],
+                        vRotation[1],
+                        vRotation[2],
+                        vScale[0],
+                        vScale[1],
+                        vScale[2]);
+}
+
+std::string Transform::StrDump(const size_t indent) const {
+
+        RecalcWorld();
+
+        std::string sResult = fmt::format("{:>{}} Transform:\n)", ">", indent);
+        glm::vec3 vRotation = glm::degrees(glm::eulerAngles(qRotation));
+
+        sResult += fmt::format("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}\n",
+                        ">",
+                        indent,
+                        vTranslation.x,
+                        vTranslation.y,
+                        vTranslation.z,
+                        vRotation.x,
+                        vRotation.y,
+                        vRotation.z,
+                        vScale.x,
+                        vScale.y,
+                        vScale.z,
+                        (void *)pParent);
+
+
+        glm::vec3 vWorldScale;
+        glm::quat qWorlRotation;
+        glm::vec3 vWorldTranslation;
+        glm::vec3 vWorldSkew;
+        glm::vec4 vWorldPersp;
+        glm::decompose(mWorldTransform, vWorldScale, qWorlRotation, vWorldTranslation, vWorldSkew, vWorldPersp);
+
+        glm::vec3 vWorldRotation = glm::degrees(glm::eulerAngles(qWorlRotation));
+        sResult += fmt::format("{:>{}} world: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), skew ({}, {}, {}), persp ({}, {}, {}, {})",
+                        ">",
+                        indent,
+                        vWorldTranslation.x,
+                        vWorldTranslation.y,
+                        vWorldTranslation.z,
+                        vWorldRotation.x,
+                        vWorldRotation.y,
+                        vWorldRotation.z,
+                        vWorldScale.x,
+                        vWorldScale.y,
+                        vWorldScale.z,
+                        vWorldSkew.x,
+                        vWorldSkew.y,
+                        vWorldSkew.z,
+                        vWorldPersp.x,
+                        vWorldPersp.y,
+                        vWorldPersp.z,
+                        vWorldPersp.q );
+        return sResult;
+}
+
 }

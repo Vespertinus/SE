@@ -75,6 +75,8 @@ class Transform {
         void SetCDirty();
         bool CDirty() const;
         glm::vec3         GetWorldPos() const;
+        std::string       Str() const;
+        std::string       StrDump(const size_t indent) const;
 };
 
 } //namespace SE

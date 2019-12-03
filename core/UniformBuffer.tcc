@@ -188,4 +188,17 @@ void UniformBuffer::Apply(const uint16_t block_id, const UniformUnitInfo::Type u
                         block_size);
 }
 
+std::string UniformBuffer::StrDump(const size_t indent) const {
+
+        std::string sResult = fmt::format("{:>{}} UniformBuffer: id: {}, block_size: {}, allocated blocks: {}, shadow size: {}, free list cnt: {}",
+                        ">",
+                        indent,
+                        gl_id,
+                        block_size,
+                        allocated_blocks_cnt,
+                        vShadowBuffer.size(),
+                        vFreeEntryList.size() );
+        return sResult;
+}
+
 }

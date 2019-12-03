@@ -33,6 +33,7 @@ class GeometryEntity {
         //Getters if needed
         //Set...
         std::string Str() const;
+        std::string StrDump(const size_t indent) const;
         //uint32_t GetPrimitiveCnt() const;//TODO
         uint32_t GetIndicesCnt() const;
         uint32_t GetVAO() const;//THINK

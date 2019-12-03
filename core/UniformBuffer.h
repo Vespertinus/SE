@@ -33,6 +33,7 @@ class UniformBuffer {
         //THINK store unit inside on creation
 
         std::string Str() const;
+        std::string StrDump(const size_t indent) const;
 
         /**
          THINK compactify storage, notify all linked UniformBlock, rewrite block_id for all UniformBLock handles

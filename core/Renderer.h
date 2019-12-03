@@ -38,6 +38,7 @@ template <class TVisibilityManager> class Renderer {
         void                               SetScreenSize(const glm::uvec2 new_screen_size);
         void                               SetCamera(Camera * pCurCamera);
         Camera *                           GetCamera() const;
+        void                               Print(const size_t indent = 0);
 
         /**
                 - set of all TRenderable

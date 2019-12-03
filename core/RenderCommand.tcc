@@ -51,5 +51,14 @@ ShaderProgramState & RenderCommand::State() {
         return oState;
 }
 
+std::string RenderCommand::StrDump(const size_t indent) const {
+
+        std::string sResult = fmt::format("{:>{}} RenderCommand: \n", ">", indent);
+        sResult += pGeom->StrDump(indent + 2) + "\n";
+        sResult += oState.StrDump(indent + 2) + "\n";
+        sResult += oTransform.StrDump(indent + 2);
+
+        return sResult;
+}
 
 } //namespace SE

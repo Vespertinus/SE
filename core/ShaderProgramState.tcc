@@ -324,6 +324,19 @@ void UniformBlock::Apply() const {
         pBuffer->Apply(block_id, unit_id);
 }
 
+std::string UniformBlock::StrDump(const size_t indent) const {
+
+        std::string sResult = fmt::format("{:>{}} UniformBlock: id: {}, UniformUnit: {}\n",
+                        ">",
+                        indent,
+                        block_id,
+                        static_cast<int32_t>(unit_id));
+        sResult += pBuffer->StrDump(indent + 2) + "\n";
+        sResult += pDesc->StrDump(indent + 2);
+
+        return sResult;
+}
+
 
 ShaderProgramState::ShaderProgramState(const Material * pNewMaterial) :
         pShader(pNewMaterial->GetShader()),
@@ -390,6 +403,41 @@ void ShaderProgramState::Apply() const {
         for (auto & oItem : mShaderBlocks) {
                 oItem.second->Apply();
         }
+}
+
+std::string ShaderProgramState::StrDump(const size_t indent) const {
+
+        std::string sResult = fmt::format("{:>{}} ShaderProgramState: shader: '{}'\n", ">", indent, pShader->Name());
+        sResult += pMaterial->StrDump(indent + 2) + "\n";
+
+        sResult += fmt::format("{:{}} ShaderBlocks cnt: {}\n", ">", indent + 2, mShaderBlocks.size());
+        for (auto & oItem : mShaderBlocks) {
+                sResult += fmt::format("{:{}} UniformUnit: {}\n", ">", indent + 4, static_cast<int32_t>(oItem.first));
+                sResult += oItem.second->StrDump(indent + 4) + "\n";
+        }
+
+        sResult += fmt::format("{:{}} Textures sets cnt: {}\n", ">", indent + 2, mTextures.size());
+        for (auto & oItem : mTextures) {
+                for (const auto & oTexItem : *oItem.second) {
+                        sResult += fmt::format("{:{}} block set: {}, TextureUnit: {}\n",
+                                        ">",
+                                        indent + 4,
+                                        static_cast<int32_t>(oItem.first),
+                                        static_cast<int32_t>(oTexItem.first));
+                        sResult += oTexItem.second->StrDump(indent + 4) + "\n";
+                }
+        }
+
+        sResult += fmt::format("{:{}} default Textures set cnt: {}\n", ">", indent + 2, mDefaultTextures.size());
+        for (auto & oTexItem : mDefaultTextures) {
+                sResult += fmt::format("{:{}} TextureUnit: {}\n",
+                                ">",
+                                indent + 4,
+                                static_cast<int32_t>(oTexItem.first));
+                sResult += oTexItem.second->StrDump(indent + 4) + "\n";
+        }
+
+        return sResult;
 }
 
 
