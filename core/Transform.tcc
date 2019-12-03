@@ -347,7 +347,7 @@ std::string Transform::StrDump(const size_t indent) const {
 
         RecalcWorld();
 
-        std::string sResult = fmt::format("{:>{}} Transform:\n)", ">", indent);
+        std::string sResult = fmt::format("{:>{}} Transform:\n", ">", indent);
         glm::vec3 vRotation = glm::degrees(glm::eulerAngles(qRotation));
 
         sResult += fmt::format("{:>{}} local: pos ({}, {}, {}), rot ({}, {}, {}), scale ({}, {}, {}), parent = {:p}\n",

@@ -310,7 +310,9 @@ const Material::TexturesMap * Material::GetTextures() const {
 std::string Material::StrDump(const size_t indent) const {
 
         std::string sResult = fmt::format("{:>{}} Material: shader: '{}'\n", ">", indent, pShader->Name());
-        sResult += pBlock->StrDump(indent + 2) + "\n";
+        if (pBlock) {
+                sResult += pBlock->StrDump(indent + 2) + "\n";
+        }
 
         sResult += fmt::format("{:>{}} Shader variables cnt: {}\n", ">", indent + 2, mShaderVariables.size());
         for (auto & oItem : mShaderVariables) {
