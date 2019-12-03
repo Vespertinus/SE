@@ -106,7 +106,7 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::AddRender
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::Print(const size_t indent) {
 
-        log_d_clean("{:>{}} '{}': resolution: ({}, {})\n", ">", indent, screen_size[0], screen_size[1]);
+        log_d_clean("{:>{}} Renderer: resolution: ({}, {})\n", ">", indent, screen_size[0], screen_size[1]);
         for (const auto * pItem : vRenderCommands) {
 
                 log_d_clean("{}", pItem->StrDump(indent));
