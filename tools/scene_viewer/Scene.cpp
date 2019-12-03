@@ -81,8 +81,10 @@ void Scene::Process() {
                 });
         }
 
-        ShowGUI();
+        //DEBUG
+        //SE::GetSystem<SE::TRenderer>().Print();
 
+        ShowGUI();
 }
 
 void Scene::ShowGUI() {

@@ -32,8 +32,6 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::PrepareVi
                         }
                 },
                 *pRenderable);
-
-
         }
 
         //TODO sort vRenderCommands
@@ -106,7 +104,7 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::AddRender
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::Print(const size_t indent) {
 
-        log_d_clean("{:>{}} Renderer: resolution: ({}, {})\n", ">", indent, screen_size[0], screen_size[1]);
+        log_d_clean("{:>{}} Renderer: resolution: ({}, {}), commands cnt: {}\n", ">", indent, screen_size[0], screen_size[1], vRenderCommands.size());
         for (const auto * pItem : vRenderCommands) {
 
                 log_d_clean("{}", pItem->StrDump(indent));

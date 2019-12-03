@@ -165,8 +165,8 @@ template <class StoreStrategyList, class LoadStrategyList>
 
         std::string sResult = fmt::format("{:>{}} Texture: name: '{}', id: {}, type: {}, size: ({}, {})",
                         ">",
-                        sName,
                         indent,
+                        sName,
                         id,
                         gl_type,
                         oDimensions.first,

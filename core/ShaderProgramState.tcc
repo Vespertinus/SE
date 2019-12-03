@@ -410,16 +410,16 @@ std::string ShaderProgramState::StrDump(const size_t indent) const {
         std::string sResult = fmt::format("{:>{}} ShaderProgramState: shader: '{}'\n", ">", indent, pShader->Name());
         sResult += pMaterial->StrDump(indent + 2) + "\n";
 
-        sResult += fmt::format("{:{}} ShaderBlocks cnt: {}\n", ">", indent + 2, mShaderBlocks.size());
+        sResult += fmt::format("{:>{}} ShaderBlocks cnt: {}\n", ">", indent + 2, mShaderBlocks.size());
         for (auto & oItem : mShaderBlocks) {
-                sResult += fmt::format("{:{}} UniformUnit: {}\n", ">", indent + 4, static_cast<int32_t>(oItem.first));
+                sResult += fmt::format("{:>{}} UniformUnit: {}\n", ">", indent + 4, static_cast<int32_t>(oItem.first));
                 sResult += oItem.second->StrDump(indent + 4) + "\n";
         }
 
-        sResult += fmt::format("{:{}} Textures sets cnt: {}\n", ">", indent + 2, mTextures.size());
+        sResult += fmt::format("{:>{}} Textures sets cnt: {}\n", ">", indent + 2, mTextures.size());
         for (auto & oItem : mTextures) {
                 for (const auto & oTexItem : *oItem.second) {
-                        sResult += fmt::format("{:{}} block set: {}, TextureUnit: {}\n",
+                        sResult += fmt::format("{:>{}} block set: {}, TextureUnit: {}\n",
                                         ">",
                                         indent + 4,
                                         static_cast<int32_t>(oItem.first),
@@ -428,9 +428,9 @@ std::string ShaderProgramState::StrDump(const size_t indent) const {
                 }
         }
 
-        sResult += fmt::format("{:{}} default Textures set cnt: {}\n", ">", indent + 2, mDefaultTextures.size());
+        sResult += fmt::format("{:>{}} default Textures set cnt: {}\n", ">", indent + 2, mDefaultTextures.size());
         for (auto & oTexItem : mDefaultTextures) {
-                sResult += fmt::format("{:{}} TextureUnit: {}\n",
+                sResult += fmt::format("{:>{}} TextureUnit: {}\n",
                                 ">",
                                 indent + 4,
                                 static_cast<int32_t>(oTexItem.first));

@@ -316,11 +316,11 @@ std::string Material::StrDump(const size_t indent) const {
 
         sResult += fmt::format("{:>{}} Shader variables cnt: {}\n", ">", indent + 2, mShaderVariables.size());
         for (auto & oItem : mShaderVariables) {
-                sResult += fmt::format("{:{}} Name id: {}\n",
+                sResult += fmt::format("{:>{}} Name id: {}\n",
                                 ">",
                                 indent + 4,
                                 oItem.first);
-                auto cur_indent = indent + 4;
+                size_t cur_indent = indent + 4;
 
                 MP::Visit(oItem.second,
                                 [&sResult, cur_indent ](const float oVar) {
@@ -383,7 +383,7 @@ std::string Material::StrDump(const size_t indent) const {
 
         sResult += fmt::format("{:>{}} Textures cnt: {}\n", ">", indent + 2, mTextures.size());
         for (auto & oTexItem : mTextures) {
-                sResult += fmt::format("{:{}} TextureUnit: {}\n",
+                sResult += fmt::format("{:>{}} TextureUnit: {}\n",
                                 ">",
                                 indent + 4,
                                 static_cast<int32_t>(oTexItem.first));

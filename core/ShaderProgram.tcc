@@ -731,10 +731,10 @@ std::string ShaderVariable::StrDump(const size_t indent, const bool sampler) con
 std::string UniformBlockDescriptor::StrDump(const size_t indent) const {
 
         std::string sResult = fmt::format("{:>{}} UniformBlockDescriptor: size: {}\n", ">", indent, size);
-        sResult += fmt::format("{:>{}} Variable cnt: {}", ">", indent, mVariables.size());
+        sResult += fmt::format("{:>{}} Variable cnt: {}\n", ">", indent, mVariables.size());
         for (auto & oItem : mVariables) {
 
-                sResult += oItem.second.StrDump(indent + 2);
+                sResult += oItem.second.StrDump(indent + 2) + "\n";
         }
 
         return sResult;
