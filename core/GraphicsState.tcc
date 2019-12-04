@@ -315,6 +315,8 @@ void GraphicsState::BindUniformBufferRange(
                 return;
         }
         vUniformRanges[unit] = buf_offset;
+        //glBindBufferRange also binds buf_id to the generic buffer binding, used by glBindBuffer
+        active_ubo = buf_id;
 
         glBindBufferRange(GL_UNIFORM_BUFFER, unit, buf_id, buf_offset, block_size);
 }
