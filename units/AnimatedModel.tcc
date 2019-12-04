@@ -50,7 +50,34 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                 return uWRONG_INPUT_DATA;
         }
 
-        //auto & vSkeletonJointsInfo = pShell->GetSkeleton()->Joints();
+
+        //CHECK scene
+        {
+                auto & vJointNodes = pShell->JointNodes();
+                if (vJointNodes.size()) {
+
+                        auto & pWeakJointNode = vJointNodes[0];
+                        if (auto pJointNode = pWeakJointNode.lock()) {
+
+                                if (pJointNode->GetScene() != pTargetNode->GetScene()) {
+
+                                        log_e("scene mismatch: node '{}', node scene: '{}' joint node '{}', joint scene: '{}'",
+                                                        pTargetNode->GetName(),
+                                                        pTargetNode->GetScene()->Name(),
+                                                        pJointNode->GetName(),
+                                                        pJointNode->GetScene()->Name() );
+                                        return uLOGIC_ERROR;
+                                }
+                        }
+                        else {
+                               log_e("failed to get first joint node, current node: '{}'",
+                                               pTargetNode->GetFullName());
+                               return uLOGIC_ERROR;
+                        }
+
+                }
+        }
+
         vJointBaseMat.reserve(pJointIndices->Length());
         vJointIndexes.reserve(pJointIndices->Length());
 
