@@ -326,11 +326,15 @@ void UniformBlock::Apply() const {
 
 std::string UniformBlock::StrDump(const size_t indent) const {
 
-        std::string sResult = fmt::format("{:>{}} UniformBlock: id: {}, UniformUnit: {}\n",
+        const char * sData;
+        pBuffer->GetValue(block_id, 0, reinterpret_cast<const void *&>(sData), pDesc->size);
+
+        std::string sResult = fmt::format("{:>{}} UniformBlock: id: {}, UniformUnit: {}, data hash: {}\n",
                         ">",
                         indent,
                         block_id,
-                        static_cast<int32_t>(unit_id));
+                        static_cast<int32_t>(unit_id),
+                        StrID(sData, pDesc->size));
         sResult += pBuffer->StrDump(indent + 2) + "\n";
         sResult += pDesc->StrDump(indent + 2);
 
