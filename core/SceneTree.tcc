@@ -136,11 +136,13 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
                 oInput.read(&vBuffer[0], file_size);
         }
         flatbuffers::Verifier oVerifier(reinterpret_cast<uint8_t *>(&vBuffer[0]), file_size);
-        if (SE::FlatBuffers::VerifyNodeBuffer(oVerifier) != true) {
+        if (SE::FlatBuffers::VerifySceneTreeBuffer(oVerifier) != true) {
                 throw(std::runtime_error("failed to verify data in: " + sName));
         }
 
-        Load(SE::FlatBuffers::GetNode(&vBuffer[0]));
+        auto * pSceneFB = SE::FlatBuffers::GetSceneTree(&vBuffer[0]);
+
+        Load(pSceneFB->root());
 }
 
 template <class T> using TSerializedCheck = typename T::TSerialized;

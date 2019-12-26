@@ -75,7 +75,9 @@ SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNod
                 return res;
         }
 
-        FinishNodeBuffer(oBuilder, root_fb);
+        auto scene_fb = CreateSceneTree(oBuilder, root_fb);
+
+        FinishSceneTreeBuffer(oBuilder, scene_fb);
 
         log_d("flatbuffers build done, size {}", oBuilder.GetSize());
 

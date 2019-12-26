@@ -13,16 +13,17 @@ table StaticModel {
         material:MaterialHolder;
 }
 
-table Joint {
-        name:string (required);
-        parent_index:uint8;
-}
-
-table JointBind {
+table BindSQT {
 
         bind_rot:Vec4;
         bind_pos:Vec3;
         bind_scale:Vec3;
+}
+
+table Joint {
+        inv_bind_pos:BindSQT;
+        name:string (required);
+        parent_index:uint8;
 }
 
 table Skeleton {
@@ -54,7 +55,7 @@ table AnimatedModel {
         blendshapes_weights:[float];
         shell:CharacterShellHolder;
         joint_indexes:[uint8];
-        joint_bind_mat:[JointBind];
+        mesh_bind_pos:BindSQT;
 }
 
 //Component wrappers

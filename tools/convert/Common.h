@@ -13,6 +13,8 @@
 #include <CommonTypes.h>
 #include <BoundingBox.h>
 #include <TextureStock.h>
+#include <StrID.h>
+#include <Logging.h>
 
 namespace SE {
 namespace TOOLS {
@@ -37,6 +39,17 @@ struct BlendShapeData {
         //uint32_t                 vertices_cnt;
         //std::vector<VertexAttribute>    vAttributes ?? pos, normal, tangent
         std::string             sName;
+
+        uint32_t
+                                serialized_fb{};
+        uint32_t                serialized_weights_fb{};
+};
+
+struct BindPoseData {
+
+        glm::vec4               bind_rot;
+        glm::vec3               bind_pos;
+        glm::vec3               bind_scale;
 };
 
 struct JointData {
@@ -44,32 +57,26 @@ struct JointData {
         static const uint8_t    ROOT_PARENT_IND = -1;
 
         std::string             sName;
+        BindPoseData            oInvBindPose;
         uint8_t                 parent_index{};
+        bool                    bind_inited{false};
 };
 
-struct JointBindPoseData {
-
-        glm::vec4               bind_rot;
-        glm::vec3               bind_pos;
-        glm::vec3               bind_scale;
-};
-
-/** FIXME temporary Skeleton and CharacterShellData duplicate each time in result files
-  load only one, using ResourceManager feature
-  rewrite on resource map that handle <name, std::variant<std::tuple<obj, fb::offset<fb::obj> > > >
-  and store ony once
-  */
 struct Skeleton {
 
         std::string             sName;
         std::vector<JointData>  vJoints;
+
+        uint32_t                serialized_fb{};
+        std::unordered_map<StrID, uint8_t>               mBonesIndexes;
 };
 
 struct CharacterShellData {
 
         std::string             sName;
-        Skeleton                oSkeleton;
+        Skeleton              * pSkeleton{};
         std::string             sRootNode;
+        uint32_t                serialized_fb{};
 };
 
 
@@ -111,17 +118,19 @@ struct MeshData {
         std::vector<ShapeData>          vShapes;
         BoundingBox                     oBBox;
         std::string                     sName;
+
+        uint32_t                        serialized_fb{};
 };
 
 using TPackVertexIndex = void (*)(MeshData::TIndexVariant & oData, const uint32_t value);
 
 struct TextureData {
 
-        std::string             sPath;
-        TextureStock            oStock;
+        std::string                     sPath;
+        TextureStock                    oStock;
+        uint32_t                        serialized_fb{};
 };
 
-//TODO cache inside ctx
 struct MaterialData {
 
         using TVariant = std::variant<
@@ -134,22 +143,30 @@ struct MaterialData {
                 glm::uvec3,
                 glm::uvec4>;
 
-        std::unordered_map<std::string, TVariant> mVariables;
-        std::unordered_map<TextureUnit, TextureData> mTextures;
+        std::unordered_map<std::string, TVariant>       mVariables;
+        std::unordered_map<TextureUnit, TextureData>    mTextures;
 
         /** TODO currently inplace storage for shader program unsupported */
-        std::string sShaderPath;
-        std::string sName;
+        std::string                                     sShaderPath;
+        std::string                                     sName;
+
+        uint32_t                                        serialized_fb{};
+};
+
+struct SkinData {
+
+        CharacterShellData    * pShell{};
+        std::vector<uint8_t>    vJointIndexes;
+        BindPoseData            oMeshBindPose;
+        std::string             sName;
 };
 
 struct ModelData {
 
-        MeshData                oMesh;
-        MaterialData            oMaterial;
-        BlendShapeData          oBlendShape{};
-        CharacterShellData      oShell;
-        std::vector<uint8_t>    vJointIndexes;
-        std::vector<JointBindPoseData> vJointBindPose;
+        MeshData              * pMesh{};
+        MaterialData          * pMaterial{};
+        BlendShapeData        * pBlendShape{};
+        SkinData              * pSkin{};
 };
 
 using TComponent = std::variant<ModelData/*, Camera, Light, CustomComponent etc*/>;
@@ -165,7 +182,6 @@ struct NodeData {
         std::string             sInfo;
         bool                    enabled = true;
 };
-
 
 /**
  TODO support cross pack asset reference
@@ -229,6 +245,47 @@ template <class T> void PackValue(MeshData::TIndexVariant & oData, const uint32_
 
 TPackVertexIndex PackVertexIndexInit(const uint32_t index_size, MeshData::TIndexVariant & oIndex);
 
+
+struct ResourceStash {
+
+        using TResourceData = std::variant<MeshData, TextureData, MaterialData, BlendShapeData, Skeleton, CharacterShellData, SkinData>;
+        /** TODO later rewrite on tuple of vectors of all types
+         and return handle
+         */
+        using TResourceMap  = std::unordered_map<StrID, std::unique_ptr<TResourceData>>;
+        TResourceMap    mResources;
+
+        template <class TResource> bool GetResourceData(const StrID name_id, TResource ** pResource);
+        inline void Clear();
+};
+
+template <class TResource> bool ResourceStash::GetResourceData(const StrID name_id, TResource ** pResource) {
+
+        bool created = false;
+
+        auto itResource = mResources.find(name_id);
+        if (itResource == mResources.end()) {
+                auto * pItem = mResources.emplace(name_id, std::make_unique<TResourceData>(TResource{})).first->second.get();
+                *pResource = std::get_if<TResource>(pItem);
+                se_assert(*pResource);
+                created = true;
+                //log_d("item type: '{}', var index: {}, name_id: '{}'", typeid(TResource).name(), oItem.index(), name_id);
+        }
+        else {
+                *pResource = std::get_if<TResource>(itResource->second.get());
+                //log_d("item type: '{}', name_id: '{}'", typeid(TResource).name(), name_id);
+                se_assert(*pResource);
+        }
+
+        return created;
+}
+
+void ResourceStash::Clear() {
+
+        mResources.clear();
+}
+
 }
 }
+
 #endif

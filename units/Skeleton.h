@@ -13,6 +13,7 @@ namespace SE {
 struct Joint {
 
         //StrID                           name_id;
+        glm::mat4       mInvBindPose;
         std::string     sName;
         uint8_t         parent_ind{0};
 };
@@ -57,6 +58,8 @@ class CharacterShell : public ResourceHolder {
          re assign skeleton
          */
 };
+
+glm::mat4 BuildTransform(const SE::FlatBuffers::BindSQT * pBindPose);
 
 }
 

@@ -150,7 +150,9 @@ int main(int argc, char **argv) {
 
                 if (sExt == ".obj") {
                         log_d("file '{}' ext '{}', call OBJLoader", sInput, sExt);
+                        auto pMesh = std::make_unique<MeshData>();
                         ModelData oModelData;
+                        oModelData.pMesh = pMesh.get();
                         err_code = ReadOBJ(sInput, oModelData, oCtx);
                         if (err_code) {
                                 throw (std::runtime_error("Loading failed, err_code = " + std::to_string(err_code)) );
@@ -178,7 +180,7 @@ int main(int argc, char **argv) {
                                 err_code = WriteSceneTree(sOutput + ".sesc", oRoot);
                         }
                         else {
-                                err_code = WriteMesh(sOutput + ".sems", oModelData.oMesh);
+                                err_code = WriteMesh(sOutput + ".sems", *oModelData.pMesh);
                         }
                         if (err_code) {
                                 throw (std::runtime_error("Write failed, err_code = " + std::to_string(err_code)) );
@@ -238,7 +240,7 @@ const SE::TOOLS::MeshData * GetMesh(const SE::TOOLS::NodeData & oRoot) {
 
         for (auto & oComponent : oRoot.vComponents) {
                 if(auto pModelComponent = std::get_if<SE::TOOLS::ModelData>(&oComponent)) {
-                        return &pModelComponent->oMesh;
+                        return pModelComponent->pMesh;
                 }
         }
 

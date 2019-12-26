@@ -34,8 +34,6 @@ source:
                         BlendedPosition += vec4(BlendShapesWeights[i] * bs, 0);
                 }
 
-                //mat4 Model = MVMatrix;
-
                 if (JointsPerVertex > 0u) { //FIXME TEMP
                         mat4 SkinMatrix = JointsMatrices[JointIndices[0] ] * JointWeights[0];
 
@@ -43,12 +41,9 @@ source:
                                 SkinMatrix += JointsMatrices[JointIndices[j] ] * JointWeights[j];
                         }
 
-                        //Model *= SkinMatrix;
-                        //Model = SkinMatrix;
                         BlendedPosition = SkinMatrix * BlendedPosition;
                 }
 
-                //gl_Position = MVPMatrix * (Model * BlendedPosition);
                 gl_Position = MVPMatrix * (MVMatrix * BlendedPosition);
                 TexCoord    = TexCoord0;
         }

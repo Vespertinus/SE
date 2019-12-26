@@ -34,7 +34,7 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
 
         vVertexData.reserve(8);
 
-        oModel.oMesh.sName   = sPath;
+        oModel.pMesh->sName  = sPath;
 
         std::string sBaseDir = GetBaseDir(sPath);
         if (sBaseDir.empty()) {
@@ -77,7 +77,7 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
                 vTextures.emplace_back(sBaseDir + pMat->diffuse_texname);
         }
 
-        oModel.oMesh.vShapes.reserve(vShapes.size());
+        oModel.pMesh->vShapes.reserve(vShapes.size());
         uint8_t  stride           = ((oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
         uint32_t index_start      = 0;
         uint32_t total_index_size = 0;
@@ -87,7 +87,7 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
                 total_index_size += vShapes[s].mesh.indices.size();
         }
         vVertices.reserve(total_index_size  * (3 * 3 + 3 * 3 + 3 * 2 ));
-        TPackVertexIndex Pack      = PackVertexIndexInit(total_index_size, oModel.oMesh.oIndex);
+        TPackVertexIndex Pack      = PackVertexIndexInit(total_index_size, oModel.pMesh->oIndex);
 
         for (size_t s = 0; s < vShapes.size(); ++s) {
 
@@ -228,37 +228,37 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
                                                         (oCtx.skip_normals) ? 0 : vVertexData[5],
                                                         vVertexData[6], vVertexData[7]);
                                 }
-                                Pack(oModel.oMesh.oIndex, cur_index);
+                                Pack(oModel.pMesh->oIndex, cur_index);
                         }
                 }
 
                 oCtx.total_triangles_cnt += triangles_cnt;
 
-                oModel.oMesh.vShapes.emplace_back(
+                oModel.pMesh->vShapes.emplace_back(
                                 index_start,
                                 static_cast<uint32_t>(vShapes[s].mesh.indices.size()),
                                 std::move(oBBox));
                 index_start = vShapes[s].mesh.indices.size();
         }
 
-        oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer { std::move(vVertices), stride });
+        oModel.pMesh->vVertexBuffers.emplace_back(MeshData::VertexBuffer { std::move(vVertices), stride });
 
         uint16_t next_offset = 3;
 
-        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+        oModel.pMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                         "Position",
                         0,
                         3,
                         0 });
         if (!oCtx.skip_normals) {
-                oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+                oModel.pMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                                 "Normal",
                                 static_cast<uint16_t>(3 * sizeof(float)),
                                 3,
                                 0 });
                 next_offset = 6;
         }
-        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+        oModel.pMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                         "TexCoord0",
                         static_cast<uint16_t>(next_offset * sizeof(float)),
                         2,
@@ -268,8 +268,8 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
 
         ++oCtx.mesh_cnt;
 
-        for (auto & oShape : oModel.oMesh.vShapes) {
-                oModel.oMesh.oBBox.Concat(oShape.oBBox);
+        for (auto & oShape : oModel.pMesh->vShapes) {
+                oModel.pMesh->oBBox.Concat(oShape.oBBox);
         }
 
         return SE::uSUCCESS;

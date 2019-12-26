@@ -14,6 +14,7 @@ namespace TOOLS {
 class FBXReader {
 
         fbxsdk::FbxManager * pManager;
+        ResourceStash        oResStash;
 
         public:
 

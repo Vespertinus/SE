@@ -19,14 +19,10 @@ class AnimatedModel : public StaticModel {
 
         struct SkeletonPart {
 
-                std::vector<glm::mat4>  vJointBaseMat;
                 std::vector<uint8_t>    vJointIndexes;
+                glm::mat4               mBindPose;
                 CharacterShell        * pShell{};
 
-                /*ret_code_t FillData(
-                                const SE::FlatBuffers::CharacterShellHolder * pHolder,
-                                const flatbuffers::Vector<uint8_t> * pJointIndices,
-                                TSceneTree::TSceneNodeExact * pTargetNode);*/
                 ret_code_t FillData(
                                 const SE::FlatBuffers::AnimatedModel * pModel,
                                 TSceneTree::TSceneNodeExact * pTargetNode);
@@ -34,7 +30,6 @@ class AnimatedModel : public StaticModel {
 
         TTexture                      * pTexBuffer{};
         std::unique_ptr<UniformBlock>   pBlock;
-        //CharacterShell                    oSkeleton;
         SkeletonPart                    oSkeletonMeta;
         uint8_t                         blendshapes_cnt{};
         /** supported max 4 */ //THINK inside Mesh
@@ -72,9 +67,7 @@ class AnimatedModel : public StaticModel {
         void            PostUpdate(const Event & oEvent);
         void            DrawDebug() const;
         const CharacterShell * GetShell() const;
-        const std::vector<glm::mat4> & GetJointOffsetMat() const;
         const std::vector<uint8_t> & GetJointIndexes() const;
-        std::vector<glm::mat4> & GetJointOffsetMat();
         std::vector<uint8_t> & GetJointIndexes();
 };
 

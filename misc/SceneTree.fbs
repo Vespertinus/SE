@@ -14,15 +14,14 @@ table Node {
         info:string;
         enabled:bool = true;
 }
-/*
+
 table SceneTree {
 
+        //resources:[Resource] (required);
         root:Node (required);
-        //node_index:[Node] (required);
-}*/
+}
 
-root_type Node;
-//root_type SceneTree;
+root_type SceneTree;
 
 file_identifier "SESC";
 file_extension "sesc";

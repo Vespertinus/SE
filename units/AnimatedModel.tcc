@@ -8,21 +8,18 @@ const StrID AnimatedModel::JOINTS_PER_VERTEX    = "JointsPerVertex";
 const StrID AnimatedModel::JOINTS_MATRICES      = "JointsMatrices";
 
 
-/*ret_code_t AnimatedModel::SkeletonPart::FillData(
-                const SE::FlatBuffers::CharacterShellHolder * pHolder,
-                const flatbuffers::Vector<uint8_t> * pJointIndices,
-                const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::JointBind>>> * pJointBindMat,
-                TSceneTree::TSceneNodeExact * pTargetNode) */
-
 ret_code_t AnimatedModel::SkeletonPart::FillData(
                 const SE::FlatBuffers::AnimatedModel * pModel,
                 TSceneTree::TSceneNodeExact * pTargetNode) {
 
         const auto * pHolder            = pModel->shell();
         const auto * pJointIndices      = pModel->joint_indexes();
-        const auto * pJointBindMat      = pModel->joint_bind_mat();
+        const auto * pMeshBindPose      = pModel->mesh_bind_pos();
 
-        if (!pHolder || !pJointIndices || ! pJointBindMat || (pJointIndices->Length() != pJointBindMat->Length())) { return uSUCCESS; }
+        if (!pHolder || !pJointIndices || !pMeshBindPose) { return uSUCCESS; }
+
+        //setup bind matrix
+        mBindPose = BuildTransform(pMeshBindPose);
 
         if (pHolder->path() != nullptr) {
                 pShell = CreateResource<CharacterShell>(GetSystem<Config>().sResourceDir + pHolder->path()->c_str(), pTargetNode);
@@ -78,7 +75,6 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                 }
         }
 
-        vJointBaseMat.reserve(pJointIndices->Length());
         vJointIndexes.reserve(pJointIndices->Length());
 
         for (uint8_t joint_ind = 0; joint_ind < pJointIndices->Length(); ++joint_ind) {
@@ -93,20 +89,15 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                         return uWRONG_INPUT_DATA;
                 }
 
-                //auto & oJoint = vSkeletonJointsInfo[cur_joint_ind];
-                auto * pJoint = pJointBindMat->Get(joint_ind);
-                glm::quat bind_qrot     = *reinterpret_cast<const glm::quat *>(pJoint->bind_rot());
-                glm::vec3 bind_pos      = *reinterpret_cast<const glm::vec3 *>(pJoint->bind_pos());
-                glm::vec3 bind_scale    = *reinterpret_cast<const glm::vec3 *>(pJoint->bind_scale());
+                if (gLogger->level() == spdlog::level::debug) {
+                        auto * pSkeleton = pShell->GetSkeleton();
+                        log_d("add joint: '{}', joint_id: {} to node: '{}'",
+                                        pSkeleton->Joints()[cur_joint_ind].sName,
+                                        cur_joint_ind,
+                                        pTargetNode->GetName()
+                                        );
+                }
 
-                //TODO serialize mJointBind on asset import
-                glm::mat4 mJointBind;
-                glm::mat4 mTranslate    = glm::translate(glm::mat4(1.0), bind_pos);
-                glm::mat4 mScale        = glm::scale (glm::mat4(1.0), bind_scale);
-                glm::mat4 mRotation     = glm::toMat4(bind_qrot);
-                mJointBind  = mTranslate * mRotation * mScale;
-
-                vJointBaseMat.emplace_back(mJointBind);
                 vJointIndexes.emplace_back(cur_joint_ind);
         }
 
@@ -256,13 +247,7 @@ AnimatedModel::~AnimatedModel() noexcept {
 
 ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel) {
 
-        auto res = oSkeletonMeta.FillData(
-                        pModel,
-                        /*pModel->shell(),
-                        //pModel->skeleton_root_node() ? pModel->skeleton_root_node()->c_str() : "",
-                        pModel->joint_indexes(),
-                        pModel->joint_bind_mat(),*/
-                        pNode);
+        auto res = oSkeletonMeta.FillData(pModel, pNode);
 
         if (res != uSUCCESS) { return res; }
 
@@ -480,11 +465,14 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
                         oSkeletonMeta.pShell->Name(),
                         oSkeletonMeta.pShell->GetSkeleton()->Name());
 
-        auto & vJointNodes = oSkeletonMeta.pShell->JointNodes();
+        auto & vJointNodes      = oSkeletonMeta.pShell->JointNodes();
+        auto * pSkeleton        = oSkeletonMeta.pShell->GetSkeleton();
 
         for (size_t i = 0; i < oSkeletonMeta.vJointIndexes.size(); ++i) {
 
                 if (auto pJointNode = vJointNodes[oSkeletonMeta.vJointIndexes[i]].lock()) {
+
+                        auto & mJointInvBindPose = pSkeleton->Joints()[oSkeletonMeta.vJointIndexes[i]].mInvBindPose;
 
                         /*
                            log_d("joint[{}] world pos: ({}, {}, {})",
@@ -495,16 +483,19 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
                                         );
                          */
 
-                        //pBlock->SetArrayElement(JOINTS_MATRICES, i, pJointNode->GetTransform().GetWorld() * oSkeletonMeta.vJointBaseMat[i]);
-
                         glm::mat4 mResTransform =
-                                        glm::inverse(pNode->GetTransform().GetWorld())
-                                        *
-                                        pJointNode->GetTransform().GetWorld()
-                                        *
-                                        oSkeletonMeta.vJointBaseMat[i];
-                        auto res_world_pos = glm::vec3(mResTransform[3]);
+                                glm::inverse(oSkeletonMeta.mBindPose)
+                                *
+                                pJointNode->GetTransform().GetWorld()
+                                *
+                                (
+                                 mJointInvBindPose
+                                 *
+                                 oSkeletonMeta.mBindPose
+                                );
+
                         /*
+                        auto      res_world_pos = glm::vec3(mResTransform[3]);
                         glm::vec3 scale;
                         glm::quat rotation;
                         glm::vec3 translation;
@@ -579,19 +570,9 @@ const CharacterShell * AnimatedModel::GetShell() const {
         return oSkeletonMeta.pShell;
 }
 
-const std::vector<glm::mat4> & AnimatedModel::GetJointOffsetMat() const {
-
-        return oSkeletonMeta.vJointBaseMat;
-}
-
 const std::vector<uint8_t> & AnimatedModel::GetJointIndexes() const {
 
         return oSkeletonMeta.vJointIndexes;
-}
-
-std::vector<glm::mat4> & AnimatedModel::GetJointOffsetMat() {
-
-        return oSkeletonMeta.vJointBaseMat;
 }
 
 std::vector<uint8_t> & AnimatedModel::GetJointIndexes() {

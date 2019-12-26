@@ -36,7 +36,7 @@
 namespace SE {
 namespace TOOLS {
 
-ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx);
+ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx, ResourceStash & oResStash);
 
 
 struct SkinVertInfo {
@@ -194,6 +194,8 @@ ret_code_t FBXReader::ReadScene(const std::string_view sPath, NodeData & oRootNo
                 return uEXT_LIBRARY_ERROR;
         }
 
+        oResStash.Clear();
+
         //TODO import camera settings
 
         FbxNode * pNode = pScene->GetRootNode();
@@ -202,7 +204,7 @@ ret_code_t FBXReader::ReadScene(const std::string_view sPath, NodeData & oRootNo
                 return uWRONG_INPUT_DATA;
         }
 
-        return ImportNode(pNode, oRootNode, oCtx);
+        return ImportNode(pNode, oRootNode, oCtx, oResStash);
 }
 
 static ret_code_t GetUV(
@@ -272,20 +274,6 @@ static ret_code_t GetUV(
         return uSUCCESS;
 }
 
-/*
-static void PolygonFlipYZ(float * data, const uint8_t elem_size) {
-
-        float old_y[3] = { data[1], data[1 + elem_size], data[1 + elem_size * 2]};
-
-        data[1]                 = - data[2];
-        data[1 + elem_size]     = - data[2 + elem_size];
-        data[1 + elem_size * 2] = - data[2 + elem_size * 2];
-
-        data[2]                 = old_y[0];
-        data[2 + elem_size]     = old_y[1];
-        data[2 + elem_size * 2] = old_y[2];
-}
-*/
 static void VertexFlipYZ(float * data) {
 
         float old_y = data[1];
@@ -296,15 +284,19 @@ static void VertexFlipYZ(float * data) {
 
 static ret_code_t ImportBlendShapes(
                 FbxMesh * pMesh,
-                BlendShapeData & oBlendShapeData,
+                ModelData & oModel,
                 const std::unordered_map<uint32_t, std::unordered_set<uint32_t>> & mRemapIndex,
-                const uint32_t remaped_vertices_cnt) {
+                const uint32_t remaped_vertices_cnt,
+                ResourceStash & oResStash,
+                const std::string & sPackName) {
 
         FbxVector4    * pMeshControlPoints = pMesh->GetControlPoints();
         uint32_t        bs_cnt             = pMesh->GetDeformerCount(FbxDeformer::eBlendShape);
         uint32_t        bs_total_cnt       = 0;
         uint32_t        bs_cur             = 0;
         uint32_t        cur_pos;
+
+        std::string sBlendshapesName = sPackName;
 
         for (uint32_t bs_ind = 0; bs_ind < bs_cnt; ++bs_ind) {
 
@@ -321,11 +313,22 @@ static ret_code_t ImportBlendShapes(
                                                 target_shape_cnt);
                                 return uWRONG_INPUT_DATA;
                         }
+
+                        if (!sBlendshapesName.empty()) {
+                                sBlendshapesName += "|";
+                        }
+                        sBlendshapesName += pBlendShapeChannel->GetName();
                 }
                 bs_total_cnt += bs_channel_cnt;
         }
 
         if (bs_total_cnt == 0) { return uSUCCESS; }
+
+        auto created = oResStash.GetResourceData(sBlendshapesName, &oModel.pBlendShape);
+        if (!created) {
+                return uSUCCESS;
+        }
+        oModel.pBlendShape->sName = sBlendshapesName;
 
         size_t total_elements_cnt = bs_total_cnt * remaped_vertices_cnt * 3 /* position */;
         if (total_elements_cnt * sizeof (float) >= (100 * 1024 * 1024)) {
@@ -339,7 +342,7 @@ static ret_code_t ImportBlendShapes(
                         bs_total_cnt,
                         remaped_vertices_cnt,
                         total_elements_cnt);
-        oBlendShapeData.vBuffer.resize(total_elements_cnt);
+        oModel.pBlendShape->vBuffer.resize(total_elements_cnt);
 
 /**
 data layout inside buffer:
@@ -359,11 +362,7 @@ data layout inside buffer:
                                         pBlendShapeChannel->GetName(),
                                         pBlendShapeChannel->DeformPercent.Get());
 
-                        oBlendShapeData.vDefaultWeights.emplace_back(pBlendShapeChannel->DeformPercent.Get() / 100.0f);
-                        if (!oBlendShapeData.sName.empty()) {
-                                oBlendShapeData.sName += "|";
-                        }
-                        oBlendShapeData.sName += pBlendShapeChannel->GetName();
+                        oModel.pBlendShape->vDefaultWeights.emplace_back(pBlendShapeChannel->DeformPercent.Get() / 100.0f);
 
                         FbxShape*       pShape            = pBlendShapeChannel->GetTargetShape(0);
                         int32_t         vertices_cnt      = pShape->GetControlPointsCount();
@@ -412,7 +411,7 @@ data layout inside buffer:
                                                         pBSControlPoints[i][2]
                                              );
                                         */
-                                        memcpy(&oBlendShapeData.vBuffer[cur_pos], &vPosDiff.x, sizeof(float) * 3);
+                                        memcpy(&oModel.pBlendShape->vBuffer[cur_pos], &vPosDiff.x, sizeof(float) * 3);
                                 }
                         }
 
@@ -428,9 +427,9 @@ data layout inside buffer:
                         log_d("blendshapes buf: vert: {}, bs: {}, pos diff: ({}, {}, {}), buf_pos: {}",
                                         vert_id,
                                         j,
-                                        oBlendShapeData.vBuffer[i + 0 + j * 3],
-                                        oBlendShapeData.vBuffer[i + 1 + j * 3],
-                                        oBlendShapeData.vBuffer[i + 2 + j * 3],
+                                        oModel.pBlendShapeData->vBuffer[i + 0 + j * 3],
+                                        oModel.pBlendShapeData->vBuffer[i + 1 + j * 3],
+                                        oModel.pBlendShapeData->vBuffer[i + 2 + j * 3],
                                         i
                              );
                 }
@@ -443,13 +442,15 @@ data layout inside buffer:
 static ret_code_t ImportSkeleton(
                 ModelData & oModel,
                 FbxNode * pJointNode,
-                std::unordered_map<std::string, uint8_t> & mJoints) {
-
-        //if (!oModel.oShell.oSkeleton.sName.empty()) { return uSUCCESS; }
+                std::unordered_map<std::string, uint8_t> & mJoints,
+                ResourceStash & oResStash,
+                const std::string & sPackName) {
 
         FbxNode * pCurNode = pJointNode;
         FbxNode * pRootNode{};
         std::vector<FbxNode *> vJointFbxNodes;
+
+        se_assert(oModel.pSkin);
 
         while (pCurNode) {
 
@@ -461,11 +462,6 @@ static ret_code_t ImportSkeleton(
 
                 FbxSkeleton * pJoint = (FbxSkeleton*) pCurNode->GetNodeAttribute();
                 if (pJoint->IsSkeletonRoot()) {
-                        /*
-                        oCurJoint.parent_index = JointData::ROOT_PARENT_IND;
-                        if (auto * pParent = pCluster->GetLink()->GetParent()) {
-                                oModel.sRootNode = pParent->GetName();
-                        }*/
                         pRootNode = pCurNode;
                         break;
                 }
@@ -481,7 +477,7 @@ static ret_code_t ImportSkeleton(
         vJointFbxNodes.emplace_back(pRootNode);
 
         std::function<ret_code_t (FbxNode * pCurNode) > ProcessSkeletonNode;
-        ProcessSkeletonNode = [pRootNode, &oModel, &vJointFbxNodes, &mJoints, &ProcessSkeletonNode](FbxNode * pCurNode) {
+        ProcessSkeletonNode = [pRootNode, &vJointFbxNodes, &mJoints, &ProcessSkeletonNode](FbxNode * pCurNode) {
 
                 auto child_cnt = pCurNode->GetChildCount();
                 for (auto i = 0; i < child_cnt; ++i) {
@@ -507,24 +503,58 @@ static ret_code_t ImportSkeleton(
 
         log_d("build skeleton with {} joints", vJointFbxNodes.size());
 
+        std::string sRootNodeName;
+
         if (auto * pParent = vJointFbxNodes[0]->GetParent()) {
-                oModel.oShell.sRootNode = pParent->GetName();
+                sRootNodeName = pParent->GetName();
         }
         else {
-                oModel.oShell.sRootNode = vJointFbxNodes[0]->GetName();
+                sRootNodeName = vJointFbxNodes[0]->GetName();
         };
 
         //THINK duplication in differet fbx..
         //same with skeleton?
-        oModel.oShell.sName += fmt::format("cs:{}", StrID(oModel.oShell.sRootNode));
+        std::string sShellName = fmt::format("cs:{}|pc:{}", StrID(sRootNodeName), sPackName);
 
-        oModel.oShell.oSkeleton.sName += vJointFbxNodes[0]->GetName();
-        oModel.oShell.oSkeleton.vJoints.emplace_back(JointData{vJointFbxNodes[0]->GetName(), JointData::ROOT_PARENT_IND});
+        if (oResStash.GetResourceData(sShellName, &oModel.pSkin->pShell) ) {
+                oModel.pSkin->pShell->sName     = sShellName;
+                oModel.pSkin->pShell->sRootNode = sRootNodeName;
+        }
+        else {
+                log_d("shell: '{}' already created", sShellName);
+                return uSUCCESS;
+        }
+
+        //build skeleton name
+        std::string sSkeletonBones;
+        for (uint8_t i = 0; i < vJointFbxNodes.size(); ++i) {
+
+                sSkeletonBones += vJointFbxNodes[i]->GetName();
+        }
+        std::string sSkeletonName = fmt::format("sk:{}:{}|pc:{}",
+                        vJointFbxNodes.size(),
+                        StrID(sSkeletonBones),
+                        sPackName);
+
+        if (!oResStash.GetResourceData(sSkeletonName, &oModel.pSkin->pShell->pSkeleton) ) {
+
+                log_d("skeleton: '{}' already created", sSkeletonName);
+                return uSUCCESS;
+        }
+
+        oModel.pSkin->pShell->pSkeleton->sName = sSkeletonName;
+        oModel.pSkin->pShell->pSkeleton->vJoints.reserve(vJointFbxNodes.size());
+
+        oModel.pSkin->pShell->pSkeleton->vJoints.emplace_back(JointData{
+                        vJointFbxNodes[0]->GetName(),
+                        BindPoseData{},
+                        JointData::ROOT_PARENT_IND
+                        });
+        oModel.pSkin->pShell->pSkeleton->mBonesIndexes.emplace(vJointFbxNodes[0]->GetName(), 0);
 
         for (uint8_t i = 1; i < vJointFbxNodes.size(); ++i) {
 
                 auto * pParent = vJointFbxNodes[i]->GetParent();
-                //if (!pParent) { continue; }//THINK
                 se_assert(pParent);
 
                 auto itParentInd = mJoints.find(pParent->GetName());
@@ -536,20 +566,13 @@ static ret_code_t ImportSkeleton(
                         return uWRONG_INPUT_DATA;
                 }
 
-                oModel.oShell.oSkeleton.sName += vJointFbxNodes[i]->GetName();
-
                 JointData oCurJoint;
                 oCurJoint.sName         = vJointFbxNodes[i]->GetName();
                 oCurJoint.parent_index  = itParentInd->second;
 
-                oModel.oShell.oSkeleton.vJoints.emplace_back(std::move(oCurJoint));
+                oModel.pSkin->pShell->pSkeleton->vJoints.emplace_back(std::move(oCurJoint));
+                oModel.pSkin->pShell->pSkeleton->mBonesIndexes.emplace(vJointFbxNodes[i]->GetName(), i);
         }
-
-        oModel.oShell.oSkeleton.sName = fmt::format("sk:{}:{}",
-                        oModel.oShell.oSkeleton.vJoints.size(),
-                        StrID(oModel.oShell.oSkeleton.sName));
-
-        //TODO set oShell.sName
 
         return uSUCCESS;
 }
@@ -559,7 +582,9 @@ static ret_code_t ImportSkin(
                 FbxMesh * pMesh,
                 ModelData & oModel,
                 const std::unordered_map<uint32_t, std::unordered_set<uint32_t>> & mRemapIndex,
-                const uint32_t remaped_vertices_cnt) {
+                const uint32_t remaped_vertices_cnt,
+                ResourceStash & oResStash,
+                const std::string & sPackName) {
 
         uint32_t skin_cnt               = pMesh->GetDeformerCount(FbxDeformer::eSkin);
         int32_t  input_vertices_cnt     = pMesh->GetControlPointsCount();
@@ -567,6 +592,16 @@ static ret_code_t ImportSkin(
         if (!skin_cnt) { return uSUCCESS; }
         else if (skin_cnt > 1) {
                 log_w("import only first skin deformer per mesh");
+        }
+
+        std::string sSkinName = fmt::format("skd:mesh:{}", oModel.pMesh->sName);
+        if (oResStash.GetResourceData(sSkinName, &oModel.pSkin) ) {
+
+                oModel.pSkin->sName = sSkinName;
+        }
+        else {
+                log_d("skin: '{}' already created", sSkinName);
+                return uSUCCESS;
         }
 
         auto pSkinDeformer = (FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin);
@@ -589,15 +624,14 @@ static ret_code_t ImportSkin(
         }
 
         auto * pInitialJointNode =  ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(0)->GetLink();
-        if (auto res = ImportSkeleton(oModel, pInitialJointNode, mJoints); res != uSUCCESS) {
+        if (auto res = ImportSkeleton(oModel, pInitialJointNode, mJoints, oResStash, sPackName); res != uSUCCESS) {
                 return res;
         }
 
         std::vector<SkinVertInfo> vSkinInfo(input_vertices_cnt);
         FbxCluster * pCluster;
-        oModel.oShell.oSkeleton.vJoints.reserve(cluster_cnt);
 
-        log_d("node: '{}', try to import {} clusters", oModel.oMesh.sName, cluster_cnt);
+        log_d("node: '{}', try to import {} clusters", oModel.pMesh->sName, cluster_cnt);
 
         auto GetGeometry = [](FbxNode* pNode) {//TODO calc once
 
@@ -623,6 +657,39 @@ static ret_code_t ImportSkin(
 
                 return FbxAMatrix(lT, lR, lS);
         };
+
+        //get mesh node bind pose transform matrix
+        {
+                pCluster = pSkinDeformer->GetCluster(0);
+
+                FbxAMatrix pTransformMatrix;
+                FbxAMatrix pReferenceGeomMatrix;
+
+                pCluster->GetTransformMatrix(pTransformMatrix);
+                pReferenceGeomMatrix = GetGeometry(pNode);
+                pTransformMatrix    *= pReferenceGeomMatrix;
+
+                FbxVector4 vBindPos     = pTransformMatrix.GetT();
+                FbxVector4 vBindScale   = pTransformMatrix.GetS();
+                FbxQuaternion qRot      = pTransformMatrix.GetQ();
+
+                oModel.pSkin->oMeshBindPose.bind_pos   = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
+                oModel.pSkin->oMeshBindPose.bind_scale = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
+                oModel.pSkin->oMeshBindPose.bind_rot   = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
+
+                /*
+                log_d("orig node: '{}' bind pose global transform pos: ({}, {}, {}), scale: ({}, {}, {})",
+                                pNode->GetName(),
+                                pTransformMatrix.GetT()[0],
+                                pTransformMatrix.GetT()[1],
+                                pTransformMatrix.GetT()[2],
+                                pTransformMatrix.GetS()[0],
+                                pTransformMatrix.GetS()[1],
+                                pTransformMatrix.GetS()[2]
+                                );
+                */
+
+        }
 
 
         //find max joints per vertex
@@ -657,13 +724,11 @@ static ret_code_t ImportSkin(
 
                         log_e("joint '{}' not found in skeleton: '{}'",
                                         pCluster->GetLink()->GetName(),
-                                        oModel.oShell.oSkeleton.sName);
+                                        oModel.pSkin->pShell->pSkeleton->sName);
                         return uWRONG_INPUT_DATA;
                 }
 
-                //fill joint info
-                JointBindPoseData oCurJoint;
-                //oCurJoint.sName = pCluster->GetLink()->GetName();
+
 
                 if (pCluster->GetLink()->GetNodeAttribute()->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
 
@@ -672,72 +737,51 @@ static ret_code_t ImportSkin(
                         return uWRONG_INPUT_DATA;
                 }
 
-                FbxAMatrix pTransformMatrix;
-                FbxAMatrix pLinkTransformMatrix;
-                FbxAMatrix pResTransformMatrix;
-                FbxAMatrix pReferenceGeomMatrix;
-
-
-
-                if (pNode == pMesh->GetNode()) {//initial object node
-
-                        pCluster->GetTransformMatrix(pTransformMatrix);
+                auto itNode = oModel.pSkin->pShell->pSkeleton->mBonesIndexes.find(pCluster->GetLink()->GetName());
+                if (itNode == oModel.pSkin->pShell->pSkeleton->mBonesIndexes.end()) {
+                        log_e("cluster node '{}' not from skeleton: '{}', hierarchy, root node: '{}'",
+                                        pCluster->GetLink()->GetName(),
+                                        oModel.pSkin->pShell->pSkeleton->sName,
+                                        oModel.pSkin->pShell->sRootNode);
+                        return uWRONG_INPUT_DATA;
                 }
-                else {//instance node
-                        pTransformMatrix = pNode->EvaluateGlobalTransform();
-                }
+                se_assert(itNode->second < oModel.pSkin->pShell->pSkeleton->vJoints.size());
+                auto & oJointData = oModel.pSkin->pShell->pSkeleton->vJoints[itNode->second];
 
-                //pReferenceGeomMatrix = GetGeometry(pMesh->GetNode());
-                //-->pReferenceGeomMatrix = GetGeometry(pCluster->GetLink());
-                pReferenceGeomMatrix = GetGeometry(pNode);
-                pLinkTransformMatrix = pCluster->GetTransformLinkMatrix(pLinkTransformMatrix);
+                if (!oJointData.bind_inited) {
+
+                        oJointData.bind_inited = true;
+
+                        FbxAMatrix pLinkTransformMatrix;
+                        pCluster->GetTransformLinkMatrix(pLinkTransformMatrix);
+
+                        /*
+                        log_d("link node: '{}' bind pos: ({}, {}, {}), scale: ({}, {}, {})",
+                                        pCluster->GetLink()->GetName(),
+                                        pLinkTransformMatrix.GetT()[0],
+                                        pLinkTransformMatrix.GetT()[1],
+                                        pLinkTransformMatrix.GetT()[2],
+                                        pLinkTransformMatrix.GetS()[0],
+                                        pLinkTransformMatrix.GetS()[1],
+                                        pLinkTransformMatrix.GetS()[2]
+                             );
+                        */
+
+                        pLinkTransformMatrix = pLinkTransformMatrix.Inverse();
+
+                        FbxVector4 vBindPos     = pLinkTransformMatrix.GetT();
+                        FbxVector4 vBindScale   = pLinkTransformMatrix.GetS();
+                        FbxQuaternion qRot      = pLinkTransformMatrix.GetQ();
+
+                        oJointData.oInvBindPose.bind_pos    = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
+                        oJointData.oInvBindPose.bind_scale  = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
+                        oJointData.oInvBindPose.bind_rot    = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
+                }
 
                 //log_d("current node name: {}", pCluster->GetLink()->GetName());
 
-                pTransformMatrix   *= pReferenceGeomMatrix;
-                pResTransformMatrix = pLinkTransformMatrix.Inverse() * pTransformMatrix;
-
-                FbxVector4 vBindPos     = pResTransformMatrix.GetT();
-                FbxVector4 vBindScale   = pResTransformMatrix.GetS();
-                FbxQuaternion qRot      = pResTransformMatrix.GetQ();
-
-                oCurJoint.bind_pos      = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
-                oCurJoint.bind_scale    = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
-                oCurJoint.bind_rot      = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
-
-                /*
-                log_d("orig node: '{}' global transform pos: ({}, {}, {})",
-                                pNode->GetName(),
-                                pTransformMatrix.GetT()[0],
-                                pTransformMatrix.GetT()[1],
-                                pTransformMatrix.GetT()[2]
-                                );
-                log_d("result for joint node: '{}', mesh node: '{}', orig node: '{}', link pos: ({}, {}, {}, {}), qrot: ({}, {}, {}, {}), scale: ({}, {}, {})",
-                                pCluster->GetLink()->GetName(),
-                                pMesh->GetNode()->GetName(),
-                                pNode->GetName(),
-                                vBindPos[0],
-                                vBindPos[1],
-                                vBindPos[2],
-                                vBindPos[3],
-                                qRot[0],
-                                qRot[1],
-                                qRot[2],
-                                qRot[3],
-                                vBindScale[0],
-                                vBindScale[1],
-                                vBindScale[2]
-                                );
-
-                */
-
-                //TODO match cluser link with current;
-                oModel.vJointIndexes.emplace_back(itJointInd->second);
-                oModel.vJointBindPose.emplace_back(std::move(oCurJoint));
+                oModel.pSkin->vJointIndexes.emplace_back(itJointInd->second);
         }
-
-        //oModel.oSkeleton.sName = fmt::format("sk:{}:{}", cluster_cnt, StrID(oModel.oSkeleton.sName));
-
 
         if (joints_per_vertex == 0) {
                 log_e("empty cluster, no one vertex weight found");
@@ -774,7 +818,7 @@ static ret_code_t ImportSkin(
 
                 auto it = mRemapIndex.find(i);
                 if (it == mRemapIndex.end()) {
-                        log_w("vertex {} unused in vertex index");
+                        log_w("vertex {} unused in skinning vertex index", i);
                         continue;
                 }
 
@@ -787,26 +831,26 @@ static ret_code_t ImportSkin(
         }
 
         log_d("skeleton: '{}', root node: '{}', cluster cnt: {}, joints_per_vertex: {}",
-                        oModel.oShell.oSkeleton.sName,
-                        oModel.oShell.sRootNode,
+                        oModel.pSkin->pShell->pSkeleton->sName,
+                        oModel.pSkin->pShell->sRootNode,
                         cluster_cnt,
                         joints_per_vertex);
 
         uint8_t stride = joints_per_vertex * sizeof(float);
-        uint8_t weights_buffer_ind = oModel.oMesh.vVertexBuffers.size();
-        oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vWeightsBuffer), stride});
+        uint8_t weights_buffer_ind = oModel.pMesh->vVertexBuffers.size();
+        oModel.pMesh->vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vWeightsBuffer), stride});
         //TODO write indices and weights in one buffer
         stride = joints_per_vertex * sizeof(uint8_t);
-        uint8_t indices_buffer_ind = oModel.oMesh.vVertexBuffers.size();
-        oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vIndicesBuffer), stride});
+        uint8_t indices_buffer_ind = oModel.pMesh->vVertexBuffers.size();
+        oModel.pMesh->vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vIndicesBuffer), stride});
 
-        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+        oModel.pMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                         "JointWeights",
                         0,
                         joints_per_vertex,
                         weights_buffer_ind });
 
-        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+        oModel.pMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                         "JointIndices",
                         0,
                         joints_per_vertex,
@@ -818,35 +862,91 @@ static ret_code_t ImportSkin(
         return uSUCCESS;
 }
 
-//TODO import sub meshes by materials
-static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
+static ret_code_t ImportMaterial(FbxNode * pNode, MaterialData ** pMaterialData, ImportCtx & oCtx, ResourceStash & oResStash) {
 
-        FbxNodeAttribute::EType attribute_type;
+        if (!(pNode->GetSrcObjectCount<FbxSurfaceMaterial>() > 0 && !oCtx.skip_material)) {
+                return uSUCCESS;
+        }
+
+        FbxSurfaceMaterial * pMaterial = pNode->GetSrcObject<FbxSurfaceMaterial>(0);
+
+        if(pMaterial) {
+                //check by name in resource cache
+
+                std::string sTextureName;
+                auto oProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
+
+                if (oProperty.IsValid() &&  oProperty.GetSrcObjectCount<FbxTexture>() > 0) {
+
+                        if (FbxLayeredTexture * pLayeredTexture = oProperty.GetSrcObject<FbxLayeredTexture>(0);
+                                        pLayeredTexture != nullptr &&
+                                        pLayeredTexture->GetSrcObjectCount<FbxTexture>() > 0) {
+
+                                FbxTexture * pTexture = pLayeredTexture->GetSrcObject<FbxTexture>(0);
+                                if (pTexture != nullptr) {
+                                        FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
+                                        sTextureName = pFileTexture->GetFileName();
+                                        oCtx.FixPath(sTextureName);
+                                        ++oCtx.textures_cnt;
+                                }
+                        }
+                        else if (FbxTexture * pTexture = oProperty.GetSrcObject<FbxTexture>(0) ) {
+                                FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
+                                sTextureName = pFileTexture->GetFileName();
+                                oCtx.FixPath(sTextureName);
+                                ++oCtx.textures_cnt;
+                        }
+                }
+
+                /** create basic material with one texture */
+                if (!sTextureName.empty()) {
+
+                        log_d("diffuse texture: '{}'", sTextureName);
+
+                        static std::string sDefaultShader = "shader_program/simple_tex.sesp";
+
+                        std::string sMaterialName = pMaterial->GetName();
+                        if (sMaterialName.empty()) {
+                                sMaterialName = oCtx.sPackName + std::to_string(StrID(sTextureName + sDefaultShader));
+                        }
+                        else {
+                                sMaterialName = oCtx.sPackName + sMaterialName;
+                        }
+
+                        bool created = oResStash.GetResourceData(sMaterialName, pMaterialData);
+                        if (created) {
+                                //TextureData by ptr for reusing
+                                //currently only by material name
+                                (*pMaterialData)->sShaderPath = sDefaultShader;
+                                (*pMaterialData)->mTextures.emplace(
+                                                TextureUnit::DIFFUSE,
+                                                TextureData{std::move(sTextureName)} );
+
+                                ++oCtx.material_cnt;
+                        }
+                }
+        }
+
+
+        return uSUCCESS;
+}
+
+static ret_code_t ImportMesh(
+                FbxNode * pNode,
+                MeshData ** pMeshData,
+                ImportCtx & oCtx,
+                ResourceStash & oResStash,
+                std::unordered_map<uint32_t, std::unordered_set<uint32_t>> & mRemapIndex,
+                uint32_t & remaped_vertices_cnt) {
+
+        VertexIndex             oVertexIndex;
+        FbxMesh               * pMesh           = (FbxMesh *) pNode->GetNodeAttribute ();
+        int32_t                 vertices_cnt    = pMesh->GetControlPointsCount();
+        FbxVector4            * pControlPoints  = pMesh->GetControlPoints();
         std::vector<float>      vVertexData;
         vVertexData.reserve(8);
-        VertexIndex             oVertexIndex;
         uint32_t                cur_index = 0;
         TPackVertexIndex        Pack;
-
-        auto * pAttribute = pNode->GetNodeAttribute();
-        if (pAttribute == nullptr) {
-                log_d("node '{}' does't contain attribute", pNode->GetName());
-                return uSUCCESS;
-        }
-
-        attribute_type = pAttribute->GetAttributeType();
-
-        if (attribute_type != FbxNodeAttribute::eMesh) {
-
-                log_d("empty node: '{}'", pNode->GetName());
-                return uSUCCESS;
-        }
-
-        log_d("mesh node: '{}', name: '{}'", pNode->GetName(), pAttribute->GetName());
-        FbxMesh * pMesh = (FbxMesh *) pNode->GetNodeAttribute ();
-
-        int32_t         vertices_cnt    = pMesh->GetControlPointsCount();
-        FbxVector4    * pControlPoints  = pMesh->GetControlPoints();
 
         if ( pMesh->GetElementUVCount() == 0) {
                 log_e("failed to get UV coordinates for mesh '{}'", pNode->GetName());
@@ -855,77 +955,28 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
         std::vector<float> vVertices;
 
-        ModelData       oModel;
         uint8_t stride               = ((oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
-        oModel.oMesh.sName           = pAttribute->GetName();
+        std::string sMeshName        = pMesh->GetName();
 
-        if (oModel.oMesh.sName.empty()) {
-                oModel.oMesh.sName = oCtx.sPackName + std::to_string(reinterpret_cast<std::uintptr_t>(pMesh));
+        if (sMeshName.empty()) {
+                sMeshName = oCtx.sPackName + std::to_string(reinterpret_cast<std::uintptr_t>(pMesh));
         }
         else {
-                oModel.oMesh.sName = oCtx.sPackName + oModel.oMesh.sName;
+                sMeshName = oCtx.sPackName + sMeshName;
         }
 
-        if (pNode->GetSrcObjectCount<FbxSurfaceMaterial>() > 0 && !oCtx.skip_material) {
-
-                FbxSurfaceMaterial * pMaterial = pNode->GetSrcObject<FbxSurfaceMaterial>(0);
-
-                if(pMaterial) {//TODO fill MaterialData
-
-                        std::string sTextureName;
-                        auto oProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
-
-                        if (oProperty.IsValid() &&  oProperty.GetSrcObjectCount<FbxTexture>() > 0) {
-
-                                if (FbxLayeredTexture * pLayeredTexture = oProperty.GetSrcObject<FbxLayeredTexture>(0);
-                                                pLayeredTexture != nullptr &&
-                                                pLayeredTexture->GetSrcObjectCount<FbxTexture>() > 0) {
-
-                                        FbxTexture * pTexture = pLayeredTexture->GetSrcObject<FbxTexture>(0);
-                                        if (pTexture != nullptr) {
-                                                FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
-                                                sTextureName = pFileTexture->GetFileName();
-                                                oCtx.FixPath(sTextureName);
-                                                ++oCtx.textures_cnt;
-                                        }
-                                }
-                                else if (FbxTexture * pTexture = oProperty.GetSrcObject<FbxTexture>(0) ) {
-                                        FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
-                                        sTextureName = pFileTexture->GetFileName();
-                                        oCtx.FixPath(sTextureName);
-                                        ++oCtx.textures_cnt;
-                                }
-                        }
-
-                        //TODO material cache
-                        /*
-                                inside ctx resource cache: map "Mesh:<name>" to ResourceData
-                                if name empty, fill with to_string(ptr)
-                                store all resource by id (name) inside other 'ObjectData' from Common.h
-                         */
-                        /** create basic material with one texture */
-                        if (!sTextureName.empty()) {
-                                log_d("diffuse texture: '{}'", sTextureName);
-
-                                oModel.oMaterial.sShaderPath = "shader_program/simple_tex.sesp";
-                                oModel.oMaterial.mTextures.emplace(
-                                                TextureUnit::DIFFUSE,
-                                                TextureData{std::move(sTextureName)} );
-
-                                oModel.oMaterial.sName = pMaterial->GetName();
-                                if (oModel.oMaterial.sName.empty()) {
-                                        oModel.oMaterial.sName = oCtx.sPackName + std::to_string(StrID(sTextureName + oModel.oMaterial.sShaderPath));
-                                }
-                                else {
-                                        oModel.oMaterial.sName = oCtx.sPackName + oModel.oMaterial.sName;
-                                }
-                                ++oCtx.material_cnt;
-                        }
-                }
+        bool mesh_created = oResStash.GetResourceData(sMeshName, pMeshData);
+        auto * pModelMesh = *pMeshData;
+        if (mesh_created) {
+                pModelMesh->sName = sMeshName;
+        }
+        else {
+                log_d("skip vert processing for mesh: '{}' that already exist, node: '{}'",
+                                pModelMesh->sName,
+                                pNode->GetName() );
+                return uSUCCESS;
         }
 
-
-        std::unordered_map<uint32_t, std::unordered_set<uint32_t>> mRemapIndex;
         int32_t  polygon_cnt            = pMesh->GetPolygonCount();
         int32_t  polygon_size;
         FbxGeometryElementUV * pUV      = pMesh->GetElementUV(0);
@@ -933,7 +984,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
         uint32_t index_size = static_cast<uint32_t>(polygon_cnt) * 3;
 
-        Pack = PackVertexIndexInit(index_size, oModel.oMesh.oIndex);
+        Pack = PackVertexIndexInit(index_size, pModelMesh->oIndex);
 
         for (int32_t polygon_num = 0; polygon_num < polygon_cnt; ++polygon_num) {
 
@@ -1035,7 +1086,7 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                                                 (oCtx.skip_normals) ? 0 : vVertexData[5],
                                                 vVertexData[6], vVertexData[7]);
                         }*/
-                        Pack(oModel.oMesh.oIndex, cur_index);
+                        Pack(pModelMesh->oIndex, cur_index);
 /*
                         log_d("vertex {}, map to: {}, pos: ({}, {}, {}), normal: ({}, {}, {}), uv: ({}, {})",
                                         vertex_ind,
@@ -1061,56 +1112,112 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
 
         oCtx.total_triangles_cnt += polygon_cnt;
         ++oCtx.mesh_cnt;
+        remaped_vertices_cnt = oVertexIndex.Size();
 
 
         BoundingBox oBBox;
         oBBox.Calc(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE);
-        oModel.oMesh.vShapes.emplace_back(0, index_size, std::move(oBBox));
+        pModelMesh->vShapes.emplace_back(0, index_size, std::move(oBBox));
 
-        uint8_t buffer_ind = oModel.oMesh.vVertexBuffers.size();
-        oModel.oMesh.vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vVertices), stride});
+        uint8_t buffer_ind = pModelMesh->vVertexBuffers.size();
+        pModelMesh->vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vVertices), stride});
 
         uint16_t next_offset = 3;
 
-        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+        pModelMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                         "Position",
                         0,
                         3,
                         buffer_ind });
         if (!oCtx.skip_normals) {
-                oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+                pModelMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                                 "Normal",
                                 static_cast<uint16_t>(3 * sizeof(float)),
                                 3,
                                 buffer_ind });
                 next_offset = 6;
         }
-        oModel.oMesh.vAttributes.emplace_back(MeshData::VertexAttribute{
+        pModelMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
                         "TexCoord0",
                         static_cast<uint16_t>(next_offset * sizeof(float)),
                         2,
                         buffer_ind });
 
-        //import vertex deformers
-        if (oCtx.import_blend_shapes) {
-                oModel.oBlendShape.sName = oCtx.sPackName;
-                auto res = ImportBlendShapes(pMesh, oModel.oBlendShape, mRemapIndex, oVertexIndex.Size());
-                if (res != uSUCCESS) { return res; }
-        }
-        if (oCtx.import_skin) {
-                oModel.oShell.sName = oCtx.sPackName;
-                oModel.oShell.oSkeleton.sName = oCtx.sPackName;
-                auto res = ImportSkin(pNode, pMesh, oModel, mRemapIndex, oVertexIndex.Size());
-                if (res != uSUCCESS) { return res; }
-        }
-
-
         //currently only one shape per mesh
         //TODO support per material sub meshes;
-        for (auto & oShape : oModel.oMesh.vShapes) {
-                oModel.oMesh.oBBox.Concat(oShape.oBBox);
+        for (auto & oShape : pModelMesh->vShapes) {
+                pModelMesh->oBBox.Concat(oShape.oBBox);
         }
-        oNodeData.vComponents.emplace_back(std::move(oModel));
+
+        return uSUCCESS;
+}
+
+//TODO import sub meshes by materials
+static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx, ResourceStash & oResStash) {
+
+        FbxNodeAttribute::EType attribute_type;
+        ret_code_t              res;
+
+        auto * pAttribute = pNode->GetNodeAttribute();
+        if (pAttribute == nullptr) {
+                log_d("node '{}' does't contain attribute", pNode->GetName());
+                return uSUCCESS;
+        }
+
+        attribute_type = pAttribute->GetAttributeType();
+
+        if (attribute_type == FbxNodeAttribute::eMesh) {
+
+                log_d("mesh node: '{}', name: '{}'", pNode->GetName(), pAttribute->GetName());
+
+                ModelData       oModel;
+                /**
+                  need to store intermediate mapping between input and output vertices
+                  for propper deformer per vertex data conversion
+                 */
+                std::unordered_map<uint32_t, std::unordered_set<uint32_t>> mRemapIndex;
+                uint32_t        remaped_vertices_cnt;
+                FbxMesh       * pMesh = (FbxMesh *) pNode->GetNodeAttribute();
+
+                if (res = ImportMesh(pNode, &oModel.pMesh, oCtx, oResStash, mRemapIndex, remaped_vertices_cnt); res != uSUCCESS) {
+                        return res;
+                }
+
+                if (res = ImportMaterial(pNode, &oModel.pMaterial, oCtx, oResStash); res != uSUCCESS) {
+                        return res;
+                }
+
+                //import vertex deformers
+                if (oCtx.import_blend_shapes) {
+                        res = ImportBlendShapes(
+                                        pMesh,
+                                        oModel,
+                                        mRemapIndex,
+                                        remaped_vertices_cnt,
+                                        oResStash,
+                                        oCtx.sPackName);
+                        if (res != uSUCCESS) { return res; }
+                }
+                if (oCtx.import_skin) {
+                        res = ImportSkin(
+                                        pNode,
+                                        pMesh,
+                                        oModel,
+                                        mRemapIndex,
+                                        remaped_vertices_cnt,
+                                        oResStash,
+                                        oCtx.sPackName);
+                        if (res != uSUCCESS) { return res; }
+                }
+
+                //mRemapIndex.clear();
+
+                oNodeData.vComponents.emplace_back(std::move(oModel));
+        }
+        else {
+
+                log_d("empty node: '{}'", pNode->GetName());
+        }
 
         return uSUCCESS;
 }
@@ -1136,7 +1243,7 @@ static void ImportCustomProperty(FbxNode * pNode, NodeData & oNodeData, ImportCt
         }
 }
 
-ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
+ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx, ResourceStash & oResStash) {
 
         FbxAMatrix & mLocalTransform    = pNode->EvaluateLocalTransform();
         FbxDouble4 translation          = mLocalTransform.GetT();
@@ -1179,7 +1286,7 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
         log_d("node rotation:    {}, {}, {}", oNodeData.rotation.x, oNodeData.rotation.y, oNodeData.rotation.z);
         log_d("node scaling:     {}, {}, {}", oNodeData.scale.x, oNodeData.scale.y, oNodeData.scale.z);
 
-        ret_code_t res = ImportAttributes(pNode, oNodeData, oCtx);
+        ret_code_t res = ImportAttributes(pNode, oNodeData, oCtx, oResStash);
         if (res != uSUCCESS) {
                 return res;
         }
@@ -1188,7 +1295,7 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx) {
 
         for(int32_t i = 0; i < pNode->GetChildCount(); ++i) {
                 auto & oChildNodeData = oNodeData.vChildren.emplace_back(NodeData{});
-                if (ret_code_t res = ImportNode(pNode->GetChild(i), oChildNodeData, oCtx); res != uSUCCESS) {
+                if (ret_code_t res = ImportNode(pNode->GetChild(i), oChildNodeData, oCtx, oResStash); res != uSUCCESS) {
                         log_e("failed to import node");
                         return res;
                 }
