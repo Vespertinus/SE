@@ -199,7 +199,13 @@ TComponentOffset SerializeModel(
 
                 flatbuffers::Offset<
                         flatbuffers::Vector<uint8_t>
-                        >                               joint_indexes_fb        = 0;
+                        >                               joints_indexes_fb       = 0;
+                flatbuffers::Offset<
+                        flatbuffers::Vector<
+                                flatbuffers::Offset<BindSQT>
+                                >
+                        >                               joints_inv_bind_pose_fb = 0;
+
                 flatbuffers::Offset<
                         CharacterShellHolder
                         >                               shell_fb                = 0;
@@ -260,12 +266,6 @@ TComponentOffset SerializeModel(
                                                 vJoints.emplace_back(
                                                                 CreateJoint(
                                                                         oBuilder,
-                                                                        CreateBindSQT(
-                                                                                oBuilder,
-                                                                                reinterpret_cast<const SE::FlatBuffers::Vec4 *>(&oItem.oInvBindPose.bind_rot[0]),
-                                                                                reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.oInvBindPose.bind_pos[0]),
-                                                                                reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.oInvBindPose.bind_scale[0])
-                                                                                ),
                                                                         oBuilder.CreateString(oItem.sName),
                                                                         oItem.parent_index)
                                                                 );
@@ -308,13 +308,30 @@ TComponentOffset SerializeModel(
                                 shell_fb = oModel.pSkin->pShell->serialized_fb;
                         }
 
-                        joint_indexes_fb        = oBuilder.CreateVector(oModel.pSkin->vJointIndexes);
                         mesh_bind_fb            = CreateBindSQT(
                                         oBuilder,
                                         reinterpret_cast<const SE::FlatBuffers::Vec4 *>(&oModel.pSkin->oMeshBindPose.bind_rot[0]),
                                         reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oModel.pSkin->oMeshBindPose.bind_pos[0]),
                                         reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oModel.pSkin->oMeshBindPose.bind_scale[0])
                                         );
+
+                        std::vector<flatbuffers::Offset<SE::FlatBuffers::BindSQT>> vJointsBind;
+                        vJointsBind.reserve(oModel.pSkin->vJointsInvBindPose.size());
+
+                        for (auto & oItem : oModel.pSkin->vJointsInvBindPose) {
+                                vJointsBind.emplace_back(
+                                                CreateBindSQT(
+                                                        oBuilder,
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec4 *>(&oItem.bind_rot[0]),
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_pos[0]),
+                                                        reinterpret_cast<const SE::FlatBuffers::Vec3 *>(&oItem.bind_scale[0])
+                                                        )
+                                                );
+                        }
+
+                        joints_indexes_fb       = oBuilder.CreateVector(oModel.pSkin->vJointIndexes);
+                        joints_inv_bind_pose_fb = oBuilder.CreateVector(vJointsBind);
+
 
                 }
                 //___End_____ skeleton
@@ -326,7 +343,8 @@ TComponentOffset SerializeModel(
                                 blendshapes_fb,
                                 default_weights_fb,
                                 shell_fb,
-                                joint_indexes_fb,
+                                joints_indexes_fb,
+                                joints_inv_bind_pose_fb,
                                 mesh_bind_fb
                                 ).Union();
                 return { CreateComponent(oBuilder, ComponentU::AnimatedModel, model_fb), uSUCCESS };

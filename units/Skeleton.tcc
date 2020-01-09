@@ -14,7 +14,6 @@ Skeleton::Skeleton(
         for (uint32_t i = 0; i < joints_cnt; ++i) {
                 auto pCurJoint = pSkeleton->joints()->Get(i);
                 vJoints.emplace_back(Joint{
-                                BuildTransform(pCurJoint->inv_bind_pos()),
                                 pCurJoint->name()->c_str(),
                                 pCurJoint->parent_index()
                                 }
@@ -56,8 +55,6 @@ CharacterShell::CharacterShell(
                 const SE::FlatBuffers::CharacterShell * pShell,
                 TSceneTree::TSceneNodeExact * pTargetNode) :
         ResourceHolder(new_rid, sName) {
-
-        //if (!pSkeletonHolder) { return uSUCCESS; }
 
         if (pShell->skeleton()->path() != nullptr) {
                 pSkeleton = CreateResource<Skeleton>(GetSystem<Config>().sResourceDir + pShell->skeleton()->path()->c_str());

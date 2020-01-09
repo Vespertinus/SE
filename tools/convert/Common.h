@@ -57,7 +57,6 @@ struct JointData {
         static const uint8_t    ROOT_PARENT_IND = -1;
 
         std::string             sName;
-        BindPoseData            oInvBindPose;
         uint8_t                 parent_index{};
         bool                    bind_inited{false};
 };
@@ -68,7 +67,6 @@ struct Skeleton {
         std::vector<JointData>  vJoints;
 
         uint32_t                serialized_fb{};
-        std::unordered_map<StrID, uint8_t>               mBonesIndexes;
 };
 
 struct CharacterShellData {
@@ -157,6 +155,9 @@ struct SkinData {
 
         CharacterShellData    * pShell{};
         std::vector<uint8_t>    vJointIndexes;
+        std::vector<
+                BindPoseData
+                >               vJointsInvBindPose;
         BindPoseData            oMeshBindPose;
         std::string             sName;
 };

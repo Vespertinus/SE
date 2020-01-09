@@ -13,7 +13,6 @@ namespace SE {
 struct Joint {
 
         //StrID                           name_id;
-        glm::mat4       mInvBindPose;
         std::string     sName;
         uint8_t         parent_ind{0};
 };

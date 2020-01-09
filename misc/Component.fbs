@@ -21,7 +21,6 @@ table BindSQT {
 }
 
 table Joint {
-        inv_bind_pos:BindSQT;
         name:string (required);
         parent_index:uint8;
 }
@@ -54,7 +53,8 @@ table AnimatedModel {
         blendshapes:TextureHolder;//or as vertex buffer
         blendshapes_weights:[float];
         shell:CharacterShellHolder;
-        joint_indexes:[uint8];
+        joints_indexes:[uint8];
+        joints_inv_bind_pose:[BindSQT];
         mesh_bind_pos:BindSQT;
 }
 

@@ -487,7 +487,7 @@ static ret_code_t ImportSkeleton(
                                 continue;
                         }
 
-                        log_d("append joint node: '{}' to skeleton", pChild->GetName() );
+                        log_d("skeleton contain joint node: '{}'", pChild->GetName() );
                         mJoints.emplace(pChild->GetName(), vJointFbxNodes.size());
                         vJointFbxNodes.emplace_back(pChild);
 
@@ -547,10 +547,8 @@ static ret_code_t ImportSkeleton(
 
         oModel.pSkin->pShell->pSkeleton->vJoints.emplace_back(JointData{
                         vJointFbxNodes[0]->GetName(),
-                        BindPoseData{},
                         JointData::ROOT_PARENT_IND
                         });
-        oModel.pSkin->pShell->pSkeleton->mBonesIndexes.emplace(vJointFbxNodes[0]->GetName(), 0);
 
         for (uint8_t i = 1; i < vJointFbxNodes.size(); ++i) {
 
@@ -571,7 +569,6 @@ static ret_code_t ImportSkeleton(
                 oCurJoint.parent_index  = itParentInd->second;
 
                 oModel.pSkin->pShell->pSkeleton->vJoints.emplace_back(std::move(oCurJoint));
-                oModel.pSkin->pShell->pSkeleton->mBonesIndexes.emplace(vJointFbxNodes[i]->GetName(), i);
         }
 
         return uSUCCESS;
@@ -678,7 +675,7 @@ static ret_code_t ImportSkin(
                 oModel.pSkin->oMeshBindPose.bind_rot   = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
 
                 /*
-                log_d("orig node: '{}' bind pose global transform pos: ({}, {}, {}), scale: ({}, {}, {})",
+                log_d("orig node: '{}' mesh bind pose global transform pos: ({}, {}, {}), scale: ({}, {}, {})",
                                 pNode->GetName(),
                                 pTransformMatrix.GetT()[0],
                                 pTransformMatrix.GetT()[1],
@@ -737,50 +734,41 @@ static ret_code_t ImportSkin(
                         return uWRONG_INPUT_DATA;
                 }
 
-                auto itNode = oModel.pSkin->pShell->pSkeleton->mBonesIndexes.find(pCluster->GetLink()->GetName());
-                if (itNode == oModel.pSkin->pShell->pSkeleton->mBonesIndexes.end()) {
-                        log_e("cluster node '{}' not from skeleton: '{}', hierarchy, root node: '{}'",
-                                        pCluster->GetLink()->GetName(),
-                                        oModel.pSkin->pShell->pSkeleton->sName,
-                                        oModel.pSkin->pShell->sRootNode);
-                        return uWRONG_INPUT_DATA;
-                }
-                se_assert(itNode->second < oModel.pSkin->pShell->pSkeleton->vJoints.size());
-                auto & oJointData = oModel.pSkin->pShell->pSkeleton->vJoints[itNode->second];
+                /**
+                need to store joint inverse bind pose for each model and could not store once inside skeleton,
+                because different meshes could be skinned in different bind poses.
+                rare case
+                */
+                BindPoseData    oInvBindPose;
+                FbxAMatrix      pLinkTransformMatrix;
+                pCluster->GetTransformLinkMatrix(pLinkTransformMatrix);
 
-                if (!oJointData.bind_inited) {
+                /*
+                log_d("link node: '{}' joint bind pos: ({}, {}, {}), scale: ({}, {}, {})",
+                                pCluster->GetLink()->GetName(),
+                                pLinkTransformMatrix.GetT()[0],
+                                pLinkTransformMatrix.GetT()[1],
+                                pLinkTransformMatrix.GetT()[2],
+                                pLinkTransformMatrix.GetS()[0],
+                                pLinkTransformMatrix.GetS()[1],
+                                pLinkTransformMatrix.GetS()[2]
+                     );
+                */
 
-                        oJointData.bind_inited = true;
+                pLinkTransformMatrix = pLinkTransformMatrix.Inverse();
 
-                        FbxAMatrix pLinkTransformMatrix;
-                        pCluster->GetTransformLinkMatrix(pLinkTransformMatrix);
+                FbxVector4 vBindPos     = pLinkTransformMatrix.GetT();
+                FbxVector4 vBindScale   = pLinkTransformMatrix.GetS();
+                FbxQuaternion qRot      = pLinkTransformMatrix.GetQ();
 
-                        /*
-                        log_d("link node: '{}' bind pos: ({}, {}, {}), scale: ({}, {}, {})",
-                                        pCluster->GetLink()->GetName(),
-                                        pLinkTransformMatrix.GetT()[0],
-                                        pLinkTransformMatrix.GetT()[1],
-                                        pLinkTransformMatrix.GetT()[2],
-                                        pLinkTransformMatrix.GetS()[0],
-                                        pLinkTransformMatrix.GetS()[1],
-                                        pLinkTransformMatrix.GetS()[2]
-                             );
-                        */
-
-                        pLinkTransformMatrix = pLinkTransformMatrix.Inverse();
-
-                        FbxVector4 vBindPos     = pLinkTransformMatrix.GetT();
-                        FbxVector4 vBindScale   = pLinkTransformMatrix.GetS();
-                        FbxQuaternion qRot      = pLinkTransformMatrix.GetQ();
-
-                        oJointData.oInvBindPose.bind_pos    = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
-                        oJointData.oInvBindPose.bind_scale  = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
-                        oJointData.oInvBindPose.bind_rot    = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
-                }
+                oInvBindPose.bind_pos   = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
+                oInvBindPose.bind_scale = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
+                oInvBindPose.bind_rot   = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
 
                 //log_d("current node name: {}", pCluster->GetLink()->GetName());
 
                 oModel.pSkin->vJointIndexes.emplace_back(itJointInd->second);
+                oModel.pSkin->vJointsInvBindPose.emplace_back(std::move(oInvBindPose));
         }
 
         if (joints_per_vertex == 0) {

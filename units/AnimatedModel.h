@@ -19,7 +19,8 @@ class AnimatedModel : public StaticModel {
 
         struct SkeletonPart {
 
-                std::vector<uint8_t>    vJointIndexes;
+                std::vector<uint8_t>    vJointsIndexes;
+                std::vector<glm::mat4>  vJointsInvBindPose;
                 glm::mat4               mBindPose;
                 CharacterShell        * pShell{};
 
