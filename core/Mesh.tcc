@@ -285,12 +285,13 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
 
                 if (pCurAttrubute->destination() == SE::FlatBuffers::AttribDestType::DEST_FLOAT) {
                         /*
-                           log_d("elem_size = {}, gl_type = {}, stride = {}, offset = {}",
-                           pCurAttrubute->elem_size(),
-                           vBuffersGLType[pCurAttrubute->buffer_ind()],
-                           pCurShape->stride(),
-                           offset);
-                         */
+                        log_d("attribute: '{}', elem_size = {}, gl_type = {}, stride = {}, offset = {}",
+                                        pCurAttrubute->name()->c_str(),
+                                        pCurAttrubute->elem_size(),
+                                        pGLTypes[pCurAttrubute->buffer_ind()],
+                                        pStride[pCurAttrubute->buffer_ind()],
+                                        offset);
+                        */
                         glVertexAttribPointer(
                                         itLocation->second,
                                         pCurAttrubute->elem_size(),

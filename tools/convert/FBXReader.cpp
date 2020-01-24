@@ -241,11 +241,15 @@ static ret_code_t GetUV(
 
                 case FbxGeometryElement::eByPolygonVertex:
                         {
-                                int32_t UVIndex = pMesh->GetTextureUVIndex(polygon_num, polygon_vert_ind);
+                                /** scene was triangulated on load */
+                                int32_t polygon_index = polygon_num * 3 /*polygon_size*/ + polygon_vert_ind;
                                 switch (pUV->GetReferenceMode()) {
                                         case FbxGeometryElement::eDirect:
+                                                oUV = pUV->GetDirectArray().GetAt(polygon_index);
+                                                break;
                                         case FbxGeometryElement::eIndexToDirect:
                                                 {
+                                                        int32_t UVIndex = pUV->GetIndexArray().GetAt(polygon_index);
                                                         oUV = pUV->GetDirectArray().GetAt(UVIndex);
                                                 }
                                                 break;
@@ -263,12 +267,15 @@ static ret_code_t GetUV(
                         return uWRONG_INPUT_DATA;
         }
 /*
-        log_d("polygon: {}, vertex: local index {}, global index {}, tex coord: {}, {}",
+        log_d("polygon: {}, vertex: local index {}, global index {}, tex coord: {}, {}, mapping: {}, reference: {}",
                         polygon_num,
                         polygon_vert_ind,
                         vertex_ind,
                         oUV[0],
-                        oUV[1]);
+                        oUV[1],
+                        pUV->GetMappingMode(),
+                        pUV->GetReferenceMode()
+                        );
 */
 
         return uSUCCESS;
@@ -932,19 +939,28 @@ static ret_code_t ImportMesh(
         int32_t                 vertices_cnt    = pMesh->GetControlPointsCount();
         FbxVector4            * pControlPoints  = pMesh->GetControlPoints();
         std::vector<float>      vVertexData;
-        vVertexData.reserve(8);
         uint32_t                cur_index = 0;
         TPackVertexIndex        Pack;
+        uint32_t                uv_sets_cnt = pMesh->GetElementUVCount();
 
-        if ( pMesh->GetElementUVCount() == 0) {
+        if ( uv_sets_cnt == 0) {
                 log_e("failed to get UV coordinates for mesh '{}'", pNode->GetName());
+                return uWRONG_INPUT_DATA;
+        }
+        else if (uv_sets_cnt > 4) {
+                log_e("too many UV sets ({}), up to 4 supported, mesh node: '{}'", uv_sets_cnt, pNode->GetName());
                 return uWRONG_INPUT_DATA;
         }
 
         std::vector<float> vVertices;
 
-        uint8_t stride               = ((oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE) * sizeof(float);
+        uint8_t elements_cnt         = (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE;
+        if (uv_sets_cnt > 1) {
+                elements_cnt += (uv_sets_cnt - 1) * 2;
+        }
+        uint8_t stride               = elements_cnt * sizeof(float);
         std::string sMeshName        = pMesh->GetName();
+        vVertexData.reserve(elements_cnt);
 
         if (sMeshName.empty()) {
                 sMeshName = oCtx.sPackName + std::to_string(reinterpret_cast<std::uintptr_t>(pMesh));
@@ -967,7 +983,6 @@ static ret_code_t ImportMesh(
 
         int32_t  polygon_cnt            = pMesh->GetPolygonCount();
         int32_t  polygon_size;
-        FbxGeometryElementUV * pUV      = pMesh->GetElementUV(0);
         log_d("polygons: cnt = {}", polygon_cnt);
 
         uint32_t index_size = static_cast<uint32_t>(polygon_cnt) * 3;
@@ -1030,17 +1045,18 @@ static ret_code_t ImportMesh(
                                  */
                         }
 
-
-                        //TODO replace with GetPolygonVertexUV
                         FbxVector2 oUV;
-                        ret_code_t result = GetUV(pUV, pNode, pMesh, polygon_num, polygon_vert_ind, vertex_ind, oUV);
-                        if (result != uSUCCESS) {
-                                log_e("failed to get uv");
-                                return result;
-                        }
+                        for (uint32_t cur_uv_set = 0; cur_uv_set < uv_sets_cnt; ++cur_uv_set) {
+                                //TODO replace with GetPolygonVertexUV
+                                ret_code_t result = GetUV(pMesh->GetElementUV(cur_uv_set), pNode, pMesh, polygon_num, polygon_vert_ind, vertex_ind, oUV);
+                                if (result != uSUCCESS) {
+                                        log_e("failed to get uv");
+                                        return result;
+                                }
 
-                        vVertexData.push_back(oUV[0]);
-                        vVertexData.push_back(oUV[1]);
+                                vVertexData.push_back(oUV[0]);
+                                vVertexData.push_back(oUV[1]);
+                        }
 
                         if (oVertexIndex.Get(vVertexData, cur_index)) {
 
@@ -1093,10 +1109,11 @@ static ret_code_t ImportMesh(
                 }
         }
 
-        log_d("input vertex cnt: {}, output vertex cnt: {}, output estimated index cnt: {}",
+        log_d("input vertex cnt: {}, output vertex cnt: {}, output estimated index cnt: {}, vertex elements cnt: {}, uv sets cnt: {}",
                         vertices_cnt,
                         oVertexIndex.Size(),
-                        index_size);
+                        index_size,
+                        elements_cnt, uv_sets_cnt);
 
         oCtx.total_triangles_cnt += polygon_cnt;
         ++oCtx.mesh_cnt;
@@ -1104,7 +1121,7 @@ static ret_code_t ImportMesh(
 
 
         BoundingBox oBBox;
-        oBBox.Calc(vVertices, (oCtx.skip_normals) ? VERTEX_BASE_SIZE : VERTEX_SIZE);
+        oBBox.Calc(vVertices, elements_cnt);
         pModelMesh->vShapes.emplace_back(0, index_size, std::move(oBBox));
 
         uint8_t buffer_ind = pModelMesh->vVertexBuffers.size();
@@ -1129,7 +1146,25 @@ static ret_code_t ImportMesh(
                         "TexCoord0",
                         static_cast<uint16_t>(next_offset * sizeof(float)),
                         2,
-                        buffer_ind });
+                        buffer_ind,
+                        uv_sets_cnt
+                        });
+
+        for (uint32_t cur_uv_set = 1; cur_uv_set < uv_sets_cnt; ++cur_uv_set) {
+                next_offset += 2;
+
+                static std::string sAttrName;
+
+                sAttrName = fmt::format("TexCoord{}", cur_uv_set);
+
+                pModelMesh->vAttributes.emplace_back(MeshData::VertexAttribute{
+                                sAttrName,
+                                static_cast<uint16_t>(next_offset * sizeof(float)),
+                                2,
+                                buffer_ind
+                                });
+
+        }
 
         //currently only one shape per mesh
         //TODO support per material sub meshes;
