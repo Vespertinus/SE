@@ -14,8 +14,6 @@ Dependency:
      * http://www.boost.org/
    * glm  - OpenGL Mathematics
      * https://glm.g-truc.net
-   * tinyobjloader - wavefront obj (and mtl ) format parser
-     * https://github.com/syoyo/tinyobjloader
    * spdlog - fast C++ logging library
      * https://github.com/gabime/spdlog
    * OpenCV - Open Source Computer Vision Library. 
@@ -32,5 +30,9 @@ Dependency:
  * CPU enabled build only:
    * OSMesa - part of Mesa 3D Graphics Library
      * https://www.mesa3d.org/
-
+ * Tools:
+   * Autodesk fbxsdk - for fbx importing. Tested with FBX SDK 2018
+     * https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2018-0
+   * tinyobjloader - wavefront obj (and mtl ) format parser
+     * https://github.com/syoyo/tinyobjloader
 
