@@ -19,6 +19,8 @@ namespace FlatBuffers {
 
 struct Node;
 
+struct SceneTree;
+
 struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_NAME = 4,
@@ -157,32 +159,74 @@ inline flatbuffers::Offset<Node> CreateNodeDirect(
       enabled);
 }
 
-inline const SE::FlatBuffers::Node *GetNode(const void *buf) {
-  return flatbuffers::GetRoot<SE::FlatBuffers::Node>(buf);
+struct SceneTree FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_ROOT = 4
+  };
+  const Node *root() const {
+    return GetPointer<const Node *>(VT_ROOT);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_ROOT) &&
+           verifier.VerifyTable(root()) &&
+           verifier.EndTable();
+  }
+};
+
+struct SceneTreeBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_root(flatbuffers::Offset<Node> root) {
+    fbb_.AddOffset(SceneTree::VT_ROOT, root);
+  }
+  explicit SceneTreeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  SceneTreeBuilder &operator=(const SceneTreeBuilder &);
+  flatbuffers::Offset<SceneTree> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<SceneTree>(end);
+    fbb_.Required(o, SceneTree::VT_ROOT);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<SceneTree> CreateSceneTree(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<Node> root = 0) {
+  SceneTreeBuilder builder_(_fbb);
+  builder_.add_root(root);
+  return builder_.Finish();
 }
 
-inline const char *NodeIdentifier() {
+inline const SE::FlatBuffers::SceneTree *GetSceneTree(const void *buf) {
+  return flatbuffers::GetRoot<SE::FlatBuffers::SceneTree>(buf);
+}
+
+inline const char *SceneTreeIdentifier() {
   return "SESC";
 }
 
-inline bool NodeBufferHasIdentifier(const void *buf) {
+inline bool SceneTreeBufferHasIdentifier(const void *buf) {
   return flatbuffers::BufferHasIdentifier(
-      buf, NodeIdentifier());
+      buf, SceneTreeIdentifier());
 }
 
-inline bool VerifyNodeBuffer(
+inline bool VerifySceneTreeBuffer(
     flatbuffers::Verifier &verifier) {
-  return verifier.VerifyBuffer<SE::FlatBuffers::Node>(NodeIdentifier());
+  return verifier.VerifyBuffer<SE::FlatBuffers::SceneTree>(SceneTreeIdentifier());
 }
 
-inline const char *NodeExtension() {
+inline const char *SceneTreeExtension() {
   return "sesc";
 }
 
-inline void FinishNodeBuffer(
+inline void FinishSceneTreeBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::Node> root) {
-  fbb.Finish(root, NodeIdentifier());
+    flatbuffers::Offset<SE::FlatBuffers::SceneTree> root) {
+  fbb.Finish(root, SceneTreeIdentifier());
 }
 
 }  // namespace FlatBuffers

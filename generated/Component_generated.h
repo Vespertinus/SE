@@ -18,9 +18,9 @@ namespace FlatBuffers {
 
 struct StaticModel;
 
-struct Joint;
+struct BindSQT;
 
-struct JointBind;
+struct Joint;
 
 struct Skeleton;
 
@@ -143,6 +143,66 @@ inline flatbuffers::Offset<StaticModel> CreateStaticModel(
   return builder_.Finish();
 }
 
+struct BindSQT FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_BIND_ROT = 4,
+    VT_BIND_POS = 6,
+    VT_BIND_SCALE = 8
+  };
+  const Vec4 *bind_rot() const {
+    return GetStruct<const Vec4 *>(VT_BIND_ROT);
+  }
+  const Vec3 *bind_pos() const {
+    return GetStruct<const Vec3 *>(VT_BIND_POS);
+  }
+  const Vec3 *bind_scale() const {
+    return GetStruct<const Vec3 *>(VT_BIND_SCALE);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<Vec4>(verifier, VT_BIND_ROT) &&
+           VerifyField<Vec3>(verifier, VT_BIND_POS) &&
+           VerifyField<Vec3>(verifier, VT_BIND_SCALE) &&
+           verifier.EndTable();
+  }
+};
+
+struct BindSQTBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_bind_rot(const Vec4 *bind_rot) {
+    fbb_.AddStruct(BindSQT::VT_BIND_ROT, bind_rot);
+  }
+  void add_bind_pos(const Vec3 *bind_pos) {
+    fbb_.AddStruct(BindSQT::VT_BIND_POS, bind_pos);
+  }
+  void add_bind_scale(const Vec3 *bind_scale) {
+    fbb_.AddStruct(BindSQT::VT_BIND_SCALE, bind_scale);
+  }
+  explicit BindSQTBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  BindSQTBuilder &operator=(const BindSQTBuilder &);
+  flatbuffers::Offset<BindSQT> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<BindSQT>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<BindSQT> CreateBindSQT(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const Vec4 *bind_rot = 0,
+    const Vec3 *bind_pos = 0,
+    const Vec3 *bind_scale = 0) {
+  BindSQTBuilder builder_(_fbb);
+  builder_.add_bind_scale(bind_scale);
+  builder_.add_bind_pos(bind_pos);
+  builder_.add_bind_rot(bind_rot);
+  return builder_.Finish();
+}
+
 struct Joint FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_NAME = 4,
@@ -203,66 +263,6 @@ inline flatbuffers::Offset<Joint> CreateJointDirect(
       _fbb,
       name ? _fbb.CreateString(name) : 0,
       parent_index);
-}
-
-struct JointBind FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
-    VT_BIND_ROT = 4,
-    VT_BIND_POS = 6,
-    VT_BIND_SCALE = 8
-  };
-  const Vec4 *bind_rot() const {
-    return GetStruct<const Vec4 *>(VT_BIND_ROT);
-  }
-  const Vec3 *bind_pos() const {
-    return GetStruct<const Vec3 *>(VT_BIND_POS);
-  }
-  const Vec3 *bind_scale() const {
-    return GetStruct<const Vec3 *>(VT_BIND_SCALE);
-  }
-  bool Verify(flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<Vec4>(verifier, VT_BIND_ROT) &&
-           VerifyField<Vec3>(verifier, VT_BIND_POS) &&
-           VerifyField<Vec3>(verifier, VT_BIND_SCALE) &&
-           verifier.EndTable();
-  }
-};
-
-struct JointBindBuilder {
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_bind_rot(const Vec4 *bind_rot) {
-    fbb_.AddStruct(JointBind::VT_BIND_ROT, bind_rot);
-  }
-  void add_bind_pos(const Vec3 *bind_pos) {
-    fbb_.AddStruct(JointBind::VT_BIND_POS, bind_pos);
-  }
-  void add_bind_scale(const Vec3 *bind_scale) {
-    fbb_.AddStruct(JointBind::VT_BIND_SCALE, bind_scale);
-  }
-  explicit JointBindBuilder(flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  JointBindBuilder &operator=(const JointBindBuilder &);
-  flatbuffers::Offset<JointBind> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<JointBind>(end);
-    return o;
-  }
-};
-
-inline flatbuffers::Offset<JointBind> CreateJointBind(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    const Vec4 *bind_rot = 0,
-    const Vec3 *bind_pos = 0,
-    const Vec3 *bind_scale = 0) {
-  JointBindBuilder builder_(_fbb);
-  builder_.add_bind_scale(bind_scale);
-  builder_.add_bind_pos(bind_pos);
-  builder_.add_bind_rot(bind_rot);
-  return builder_.Finish();
 }
 
 struct Skeleton FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -537,8 +537,9 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_BLENDSHAPES = 8,
     VT_BLENDSHAPES_WEIGHTS = 10,
     VT_SHELL = 12,
-    VT_JOINT_INDEXES = 14,
-    VT_JOINT_BIND_MAT = 16
+    VT_JOINTS_INDEXES = 14,
+    VT_JOINTS_INV_BIND_POSE = 16,
+    VT_MESH_BIND_POS = 18
   };
   const MeshHolder *mesh() const {
     return GetPointer<const MeshHolder *>(VT_MESH);
@@ -555,11 +556,14 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const CharacterShellHolder *shell() const {
     return GetPointer<const CharacterShellHolder *>(VT_SHELL);
   }
-  const flatbuffers::Vector<uint8_t> *joint_indexes() const {
-    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_JOINT_INDEXES);
+  const flatbuffers::Vector<uint8_t> *joints_indexes() const {
+    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_JOINTS_INDEXES);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<JointBind>> *joint_bind_mat() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<JointBind>> *>(VT_JOINT_BIND_MAT);
+  const flatbuffers::Vector<flatbuffers::Offset<BindSQT>> *joints_inv_bind_pose() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<BindSQT>> *>(VT_JOINTS_INV_BIND_POSE);
+  }
+  const BindSQT *mesh_bind_pos() const {
+    return GetPointer<const BindSQT *>(VT_MESH_BIND_POS);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -573,11 +577,13 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.Verify(blendshapes_weights()) &&
            VerifyOffset(verifier, VT_SHELL) &&
            verifier.VerifyTable(shell()) &&
-           VerifyOffset(verifier, VT_JOINT_INDEXES) &&
-           verifier.Verify(joint_indexes()) &&
-           VerifyOffset(verifier, VT_JOINT_BIND_MAT) &&
-           verifier.Verify(joint_bind_mat()) &&
-           verifier.VerifyVectorOfTables(joint_bind_mat()) &&
+           VerifyOffset(verifier, VT_JOINTS_INDEXES) &&
+           verifier.Verify(joints_indexes()) &&
+           VerifyOffset(verifier, VT_JOINTS_INV_BIND_POSE) &&
+           verifier.Verify(joints_inv_bind_pose()) &&
+           verifier.VerifyVectorOfTables(joints_inv_bind_pose()) &&
+           VerifyOffset(verifier, VT_MESH_BIND_POS) &&
+           verifier.VerifyTable(mesh_bind_pos()) &&
            verifier.EndTable();
   }
 };
@@ -600,11 +606,14 @@ struct AnimatedModelBuilder {
   void add_shell(flatbuffers::Offset<CharacterShellHolder> shell) {
     fbb_.AddOffset(AnimatedModel::VT_SHELL, shell);
   }
-  void add_joint_indexes(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> joint_indexes) {
-    fbb_.AddOffset(AnimatedModel::VT_JOINT_INDEXES, joint_indexes);
+  void add_joints_indexes(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> joints_indexes) {
+    fbb_.AddOffset(AnimatedModel::VT_JOINTS_INDEXES, joints_indexes);
   }
-  void add_joint_bind_mat(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<JointBind>>> joint_bind_mat) {
-    fbb_.AddOffset(AnimatedModel::VT_JOINT_BIND_MAT, joint_bind_mat);
+  void add_joints_inv_bind_pose(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<BindSQT>>> joints_inv_bind_pose) {
+    fbb_.AddOffset(AnimatedModel::VT_JOINTS_INV_BIND_POSE, joints_inv_bind_pose);
+  }
+  void add_mesh_bind_pos(flatbuffers::Offset<BindSQT> mesh_bind_pos) {
+    fbb_.AddOffset(AnimatedModel::VT_MESH_BIND_POS, mesh_bind_pos);
   }
   explicit AnimatedModelBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -626,11 +635,13 @@ inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
     flatbuffers::Offset<TextureHolder> blendshapes = 0,
     flatbuffers::Offset<flatbuffers::Vector<float>> blendshapes_weights = 0,
     flatbuffers::Offset<CharacterShellHolder> shell = 0,
-    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> joint_indexes = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<JointBind>>> joint_bind_mat = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> joints_indexes = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<BindSQT>>> joints_inv_bind_pose = 0,
+    flatbuffers::Offset<BindSQT> mesh_bind_pos = 0) {
   AnimatedModelBuilder builder_(_fbb);
-  builder_.add_joint_bind_mat(joint_bind_mat);
-  builder_.add_joint_indexes(joint_indexes);
+  builder_.add_mesh_bind_pos(mesh_bind_pos);
+  builder_.add_joints_inv_bind_pose(joints_inv_bind_pose);
+  builder_.add_joints_indexes(joints_indexes);
   builder_.add_shell(shell);
   builder_.add_blendshapes_weights(blendshapes_weights);
   builder_.add_blendshapes(blendshapes);
@@ -646,8 +657,9 @@ inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
     flatbuffers::Offset<TextureHolder> blendshapes = 0,
     const std::vector<float> *blendshapes_weights = nullptr,
     flatbuffers::Offset<CharacterShellHolder> shell = 0,
-    const std::vector<uint8_t> *joint_indexes = nullptr,
-    const std::vector<flatbuffers::Offset<JointBind>> *joint_bind_mat = nullptr) {
+    const std::vector<uint8_t> *joints_indexes = nullptr,
+    const std::vector<flatbuffers::Offset<BindSQT>> *joints_inv_bind_pose = nullptr,
+    flatbuffers::Offset<BindSQT> mesh_bind_pos = 0) {
   return SE::FlatBuffers::CreateAnimatedModel(
       _fbb,
       mesh,
@@ -655,8 +667,9 @@ inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
       blendshapes,
       blendshapes_weights ? _fbb.CreateVector<float>(*blendshapes_weights) : 0,
       shell,
-      joint_indexes ? _fbb.CreateVector<uint8_t>(*joint_indexes) : 0,
-      joint_bind_mat ? _fbb.CreateVector<flatbuffers::Offset<JointBind>>(*joint_bind_mat) : 0);
+      joints_indexes ? _fbb.CreateVector<uint8_t>(*joints_indexes) : 0,
+      joints_inv_bind_pose ? _fbb.CreateVector<flatbuffers::Offset<BindSQT>>(*joints_inv_bind_pose) : 0,
+      mesh_bind_pos);
 }
 
 struct AppComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
