@@ -110,7 +110,7 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 -- dds textures
 -- SDL2
 --- input manager | listener
--- EventManager
+++ EventManager
 -- Node \ Component:
 --- id
 --- mem management
@@ -126,3 +126,19 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 
 - active вкл \ выкл под дерево, первично относительно enabled
 - добавить имена блендшейпов и GetBlendShapeName by ind и GetInd by Name
+
+- перейти на SDL2 и отказаться от libX11 и OIS
+- multi pass texturing
+- simple animation controller (pose import and manipulation)
+- DXT текстуры (dds)
+- process manager
+- basic lighting.. лучше после multi pass
+- spatial sorting (oct)
+-- basic terrain
+- LOD support
+- collision detection and basic physics using bullet
+
+- bucketed, phased, batched update loop
+-- после создания доп подсистем (AnimationController etc) разделить loop на bucket'ы и списки объектов в каждой подсистеме.
+
+
