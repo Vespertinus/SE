@@ -89,18 +89,27 @@ typedef Mesh                                                            TMesh;
 #include <App.h>
 #undef FORWARD_CUSTOM_COMPONENTS
 
+#define FORWARD_CUSTOM_SYSTEMS
+#include <App.h>
+#undef FORWARD_CUSTOM_SYSTEMS
+
 namespace SE {
 
 //renderable components list
 
 //engine subsytem types
-
-//FIXME rewrite on custom component handling
 using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 using TRenderer = Renderer<TVisibilityManager>;
 
-//singleton
-using TEngine = Loki::SingletonHolder<Engine<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer /*, TInputManager, ...*/>>;
+using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer /*, TInputManager, ...*/>;
+
+using TEngine =
+        typename Loki::SingletonHolder<
+        typename MP::Typelist2TmplPack<
+        Engine,
+        decltype(MP::TypelistConcatenate(TCoreSystems{}, TCustomSystems{}))
+                >::Type>;
+
 
 }
 
@@ -115,6 +124,10 @@ using TSceneTree = typename MP::Typelist2TmplPack<
                 >::Type;
 
 }
+
+#define INC_CUSTOM_SYSTEMS_HEADER
+#include <App.h>
+#undef INC_CUSTOM_SYSTEMS_HEADER
 
 //TODO INC Resource list
 //TSceneTree dependent resources
@@ -161,6 +174,9 @@ template <class TSystem> TSystem & GetSystem() {
 
 } //namespace SE
 
+#define INC_CUSTOM_SYSTEMS_IMPL
+#include <App.h>
+#undef INC_CUSTOM_SYSTEMS_IMPL
 
 #include <AllImpl.tcc>
 #define INC_CORE_COMPONENTS_IMPL

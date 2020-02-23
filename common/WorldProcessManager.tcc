@@ -4,15 +4,19 @@ namespace SE {
 
 WorldProcessManager::WorldProcessManager(allocator_type oNewAlloc) : oAlloc(oNewAlloc), vProcesses(oNewAlloc) {
 
+        TEngine::Instance().Get<EventManager>().AddListener<EUpdate, &WorldProcessManager::Update>(this);
 }
 
 WorldProcessManager::~WorldProcessManager() noexcept {
 
+        TEngine::Instance().Get<EventManager>().RemoveListener<EUpdate, &WorldProcessManager::Update>(this);
 }
 
 template <class T, class ... TArgs> std::shared_ptr<T> WorldProcessManager::Create(TArgs && ... oArgs) {
 
         auto pItem = std::allocate_shared<T>(oAlloc, std::forward<TArgs>(oArgs)...);
+
+        log_d("'{}' created", typeid(T).name());
 
         return pItem;
 }
@@ -28,35 +32,9 @@ template <class T, class ... TArgs> std::shared_ptr<T> WorldProcessManager::Crea
         return pItem;
 }
 
-uint32_t WorldProcessManager::RemoveProcess(std::shared_ptr<WorldProcess> pProcess) {
+void WorldProcessManager::Update(const Event & oEvent) {
 
-        auto it = std::find_if(
-                        vProcesses.begin(),
-                        vProcesses.end(),
-                        [&pProcess](std::shared_ptr<WorldProcess> const & pCurProcess) {
-
-                                return pProcess.get() == pCurProcess.get();
-                        });
-
-        if (it != vProcesses.end()) {
-                *it = vProcesses.back();
-                vProcesses.pop_back();
-
-                log_d("'{}' removed", typeid(T).name());
-                return 1;
-        }
-
-        return 0;
-}
-
-void WorldProcessManager::Update(const float dt) {
-
-        /*
-        for (auto pProcess : vProcesses) {
-                pProcess->OnUpdate(dt);
-        }
-        */
-
+        const auto & oEventData = oEvent.Get<EUpdate>();
         std::shared_ptr<WorldProcess> pProcess;
         uint32_t index = 0;
 
@@ -69,17 +47,17 @@ void WorldProcessManager::Update(const float dt) {
                 }
 
                 if (pProcess->GetState() == WorldProcess::State::RUNNING) {
-                        pProcess->OnUpdate(dt);
+                        pProcess->OnUpdate(oEventData.last_frame_time);
                 }
 
                 if (pProcess->IsDead()) {
 
-                        switch(pCurProcess->GetState()) {
+                        switch(pProcess->GetState()) {
 
                                 case WorldProcess::State::SUCCEEDED:
                                         {
-                                                pCurProcess->OnSuccess();
-                                                auto pChild = pCurProcess->ReleaseChild();
+                                                pProcess->OnSuccess();
+                                                auto pChild = pProcess->ReleaseChild();
                                                 if (pChild) {
                                                         LinkProcess(pChild);
                                                 }
@@ -97,6 +75,8 @@ void WorldProcessManager::Update(const float dt) {
                                                 pProcess->OnAbort();
                                                 break;
                                         }
+                                default:
+                                        se_assert(0);
                         }
 
                         if (UnlinkProcess(index)) {

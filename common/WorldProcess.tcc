@@ -13,7 +13,7 @@ void WorldProcess::OnInit() {
         cur_state = State::RUNNING;
 };
 
-State WorldProcess::GetState() const {
+WorldProcess::State WorldProcess::GetState() const {
         return cur_state;
 }
 
@@ -37,11 +37,11 @@ void WorldProcess::SetChild(TSharedProcess & pNewChild) {
         pChild = pNewChild;
 }
 
-TSharedProcess WorldProcess::GetChild() {
+WorldProcess::TSharedProcess WorldProcess::GetChild() {
         return pChild;
 }
 
-TSharedProcess WorldProcess::ReleaseChild() {
+WorldProcess::TSharedProcess WorldProcess::ReleaseChild() {
 
         if (!pChild) { return {}; }
 

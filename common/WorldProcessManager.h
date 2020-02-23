@@ -21,7 +21,7 @@ class WorldProcessManager {
         std::experimental::pmr::vector<std::shared_ptr<WorldProcess> > vProcesses;
 
         void LinkProcess(std::shared_ptr<WorldProcess> & pProcess);
-        void UnlinkProcess(const uint32_t index);
+        bool UnlinkProcess(const uint32_t index);
 
         public:
 
@@ -30,8 +30,7 @@ class WorldProcessManager {
         ~WorldProcessManager() noexcept;
         template <class T, class ... TArgs> std::shared_ptr<T> Create(TArgs && ... oArgs);
         template <class T, class ... TArgs> std::shared_ptr<T> CreateAndLink(TArgs && ... oArgs);
-        //uint32_t Remove(std::shared_ptr<WorldProcess> pProcess); through cancel | Fail |Abort
-        void Update(const float dt);
+        void Update(const Event & oEvent);
         //copy constructor
         //move constructor
         void Clean();

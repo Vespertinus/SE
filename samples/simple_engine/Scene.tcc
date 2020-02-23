@@ -1,5 +1,5 @@
 
-
+#include <BlinkProcess.h>
 
 namespace SE {
 
@@ -7,7 +7,9 @@ Scene::Scene(const Settings & oSettings) :
         oSmallElipse(0, 0, 2, 10, 36),
         oBigElipse(0, 0, 2, 100, 36),
         pSceneTree(CreateResource<TSceneTree>("resource/scene/test-01.sesc")) {
-        
+
+        se_assert(pSceneTree);
+
         auto pCameraNode = pSceneTree->Create("MainCamera");
         auto res = pCameraNode->CreateComponent<SE::Camera>(oSettings.oCamSettings);
         if (res != SE::uSUCCESS) {
@@ -25,6 +27,16 @@ Scene::Scene(const Settings & oSettings) :
         if (res != SE::uSUCCESS) {
                 throw("failed to create BasicController component");
         }
+
+        auto pTargetNode = pSceneTree->Create("Target");
+        res = pTargetNode->CreateComponent<SE::StaticModel>();//default
+        if (res != SE::uSUCCESS) {
+                throw("failed to create StaticModel component");
+        }
+        pTargetNode->Rotate(glm::vec3(-90, -90, 0));
+        pTargetNode->Translate(glm::vec3(8, 1, 0));
+
+        GetSystem<WorldProcessManager>().CreateAndLink<BlinkProcess>(pTargetNode, 1);
 
         pSceneTree->Print();
 }

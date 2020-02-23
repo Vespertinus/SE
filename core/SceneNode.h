@@ -16,6 +16,7 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
 
         using TSceneNodeExact   = SceneNode<TComponents...>;
         using TSceneNode        = std::shared_ptr<TSceneNodeExact>;
+        using TSceneNodeWeak    = std::weak_ptr<TSceneNode>;
         //TODO rewrite on separate per component storage
         using TVariant          = std::variant<std::unique_ptr<TComponents> ...>;
         using TSceneTree        = SceneTree<TComponents...>;
