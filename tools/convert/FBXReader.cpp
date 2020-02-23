@@ -896,8 +896,6 @@ static ret_code_t ImportMaterial(FbxNode * pNode, MaterialData ** pMaterialData,
                 /** create basic material with one texture */
                 if (!sTextureName.empty()) {
 
-                        log_d("diffuse texture: '{}'", sTextureName);
-
                         static std::string sDefaultShader = "shader_program/simple_tex.sesp";
 
                         std::string sMaterialName = pMaterial->GetName();
@@ -908,10 +906,13 @@ static ret_code_t ImportMaterial(FbxNode * pNode, MaterialData ** pMaterialData,
                                 sMaterialName = oCtx.sPackName + sMaterialName;
                         }
 
+                        log_d("diffuse texture: '{}', material: '{}'", sTextureName, sMaterialName);
+
                         bool created = oResStash.GetResourceData(sMaterialName, pMaterialData);
                         if (created) {
                                 //TextureData by ptr for reusing
                                 //currently only by material name
+                                (*pMaterialData)->sName       = sMaterialName;
                                 (*pMaterialData)->sShaderPath = sDefaultShader;
                                 (*pMaterialData)->mTextures.emplace(
                                                 TextureUnit::DIFFUSE,
