@@ -5,7 +5,7 @@ namespace SE.FlatBuffers;
 
 table Node {
 
-        name:string;
+        name:string (required);
         translation:Vec3;
         rotation:Vec3;
         scale:Vec3;
