@@ -36,8 +36,6 @@ using TCustomComponents = MP::TypelistWrapper<BasicController>;
 #ifndef FORWARD_CUSTOM_SYSTEMS_GUARD
 #define FORWARD_CUSTOM_SYSTEMS_GUARD
 
-//#include <WorldProcessManager.h>
-
 namespace SE {
 
 class WorldProcessManager;
