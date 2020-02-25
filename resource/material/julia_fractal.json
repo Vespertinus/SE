@@ -4,7 +4,7 @@
         },
         "textures" : [
                 {
-                        "path" : "resource/texture/pal04.png",
+                        "path" : "resource/texture/pal01.png",
                         "unit" : "UNIT_DIFFUSE"
                 }
         ],
