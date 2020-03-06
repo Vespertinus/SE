@@ -141,4 +141,6 @@ Mesh, Texture, Material, Particles(???), Sound, Skeleton bones, Shaders, ...?
 - bucketed, phased, batched update loop
 -- после создания доп подсистем (AnimationController etc) разделить loop на bucket'ы и списки объектов в каждой подсистеме.
 
-
+- убрать singleton'ы.. -> мешают тестировать
+-- спрятать за обертками, аля GetSystem, которые будут использовать extern TEngine obj, упрятать в unique_ptr что бы не потерялась возможность управлять временем инициализации
+-- в принципе должен отстаться только TEngine, остальное подсистемами в нем, в том числе и ResourceManager
