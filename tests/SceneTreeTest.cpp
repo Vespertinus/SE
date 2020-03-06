@@ -14,8 +14,6 @@
 
 #include <DebugRendererMock.h>
 
-#include <Transform.tcc>
-
 using ::testing::NiceMock;
 
 namespace SE {
