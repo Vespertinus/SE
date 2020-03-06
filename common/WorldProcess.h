@@ -33,7 +33,7 @@ class WorldProcess {
 
         virtual ~WorldProcess() noexcept;
 
-        void            SetChild(TSharedProcess & pNewChild);
+        void            SetChild(TSharedProcess pNewChild);
         TSharedProcess  ReleaseChild();
         TSharedProcess  GetChild();
 

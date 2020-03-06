@@ -1,15 +1,17 @@
 
+#include <CommonEvents.h>
+
 namespace SE {
 
 
 WorldProcessManager::WorldProcessManager(allocator_type oNewAlloc) : oAlloc(oNewAlloc), vProcesses(oNewAlloc) {
 
-        TEngine::Instance().Get<EventManager>().AddListener<EUpdate, &WorldProcessManager::Update>(this);
+        GetSystem<EventManager>().AddListener<EUpdate, &WorldProcessManager::Update>(this);
 }
 
 WorldProcessManager::~WorldProcessManager() noexcept {
 
-        TEngine::Instance().Get<EventManager>().RemoveListener<EUpdate, &WorldProcessManager::Update>(this);
+        GetSystem<EventManager>().RemoveListener<EUpdate, &WorldProcessManager::Update>(this);
 }
 
 template <class T, class ... TArgs> std::shared_ptr<T> WorldProcessManager::Create(TArgs && ... oArgs) {

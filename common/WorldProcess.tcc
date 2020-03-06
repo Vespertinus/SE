@@ -1,6 +1,6 @@
 
 namespace SE {
-        
+
 WorldProcess::~WorldProcess() noexcept {
 
         if (pChild) {
@@ -33,7 +33,7 @@ bool WorldProcess::IsPaused() const {
         return (cur_state == State::PAUSED);
 }
 
-void WorldProcess::SetChild(TSharedProcess & pNewChild) {
+void WorldProcess::SetChild(TSharedProcess pNewChild) {
         pChild = pNewChild;
 }
 
@@ -52,9 +52,9 @@ WorldProcess::TSharedProcess WorldProcess::ReleaseChild() {
 }
 
 void WorldProcess::Succeed() {
-        
+
         se_assert(cur_state == State::RUNNING || cur_state == State::PAUSED);
-        cur_state = State::RUNNING;
+        cur_state = State::SUCCEEDED;
 }
 
 void WorldProcess::Fail() {
@@ -72,7 +72,7 @@ void WorldProcess::Abort() {
 void WorldProcess::Pause() {
 
         if (cur_state == State::RUNNING) {
-        
+
                 cur_state = State::PAUSED;
         }
         else {
@@ -83,7 +83,7 @@ void WorldProcess::Pause() {
 void WorldProcess::UnPause() {
 
         if (cur_state == State::PAUSED) {
-        
+
                 cur_state = State::RUNNING;
         }
         else {
