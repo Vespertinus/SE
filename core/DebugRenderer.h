@@ -47,14 +47,14 @@ class DebugRenderer {
                         const glm::vec3 & v3,
                         const uint32_t color);
 
-        void            DrawPolyggon(
+        void            DrawPolygon(
                         const glm::vec3 & v1,
                         const glm::vec3 & v2,
                         const glm::vec3 & v3,
                         const glm::vec3 & v4,
                         const glm::vec4 & vColor);
 
-        void            DrawPolyggon(
+        void            DrawPolygon(
                         const glm::vec3 & v1,
                         const glm::vec3 & v2,
                         const glm::vec3 & v3,

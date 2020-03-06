@@ -31,9 +31,6 @@ template <class StoreStrategyList, class LoadStrategyList> class Texture : publi
 
         public:
 
-        template <class StoreStrategy, class LoadStrategy> struct TSettings :
-                public SettingsType <LOKI_TYPELIST_2(typename StoreStrategy::Settings, typename LoadStrategy::Settings) > {  };
-
         template <class TStoreStrategySettings,  class TLoadStrategySettings>
                 Texture(const std::string sName,
                         const rid_t new_rid,

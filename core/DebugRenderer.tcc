@@ -112,7 +112,7 @@ void DebugRenderer::DrawTriangle(
         DrawLine(v2, v3, color);
 }
 
-void DebugRenderer::DrawPolyggon(
+void DebugRenderer::DrawPolygon(
                 const glm::vec3 & v1,
                 const glm::vec3 & v2,
                 const glm::vec3 & v3,
@@ -120,9 +120,9 @@ void DebugRenderer::DrawPolyggon(
                 const glm::vec4 & vColor) {
 
         uint32_t color = ConvertColor(vColor);
-        DrawPolyggon(v1, v2, v3, v4, color);
+        DrawPolygon(v1, v2, v3, v4, color);
 }
-void DebugRenderer::DrawPolyggon(
+void DebugRenderer::DrawPolygon(
                 const glm::vec3 & v1,
                 const glm::vec3 & v2,
                 const glm::vec3 & v3,
