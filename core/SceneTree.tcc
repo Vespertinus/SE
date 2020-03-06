@@ -13,6 +13,7 @@ template <class ... TComponents > SceneTree<TComponents ...>::SceneTree(
         pRoot(std::make_shared<NodeWrapper>("root", this, true)) {
 
         mNamedNodes.emplace(pRoot->GetName(), pRoot);
+        pRoot->sFullName = "root"; //FIXME need only for root node, change API |SetName?
         mLocalNamedNodes.emplace(pRoot->GetName(), std::vector<TSceneNode>(1, pRoot) );
 
         if (!empty) {
@@ -179,7 +180,7 @@ template <class TComponent> struct LoadWrapper {
 };
 
 template <class ... TComponents > void SceneTree<TComponents ...>::
-        Load(const SE::FlatBuffers::Node * pRoot) {
+        Load(const SE::FlatBuffers::Node * pRootFB) {
 
 
         using TFilteredTypes    = MP::FilteredTypelist<THasSerialized, TComponents...>;
@@ -221,7 +222,7 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
         //init loaders map
         MP::TupleForEach(oLoaders, InitMap);
 
-        if (auto res = LoadNode(pRoot, nullptr, mLoaders, vPostLoadComponents); res != uSUCCESS) {
+        if (auto res = LoadNode(pRootFB, nullptr, mLoaders, vPostLoadComponents); res != uSUCCESS) {
                 throw (std::runtime_error("failed to load tree, reason: " +
                                           std::to_string(res) +
                                           ", from: " +
