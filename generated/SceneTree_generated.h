@@ -59,18 +59,18 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            VerifyField<Vec3>(verifier, VT_TRANSLATION) &&
            VerifyField<Vec3>(verifier, VT_ROTATION) &&
            VerifyField<Vec3>(verifier, VT_SCALE) &&
            VerifyOffset(verifier, VT_COMPONENTS) &&
-           verifier.Verify(components()) &&
+           verifier.VerifyVector(components()) &&
            verifier.VerifyVectorOfTables(components()) &&
            VerifyOffset(verifier, VT_CHILDREN) &&
-           verifier.Verify(children()) &&
+           verifier.VerifyVector(children()) &&
            verifier.VerifyVectorOfTables(children()) &&
            VerifyOffset(verifier, VT_INFO) &&
-           verifier.Verify(info()) &&
+           verifier.VerifyString(info()) &&
            VerifyField<uint8_t>(verifier, VT_ENABLED) &&
            verifier.EndTable();
   }
@@ -205,6 +205,10 @@ inline const SE::FlatBuffers::SceneTree *GetSceneTree(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::SceneTree>(buf);
 }
 
+inline const SE::FlatBuffers::SceneTree *GetSizePrefixedSceneTree(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::SceneTree>(buf);
+}
+
 inline const char *SceneTreeIdentifier() {
   return "SESC";
 }
@@ -219,6 +223,11 @@ inline bool VerifySceneTreeBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::SceneTree>(SceneTreeIdentifier());
 }
 
+inline bool VerifySizePrefixedSceneTreeBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::SceneTree>(SceneTreeIdentifier());
+}
+
 inline const char *SceneTreeExtension() {
   return "sesc";
 }
@@ -227,6 +236,12 @@ inline void FinishSceneTreeBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::SceneTree> root) {
   fbb.Finish(root, SceneTreeIdentifier());
+}
+
+inline void FinishSizePrefixedSceneTreeBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<SE::FlatBuffers::SceneTree> root) {
+  fbb.FinishSizePrefixed(root, SceneTreeIdentifier());
 }
 
 }  // namespace FlatBuffers

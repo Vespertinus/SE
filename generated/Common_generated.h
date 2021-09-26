@@ -27,7 +27,7 @@ struct ColorARGB;
 
 struct ResourcePath;
 
-MANUALLY_ALIGNED_STRUCT(4) Float FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Float FLATBUFFERS_FINAL_CLASS {
  private:
   float value_;
 
@@ -42,9 +42,9 @@ MANUALLY_ALIGNED_STRUCT(4) Float FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(value_);
   }
 };
-STRUCT_END(Float, 4);
+FLATBUFFERS_STRUCT_END(Float, 4);
 
-MANUALLY_ALIGNED_STRUCT(4) Vec4 FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec4 FLATBUFFERS_FINAL_CLASS {
  private:
   float x_;
   float y_;
@@ -74,9 +74,9 @@ MANUALLY_ALIGNED_STRUCT(4) Vec4 FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(w_);
   }
 };
-STRUCT_END(Vec4, 16);
+FLATBUFFERS_STRUCT_END(Vec4, 16);
 
-MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
  private:
   float x_;
   float y_;
@@ -101,9 +101,9 @@ MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(z_);
   }
 };
-STRUCT_END(Vec3, 12);
+FLATBUFFERS_STRUCT_END(Vec3, 12);
 
-MANUALLY_ALIGNED_STRUCT(4) Vec2 FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec2 FLATBUFFERS_FINAL_CLASS {
  private:
   float u_;
   float v_;
@@ -123,9 +123,9 @@ MANUALLY_ALIGNED_STRUCT(4) Vec2 FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(v_);
   }
 };
-STRUCT_END(Vec2, 8);
+FLATBUFFERS_STRUCT_END(Vec2, 8);
 
-MANUALLY_ALIGNED_STRUCT(4) UVec4 FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec4 FLATBUFFERS_FINAL_CLASS {
  private:
   uint32_t x_;
   uint32_t y_;
@@ -155,9 +155,9 @@ MANUALLY_ALIGNED_STRUCT(4) UVec4 FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(w_);
   }
 };
-STRUCT_END(UVec4, 16);
+FLATBUFFERS_STRUCT_END(UVec4, 16);
 
-MANUALLY_ALIGNED_STRUCT(4) UVec3 FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec3 FLATBUFFERS_FINAL_CLASS {
  private:
   uint32_t x_;
   uint32_t y_;
@@ -182,9 +182,9 @@ MANUALLY_ALIGNED_STRUCT(4) UVec3 FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(z_);
   }
 };
-STRUCT_END(UVec3, 12);
+FLATBUFFERS_STRUCT_END(UVec3, 12);
 
-MANUALLY_ALIGNED_STRUCT(4) UVec2 FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec2 FLATBUFFERS_FINAL_CLASS {
  private:
   uint32_t u_;
   uint32_t v_;
@@ -204,9 +204,9 @@ MANUALLY_ALIGNED_STRUCT(4) UVec2 FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(v_);
   }
 };
-STRUCT_END(UVec2, 8);
+FLATBUFFERS_STRUCT_END(UVec2, 8);
 
-MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
  private:
   float a_;
   float r_;
@@ -236,7 +236,7 @@ MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(b_);
   }
 };
-STRUCT_END(ColorARGB, 16);
+FLATBUFFERS_STRUCT_END(ColorARGB, 16);
 
 struct ResourcePath FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -248,7 +248,7 @@ struct ResourcePath FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            verifier.EndTable();
   }
 };

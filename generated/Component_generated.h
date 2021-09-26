@@ -45,8 +45,8 @@ enum class ComponentU : uint8_t {
   MAX = AppComponent
 };
 
-inline ComponentU (&EnumValuesComponentU())[4] {
-  static ComponentU values[] = {
+inline const ComponentU (&EnumValuesComponentU())[4] {
+  static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
     ComponentU::AnimatedModel,
@@ -55,8 +55,8 @@ inline ComponentU (&EnumValuesComponentU())[4] {
   return values;
 }
 
-inline const char **EnumNamesComponentU() {
-  static const char *names[] = {
+inline const char * const *EnumNamesComponentU() {
+  static const char * const names[] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
@@ -217,7 +217,7 @@ struct Joint FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            VerifyField<uint8_t>(verifier, VT_PARENT_INDEX) &&
            verifier.EndTable();
   }
@@ -275,7 +275,7 @@ struct Skeleton FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_JOINTS) &&
-           verifier.Verify(joints()) &&
+           verifier.VerifyVector(joints()) &&
            verifier.VerifyVectorOfTables(joints()) &&
            verifier.EndTable();
   }
@@ -336,9 +336,9 @@ struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_SKELETON) &&
            verifier.VerifyTable(skeleton()) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            VerifyOffset(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
 };
@@ -405,7 +405,7 @@ struct CharacterShell FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_SKELETON_ROOT_NODE) &&
-           verifier.Verify(skeleton_root_node()) &&
+           verifier.VerifyString(skeleton_root_node()) &&
            VerifyOffsetRequired(verifier, VT_SKELETON) &&
            verifier.VerifyTable(skeleton()) &&
            verifier.EndTable();
@@ -475,9 +475,9 @@ struct CharacterShellHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
            VerifyOffset(verifier, VT_SHELL) &&
            verifier.VerifyTable(shell()) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            VerifyOffset(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
 };
@@ -574,13 +574,13 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_BLENDSHAPES) &&
            verifier.VerifyTable(blendshapes()) &&
            VerifyOffset(verifier, VT_BLENDSHAPES_WEIGHTS) &&
-           verifier.Verify(blendshapes_weights()) &&
+           verifier.VerifyVector(blendshapes_weights()) &&
            VerifyOffset(verifier, VT_SHELL) &&
            verifier.VerifyTable(shell()) &&
            VerifyOffset(verifier, VT_JOINTS_INDEXES) &&
-           verifier.Verify(joints_indexes()) &&
+           verifier.VerifyVector(joints_indexes()) &&
            VerifyOffset(verifier, VT_JOINTS_INV_BIND_POSE) &&
-           verifier.Verify(joints_inv_bind_pose()) &&
+           verifier.VerifyVector(joints_inv_bind_pose()) &&
            verifier.VerifyVectorOfTables(joints_inv_bind_pose()) &&
            VerifyOffset(verifier, VT_MESH_BIND_POS) &&
            verifier.VerifyTable(mesh_bind_pos()) &&
@@ -684,14 +684,13 @@ struct AppComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_DATA);
   }
   flexbuffers::Reference data_flexbuffer_root() const {
-    auto v = data();
-    return flexbuffers::GetRoot(v->Data(), v->size());
+    return flexbuffers::GetRoot(data()->Data(), data()->size());
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_SUB_TYPE) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
 };
@@ -833,6 +832,7 @@ inline bool VerifyComponentU(flatbuffers::Verifier &verifier, const void *obj, C
 }
 
 inline bool VerifyComponentUVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyComponentU(
@@ -847,15 +847,30 @@ inline const SE::FlatBuffers::Component *GetComponent(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::Component>(buf);
 }
 
+inline const SE::FlatBuffers::Component *GetSizePrefixedComponent(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Component>(buf);
+}
+
 inline bool VerifyComponentBuffer(
     flatbuffers::Verifier &verifier) {
   return verifier.VerifyBuffer<SE::FlatBuffers::Component>(nullptr);
+}
+
+inline bool VerifySizePrefixedComponentBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::Component>(nullptr);
 }
 
 inline void FinishComponentBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::Component> root) {
   fbb.Finish(root);
+}
+
+inline void FinishSizePrefixedComponentBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<SE::FlatBuffers::Component> root) {
+  fbb.FinishSizePrefixed(root);
 }
 
 }  // namespace FlatBuffers

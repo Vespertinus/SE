@@ -35,8 +35,8 @@ enum class StoreSettings : uint8_t {
   MAX = StoreTextureBuffer
 };
 
-inline StoreSettings (&EnumValuesStoreSettings())[3] {
-  static StoreSettings values[] = {
+inline const StoreSettings (&EnumValuesStoreSettings())[3] {
+  static const StoreSettings values[] = {
     StoreSettings::NONE,
     StoreSettings::StoreTexture2D,
     StoreSettings::StoreTextureBuffer
@@ -44,8 +44,8 @@ inline StoreSettings (&EnumValuesStoreSettings())[3] {
   return values;
 }
 
-inline const char **EnumNamesStoreSettings() {
-  static const char *names[] = {
+inline const char * const *EnumNamesStoreSettings() {
+  static const char * const names[] = {
     "NONE",
     "StoreTexture2D",
     "StoreTextureBuffer",
@@ -86,8 +86,8 @@ enum class TextureUnit : uint8_t {
   MAX = UNIT_CUSTOM
 };
 
-inline TextureUnit (&EnumValuesTextureUnit())[7] {
-  static TextureUnit values[] = {
+inline const TextureUnit (&EnumValuesTextureUnit())[7] {
+  static const TextureUnit values[] = {
     TextureUnit::UNIT_DIFFUSE,
     TextureUnit::UNIT_NORMAL,
     TextureUnit::UNIT_SPECULAR,
@@ -99,8 +99,8 @@ inline TextureUnit (&EnumValuesTextureUnit())[7] {
   return values;
 }
 
-inline const char **EnumNamesTextureUnit() {
-  static const char *names[] = {
+inline const char * const *EnumNamesTextureUnit() {
+  static const char * const names[] = {
     "UNIT_DIFFUSE",
     "UNIT_NORMAL",
     "UNIT_SPECULAR",
@@ -145,7 +145,7 @@ struct TextureStock FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_IMAGE) &&
-           verifier.Verify(image()) &&
+           verifier.VerifyVector(image()) &&
            VerifyField<int32_t>(verifier, VT_FORMAT) &&
            VerifyField<int32_t>(verifier, VT_INTERNAL_FORMAT) &&
            VerifyField<uint32_t>(verifier, VT_WIDTH) &&
@@ -354,9 +354,9 @@ struct TextureHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_STOCK) &&
            verifier.VerifyTable(stock()) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            VerifyOffset(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            VerifyField<uint8_t>(verifier, VT_STORE_TYPE) &&
            VerifyOffset(verifier, VT_STORE) &&
            VerifyStoreSettings(verifier, store(), store_type()) &&
@@ -484,7 +484,7 @@ struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            VerifyField<float>(verifier, VT_FLOAT_VAL) &&
            VerifyField<int32_t>(verifier, VT_INT_VAL) &&
            VerifyField<Vec2>(verifier, VT_VEC2_VAL) &&
@@ -608,10 +608,10 @@ struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffsetRequired(verifier, VT_SHADER) &&
            verifier.VerifyTable(shader()) &&
            VerifyOffset(verifier, VT_TEXTURES) &&
-           verifier.Verify(textures()) &&
+           verifier.VerifyVector(textures()) &&
            verifier.VerifyVectorOfTables(textures()) &&
            VerifyOffset(verifier, VT_VARIABLES) &&
-           verifier.Verify(variables()) &&
+           verifier.VerifyVector(variables()) &&
            verifier.VerifyVectorOfTables(variables()) &&
            verifier.EndTable();
   }
@@ -686,9 +686,9 @@ struct MaterialHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_MATERIAL) &&
            verifier.VerifyTable(material()) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            VerifyOffset(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
 };
@@ -759,6 +759,7 @@ inline bool VerifyStoreSettings(flatbuffers::Verifier &verifier, const void *obj
 }
 
 inline bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyStoreSettings(
@@ -771,6 +772,10 @@ inline bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const fla
 
 inline const SE::FlatBuffers::Material *GetMaterial(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::Material>(buf);
+}
+
+inline const SE::FlatBuffers::Material *GetSizePrefixedMaterial(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Material>(buf);
 }
 
 inline const char *MaterialIdentifier() {
@@ -787,6 +792,11 @@ inline bool VerifyMaterialBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::Material>(MaterialIdentifier());
 }
 
+inline bool VerifySizePrefixedMaterialBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::Material>(MaterialIdentifier());
+}
+
 inline const char *MaterialExtension() {
   return "semt";
 }
@@ -795,6 +805,12 @@ inline void FinishMaterialBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::Material> root) {
   fbb.Finish(root, MaterialIdentifier());
+}
+
+inline void FinishSizePrefixedMaterialBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<SE::FlatBuffers::Material> root) {
+  fbb.FinishSizePrefixed(root, MaterialIdentifier());
 }
 
 }  // namespace FlatBuffers

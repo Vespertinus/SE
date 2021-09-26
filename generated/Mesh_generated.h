@@ -42,16 +42,16 @@ enum class AttribDestType : uint8_t {
   MAX = DEST_INT
 };
 
-inline AttribDestType (&EnumValuesAttribDestType())[2] {
-  static AttribDestType values[] = {
+inline const AttribDestType (&EnumValuesAttribDestType())[2] {
+  static const AttribDestType values[] = {
     AttribDestType::DEST_FLOAT,
     AttribDestType::DEST_INT
   };
   return values;
 }
 
-inline const char **EnumNamesAttribDestType() {
-  static const char *names[] = {
+inline const char * const *EnumNamesAttribDestType() {
+  static const char * const names[] = {
     "DEST_FLOAT",
     "DEST_INT",
     nullptr
@@ -73,8 +73,8 @@ enum class VertexBufferU : uint8_t {
   MAX = Uint32Vector
 };
 
-inline VertexBufferU (&EnumValuesVertexBufferU())[4] {
-  static VertexBufferU values[] = {
+inline const VertexBufferU (&EnumValuesVertexBufferU())[4] {
+  static const VertexBufferU values[] = {
     VertexBufferU::NONE,
     VertexBufferU::FloatVector,
     VertexBufferU::ByteVector,
@@ -83,8 +83,8 @@ inline VertexBufferU (&EnumValuesVertexBufferU())[4] {
   return values;
 }
 
-inline const char **EnumNamesVertexBufferU() {
-  static const char *names[] = {
+inline const char * const *EnumNamesVertexBufferU() {
+  static const char * const names[] = {
     "NONE",
     "FloatVector",
     "ByteVector",
@@ -127,8 +127,8 @@ enum class IndexBufferU : uint8_t {
   MAX = Uint32Vector
 };
 
-inline IndexBufferU (&EnumValuesIndexBufferU())[4] {
-  static IndexBufferU values[] = {
+inline const IndexBufferU (&EnumValuesIndexBufferU())[4] {
+  static const IndexBufferU values[] = {
     IndexBufferU::NONE,
     IndexBufferU::Uint8Vector,
     IndexBufferU::Uint16Vector,
@@ -137,8 +137,8 @@ inline IndexBufferU (&EnumValuesIndexBufferU())[4] {
   return values;
 }
 
-inline const char **EnumNamesIndexBufferU() {
-  static const char *names[] = {
+inline const char * const *EnumNamesIndexBufferU() {
+  static const char * const names[] = {
     "NONE",
     "Uint8Vector",
     "Uint16Vector",
@@ -180,8 +180,8 @@ enum class PrimitiveType : uint8_t {
   MAX = GEOM_POINTS
 };
 
-inline PrimitiveType (&EnumValuesPrimitiveType())[3] {
-  static PrimitiveType values[] = {
+inline const PrimitiveType (&EnumValuesPrimitiveType())[3] {
+  static const PrimitiveType values[] = {
     PrimitiveType::GEOM_TRIANGLES,
     PrimitiveType::GEOM_LINES,
     PrimitiveType::GEOM_POINTS
@@ -189,8 +189,8 @@ inline PrimitiveType (&EnumValuesPrimitiveType())[3] {
   return values;
 }
 
-inline const char **EnumNamesPrimitiveType() {
-  static const char *names[] = {
+inline const char * const *EnumNamesPrimitiveType() {
+  static const char * const names[] = {
     "GEOM_TRIANGLES",
     "GEOM_LINES",
     "GEOM_POINTS",
@@ -204,7 +204,7 @@ inline const char *EnumNamePrimitiveType(PrimitiveType e) {
   return EnumNamesPrimitiveType()[index];
 }
 
-MANUALLY_ALIGNED_STRUCT(4) BoundingBox FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) BoundingBox FLATBUFFERS_FINAL_CLASS {
  private:
   Vec3 min_;
   Vec3 max_;
@@ -224,7 +224,7 @@ MANUALLY_ALIGNED_STRUCT(4) BoundingBox FLATBUFFERS_FINAL_CLASS {
     return max_;
   }
 };
-STRUCT_END(BoundingBox, 24);
+FLATBUFFERS_STRUCT_END(BoundingBox, 24);
 
 struct VertexAttribute FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -256,7 +256,7 @@ struct VertexAttribute FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            VerifyField<uint16_t>(verifier, VT_OFFSET) &&
            VerifyField<uint8_t>(verifier, VT_ELEM_SIZE) &&
            VerifyField<uint8_t>(verifier, VT_BUFFER_IND) &&
@@ -346,7 +346,7 @@ struct FloatVector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
 };
@@ -395,7 +395,7 @@ struct ByteVector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
 };
@@ -444,7 +444,7 @@ struct Uint32Vector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
 };
@@ -493,7 +493,7 @@ struct Uint16Vector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
 };
@@ -542,7 +542,7 @@ struct Uint8Vector FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
 };
@@ -832,14 +832,14 @@ struct Mesh FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffsetRequired(verifier, VT_INDEX) &&
            verifier.VerifyTable(index()) &&
            VerifyOffsetRequired(verifier, VT_VERTICES) &&
-           verifier.Verify(vertices()) &&
+           verifier.VerifyVector(vertices()) &&
            verifier.VerifyVectorOfTables(vertices()) &&
            VerifyOffsetRequired(verifier, VT_ATTRIBUTES) &&
-           verifier.Verify(attributes()) &&
+           verifier.VerifyVector(attributes()) &&
            verifier.VerifyVectorOfTables(attributes()) &&
            VerifyField<uint8_t>(verifier, VT_PRIMITIVE_TYPE) &&
            VerifyOffsetRequired(verifier, VT_SHAPES) &&
-           verifier.Verify(shapes()) &&
+           verifier.VerifyVector(shapes()) &&
            verifier.VerifyVectorOfTables(shapes()) &&
            VerifyFieldRequired<BoundingBox>(verifier, VT_BBOX) &&
            verifier.EndTable();
@@ -940,9 +940,9 @@ struct MeshHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_MESH) &&
            verifier.VerifyTable(mesh()) &&
            VerifyOffset(verifier, VT_PATH) &&
-           verifier.Verify(path()) &&
+           verifier.VerifyString(path()) &&
            VerifyOffset(verifier, VT_NAME) &&
-           verifier.Verify(name()) &&
+           verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
 };
@@ -1017,6 +1017,7 @@ inline bool VerifyVertexBufferU(flatbuffers::Verifier &verifier, const void *obj
 }
 
 inline bool VerifyVertexBufferUVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyVertexBufferU(
@@ -1049,6 +1050,7 @@ inline bool VerifyIndexBufferU(flatbuffers::Verifier &verifier, const void *obj,
 }
 
 inline bool VerifyIndexBufferUVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyIndexBufferU(
@@ -1061,6 +1063,10 @@ inline bool VerifyIndexBufferUVector(flatbuffers::Verifier &verifier, const flat
 
 inline const SE::FlatBuffers::Mesh *GetMesh(const void *buf) {
   return flatbuffers::GetRoot<SE::FlatBuffers::Mesh>(buf);
+}
+
+inline const SE::FlatBuffers::Mesh *GetSizePrefixedMesh(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Mesh>(buf);
 }
 
 inline const char *MeshIdentifier() {
@@ -1077,6 +1083,11 @@ inline bool VerifyMeshBuffer(
   return verifier.VerifyBuffer<SE::FlatBuffers::Mesh>(MeshIdentifier());
 }
 
+inline bool VerifySizePrefixedMeshBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::Mesh>(MeshIdentifier());
+}
+
 inline const char *MeshExtension() {
   return "sems";
 }
@@ -1085,6 +1096,12 @@ inline void FinishMeshBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<SE::FlatBuffers::Mesh> root) {
   fbb.Finish(root, MeshIdentifier());
+}
+
+inline void FinishSizePrefixedMeshBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<SE::FlatBuffers::Mesh> root) {
+  fbb.FinishSizePrefixed(root, MeshIdentifier());
 }
 
 }  // namespace FlatBuffers
