@@ -1,11 +1,4 @@
 
-// Internal include
-#include <Global.h>
-#include <GlobalTypes.h>
-//SE wrapper over imgui
-#include <ImGui.h>
-
-
 namespace SE {
 namespace HELPERS {
 

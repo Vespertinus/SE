@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 
 project(SimpleEngine C CXX)
-project(SimpleEngine VERSION 0.1.0)
+project(SimpleEngine VERSION 0.2.0)
 
 option(GPU                      "Compile with direct rendering support"  ON)
 option(ASAN                     "Compile with address sanitizer"         OFF)

@@ -7,6 +7,13 @@ add_library(SE INTERFACE )
 
 add_library(SECommon SHARED ${COMMON_SOURCES})
 
+if(GPU)
+        add_library(            SEImGui STATIC
+                                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui.cpp"
+                                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_draw.cpp"
+                )
+endif()
+
 
 set (                           INSTALLED_HEADERS_DIR "include/SE")
 set (                           CONFIG_PACKAGE_LOCATION "${CMAKE_INSTALL_LIBDIR}/cmake/SimpleEngine")
@@ -50,6 +57,13 @@ install(                        DIRECTORY ${THIRD_PARTY_INC_DIRS}
                                 PATTERN "*.tcc"
                                 )
 
+if(GPU)
+install(                        TARGETS
+                                SEImGui
+                                DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                                EXPORT SimpleEngineTargets)
+endif()
+
 install(                        TARGETS
                                 SE
                                 SECommon
@@ -60,6 +74,12 @@ install(                        EXPORT SimpleEngineTargets
                                 NAMESPACE SimpleEngine::
                                 DESTINATION ${CONFIG_PACKAGE_LOCATION})
 
+install(                        DIRECTORY "${CMAKE_SOURCE_DIR}/resource"
+                                DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/SE"
+                                FILES_MATCHING
+                                PATTERN "*.semt"
+                                PATTERN "*.sesl"
+                                PATTERN "*.sesp")
 
 configure_file(cmake_mods/SimpleEngineConfig.cmake
         "${CMAKE_CURRENT_BINARY_DIR}/SimpleEngine/SimpleEngineConfig.cmake"

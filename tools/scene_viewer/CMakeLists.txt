@@ -13,9 +13,7 @@ include_directories(${TOOLS_INC_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES     "Main.cpp"
                 "Scene.cpp"
-                "${CMAKE_SOURCE_DIR}/common/ImGui.cpp"
-                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui.cpp"
-                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_draw.cpp"
+                "ImGuiWrapper.cpp"
                 )
 
 add_executable(         scene_viewer
@@ -24,4 +22,5 @@ add_executable(         scene_viewer
 target_link_libraries(  scene_viewer
                         ${TOOLS_LIBRARIES_LIST}
                         SECommon
-                        SE)
+                        SE
+                        SEImGui)
