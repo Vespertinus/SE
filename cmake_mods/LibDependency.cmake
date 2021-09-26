@@ -44,27 +44,21 @@ endif()
 
 #check OpenCV
 #imgproc only for workaround to convert BGR2BGRA
-find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)
+find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc imgcodecs)
 message(STATUS "Found OpenCV libraries: ${OpenCV_LIBRARIES}")
 list(APPEND EXTERN_INC_DIRS ${OpenCV_INCLUDE_DIRS})
 list(APPEND LIBRARIES_LIST ${OpenCV_LIBRARIES})
 
 function(link_X11)
-        find_package(X11 REQUIRED COMPONENTS X11 Xxf86vm)
+        find_package(X11 REQUIRED COMPONENTS Xxf86vm)
         if(X11_xf86vmode_FOUND AND X11_FOUND)
-                message(STATUS "Found X11 library: ${X11_Xxf86vm_LIB}")
+                message(STATUS "Found X11 library: ${X11_Xxf86vm_LIB}, ${X11_LIBRARIES}")
                 set(EXTERN_INC_DIRS ${EXTERN_INC_DIRS} ${X11_xf86vmode_INCLUDE_PATH} ${X11_INCLUDE_DIR} PARENT_SCOPE)
                 set(LIBRARIES_LIST ${LIBRARIES_LIST} ${X11_Xxf86vm_LIB} ${X11_LIBRARIES} PARENT_SCOPE)
         else()
                 message(FATAL_ERROR "Failed to found Xxf86vm or X11 library")
         endif()
 endfunction()
-
-
-#header only packages:
-find_package(spdlog CONFIG REQUIRED)
-message(STATUS "Found spdlog package, settings at '${spdlog_DIR}'")
-list(APPEND LIBRARIES_LIST spdlog::spdlog)
 
 
 list(APPEND LIBRARIES_LIST "m")
