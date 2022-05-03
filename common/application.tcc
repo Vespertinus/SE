@@ -10,13 +10,14 @@ template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t 
         TEngine::Instance().Init();
 
         log_d("try to init OIS");
-
+/*
         TInputManager::Instance().Initialise(
                         window_id,
                         oSettings.oWindowSettings.width,
                         oSettings.oWindowSettings.height,
                         oSettings.grab_mouse,
                         oSettings.hide_mouse);
+                        */
 
 }
 

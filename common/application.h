@@ -9,7 +9,8 @@
 #include <map>
 
 // Internal include
-#include <X11Window.h>
+//#include <X11Window.h>
+#include <SDLWindow.h>
 
 #include <stl_extension.h>
 
@@ -40,7 +41,8 @@ template <class TLoop > class Application {
         typedef STD_EXT::GeneralFunctor<Application<TLoop>, void, int32_t, int32_t> TResizeFunctor;
         //TODO write normal OS switch
         //#ifdef linux
-        typedef X11Window<TResizeFunctor, TRunFunctor>                              TWindow;
+        //typedef X11Window<TResizeFunctor, TRunFunctor>                              TWindow;
+        typedef SDLWindow<TResizeFunctor, TRunFunctor>                              TWindow;
         //#else
         //# error "unsupported OS"
         //#endif
