@@ -7,10 +7,10 @@
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/flexbuffers.h"
 
-#include "Common_generated.h"
+#include "Mesh_generated.h"
 #include "Component_generated.h"
 #include "Material_generated.h"
-#include "Mesh_generated.h"
+#include "Common_generated.h"
 #include "ShaderComponent_generated.h"
 #include "ShaderProgram_generated.h"
 
@@ -18,11 +18,14 @@ namespace SE {
 namespace FlatBuffers {
 
 struct Node;
+struct NodeBuilder;
 
 struct SceneTree;
+struct SceneTreeBuilder;
 
 struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef NodeBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
     VT_TRANSLATION = 6,
     VT_ROTATION = 8,
@@ -35,20 +38,20 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
   }
-  const Vec3 *translation() const {
-    return GetStruct<const Vec3 *>(VT_TRANSLATION);
+  const SE::FlatBuffers::Vec3 *translation() const {
+    return GetStruct<const SE::FlatBuffers::Vec3 *>(VT_TRANSLATION);
   }
-  const Vec3 *rotation() const {
-    return GetStruct<const Vec3 *>(VT_ROTATION);
+  const SE::FlatBuffers::Vec3 *rotation() const {
+    return GetStruct<const SE::FlatBuffers::Vec3 *>(VT_ROTATION);
   }
-  const Vec3 *scale() const {
-    return GetStruct<const Vec3 *>(VT_SCALE);
+  const SE::FlatBuffers::Vec3 *scale() const {
+    return GetStruct<const SE::FlatBuffers::Vec3 *>(VT_SCALE);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<Component>> *components() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Component>> *>(VT_COMPONENTS);
+  const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Component>> *components() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Component>> *>(VT_COMPONENTS);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<Node>> *children() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Node>> *>(VT_CHILDREN);
+  const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Node>> *children() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Node>> *>(VT_CHILDREN);
   }
   const flatbuffers::String *info() const {
     return GetPointer<const flatbuffers::String *>(VT_INFO);
@@ -58,11 +61,11 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_NAME) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyField<Vec3>(verifier, VT_TRANSLATION) &&
-           VerifyField<Vec3>(verifier, VT_ROTATION) &&
-           VerifyField<Vec3>(verifier, VT_SCALE) &&
+           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_TRANSLATION) &&
+           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_ROTATION) &&
+           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_SCALE) &&
            VerifyOffset(verifier, VT_COMPONENTS) &&
            verifier.VerifyVector(components()) &&
            verifier.VerifyVectorOfTables(components()) &&
@@ -77,24 +80,25 @@ struct Node FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct NodeBuilder {
+  typedef Node Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
     fbb_.AddOffset(Node::VT_NAME, name);
   }
-  void add_translation(const Vec3 *translation) {
+  void add_translation(const SE::FlatBuffers::Vec3 *translation) {
     fbb_.AddStruct(Node::VT_TRANSLATION, translation);
   }
-  void add_rotation(const Vec3 *rotation) {
+  void add_rotation(const SE::FlatBuffers::Vec3 *rotation) {
     fbb_.AddStruct(Node::VT_ROTATION, rotation);
   }
-  void add_scale(const Vec3 *scale) {
+  void add_scale(const SE::FlatBuffers::Vec3 *scale) {
     fbb_.AddStruct(Node::VT_SCALE, scale);
   }
-  void add_components(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Component>>> components) {
+  void add_components(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Component>>> components) {
     fbb_.AddOffset(Node::VT_COMPONENTS, components);
   }
-  void add_children(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Node>>> children) {
+  void add_children(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Node>>> children) {
     fbb_.AddOffset(Node::VT_CHILDREN, children);
   }
   void add_info(flatbuffers::Offset<flatbuffers::String> info) {
@@ -107,10 +111,10 @@ struct NodeBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  NodeBuilder &operator=(const NodeBuilder &);
   flatbuffers::Offset<Node> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Node>(end);
+    fbb_.Required(o, Node::VT_NAME);
     return o;
   }
 };
@@ -118,11 +122,11 @@ struct NodeBuilder {
 inline flatbuffers::Offset<Node> CreateNode(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    const Vec3 *translation = 0,
-    const Vec3 *rotation = 0,
-    const Vec3 *scale = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Component>>> components = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Node>>> children = 0,
+    const SE::FlatBuffers::Vec3 *translation = nullptr,
+    const SE::FlatBuffers::Vec3 *rotation = nullptr,
+    const SE::FlatBuffers::Vec3 *scale = nullptr,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Component>>> components = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Node>>> children = 0,
     flatbuffers::Offset<flatbuffers::String> info = 0,
     bool enabled = true) {
   NodeBuilder builder_(_fbb);
@@ -140,31 +144,36 @@ inline flatbuffers::Offset<Node> CreateNode(
 inline flatbuffers::Offset<Node> CreateNodeDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
-    const Vec3 *translation = 0,
-    const Vec3 *rotation = 0,
-    const Vec3 *scale = 0,
-    const std::vector<flatbuffers::Offset<Component>> *components = nullptr,
-    const std::vector<flatbuffers::Offset<Node>> *children = nullptr,
+    const SE::FlatBuffers::Vec3 *translation = nullptr,
+    const SE::FlatBuffers::Vec3 *rotation = nullptr,
+    const SE::FlatBuffers::Vec3 *scale = nullptr,
+    const std::vector<flatbuffers::Offset<SE::FlatBuffers::Component>> *components = nullptr,
+    const std::vector<flatbuffers::Offset<SE::FlatBuffers::Node>> *children = nullptr,
     const char *info = nullptr,
     bool enabled = true) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto components__ = components ? _fbb.CreateVector<flatbuffers::Offset<SE::FlatBuffers::Component>>(*components) : 0;
+  auto children__ = children ? _fbb.CreateVector<flatbuffers::Offset<SE::FlatBuffers::Node>>(*children) : 0;
+  auto info__ = info ? _fbb.CreateString(info) : 0;
   return SE::FlatBuffers::CreateNode(
       _fbb,
-      name ? _fbb.CreateString(name) : 0,
+      name__,
       translation,
       rotation,
       scale,
-      components ? _fbb.CreateVector<flatbuffers::Offset<Component>>(*components) : 0,
-      children ? _fbb.CreateVector<flatbuffers::Offset<Node>>(*children) : 0,
-      info ? _fbb.CreateString(info) : 0,
+      components__,
+      children__,
+      info__,
       enabled);
 }
 
 struct SceneTree FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef SceneTreeBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_ROOT = 4
   };
-  const Node *root() const {
-    return GetPointer<const Node *>(VT_ROOT);
+  const SE::FlatBuffers::Node *root() const {
+    return GetPointer<const SE::FlatBuffers::Node *>(VT_ROOT);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -175,16 +184,16 @@ struct SceneTree FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct SceneTreeBuilder {
+  typedef SceneTree Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_root(flatbuffers::Offset<Node> root) {
+  void add_root(flatbuffers::Offset<SE::FlatBuffers::Node> root) {
     fbb_.AddOffset(SceneTree::VT_ROOT, root);
   }
   explicit SceneTreeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  SceneTreeBuilder &operator=(const SceneTreeBuilder &);
   flatbuffers::Offset<SceneTree> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<SceneTree>(end);
@@ -195,7 +204,7 @@ struct SceneTreeBuilder {
 
 inline flatbuffers::Offset<SceneTree> CreateSceneTree(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<Node> root = 0) {
+    flatbuffers::Offset<SE::FlatBuffers::Node> root = 0) {
   SceneTreeBuilder builder_(_fbb);
   builder_.add_root(root);
   return builder_.Finish();

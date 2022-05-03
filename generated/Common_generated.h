@@ -26,14 +26,15 @@ struct UVec2;
 struct ColorARGB;
 
 struct ResourcePath;
+struct ResourcePathBuilder;
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Float FLATBUFFERS_FINAL_CLASS {
  private:
   float value_;
 
  public:
-  Float() {
-    memset(this, 0, sizeof(Float));
+  Float()
+      : value_(0) {
   }
   Float(float _value)
       : value_(flatbuffers::EndianScalar(_value)) {
@@ -52,8 +53,11 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec4 FLATBUFFERS_FINAL_CLASS {
   float w_;
 
  public:
-  Vec4() {
-    memset(this, 0, sizeof(Vec4));
+  Vec4()
+      : x_(0),
+        y_(0),
+        z_(0),
+        w_(0) {
   }
   Vec4(float _x, float _y, float _z, float _w)
       : x_(flatbuffers::EndianScalar(_x)),
@@ -83,8 +87,10 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
   float z_;
 
  public:
-  Vec3() {
-    memset(this, 0, sizeof(Vec3));
+  Vec3()
+      : x_(0),
+        y_(0),
+        z_(0) {
   }
   Vec3(float _x, float _y, float _z)
       : x_(flatbuffers::EndianScalar(_x)),
@@ -109,8 +115,9 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec2 FLATBUFFERS_FINAL_CLASS {
   float v_;
 
  public:
-  Vec2() {
-    memset(this, 0, sizeof(Vec2));
+  Vec2()
+      : u_(0),
+        v_(0) {
   }
   Vec2(float _u, float _v)
       : u_(flatbuffers::EndianScalar(_u)),
@@ -133,8 +140,11 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec4 FLATBUFFERS_FINAL_CLASS {
   uint32_t w_;
 
  public:
-  UVec4() {
-    memset(this, 0, sizeof(UVec4));
+  UVec4()
+      : x_(0),
+        y_(0),
+        z_(0),
+        w_(0) {
   }
   UVec4(uint32_t _x, uint32_t _y, uint32_t _z, uint32_t _w)
       : x_(flatbuffers::EndianScalar(_x)),
@@ -164,8 +174,10 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec3 FLATBUFFERS_FINAL_CLASS {
   uint32_t z_;
 
  public:
-  UVec3() {
-    memset(this, 0, sizeof(UVec3));
+  UVec3()
+      : x_(0),
+        y_(0),
+        z_(0) {
   }
   UVec3(uint32_t _x, uint32_t _y, uint32_t _z)
       : x_(flatbuffers::EndianScalar(_x)),
@@ -190,8 +202,9 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec2 FLATBUFFERS_FINAL_CLASS {
   uint32_t v_;
 
  public:
-  UVec2() {
-    memset(this, 0, sizeof(UVec2));
+  UVec2()
+      : u_(0),
+        v_(0) {
   }
   UVec2(uint32_t _u, uint32_t _v)
       : u_(flatbuffers::EndianScalar(_u)),
@@ -214,8 +227,11 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
   float b_;
 
  public:
-  ColorARGB() {
-    memset(this, 0, sizeof(ColorARGB));
+  ColorARGB()
+      : a_(0),
+        r_(0),
+        g_(0),
+        b_(0) {
   }
   ColorARGB(float _a, float _r, float _g, float _b)
       : a_(flatbuffers::EndianScalar(_a)),
@@ -239,7 +255,8 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
 FLATBUFFERS_STRUCT_END(ColorARGB, 16);
 
 struct ResourcePath FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef ResourcePathBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PATH = 4
   };
   const flatbuffers::String *path() const {
@@ -254,6 +271,7 @@ struct ResourcePath FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct ResourcePathBuilder {
+  typedef ResourcePath Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_path(flatbuffers::Offset<flatbuffers::String> path) {
@@ -263,7 +281,6 @@ struct ResourcePathBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ResourcePathBuilder &operator=(const ResourcePathBuilder &);
   flatbuffers::Offset<ResourcePath> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<ResourcePath>(end);
@@ -283,9 +300,10 @@ inline flatbuffers::Offset<ResourcePath> CreateResourcePath(
 inline flatbuffers::Offset<ResourcePath> CreateResourcePathDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *path = nullptr) {
+  auto path__ = path ? _fbb.CreateString(path) : 0;
   return SE::FlatBuffers::CreateResourcePath(
       _fbb,
-      path ? _fbb.CreateString(path) : 0);
+      path__);
 }
 
 }  // namespace FlatBuffers

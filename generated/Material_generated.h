@@ -14,18 +14,25 @@ namespace SE {
 namespace FlatBuffers {
 
 struct TextureStock;
+struct TextureStockBuilder;
 
 struct StoreTexture2D;
+struct StoreTexture2DBuilder;
 
 struct StoreTextureBuffer;
+struct StoreTextureBufferBuilder;
 
 struct TextureHolder;
+struct TextureHolderBuilder;
 
 struct ShaderVariable;
+struct ShaderVariableBuilder;
 
 struct Material;
+struct MaterialBuilder;
 
 struct MaterialHolder;
+struct MaterialHolderBuilder;
 
 enum class StoreSettings : uint8_t {
   NONE = 0,
@@ -45,7 +52,7 @@ inline const StoreSettings (&EnumValuesStoreSettings())[3] {
 }
 
 inline const char * const *EnumNamesStoreSettings() {
-  static const char * const names[] = {
+  static const char * const names[4] = {
     "NONE",
     "StoreTexture2D",
     "StoreTextureBuffer",
@@ -55,7 +62,8 @@ inline const char * const *EnumNamesStoreSettings() {
 }
 
 inline const char *EnumNameStoreSettings(StoreSettings e) {
-  const size_t index = static_cast<int>(e);
+  if (flatbuffers::IsOutRange(e, StoreSettings::NONE, StoreSettings::StoreTextureBuffer)) return "";
+  const size_t index = static_cast<size_t>(e);
   return EnumNamesStoreSettings()[index];
 }
 
@@ -63,16 +71,16 @@ template<typename T> struct StoreSettingsTraits {
   static const StoreSettings enum_value = StoreSettings::NONE;
 };
 
-template<> struct StoreSettingsTraits<StoreTexture2D> {
+template<> struct StoreSettingsTraits<SE::FlatBuffers::StoreTexture2D> {
   static const StoreSettings enum_value = StoreSettings::StoreTexture2D;
 };
 
-template<> struct StoreSettingsTraits<StoreTextureBuffer> {
+template<> struct StoreSettingsTraits<SE::FlatBuffers::StoreTextureBuffer> {
   static const StoreSettings enum_value = StoreSettings::StoreTextureBuffer;
 };
 
 bool VerifyStoreSettings(flatbuffers::Verifier &verifier, const void *obj, StoreSettings type);
-bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types);
+bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<StoreSettings> *types);
 
 enum class TextureUnit : uint8_t {
   UNIT_DIFFUSE = 0,
@@ -100,7 +108,7 @@ inline const TextureUnit (&EnumValuesTextureUnit())[7] {
 }
 
 inline const char * const *EnumNamesTextureUnit() {
-  static const char * const names[] = {
+  static const char * const names[9] = {
     "UNIT_DIFFUSE",
     "UNIT_NORMAL",
     "UNIT_SPECULAR",
@@ -115,12 +123,14 @@ inline const char * const *EnumNamesTextureUnit() {
 }
 
 inline const char *EnumNameTextureUnit(TextureUnit e) {
-  const size_t index = static_cast<int>(e);
+  if (flatbuffers::IsOutRange(e, TextureUnit::UNIT_DIFFUSE, TextureUnit::UNIT_CUSTOM)) return "";
+  const size_t index = static_cast<size_t>(e);
   return EnumNamesTextureUnit()[index];
 }
 
 struct TextureStock FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef TextureStockBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_IMAGE = 4,
     VT_FORMAT = 6,
     VT_INTERNAL_FORMAT = 8,
@@ -155,6 +165,7 @@ struct TextureStock FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct TextureStockBuilder {
+  typedef TextureStock Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_image(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> image) {
@@ -176,7 +187,6 @@ struct TextureStockBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  TextureStockBuilder &operator=(const TextureStockBuilder &);
   flatbuffers::Offset<TextureStock> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<TextureStock>(end);
@@ -208,9 +218,10 @@ inline flatbuffers::Offset<TextureStock> CreateTextureStockDirect(
     int32_t internal_format = 0,
     uint32_t width = 0,
     uint32_t height = 0) {
+  auto image__ = image ? _fbb.CreateVector<uint8_t>(*image) : 0;
   return SE::FlatBuffers::CreateTextureStock(
       _fbb,
-      image ? _fbb.CreateVector<uint8_t>(*image) : 0,
+      image__,
       format,
       internal_format,
       width,
@@ -218,7 +229,8 @@ inline flatbuffers::Offset<TextureStock> CreateTextureStockDirect(
 }
 
 struct StoreTexture2D FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef StoreTexture2DBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_WRAP = 4,
     VT_MIN_FILTER = 6,
     VT_MAG_FILTER = 8,
@@ -247,6 +259,7 @@ struct StoreTexture2D FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct StoreTexture2DBuilder {
+  typedef StoreTexture2D Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_wrap(int32_t wrap) {
@@ -265,7 +278,6 @@ struct StoreTexture2DBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  StoreTexture2DBuilder &operator=(const StoreTexture2DBuilder &);
   flatbuffers::Offset<StoreTexture2D> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<StoreTexture2D>(end);
@@ -288,6 +300,7 @@ inline flatbuffers::Offset<StoreTexture2D> CreateStoreTexture2D(
 }
 
 struct StoreTextureBuffer FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef StoreTextureBufferBuilder Builder;
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
@@ -295,13 +308,13 @@ struct StoreTextureBuffer FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct StoreTextureBufferBuilder {
+  typedef StoreTextureBuffer Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   explicit StoreTextureBufferBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  StoreTextureBufferBuilder &operator=(const StoreTextureBufferBuilder &);
   flatbuffers::Offset<StoreTextureBuffer> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<StoreTextureBuffer>(end);
@@ -316,7 +329,8 @@ inline flatbuffers::Offset<StoreTextureBuffer> CreateStoreTextureBuffer(
 }
 
 struct TextureHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef TextureHolderBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_STOCK = 4,
     VT_PATH = 6,
     VT_NAME = 8,
@@ -324,8 +338,8 @@ struct TextureHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_STORE = 12,
     VT_UNIT = 14
   };
-  const TextureStock *stock() const {
-    return GetPointer<const TextureStock *>(VT_STOCK);
+  const SE::FlatBuffers::TextureStock *stock() const {
+    return GetPointer<const SE::FlatBuffers::TextureStock *>(VT_STOCK);
   }
   const flatbuffers::String *path() const {
     return GetPointer<const flatbuffers::String *>(VT_PATH);
@@ -333,21 +347,21 @@ struct TextureHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
   }
-  StoreSettings store_type() const {
-    return static_cast<StoreSettings>(GetField<uint8_t>(VT_STORE_TYPE, 0));
+  SE::FlatBuffers::StoreSettings store_type() const {
+    return static_cast<SE::FlatBuffers::StoreSettings>(GetField<uint8_t>(VT_STORE_TYPE, 0));
   }
   const void *store() const {
     return GetPointer<const void *>(VT_STORE);
   }
   template<typename T> const T *store_as() const;
-  const StoreTexture2D *store_as_StoreTexture2D() const {
-    return store_type() == StoreSettings::StoreTexture2D ? static_cast<const StoreTexture2D *>(store()) : nullptr;
+  const SE::FlatBuffers::StoreTexture2D *store_as_StoreTexture2D() const {
+    return store_type() == SE::FlatBuffers::StoreSettings::StoreTexture2D ? static_cast<const SE::FlatBuffers::StoreTexture2D *>(store()) : nullptr;
   }
-  const StoreTextureBuffer *store_as_StoreTextureBuffer() const {
-    return store_type() == StoreSettings::StoreTextureBuffer ? static_cast<const StoreTextureBuffer *>(store()) : nullptr;
+  const SE::FlatBuffers::StoreTextureBuffer *store_as_StoreTextureBuffer() const {
+    return store_type() == SE::FlatBuffers::StoreSettings::StoreTextureBuffer ? static_cast<const SE::FlatBuffers::StoreTextureBuffer *>(store()) : nullptr;
   }
-  TextureUnit unit() const {
-    return static_cast<TextureUnit>(GetField<uint8_t>(VT_UNIT, 0));
+  SE::FlatBuffers::TextureUnit unit() const {
+    return static_cast<SE::FlatBuffers::TextureUnit>(GetField<uint8_t>(VT_UNIT, 0));
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -365,18 +379,19 @@ struct TextureHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
 };
 
-template<> inline const StoreTexture2D *TextureHolder::store_as<StoreTexture2D>() const {
+template<> inline const SE::FlatBuffers::StoreTexture2D *TextureHolder::store_as<SE::FlatBuffers::StoreTexture2D>() const {
   return store_as_StoreTexture2D();
 }
 
-template<> inline const StoreTextureBuffer *TextureHolder::store_as<StoreTextureBuffer>() const {
+template<> inline const SE::FlatBuffers::StoreTextureBuffer *TextureHolder::store_as<SE::FlatBuffers::StoreTextureBuffer>() const {
   return store_as_StoreTextureBuffer();
 }
 
 struct TextureHolderBuilder {
+  typedef TextureHolder Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_stock(flatbuffers::Offset<TextureStock> stock) {
+  void add_stock(flatbuffers::Offset<SE::FlatBuffers::TextureStock> stock) {
     fbb_.AddOffset(TextureHolder::VT_STOCK, stock);
   }
   void add_path(flatbuffers::Offset<flatbuffers::String> path) {
@@ -385,20 +400,19 @@ struct TextureHolderBuilder {
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
     fbb_.AddOffset(TextureHolder::VT_NAME, name);
   }
-  void add_store_type(StoreSettings store_type) {
+  void add_store_type(SE::FlatBuffers::StoreSettings store_type) {
     fbb_.AddElement<uint8_t>(TextureHolder::VT_STORE_TYPE, static_cast<uint8_t>(store_type), 0);
   }
   void add_store(flatbuffers::Offset<void> store) {
     fbb_.AddOffset(TextureHolder::VT_STORE, store);
   }
-  void add_unit(TextureUnit unit) {
+  void add_unit(SE::FlatBuffers::TextureUnit unit) {
     fbb_.AddElement<uint8_t>(TextureHolder::VT_UNIT, static_cast<uint8_t>(unit), 0);
   }
   explicit TextureHolderBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  TextureHolderBuilder &operator=(const TextureHolderBuilder &);
   flatbuffers::Offset<TextureHolder> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<TextureHolder>(end);
@@ -408,12 +422,12 @@ struct TextureHolderBuilder {
 
 inline flatbuffers::Offset<TextureHolder> CreateTextureHolder(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<TextureStock> stock = 0,
+    flatbuffers::Offset<SE::FlatBuffers::TextureStock> stock = 0,
     flatbuffers::Offset<flatbuffers::String> path = 0,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    StoreSettings store_type = StoreSettings::NONE,
+    SE::FlatBuffers::StoreSettings store_type = SE::FlatBuffers::StoreSettings::NONE,
     flatbuffers::Offset<void> store = 0,
-    TextureUnit unit = TextureUnit::UNIT_DIFFUSE) {
+    SE::FlatBuffers::TextureUnit unit = SE::FlatBuffers::TextureUnit::UNIT_DIFFUSE) {
   TextureHolderBuilder builder_(_fbb);
   builder_.add_store(store);
   builder_.add_name(name);
@@ -426,24 +440,27 @@ inline flatbuffers::Offset<TextureHolder> CreateTextureHolder(
 
 inline flatbuffers::Offset<TextureHolder> CreateTextureHolderDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<TextureStock> stock = 0,
+    flatbuffers::Offset<SE::FlatBuffers::TextureStock> stock = 0,
     const char *path = nullptr,
     const char *name = nullptr,
-    StoreSettings store_type = StoreSettings::NONE,
+    SE::FlatBuffers::StoreSettings store_type = SE::FlatBuffers::StoreSettings::NONE,
     flatbuffers::Offset<void> store = 0,
-    TextureUnit unit = TextureUnit::UNIT_DIFFUSE) {
+    SE::FlatBuffers::TextureUnit unit = SE::FlatBuffers::TextureUnit::UNIT_DIFFUSE) {
+  auto path__ = path ? _fbb.CreateString(path) : 0;
+  auto name__ = name ? _fbb.CreateString(name) : 0;
   return SE::FlatBuffers::CreateTextureHolder(
       _fbb,
       stock,
-      path ? _fbb.CreateString(path) : 0,
-      name ? _fbb.CreateString(name) : 0,
+      path__,
+      name__,
       store_type,
       store,
       unit);
 }
 
 struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef ShaderVariableBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
     VT_FLOAT_VAL = 6,
     VT_INT_VAL = 8,
@@ -463,23 +480,23 @@ struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int32_t int_val() const {
     return GetField<int32_t>(VT_INT_VAL, 0);
   }
-  const Vec2 *vec2_val() const {
-    return GetStruct<const Vec2 *>(VT_VEC2_VAL);
+  const SE::FlatBuffers::Vec2 *vec2_val() const {
+    return GetStruct<const SE::FlatBuffers::Vec2 *>(VT_VEC2_VAL);
   }
-  const Vec3 *vec3_val() const {
-    return GetStruct<const Vec3 *>(VT_VEC3_VAL);
+  const SE::FlatBuffers::Vec3 *vec3_val() const {
+    return GetStruct<const SE::FlatBuffers::Vec3 *>(VT_VEC3_VAL);
   }
-  const Vec4 *vec4_val() const {
-    return GetStruct<const Vec4 *>(VT_VEC4_VAL);
+  const SE::FlatBuffers::Vec4 *vec4_val() const {
+    return GetStruct<const SE::FlatBuffers::Vec4 *>(VT_VEC4_VAL);
   }
-  const UVec2 *uvec2_val() const {
-    return GetStruct<const UVec2 *>(VT_UVEC2_VAL);
+  const SE::FlatBuffers::UVec2 *uvec2_val() const {
+    return GetStruct<const SE::FlatBuffers::UVec2 *>(VT_UVEC2_VAL);
   }
-  const UVec3 *uvec3_val() const {
-    return GetStruct<const UVec3 *>(VT_UVEC3_VAL);
+  const SE::FlatBuffers::UVec3 *uvec3_val() const {
+    return GetStruct<const SE::FlatBuffers::UVec3 *>(VT_UVEC3_VAL);
   }
-  const UVec4 *uvec4_val() const {
-    return GetStruct<const UVec4 *>(VT_UVEC4_VAL);
+  const SE::FlatBuffers::UVec4 *uvec4_val() const {
+    return GetStruct<const SE::FlatBuffers::UVec4 *>(VT_UVEC4_VAL);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -487,17 +504,18 @@ struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyString(name()) &&
            VerifyField<float>(verifier, VT_FLOAT_VAL) &&
            VerifyField<int32_t>(verifier, VT_INT_VAL) &&
-           VerifyField<Vec2>(verifier, VT_VEC2_VAL) &&
-           VerifyField<Vec3>(verifier, VT_VEC3_VAL) &&
-           VerifyField<Vec4>(verifier, VT_VEC4_VAL) &&
-           VerifyField<UVec2>(verifier, VT_UVEC2_VAL) &&
-           VerifyField<UVec3>(verifier, VT_UVEC3_VAL) &&
-           VerifyField<UVec4>(verifier, VT_UVEC4_VAL) &&
+           VerifyField<SE::FlatBuffers::Vec2>(verifier, VT_VEC2_VAL) &&
+           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_VEC3_VAL) &&
+           VerifyField<SE::FlatBuffers::Vec4>(verifier, VT_VEC4_VAL) &&
+           VerifyField<SE::FlatBuffers::UVec2>(verifier, VT_UVEC2_VAL) &&
+           VerifyField<SE::FlatBuffers::UVec3>(verifier, VT_UVEC3_VAL) &&
+           VerifyField<SE::FlatBuffers::UVec4>(verifier, VT_UVEC4_VAL) &&
            verifier.EndTable();
   }
 };
 
 struct ShaderVariableBuilder {
+  typedef ShaderVariable Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
@@ -509,29 +527,28 @@ struct ShaderVariableBuilder {
   void add_int_val(int32_t int_val) {
     fbb_.AddElement<int32_t>(ShaderVariable::VT_INT_VAL, int_val, 0);
   }
-  void add_vec2_val(const Vec2 *vec2_val) {
+  void add_vec2_val(const SE::FlatBuffers::Vec2 *vec2_val) {
     fbb_.AddStruct(ShaderVariable::VT_VEC2_VAL, vec2_val);
   }
-  void add_vec3_val(const Vec3 *vec3_val) {
+  void add_vec3_val(const SE::FlatBuffers::Vec3 *vec3_val) {
     fbb_.AddStruct(ShaderVariable::VT_VEC3_VAL, vec3_val);
   }
-  void add_vec4_val(const Vec4 *vec4_val) {
+  void add_vec4_val(const SE::FlatBuffers::Vec4 *vec4_val) {
     fbb_.AddStruct(ShaderVariable::VT_VEC4_VAL, vec4_val);
   }
-  void add_uvec2_val(const UVec2 *uvec2_val) {
+  void add_uvec2_val(const SE::FlatBuffers::UVec2 *uvec2_val) {
     fbb_.AddStruct(ShaderVariable::VT_UVEC2_VAL, uvec2_val);
   }
-  void add_uvec3_val(const UVec3 *uvec3_val) {
+  void add_uvec3_val(const SE::FlatBuffers::UVec3 *uvec3_val) {
     fbb_.AddStruct(ShaderVariable::VT_UVEC3_VAL, uvec3_val);
   }
-  void add_uvec4_val(const UVec4 *uvec4_val) {
+  void add_uvec4_val(const SE::FlatBuffers::UVec4 *uvec4_val) {
     fbb_.AddStruct(ShaderVariable::VT_UVEC4_VAL, uvec4_val);
   }
   explicit ShaderVariableBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ShaderVariableBuilder &operator=(const ShaderVariableBuilder &);
   flatbuffers::Offset<ShaderVariable> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<ShaderVariable>(end);
@@ -545,12 +562,12 @@ inline flatbuffers::Offset<ShaderVariable> CreateShaderVariable(
     flatbuffers::Offset<flatbuffers::String> name = 0,
     float float_val = 0.0f,
     int32_t int_val = 0,
-    const Vec2 *vec2_val = 0,
-    const Vec3 *vec3_val = 0,
-    const Vec4 *vec4_val = 0,
-    const UVec2 *uvec2_val = 0,
-    const UVec3 *uvec3_val = 0,
-    const UVec4 *uvec4_val = 0) {
+    const SE::FlatBuffers::Vec2 *vec2_val = nullptr,
+    const SE::FlatBuffers::Vec3 *vec3_val = nullptr,
+    const SE::FlatBuffers::Vec4 *vec4_val = nullptr,
+    const SE::FlatBuffers::UVec2 *uvec2_val = nullptr,
+    const SE::FlatBuffers::UVec3 *uvec3_val = nullptr,
+    const SE::FlatBuffers::UVec4 *uvec4_val = nullptr) {
   ShaderVariableBuilder builder_(_fbb);
   builder_.add_uvec4_val(uvec4_val);
   builder_.add_uvec3_val(uvec3_val);
@@ -569,15 +586,16 @@ inline flatbuffers::Offset<ShaderVariable> CreateShaderVariableDirect(
     const char *name = nullptr,
     float float_val = 0.0f,
     int32_t int_val = 0,
-    const Vec2 *vec2_val = 0,
-    const Vec3 *vec3_val = 0,
-    const Vec4 *vec4_val = 0,
-    const UVec2 *uvec2_val = 0,
-    const UVec3 *uvec3_val = 0,
-    const UVec4 *uvec4_val = 0) {
+    const SE::FlatBuffers::Vec2 *vec2_val = nullptr,
+    const SE::FlatBuffers::Vec3 *vec3_val = nullptr,
+    const SE::FlatBuffers::Vec4 *vec4_val = nullptr,
+    const SE::FlatBuffers::UVec2 *uvec2_val = nullptr,
+    const SE::FlatBuffers::UVec3 *uvec3_val = nullptr,
+    const SE::FlatBuffers::UVec4 *uvec4_val = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
   return SE::FlatBuffers::CreateShaderVariable(
       _fbb,
-      name ? _fbb.CreateString(name) : 0,
+      name__,
       float_val,
       int_val,
       vec2_val,
@@ -589,19 +607,20 @@ inline flatbuffers::Offset<ShaderVariable> CreateShaderVariableDirect(
 }
 
 struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef MaterialBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SHADER = 4,
     VT_TEXTURES = 6,
     VT_VARIABLES = 8
   };
-  const ShaderProgramHolder *shader() const {
-    return GetPointer<const ShaderProgramHolder *>(VT_SHADER);
+  const SE::FlatBuffers::ShaderProgramHolder *shader() const {
+    return GetPointer<const SE::FlatBuffers::ShaderProgramHolder *>(VT_SHADER);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<TextureHolder>> *textures() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<TextureHolder>> *>(VT_TEXTURES);
+  const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::TextureHolder>> *textures() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::TextureHolder>> *>(VT_TEXTURES);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<ShaderVariable>> *variables() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<ShaderVariable>> *>(VT_VARIABLES);
+  const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> *variables() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> *>(VT_VARIABLES);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -618,22 +637,22 @@ struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct MaterialBuilder {
+  typedef Material Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_shader(flatbuffers::Offset<ShaderProgramHolder> shader) {
+  void add_shader(flatbuffers::Offset<SE::FlatBuffers::ShaderProgramHolder> shader) {
     fbb_.AddOffset(Material::VT_SHADER, shader);
   }
-  void add_textures(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<TextureHolder>>> textures) {
+  void add_textures(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::TextureHolder>>> textures) {
     fbb_.AddOffset(Material::VT_TEXTURES, textures);
   }
-  void add_variables(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<ShaderVariable>>> variables) {
+  void add_variables(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>>> variables) {
     fbb_.AddOffset(Material::VT_VARIABLES, variables);
   }
   explicit MaterialBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  MaterialBuilder &operator=(const MaterialBuilder &);
   flatbuffers::Offset<Material> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Material>(end);
@@ -644,9 +663,9 @@ struct MaterialBuilder {
 
 inline flatbuffers::Offset<Material> CreateMaterial(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<ShaderProgramHolder> shader = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<TextureHolder>>> textures = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<ShaderVariable>>> variables = 0) {
+    flatbuffers::Offset<SE::FlatBuffers::ShaderProgramHolder> shader = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::TextureHolder>>> textures = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>>> variables = 0) {
   MaterialBuilder builder_(_fbb);
   builder_.add_variables(variables);
   builder_.add_textures(textures);
@@ -656,24 +675,27 @@ inline flatbuffers::Offset<Material> CreateMaterial(
 
 inline flatbuffers::Offset<Material> CreateMaterialDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<ShaderProgramHolder> shader = 0,
-    const std::vector<flatbuffers::Offset<TextureHolder>> *textures = nullptr,
-    const std::vector<flatbuffers::Offset<ShaderVariable>> *variables = nullptr) {
+    flatbuffers::Offset<SE::FlatBuffers::ShaderProgramHolder> shader = 0,
+    const std::vector<flatbuffers::Offset<SE::FlatBuffers::TextureHolder>> *textures = nullptr,
+    const std::vector<flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> *variables = nullptr) {
+  auto textures__ = textures ? _fbb.CreateVector<flatbuffers::Offset<SE::FlatBuffers::TextureHolder>>(*textures) : 0;
+  auto variables__ = variables ? _fbb.CreateVector<flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>>(*variables) : 0;
   return SE::FlatBuffers::CreateMaterial(
       _fbb,
       shader,
-      textures ? _fbb.CreateVector<flatbuffers::Offset<TextureHolder>>(*textures) : 0,
-      variables ? _fbb.CreateVector<flatbuffers::Offset<ShaderVariable>>(*variables) : 0);
+      textures__,
+      variables__);
 }
 
 struct MaterialHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
+  typedef MaterialHolderBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MATERIAL = 4,
     VT_PATH = 6,
     VT_NAME = 8
   };
-  const Material *material() const {
-    return GetPointer<const Material *>(VT_MATERIAL);
+  const SE::FlatBuffers::Material *material() const {
+    return GetPointer<const SE::FlatBuffers::Material *>(VT_MATERIAL);
   }
   const flatbuffers::String *path() const {
     return GetPointer<const flatbuffers::String *>(VT_PATH);
@@ -694,9 +716,10 @@ struct MaterialHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct MaterialHolderBuilder {
+  typedef MaterialHolder Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_material(flatbuffers::Offset<Material> material) {
+  void add_material(flatbuffers::Offset<SE::FlatBuffers::Material> material) {
     fbb_.AddOffset(MaterialHolder::VT_MATERIAL, material);
   }
   void add_path(flatbuffers::Offset<flatbuffers::String> path) {
@@ -709,7 +732,6 @@ struct MaterialHolderBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  MaterialHolderBuilder &operator=(const MaterialHolderBuilder &);
   flatbuffers::Offset<MaterialHolder> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<MaterialHolder>(end);
@@ -719,7 +741,7 @@ struct MaterialHolderBuilder {
 
 inline flatbuffers::Offset<MaterialHolder> CreateMaterialHolder(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<Material> material = 0,
+    flatbuffers::Offset<SE::FlatBuffers::Material> material = 0,
     flatbuffers::Offset<flatbuffers::String> path = 0,
     flatbuffers::Offset<flatbuffers::String> name = 0) {
   MaterialHolderBuilder builder_(_fbb);
@@ -731,14 +753,16 @@ inline flatbuffers::Offset<MaterialHolder> CreateMaterialHolder(
 
 inline flatbuffers::Offset<MaterialHolder> CreateMaterialHolderDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<Material> material = 0,
+    flatbuffers::Offset<SE::FlatBuffers::Material> material = 0,
     const char *path = nullptr,
     const char *name = nullptr) {
+  auto path__ = path ? _fbb.CreateString(path) : 0;
+  auto name__ = name ? _fbb.CreateString(name) : 0;
   return SE::FlatBuffers::CreateMaterialHolder(
       _fbb,
       material,
-      path ? _fbb.CreateString(path) : 0,
-      name ? _fbb.CreateString(name) : 0);
+      path__,
+      name__);
 }
 
 inline bool VerifyStoreSettings(flatbuffers::Verifier &verifier, const void *obj, StoreSettings type) {
@@ -747,18 +771,18 @@ inline bool VerifyStoreSettings(flatbuffers::Verifier &verifier, const void *obj
       return true;
     }
     case StoreSettings::StoreTexture2D: {
-      auto ptr = reinterpret_cast<const StoreTexture2D *>(obj);
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StoreTexture2D *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case StoreSettings::StoreTextureBuffer: {
-      auto ptr = reinterpret_cast<const StoreTextureBuffer *>(obj);
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StoreTextureBuffer *>(obj);
       return verifier.VerifyTable(ptr);
     }
-    default: return false;
+    default: return true;
   }
 }
 
-inline bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+inline bool VerifyStoreSettingsVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<StoreSettings> *types) {
   if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
