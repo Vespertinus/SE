@@ -9,7 +9,6 @@
 #include <map>
 
 // Internal include
-//#include <X11Window.h>
 #include <SDLWindow.h>
 
 #include <stl_extension.h>
@@ -39,13 +38,7 @@ template <class TLoop > class Application {
 
         typedef STD_EXT::GeneralFunctor<Application<TLoop>, void>                   TRunFunctor;
         typedef STD_EXT::GeneralFunctor<Application<TLoop>, void, int32_t, int32_t> TResizeFunctor;
-        //TODO write normal OS switch
-        //#ifdef linux
-        //typedef X11Window<TResizeFunctor, TRunFunctor>                              TWindow;
         typedef SDLWindow<TResizeFunctor, TRunFunctor>                              TWindow;
-        //#else
-        //# error "unsupported OS"
-        //#endif
 
         /** global initialization before user code (Loop)*/
         struct PreInit {
@@ -68,8 +61,6 @@ template <class TLoop > class Application {
         Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings & oLoopSettings);
         ~Application() noexcept;
 
-
-        public:		//TEMP
         void Init();
         //private:	//TEMP
         void ResizeViewport(const int32_t & new_width, const int32_t & new_height);

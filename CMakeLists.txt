@@ -85,9 +85,8 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH      "${CMAKE_SOURCE_DIR}")
 
 set (COMMON_SOURCES             "${CMAKE_SOURCE_DIR}/common/Chrono.cpp")
+
 if(GPU)
-list(APPEND                     COMMON_SOURCES
-                                "${CMAKE_SOURCE_DIR}/core/InputManager.cpp")
 list(APPEND                     THIRD_PARTY_INC_DIRS "third_party/imgui")
 endif()
 

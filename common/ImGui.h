@@ -1,13 +1,12 @@
 #ifndef __IMGUI_WRAPPER_H__
 #define __IMGUI_WRAPPER_H__ 1
 
-#include <InputManager.h>
 #include <imgui.h>
 
 namespace SE {
 namespace HELPERS {
 
-class ImGuiWrapper : public OIS::KeyListener, public OIS::MouseListener {
+class ImGuiWrapper {
 
 
         ShaderProgram         * pShader;
@@ -20,17 +19,17 @@ class ImGuiWrapper : public OIS::KeyListener, public OIS::MouseListener {
         void InitGLData();
         void InitWndData();
 
+        void OnKeyDown(const Event & oEvent);
+        void OnKeyUp(const Event & oEvent);
+        void OnTextInput(const Event & oEvent);
+        void OnMouseMove(const Event & oEvent);
+        void OnMouseButtonDown(const Event & oEvent);
+        void OnMouseButtonUp(const Event & oEvent);
+
         public:
 
         ImGuiWrapper();
         ~ImGuiWrapper();
-
-        bool keyPressed( const OIS::KeyEvent &ev);
-        bool keyReleased( const OIS::KeyEvent &ev);
-
-        bool mouseMoved( const OIS::MouseEvent &ev);
-        bool mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
-        bool mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
 
         void NewFrame(const Event &);
         void Render(const Event &);

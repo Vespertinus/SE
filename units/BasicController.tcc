@@ -10,131 +10,74 @@ BasicController::~BasicController() noexcept {
         Disable();
 }
 
-bool BasicController::keyPressed( const OIS::KeyEvent &ev) {
+void BasicController::OnKeyDown(const Event & oEvent) {
 
-        //log_d("key: {}", ev.key);
+        switch (oEvent.Get<EKeyDown>().key) {
 
-        switch (ev.key) {
-
-                case OIS::KC_W:
+                case SDLK_w:
                         translation_speed.z -= speed;
                         break;
-                case OIS::KC_S:	
+                case SDLK_s:
                         translation_speed.z += speed;
                         break;
-                case OIS::KC_D:	
+                case SDLK_d:
                         translation_speed.x += speed;
                         break;
-                case OIS::KC_A:
+                case SDLK_a:
                         translation_speed.x -= speed;
                         break;
-                case OIS::KC_R:
+                case SDLK_r:
                         translation_speed.y += speed;
                         break;
-                case OIS::KC_F:
+                case SDLK_f:
                         translation_speed.y -= speed;
                         break;
-                case OIS::KC_ESCAPE:
-                        log_i("stop program");
-                        exit(0);
-                        //return false;
-                        //TODO write correct exit
-
-                case OIS::KC_Q:
+                case SDLK_q:
                         rotation_speed.y += 15;
                         break;
-                case OIS::KC_E:
+                case SDLK_e:
                         rotation_speed.y -= 15;
                         break;
-                case OIS::KC_Z:
+                case SDLK_z:
                         speed *= 2;
                         break;
-                case OIS::KC_X:
+                case SDLK_x:
                         speed /= 2;
                         if (speed < 0) { speed = 0.001; }
-
                         break;
                 default:
                         break;
 
         }
-        return true;
 }
 
+void BasicController::OnKeyUp(const Event & oEvent) {
 
+        switch (oEvent.Get<EKeyUp>().key) {
 
-bool BasicController::keyReleased( const OIS::KeyEvent &ev) {
-
-        //log_d("key: {}", ev.key);
-
-        switch (ev.key) {
-
-                case OIS::KC_W:
-                case OIS::KC_S:	
+                case SDLK_w:
+                case SDLK_s:
                         translation_speed.z = 0.0f;
                         break;
-                case OIS::KC_D:	
-                case OIS::KC_A:
+                case SDLK_d:
+                case SDLK_a:
                         translation_speed.x = 0.0f;
                         break;
-                case OIS::KC_R:
+                case SDLK_r:
+                case SDLK_f:
                         translation_speed.y = 0.0f;
                         break;
-                case OIS::KC_F:
-                        translation_speed.y = 0.0f;
-                        break;
-
                 default:
                         break;
 
         }
-
-        return true;
 }
 
-bool BasicController::mouseMoved( const OIS::MouseEvent &ev) {
+void BasicController::OnMouseMove(const Event & oEvent) {
 
-        rotation_speed.x += (cursor_y - ev.state.Y.abs) * 0.05;
-        rotation_speed.y += (cursor_x - ev.state.X.abs) * 0.05;
-
-        cursor_x = ev.state.X.abs;
-        cursor_y = ev.state.Y.abs;
-
-        //FIXME after switching from OIS to SDL2
-        OIS::MouseState &MutableMouseState = const_cast<OIS::MouseState &>(TInputManager::Instance().GetMouse()->getMouseState());
-        const auto & screen_size = GetSystem<GraphicsState>().GetScreenSize();
-
-        if (ev.state.X.abs >= screen_size.x - 1.0) {
-
-                MutableMouseState.X.abs = 1;
-                cursor_x                = 1;
-        }
-
-        if (ev.state.Y.abs >= screen_size.y - 1.0) {
-                MutableMouseState.Y.abs = 1;
-                cursor_y                = 1;
-        }
-        if (ev.state.X.abs == 0.0) {
-                MutableMouseState.X.abs = screen_size.x;
-                cursor_x                = screen_size.x;
-        }
-
-        if (ev.state.Y.abs == 0.0) {
-                MutableMouseState.Y.abs = screen_size.y;
-                cursor_y                = screen_size.y;
-        }
-
-        return true;
-}
-
-bool BasicController::mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
-
-        return true;
-}
-
-bool BasicController::mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
-
-        return true;
+        auto & ev = oEvent.Get<EMouseMove>();
+        rotation_speed.x += -ev.delta.y * 0.05f;
+        rotation_speed.y += -ev.delta.x * 0.05f;
 }
 
 void BasicController::Update(const Event & oEvent) {
@@ -154,18 +97,22 @@ void BasicController::Update(const Event & oEvent) {
 
 void BasicController::Enable() {
 
-        TInputManager::Instance().AddKeyListener   (this, sName);
-        TInputManager::Instance().AddMouseListener (this, sName);
+        auto & oEM = TEngine::Instance().Get<EventManager>();
+        oEM.AddListener<EKeyDown,   &BasicController::OnKeyDown>  (this);
+        oEM.AddListener<EKeyUp,     &BasicController::OnKeyUp>    (this);
+        oEM.AddListener<EMouseMove, &BasicController::OnMouseMove>(this);
 
-        TEngine::Instance().Get<EventManager>().AddListener<EInputUpdate, &BasicController::Update>(this);
+        oEM.AddListener<EInputUpdate, &BasicController::Update>(this);
 }
 
 void BasicController::Disable() {
 
-        TInputManager::Instance().RemoveKeyListener   (sName);
-        TInputManager::Instance().RemoveMouseListener (sName);
+        auto & oEM = TEngine::Instance().Get<EventManager>();
+        oEM.RemoveListener<EKeyDown,   &BasicController::OnKeyDown>  (this);
+        oEM.RemoveListener<EKeyUp,     &BasicController::OnKeyUp>    (this);
+        oEM.RemoveListener<EMouseMove, &BasicController::OnMouseMove>(this);
 
-        TEngine::Instance().Get<EventManager>().RemoveListener<EInputUpdate, &BasicController::Update>(this);
+        oEM.RemoveListener<EInputUpdate, &BasicController::Update>(this);
 }
 
 std::string BasicController::Str() const {

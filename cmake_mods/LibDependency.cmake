@@ -7,25 +7,13 @@ list(APPEND LIBRARIES_LIST ${Boost_LIBRARIES})
 
 if (GPU)
         #check OpenGL
-        find_package(OpenGL)
-        list(APPEND EXTERN_INC_DIRS ${OPENGL_INCLUDE_DIR})
-        list(APPEND LIBRARIES_LIST ${OPENGL_gl_LIBRARY})
-
-        #check OIS library support for interacting with input devices
-        find_path(      OIS_INCLUDE_DIR
-                        "ois/OISMouse.h")
-        find_library(   OIS_LIBRARY
-                        NAMES OIS
-                        )
-        if(OIS_INCLUDE_DIR AND OIS_LIBRARY)
-                message(STATUS "Found OIS library at ${OIS_LIBRARY}")
-                list(APPEND EXTERN_INC_DIRS ${OIS_INCLUDE_DIR})
-                list(APPEND LIBRARIES_LIST ${OIS_LIBRARY})
-        else()
-                message(FATAL_ERROR "Failed to found OIS library")
+        if(POLICY CMP0072)
+                cmake_policy(SET CMP0072 NEW)
         endif()
 
-
+        find_package(OpenGL REQUIRED)
+        list(APPEND EXTERN_INC_DIRS ${OPENGL_INCLUDE_DIRS})
+        list(APPEND LIBRARIES_LIST OpenGL::OpenGL)
 else()
         #check OSMesa lib for software rendering. Mesa must be build with openswr or llvmpipe support
         find_path(      OSMESA_INCLUDE_DIR

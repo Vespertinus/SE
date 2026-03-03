@@ -31,6 +31,8 @@
 #include <BasicConfig.h>
 #include <GraphicsConfig.h>
 #include <EventManager.h>
+#include <InputEvents.h>
+#include <InputManager.h>
 
 #include <TextureStock.h>
 #include <TGALoader.h>
@@ -101,7 +103,7 @@ namespace SE {
 using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 using TRenderer = Renderer<TVisibilityManager>;
 
-using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer /*, TInputManager, ...*/>;
+using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer, InputManager>;
 
 using TEngine =
         typename Loki::SingletonHolder<

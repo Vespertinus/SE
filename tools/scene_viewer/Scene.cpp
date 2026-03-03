@@ -38,7 +38,7 @@ Scene::Scene(const Settings & oNewSettings) :
 
         pSceneTree->Print();
 
-        TInputManager::Instance().AddMouseListener (this, "SceneViewer");
+        GetSystem<EventManager>().AddListener<EMouseButtonUp, &Scene::OnMouseButtonUp>(this);
 
 }
 
@@ -46,7 +46,7 @@ Scene::Scene(const Settings & oNewSettings) :
 
 Scene::~Scene() noexcept {
 
-        TInputManager::Instance().RemoveMouseListener ("SceneViewer");
+        GetSystem<EventManager>().RemoveListener<EMouseButtonUp, &Scene::OnMouseButtonUp>(this);
 }
 
 
@@ -260,27 +260,11 @@ void Scene::ShowGUI() {
         ImGui::End();
 }
 
-bool Scene::mouseMoved( const OIS::MouseEvent &ev [[maybe_unused]]) {
-        return true;
-}
+void Scene::OnMouseButtonUp(const Event & oEvent) {
 
-bool Scene::mousePressed( const OIS::MouseEvent &ev [[maybe_unused]], OIS::MouseButtonID id [[maybe_unused]]) {
-
-        return true;
-}
-
-
-bool Scene::mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
-
-        switch (id) {
-                case OIS::MB_Right:
-                        toggle_controller = true;
-                        break;
-                default:
-                        break;
+        if (oEvent.Get<EMouseButtonUp>().button == MouseB::RIGHT) {
+                toggle_controller = true;
         }
-
-        return true;
 }
 
 

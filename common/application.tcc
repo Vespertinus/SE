@@ -1,24 +1,15 @@
 
-#include <InputManager.h>
 #include <CommonEvents.h>
 
 namespace SE {
 
 template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t & oSettings, const uint32_t window_id) {
 
-        log_d ("init remain subsytems");
+        log_d("init remain subsystems");
         TEngine::Instance().Init();
 
-        log_d("try to init OIS");
-/*
-        TInputManager::Instance().Initialise(
-                        window_id,
-                        oSettings.oWindowSettings.width,
-                        oSettings.oWindowSettings.height,
-                        oSettings.grab_mouse,
-                        oSettings.hide_mouse);
-                        */
-
+        auto & oInputManager = GetSystem<InputManager>();
+        oInputManager.Init(window_id, oSettings.grab_mouse, oSettings.hide_mouse);
 }
 
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
@@ -76,7 +67,7 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 
         glViewport(0, 0, new_width, new_height);
 
-        TInputManager::Instance().SetWindowExtents(new_width, new_height);
+        GetSystem<InputManager>().SetWindowExtents(new_width, new_height);
         GetSystem<GraphicsState>().SetScreenSize(screen_size);
         GetSystem<TRenderer>().SetScreenSize(screen_size);
 }
@@ -104,7 +95,7 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         oEventManager.TriggerEvent(EPostRenderUpdate{last_frame_time});
 
-        TInputManager::Instance().Capture();
+        GetSystem<InputManager>().Capture();
 
         TSimpleFPS::Instance().Update();
 }

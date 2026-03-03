@@ -7,7 +7,7 @@
 namespace SE {
 namespace TOOLS {
 
-class Scene : public OIS::MouseListener {
+class Scene {
 
         public:
         struct Settings {
@@ -26,16 +26,13 @@ class Scene : public OIS::MouseListener {
         bool                            toggle_controller{false};
 
         void ShowGUI();
+        void OnMouseButtonUp(const Event & oEvent);
 
         public:
         Scene(const Settings & oNewSettings);
         ~Scene() noexcept;
 
         void Process();
-
-        bool mouseMoved( const OIS::MouseEvent &ev);
-        bool mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
-        bool mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id);
 
 
 };

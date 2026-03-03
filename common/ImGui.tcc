@@ -14,11 +14,16 @@ ImGuiWrapper::ImGuiWrapper() {
 
         ImGui::StyleColorsDark();
 
-        TInputManager::Instance().AddKeyListener   (this, "ImGui");
-        TInputManager::Instance().AddMouseListener (this, "ImGui");
+        auto & oEM = GetSystem<EventManager>();
+        oEM.AddListener<EKeyDown,         &ImGuiWrapper::OnKeyDown>        (this);
+        oEM.AddListener<EKeyUp,           &ImGuiWrapper::OnKeyUp>          (this);
+        oEM.AddListener<ETextInput,       &ImGuiWrapper::OnTextInput>      (this);
+        oEM.AddListener<EMouseMove,       &ImGuiWrapper::OnMouseMove>      (this);
+        oEM.AddListener<EMouseButtonDown, &ImGuiWrapper::OnMouseButtonDown>(this);
+        oEM.AddListener<EMouseButtonUp,   &ImGuiWrapper::OnMouseButtonUp>  (this);
 
-        GetSystem<EventManager>().AddListener<EFrameStart, &ImGuiWrapper::NewFrame>(this);
-        GetSystem<EventManager>().AddListener<EPostRenderUpdate, &ImGuiWrapper::Render>(this);
+        oEM.AddListener<EFrameStart,       &ImGuiWrapper::NewFrame>(this);
+        oEM.AddListener<EPostRenderUpdate, &ImGuiWrapper::Render>(this);
 }
 
 ImGuiWrapper::~ImGuiWrapper() {
@@ -31,11 +36,16 @@ ImGuiWrapper::~ImGuiWrapper() {
         glDeleteBuffers(1, &index_array_id);
         glDeleteVertexArrays(1, &vao_id);
 
-        TInputManager::Instance().RemoveKeyListener   ("ImGui");
-        TInputManager::Instance().RemoveMouseListener ("ImGui");
+        auto & oEM = GetSystem<EventManager>();
+        oEM.RemoveListener<EKeyDown,         &ImGuiWrapper::OnKeyDown>        (this);
+        oEM.RemoveListener<EKeyUp,           &ImGuiWrapper::OnKeyUp>          (this);
+        oEM.RemoveListener<ETextInput,       &ImGuiWrapper::OnTextInput>      (this);
+        oEM.RemoveListener<EMouseMove,       &ImGuiWrapper::OnMouseMove>      (this);
+        oEM.RemoveListener<EMouseButtonDown, &ImGuiWrapper::OnMouseButtonDown>(this);
+        oEM.RemoveListener<EMouseButtonUp,   &ImGuiWrapper::OnMouseButtonUp>  (this);
 
-        GetSystem<EventManager>().RemoveListener<EFrameStart, &ImGuiWrapper::NewFrame>(this);
-        GetSystem<EventManager>().RemoveListener<EPostRenderUpdate, &ImGuiWrapper::Render>(this);
+        oEM.RemoveListener<EFrameStart,       &ImGuiWrapper::NewFrame>(this);
+        oEM.RemoveListener<EPostRenderUpdate, &ImGuiWrapper::Render>(this);
 }
 
 void ImGuiWrapper::InitWndData() {
@@ -44,28 +54,28 @@ void ImGuiWrapper::InitWndData() {
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
 
-        //fill keys mapping
-        io.KeyMap[ImGuiKey_Tab]         = OIS::KC_TAB;
-        io.KeyMap[ImGuiKey_LeftArrow]   = OIS::KC_LEFT;
-        io.KeyMap[ImGuiKey_RightArrow]  = OIS::KC_RIGHT;
-        io.KeyMap[ImGuiKey_UpArrow]     = OIS::KC_UP;
-        io.KeyMap[ImGuiKey_DownArrow]   = OIS::KC_DOWN;
-        io.KeyMap[ImGuiKey_PageUp]      = OIS::KC_PGUP;
-        io.KeyMap[ImGuiKey_PageDown]    = OIS::KC_PGDOWN;
-        io.KeyMap[ImGuiKey_Home]        = OIS::KC_HOME;
-        io.KeyMap[ImGuiKey_End]         = OIS::KC_END;
-        io.KeyMap[ImGuiKey_Insert]      = OIS::KC_INSERT;
-        io.KeyMap[ImGuiKey_Delete]      = OIS::KC_DELETE;
-        io.KeyMap[ImGuiKey_Backspace]   = OIS::KC_BACK;
-        io.KeyMap[ImGuiKey_Space]       = OIS::KC_SPACE;
-        io.KeyMap[ImGuiKey_Enter]       = OIS::KC_RETURN;
-        io.KeyMap[ImGuiKey_Escape]      = OIS::KC_ESCAPE;
-        io.KeyMap[ImGuiKey_A]           = OIS::KC_A;
-        io.KeyMap[ImGuiKey_C]           = OIS::KC_C;
-        io.KeyMap[ImGuiKey_V]           = OIS::KC_V;
-        io.KeyMap[ImGuiKey_X]           = OIS::KC_X;
-        io.KeyMap[ImGuiKey_Y]           = OIS::KC_Y;
-        io.KeyMap[ImGuiKey_Z]           = OIS::KC_Z;
+        //fill keys mapping (SDL scancodes fit io.KeysDown[512])
+        io.KeyMap[ImGuiKey_Tab]         = SDL_SCANCODE_TAB;
+        io.KeyMap[ImGuiKey_LeftArrow]   = SDL_SCANCODE_LEFT;
+        io.KeyMap[ImGuiKey_RightArrow]  = SDL_SCANCODE_RIGHT;
+        io.KeyMap[ImGuiKey_UpArrow]     = SDL_SCANCODE_UP;
+        io.KeyMap[ImGuiKey_DownArrow]   = SDL_SCANCODE_DOWN;
+        io.KeyMap[ImGuiKey_PageUp]      = SDL_SCANCODE_PAGEUP;
+        io.KeyMap[ImGuiKey_PageDown]    = SDL_SCANCODE_PAGEDOWN;
+        io.KeyMap[ImGuiKey_Home]        = SDL_SCANCODE_HOME;
+        io.KeyMap[ImGuiKey_End]         = SDL_SCANCODE_END;
+        io.KeyMap[ImGuiKey_Insert]      = SDL_SCANCODE_INSERT;
+        io.KeyMap[ImGuiKey_Delete]      = SDL_SCANCODE_DELETE;
+        io.KeyMap[ImGuiKey_Backspace]   = SDL_SCANCODE_BACKSPACE;
+        io.KeyMap[ImGuiKey_Space]       = SDL_SCANCODE_SPACE;
+        io.KeyMap[ImGuiKey_Enter]       = SDL_SCANCODE_RETURN;
+        io.KeyMap[ImGuiKey_Escape]      = SDL_SCANCODE_ESCAPE;
+        io.KeyMap[ImGuiKey_A]           = SDL_SCANCODE_A;
+        io.KeyMap[ImGuiKey_C]           = SDL_SCANCODE_C;
+        io.KeyMap[ImGuiKey_V]           = SDL_SCANCODE_V;
+        io.KeyMap[ImGuiKey_X]           = SDL_SCANCODE_X;
+        io.KeyMap[ImGuiKey_Y]           = SDL_SCANCODE_Y;
+        io.KeyMap[ImGuiKey_Z]           = SDL_SCANCODE_Z;
 }
 
 void ImGuiWrapper::InitGLData() {
@@ -277,108 +287,79 @@ void ImGuiWrapper::NewFrame(const Event & oEvent [[maybe_unused]]) {
 
         io.DeltaTime = oFrame.last_frame_time;
 
-        const auto & oMouseState = TInputManager::Instance().GetMouse()->getMouseState();
-        io.MousePos = ImVec2((float)oMouseState.X.abs, (float)oMouseState.Y.abs);
+        auto pos = GetSystem<InputManager>().GetMousePos();
+        io.MousePos = ImVec2((float)pos.x, (float)pos.y);
 
         //TODO switch cursor
 
         ImGui::NewFrame();
 }
 
-bool ImGuiWrapper::mouseMoved( const OIS::MouseEvent &ev) {
+void ImGuiWrapper::OnKeyDown(const Event & oEvent) {
 
         ImGuiIO & io = ImGui::GetIO();
+        auto & ev = oEvent.Get<EKeyDown>();
 
+        IM_ASSERT(ev.scancode >= 0 && ev.scancode < IM_ARRAYSIZE(io.KeysDown));
+        io.KeysDown[ev.scancode] = true;
+
+        io.KeyShift = (ev.mod & KMOD_SHIFT) != 0;
+        io.KeyCtrl  = (ev.mod & KMOD_CTRL)  != 0;
+        io.KeyAlt   = (ev.mod & KMOD_ALT)   != 0;
+}
+
+void ImGuiWrapper::OnKeyUp(const Event & oEvent) {
+
+        ImGuiIO & io = ImGui::GetIO();
+        auto & ev = oEvent.Get<EKeyUp>();
+
+        IM_ASSERT(ev.scancode >= 0 && ev.scancode < IM_ARRAYSIZE(io.KeysDown));
+        io.KeysDown[ev.scancode] = false;
+
+        io.KeyShift = (ev.mod & KMOD_SHIFT) != 0;
+        io.KeyCtrl  = (ev.mod & KMOD_CTRL)  != 0;
+        io.KeyAlt   = (ev.mod & KMOD_ALT)   != 0;
+}
+
+void ImGuiWrapper::OnTextInput(const Event & oEvent) {
+
+        ImGui::GetIO().AddInputCharactersUTF8(oEvent.Get<ETextInput>().text);
+}
+
+void ImGuiWrapper::OnMouseMove(const Event & oEvent) {
+
+        ImGuiIO & io = ImGui::GetIO();
+        auto & ev = oEvent.Get<EMouseMove>();
 
         if (io.WantSetMousePos) {
-                OIS::MouseState & MutableMouseState = const_cast<OIS::MouseState &>(TInputManager::Instance().GetMouse()->getMouseState());
-                MutableMouseState.X.abs = io.MousePos.x;
-                MutableMouseState.Y.abs = io.MousePos.y;
+                GetSystem<InputManager>().SetMousePos({(int)io.MousePos.x, (int)io.MousePos.y});
         }
 
-        io.MousePos = ImVec2((float)ev.state.X.abs, (float)ev.state.Y.abs);
-
-        return true;
+        io.MousePos = ImVec2((float)ev.pos.x, (float)ev.pos.y);
 }
 
-bool ImGuiWrapper::mousePressed( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
+void ImGuiWrapper::OnMouseButtonDown(const Event & oEvent) {
 
         ImGuiIO & io = ImGui::GetIO();
 
-        switch (id) {
-
-                case OIS::MB_Left:
-                        io.MouseDown[0] = true;
-                        break;
-                case OIS::MB_Right:
-                        io.MouseDown[1] = true;
-                        break;
-                case OIS::MB_Middle:
-                        io.MouseDown[2] = true;
-                        break;
-                default:
-                        break;
+        switch (oEvent.Get<EMouseButtonDown>().button) {
+                case MouseB::LEFT:   io.MouseDown[0] = true; break;
+                case MouseB::RIGHT:  io.MouseDown[1] = true; break;
+                case MouseB::MIDDLE: io.MouseDown[2] = true; break;
+                default: break;
         }
-
-        return true;
 }
 
-bool ImGuiWrapper::mouseReleased( const OIS::MouseEvent &ev, OIS::MouseButtonID id) {
+void ImGuiWrapper::OnMouseButtonUp(const Event & oEvent) {
 
         ImGuiIO & io = ImGui::GetIO();
 
-        switch (id) {
-
-                case OIS::MB_Left:
-                        io.MouseDown[0] = false;
-                        break;
-                case OIS::MB_Right:
-                        io.MouseDown[1] = false;
-                        break;
-                case OIS::MB_Middle:
-                        io.MouseDown[2] = false;
-                        break;
-                default:
-                        break;
+        switch (oEvent.Get<EMouseButtonUp>().button) {
+                case MouseB::LEFT:   io.MouseDown[0] = false; break;
+                case MouseB::RIGHT:  io.MouseDown[1] = false; break;
+                case MouseB::MIDDLE: io.MouseDown[2] = false; break;
+                default: break;
         }
-
-        return true;
-}
-
-bool ImGuiWrapper::keyPressed( const OIS::KeyEvent &ev) {
-
-        ImGuiIO & io = ImGui::GetIO();
-
-        IM_ASSERT(ev.key >= 0 && ev.key < IM_ARRAYSIZE(io.KeysDown));
-        io.KeysDown[ev.key] = true;
-
-        auto * pKeyboard = TInputManager::Instance().GetKeyboard();
-
-        io.KeyShift =  (pKeyboard->isModifierDown(OIS::Keyboard::Shift) == true);
-        io.KeyCtrl  =  (pKeyboard->isModifierDown(OIS::Keyboard::Ctrl)  == true);
-        io.KeyAlt   =  (pKeyboard->isModifierDown(OIS::Keyboard::Alt)   == true);
-
-        if (ev.text > 0 && ev.text < 0x10000) {
-                io.AddInputCharacter((uint16_t)ev.text);
-        }
-
-        return true;
-}
-
-bool ImGuiWrapper::keyReleased( const OIS::KeyEvent &ev) {
-
-        ImGuiIO & io = ImGui::GetIO();
-
-        IM_ASSERT(ev.key >= 0 && ev.key < IM_ARRAYSIZE(io.KeysDown));
-        io.KeysDown[ev.key] = false;
-
-        auto * pKeyboard = TInputManager::Instance().GetKeyboard();
-
-        io.KeyShift =  (pKeyboard->isModifierDown(OIS::Keyboard::Shift) == true);
-        io.KeyCtrl  =  (pKeyboard->isModifierDown(OIS::Keyboard::Ctrl)  == true);
-        io.KeyAlt   =  (pKeyboard->isModifierDown(OIS::Keyboard::Alt)   == true);
-
-        return true;
 }
 
 } //namespace HELPERS
