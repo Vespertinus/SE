@@ -33,6 +33,7 @@
 #include <EventManager.h>
 #include <InputEvents.h>
 #include <InputManager.h>
+#include <InputCodes.h>
 
 #include <TextureStock.h>
 #include <TGALoader.h>

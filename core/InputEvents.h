@@ -1,23 +1,30 @@
 #ifndef INPUT_EVENTS_H
 #define INPUT_EVENTS_H
 
-#include <SDL2/SDL.h>
+#include <cstdint>
+#include <cstddef>
 #include <glm/vec2.hpp>
 
 namespace SE {
 
+using Key      = int32_t;
+using Scancode = int32_t;
+using Keymod   = uint16_t;
+
+static constexpr size_t TEXT_INPUT_SIZE = 32;
+
 enum class MouseB : uint32_t {
         NONE   = 0,
-        LEFT   = SDL_BUTTON_LMASK,
-        MIDDLE = SDL_BUTTON_MMASK,
-        RIGHT  = SDL_BUTTON_RMASK,
-        X1     = SDL_BUTTON_X1MASK,
-        X2     = SDL_BUTTON_X2MASK
+        LEFT   = 0x01,
+        MIDDLE = 0x02,
+        RIGHT  = 0x04,
+        X1     = 0x08,
+        X2     = 0x10
 };
 
-struct EKeyDown         { SDL_Keycode key; SDL_Scancode scancode; uint16_t mod; };
-struct EKeyUp           { SDL_Keycode key; SDL_Scancode scancode; uint16_t mod; };
-struct ETextInput       { char text[SDL_TEXTINPUTEVENT_TEXT_SIZE]; };
+struct EKeyDown         { Key key; Scancode scancode; Keymod mod; };
+struct EKeyUp           { Key key; Scancode scancode; Keymod mod; };
+struct ETextInput       { char text[TEXT_INPUT_SIZE]; };
 struct EMouseMove       { glm::ivec2 pos; glm::ivec2 delta; };
 struct EMouseButtonDown { glm::ivec2 pos; MouseB button; uint8_t clicks; };
 struct EMouseButtonUp   { glm::ivec2 pos; MouseB button; };

@@ -7,9 +7,9 @@
 
 #include <InputEvents.h>
 
-namespace SE {
+union SDL_Event;
 
-using Key = SDL_Keycode;
+namespace SE {
 
 class Joystick { //TODO
         public:
@@ -17,11 +17,11 @@ class Joystick { //TODO
 
 class InputManager {
 
-        std::unordered_set<SDL_Keycode>              sKeyDown;
-        std::unordered_set<SDL_Keycode>              sKeyPress;
-        std::unordered_set<SDL_Scancode>             sScancodeDown;
-        std::unordered_set<SDL_Scancode>             sScancodePress;
-        std::unordered_map<SDL_JoystickID, Joystick> mJoysticks;
+        std::unordered_set<Key>              sKeyDown;
+        std::unordered_set<Key>              sKeyPress;
+        std::unordered_set<Scancode>         sScancodeDown;
+        std::unordered_set<Scancode>         sScancodePress;
+        std::unordered_map<int32_t, Joystick> mJoysticks;
 
         std::string     sInputText;
 
@@ -56,8 +56,8 @@ class InputManager {
 
         bool       GetKeyDown(Key key) const;
         bool       GetKeyPress(Key key) const;
-        bool       GetScancodeDown(SDL_Scancode sc) const;
-        bool       GetScancodePress(SDL_Scancode sc) const;
+        bool       GetScancodeDown(Scancode sc) const;
+        bool       GetScancodePress(Scancode sc) const;
         glm::ivec2 GetMousePos() const;
         glm::ivec2 GetMouseMove() const;
         int32_t    GetMouseWheel() const;

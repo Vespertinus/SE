@@ -14,34 +14,34 @@ void BasicController::OnKeyDown(const Event & oEvent) {
 
         switch (oEvent.Get<EKeyDown>().key) {
 
-                case SDLK_w:
+                case Keys::W:
                         translation_speed.z -= speed;
                         break;
-                case SDLK_s:
+                case Keys::S:
                         translation_speed.z += speed;
                         break;
-                case SDLK_d:
+                case Keys::D:
                         translation_speed.x += speed;
                         break;
-                case SDLK_a:
+                case Keys::A:
                         translation_speed.x -= speed;
                         break;
-                case SDLK_r:
+                case Keys::R:
                         translation_speed.y += speed;
                         break;
-                case SDLK_f:
+                case Keys::F:
                         translation_speed.y -= speed;
                         break;
-                case SDLK_q:
+                case Keys::Q:
                         rotation_speed.y += 15;
                         break;
-                case SDLK_e:
+                case Keys::E:
                         rotation_speed.y -= 15;
                         break;
-                case SDLK_z:
+                case Keys::Z:
                         speed *= 2;
                         break;
-                case SDLK_x:
+                case Keys::X:
                         speed /= 2;
                         if (speed < 0) { speed = 0.001; }
                         break;
@@ -55,16 +55,16 @@ void BasicController::OnKeyUp(const Event & oEvent) {
 
         switch (oEvent.Get<EKeyUp>().key) {
 
-                case SDLK_w:
-                case SDLK_s:
+                case Keys::W:
+                case Keys::S:
                         translation_speed.z = 0.0f;
                         break;
-                case SDLK_d:
-                case SDLK_a:
+                case Keys::D:
+                case Keys::A:
                         translation_speed.x = 0.0f;
                         break;
-                case SDLK_r:
-                case SDLK_f:
+                case Keys::R:
+                case Keys::F:
                         translation_speed.y = 0.0f;
                         break;
                 default:

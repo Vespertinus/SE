@@ -54,28 +54,28 @@ void ImGuiWrapper::InitWndData() {
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
 
-        //fill keys mapping (SDL scancodes fit io.KeysDown[512])
-        io.KeyMap[ImGuiKey_Tab]         = SDL_SCANCODE_TAB;
-        io.KeyMap[ImGuiKey_LeftArrow]   = SDL_SCANCODE_LEFT;
-        io.KeyMap[ImGuiKey_RightArrow]  = SDL_SCANCODE_RIGHT;
-        io.KeyMap[ImGuiKey_UpArrow]     = SDL_SCANCODE_UP;
-        io.KeyMap[ImGuiKey_DownArrow]   = SDL_SCANCODE_DOWN;
-        io.KeyMap[ImGuiKey_PageUp]      = SDL_SCANCODE_PAGEUP;
-        io.KeyMap[ImGuiKey_PageDown]    = SDL_SCANCODE_PAGEDOWN;
-        io.KeyMap[ImGuiKey_Home]        = SDL_SCANCODE_HOME;
-        io.KeyMap[ImGuiKey_End]         = SDL_SCANCODE_END;
-        io.KeyMap[ImGuiKey_Insert]      = SDL_SCANCODE_INSERT;
-        io.KeyMap[ImGuiKey_Delete]      = SDL_SCANCODE_DELETE;
-        io.KeyMap[ImGuiKey_Backspace]   = SDL_SCANCODE_BACKSPACE;
-        io.KeyMap[ImGuiKey_Space]       = SDL_SCANCODE_SPACE;
-        io.KeyMap[ImGuiKey_Enter]       = SDL_SCANCODE_RETURN;
-        io.KeyMap[ImGuiKey_Escape]      = SDL_SCANCODE_ESCAPE;
-        io.KeyMap[ImGuiKey_A]           = SDL_SCANCODE_A;
-        io.KeyMap[ImGuiKey_C]           = SDL_SCANCODE_C;
-        io.KeyMap[ImGuiKey_V]           = SDL_SCANCODE_V;
-        io.KeyMap[ImGuiKey_X]           = SDL_SCANCODE_X;
-        io.KeyMap[ImGuiKey_Y]           = SDL_SCANCODE_Y;
-        io.KeyMap[ImGuiKey_Z]           = SDL_SCANCODE_Z;
+        //fill keys mapping (SE scancodes fit io.KeysDown[512])
+        io.KeyMap[ImGuiKey_Tab]         = Scancodes::TAB;
+        io.KeyMap[ImGuiKey_LeftArrow]   = Scancodes::LEFT;
+        io.KeyMap[ImGuiKey_RightArrow]  = Scancodes::RIGHT;
+        io.KeyMap[ImGuiKey_UpArrow]     = Scancodes::UP;
+        io.KeyMap[ImGuiKey_DownArrow]   = Scancodes::DOWN;
+        io.KeyMap[ImGuiKey_PageUp]      = Scancodes::PAGE_UP;
+        io.KeyMap[ImGuiKey_PageDown]    = Scancodes::PAGE_DOWN;
+        io.KeyMap[ImGuiKey_Home]        = Scancodes::HOME;
+        io.KeyMap[ImGuiKey_End]         = Scancodes::END;
+        io.KeyMap[ImGuiKey_Insert]      = Scancodes::INSERT;
+        io.KeyMap[ImGuiKey_Delete]      = Scancodes::DELETE_;
+        io.KeyMap[ImGuiKey_Backspace]   = Scancodes::BACKSPACE;
+        io.KeyMap[ImGuiKey_Space]       = Scancodes::SPACE;
+        io.KeyMap[ImGuiKey_Enter]       = Scancodes::RETURN;
+        io.KeyMap[ImGuiKey_Escape]      = Scancodes::ESCAPE;
+        io.KeyMap[ImGuiKey_A]           = Scancodes::A;
+        io.KeyMap[ImGuiKey_C]           = Scancodes::C;
+        io.KeyMap[ImGuiKey_V]           = Scancodes::V;
+        io.KeyMap[ImGuiKey_X]           = Scancodes::X;
+        io.KeyMap[ImGuiKey_Y]           = Scancodes::Y;
+        io.KeyMap[ImGuiKey_Z]           = Scancodes::Z;
 }
 
 void ImGuiWrapper::InitGLData() {
@@ -303,9 +303,9 @@ void ImGuiWrapper::OnKeyDown(const Event & oEvent) {
         IM_ASSERT(ev.scancode >= 0 && ev.scancode < IM_ARRAYSIZE(io.KeysDown));
         io.KeysDown[ev.scancode] = true;
 
-        io.KeyShift = (ev.mod & KMOD_SHIFT) != 0;
-        io.KeyCtrl  = (ev.mod & KMOD_CTRL)  != 0;
-        io.KeyAlt   = (ev.mod & KMOD_ALT)   != 0;
+        io.KeyShift = (ev.mod & Keymods::SHIFT) != 0;
+        io.KeyCtrl  = (ev.mod & Keymods::CTRL)  != 0;
+        io.KeyAlt   = (ev.mod & Keymods::ALT)   != 0;
 }
 
 void ImGuiWrapper::OnKeyUp(const Event & oEvent) {
@@ -316,9 +316,9 @@ void ImGuiWrapper::OnKeyUp(const Event & oEvent) {
         IM_ASSERT(ev.scancode >= 0 && ev.scancode < IM_ARRAYSIZE(io.KeysDown));
         io.KeysDown[ev.scancode] = false;
 
-        io.KeyShift = (ev.mod & KMOD_SHIFT) != 0;
-        io.KeyCtrl  = (ev.mod & KMOD_CTRL)  != 0;
-        io.KeyAlt   = (ev.mod & KMOD_ALT)   != 0;
+        io.KeyShift = (ev.mod & Keymods::SHIFT) != 0;
+        io.KeyCtrl  = (ev.mod & Keymods::CTRL)  != 0;
+        io.KeyAlt   = (ev.mod & Keymods::ALT)   != 0;
 }
 
 void ImGuiWrapper::OnTextInput(const Event & oEvent) {

@@ -1,4 +1,5 @@
 
+#include <SDL2/SDL.h>
 #include <Logging.h>
 
 namespace SE {
@@ -65,7 +66,7 @@ void InputManager::HandleEvent(const SDL_Event & event) {
                         sInputText += event.text.text;
                         {
                                 ETextInput e{};
-                                SDL_strlcpy(e.text, event.text.text, SDL_TEXTINPUTEVENT_TEXT_SIZE);
+                                SDL_strlcpy(e.text, event.text.text, SE::TEXT_INPUT_SIZE);
                                 oEventManager.TriggerEvent(e);
                         }
                         break;
@@ -177,12 +178,12 @@ bool InputManager::GetKeyPress(Key key) const {
         return sKeyPress.count(key) > 0;
 }
 
-bool InputManager::GetScancodeDown(SDL_Scancode sc) const {
+bool InputManager::GetScancodeDown(Scancode sc) const {
 
         return sScancodeDown.count(sc) > 0;
 }
 
-bool InputManager::GetScancodePress(SDL_Scancode sc) const {
+bool InputManager::GetScancodePress(Scancode sc) const {
 
         return sScancodePress.count(sc) > 0;
 }
