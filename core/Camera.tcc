@@ -63,22 +63,6 @@ void Camera::RecalcVolume() {
                         abort();
         }
 
-        /*
-        log_d("projection: {}, near: {}, far: {}, fov: {}, view_size x: {}, y: {}",
-                        static_cast<uint8_t>(oVolume.projection),
-                        oVolume.near_clip,
-                        oVolume.far_clip,
-                        oVolume.fov,
-                        view_size.x,
-                        view_size.y
-                        );
-        log_d("volume: left: {}, right: {}, top: {}, bottom: {}",
-                        oVolume.left,
-                        oVolume.right,
-                        oVolume.top,
-                        oVolume.bottom
-                        );*/
-
         flags ^= Dirty::VOLUME;
         flags |= Dirty::PROJECTION;
 }
@@ -126,7 +110,6 @@ const glm::mat4 & Camera::GetWorldMVP() {
         RecalcProjection();
 
         //View matrix -> inverse world
-        //THINK always reset scale to 1
         mModelViewProjection = mProjection * glm::inverse(pNode->GetTransform().GetWorld());
         return mModelViewProjection;
 }
@@ -150,7 +133,7 @@ void Camera::SetZoom(const float new_zoom) {
         float min_dim = std::min(view_size.x, view_size.y);
         target_length = min_dim / zoom;
 
-        flags ^= Dirty::ZOOM;
+        flags &= ~static_cast<uint8_t>(Dirty::ZOOM);
         flags |= Dirty::PROJECTION;
 }
 
@@ -163,16 +146,6 @@ void Camera::Zoom(const float factor) {
 void Camera::ZoomTo(const BoundingBox & oBBox) {
 
         glm::vec3 len = oBBox.Size();
-/*
-        const glm::vec3 & min = oBBox.Min();
-        const glm::vec3 & max = oBBox.Max();
-
-        log_d("min x = {}, y = {}, z = {}, max x = {}, y = {}, z = {}",
-                        min.x, min.y, min.z,
-                        max.x, max.y, max.z);
-
-        log_d("bbox len = {}", glm::distance(max, min) );
-*/
 
         target_length = std::max({ std::abs(len.x), std::abs(len.y), std::abs(len.z) });
 
@@ -237,14 +210,17 @@ std::string Camera::Str() const {
 
 void Camera::SetProjection(const Projection proj) {
 
-        if (oVolume.projection == proj) { return; }
-        if (proj > Projection::ORTHO) {
-                log_e("unknown projection: {}", static_cast<uint8_t>(proj));
-                return;
+        switch (proj) {
+                case Projection::PERSPECTIVE:
+                case Projection::ORTHO:
+                        break;
+                default:
+                        log_e("unknown projection: {}", static_cast<uint8_t>(proj));
+                        return;
         }
-
+        if (oVolume.projection == proj) { return; }
         oVolume.projection = proj;
-        flags |= Dirty::PROJECTION;
+        flags |= Dirty::VOLUME | Dirty::PROJECTION;
 }
 
 Camera::Projection Camera::GetProjection() const {
@@ -278,5 +254,5 @@ void Camera::DrawDebug() const {
         //GetSystem<DebugRenderer>().Draw ...;
 }
 
-} //namhespace SE
+} //namespace SE
 

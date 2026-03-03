@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <variant>
 #include <regex>
+#include <optional>
 
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>

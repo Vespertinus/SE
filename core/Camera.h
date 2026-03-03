@@ -63,10 +63,10 @@ class Camera {
         //using TSerialized = FlatBuffers::Camera; TODO
 
         struct Settings {
-                float                   near_clip,
-                                        far_clip;
-                float                   fov;
-                Projection              projection;
+                float      near_clip   {0.1f};
+                float      far_clip    {100.0f};
+                float      fov         {60.0f};
+                Projection projection  {Projection::PERSPECTIVE};
         };
 	
         Camera(TSceneTree::TSceneNodeExact * pNewNode);
