@@ -41,6 +41,7 @@
 #include <Texture.h>
 #include <StoreTexture2D.h>
 #include <StoreTextureBufferObject.h>
+#include <StoreTexture2DRenderTarget.h>
 //#include <Skeleton.h>
 
 
@@ -55,7 +56,7 @@ template <class TSystem> TSystem & GetSystem();
 
 
 typedef LOKI_TYPELIST_2(TGALoader, OpenCVImgLoader)                     TextureLoadStrategyList;
-typedef LOKI_TYPELIST_2(StoreTexture2D, StoreTextureBufferObject)       TextureStoreStrategyList;
+typedef LOKI_TYPELIST_3(StoreTexture2D, StoreTextureBufferObject, StoreTexture2DRenderTarget) TextureStoreStrategyList;
 typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture;
 
 }
@@ -79,6 +80,7 @@ typedef Mesh                                                            TMesh;
 }
 
 #include <Renderer.h>
+#include <DeferredRenderer.h>
 #include <DebugRenderer.h>
 //TEMP
 #include <AllVisible.h>
@@ -103,6 +105,8 @@ namespace SE {
 //engine subsytem types
 using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 using TRenderer = Renderer<TVisibilityManager>;
+// To use deferred PBR renderer, replace the line above with:
+//using TRenderer = DeferredRenderer<TVisibilityManager>;
 
 using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer, InputManager>;
 
@@ -168,6 +172,11 @@ typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourc
 template <class Resource, class ... TConcreateSettings> Resource * CreateResource (const std::string & sPath, const TConcreateSettings & ... oSettings) {
 
         return TResourceManager::Instance().Create<Resource>(sPath, oSettings...);
+}
+
+template <class Resource> void DestroyResource (Resource * pResource) {
+
+        TResourceManager::Instance().Destroy<Resource>(pResource->RID());
 }
 
 template <class TSystem> TSystem & GetSystem() {

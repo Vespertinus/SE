@@ -6,6 +6,7 @@
 #include <OpenCVImgLoader.tcc>
 #include <StoreTexture2D.tcc>
 #include <StoreTextureBufferObject.tcc>
+#include <StoreTexture2DRenderTarget.tcc>
 
 #include <Transform.tcc> //TEMP
 #endif

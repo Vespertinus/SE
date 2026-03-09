@@ -114,6 +114,11 @@ const glm::mat4 & Camera::GetWorldMVP() {
         return mModelViewProjection;
 }
 
+glm::vec3 Camera::GetWorldPos() const {
+
+        return pNode->GetTransform().GetWorldPos();
+}
+
 void Camera::UpdateZoom() {
 
         if (!(flags & Dirty::ZOOM) || target_length <= 0) { return; }

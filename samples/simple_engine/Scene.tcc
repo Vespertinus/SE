@@ -39,6 +39,16 @@ Scene::Scene(const Settings & oSettings) :
         GetSystem<WorldProcessManager>().CreateAndLink<BlinkProcess>(pTargetNode, 1);
 
         pSceneTree->Print();
+
+        /*
+        DirLight oDirLight;
+        PointLight oPL;
+        oPL.position = glm::vec3(5, 5, 5);
+
+        GetSystem<TRenderer>().SetDirLight(oDirLight);
+        GetSystem<TRenderer>().AddPointLight(oPL);
+        */
+
 }
 
 

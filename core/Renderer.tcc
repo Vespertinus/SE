@@ -39,7 +39,7 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::PrepareVi
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::Render() {
 
-        CalcDuration oDuration;
+        //CalcDuration oDuration;
 
         if (!pCamera) {
                 log_e("main camera was not set");
