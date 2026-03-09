@@ -11,6 +11,7 @@ static const std::unordered_map<StrID, TextureUnit> mTextureUnitMapping = {
         { "EnvTex",             TextureUnit::ENV },
         { "ShadowTex",          TextureUnit::SHADOW },
         { "BufferTex",          TextureUnit::BUFFER },
+        { "RenderBufferTex",    TextureUnit::RENDER_BUFFER },
         { "CustomTex",          TextureUnit::CUSTOM }
 };
 

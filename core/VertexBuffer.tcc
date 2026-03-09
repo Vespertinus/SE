@@ -16,7 +16,7 @@ VertexBuffer::VertexBuffer(const size_t size, const UpdateFreq freq) : vShadowBu
                         break;
                 default:
                         throw(std::runtime_error(fmt::format(
-                                                        "wronf update frequency: {}",
+                                                        "wrong update frequency: {}",
                                                         static_cast<uint8_t>(freq))));
         }
 

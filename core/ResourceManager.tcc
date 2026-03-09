@@ -83,7 +83,7 @@ template < class ResourceList > template <class Resource> void ResourceManager<R
 
         if (itCheck == oStorage.end()) { return; }
 
-        delete itCheck.second;
+        delete itCheck->second;
         oStorage.erase(itCheck);
 }
 
