@@ -1,0 +1,8 @@
+{
+        "vertex" : {
+                "name" : "shader/pbr_geometry_vert.sesl"
+        },
+        "fragment" : {
+                "name" : "shader/pbr_geometry_frag.sesl"
+        }
+}
