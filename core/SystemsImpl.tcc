@@ -5,6 +5,7 @@
 #include <DebugRenderer.tcc>
 #include <InputManager.tcc>
 #include <GBuffer.tcc>
+#include <SSAOBuffer.tcc>
 #endif
 //template class, so we need realization also
 #include <Renderer.tcc>

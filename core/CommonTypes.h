@@ -12,8 +12,10 @@ enum class TextureUnit : int32_t {
         BUFFER          = 5,
         RENDER_BUFFER   = 6,
         CUSTOM          = 7,
-        //DEPTH
-        //etc
+        EMISSIVE        = 8,   // "EmissiveTex" — G-buffer RT2
+        HDR             = 9,   // "HdrTex"      — HDR accumulation result
+        SSAO_TEX        = 10,  // "SSAOTex"     — SSAO blurred result
+        NOISE           = 11,  // "NoiseTex"    — SSAO noise texture
         //MAX_TEXTURE_IMAGE_UNITS = 16
         UNKNOWN         = 255
 };

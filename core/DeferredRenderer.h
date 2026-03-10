@@ -4,6 +4,7 @@
 
 #include <RenderCommand.h>
 #include <GBuffer.h>
+#include <SSAOBuffer.h>
 #include <Light.h>
 
 namespace SE {
@@ -18,22 +19,53 @@ template <class TVisibilityManager> class DeferredRenderer {
         std::vector<RenderCommand const *>   vRenderCommands;
         std::vector<RenderCommand const *>   vRenderInstantCommands;
 
-        // G-buffer & internal rendering resources
+        // G-buffer
         GBuffer  oGBuffer;
-        uint32_t quad_vao      { 0 };
-        uint32_t quad_vbo      { 0 };
+
+        // HDR accumulation buffer (shares depth-stencil with GBuffer)
+        uint32_t   hdr_fbo  { 0 };
+        TTexture * pHdrTex  { nullptr };
+
+        // SSAO
+        SSAOBuffer oSSAOBuffer;
+        bool       ssao_enabled { true };
+
+        // Fullscreen quad
+        uint32_t quad_vao { 0 };
+        uint32_t quad_vbo { 0 };
+
+        // Sphere mesh for point light volumes
+        uint32_t sphere_vao         { 0 };
+        uint32_t sphere_vbo         { 0 };
+        uint32_t sphere_ibo         { 0 };
+        uint32_t sphere_index_count { 0 };
+
+        // Shader programs
+        ShaderProgram * pAmbientDirShader  { nullptr };
+        ShaderProgram * pPointLightShader  { nullptr };
+        ShaderProgram * pSSAOShader        { nullptr };
+        ShaderProgram * pSSAOBlurShader    { nullptr };
+        ShaderProgram * pToneMapShader     { nullptr };
+
+        // Lighting UBO for ambient+directional pass
+        std::unique_ptr<UniformBlock> pLightingBlock;
 
         // Light state
-        ShaderProgram         * pLightingShader;
-        std::unique_ptr<UniformBlock> pBlock;
-
         std::vector<PointLight> vPointLights;
         DirLight                oDirLight;
 
+        void CreateQuad();
+        void CreateSphere(int rings = 16, int sectors = 32);
+        void CreateHdrBuffer();
+        void DestroyHdrBuffer() noexcept;
+
         void PrepareVisible();
         void GeometryPass();
-        void LightingPass();
-        void CreateQuad();
+        void SSAOPass();
+        void SSAOBlurPass();
+        void AmbientDirPass();
+        void PointLightPass();
+        void ToneMapPass();
 
         public:
 

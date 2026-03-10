@@ -11,8 +11,9 @@ class GBuffer {
 
         uint32_t   fbo_id { 0 };
         TTexture * pRT0   { nullptr };   // albedo (RGB) + roughness (A) — GL_RGBA8
-        TTexture * pRT1   { nullptr };   // world-normal (RGB) + metallic (A) — GL_RGBA16F
-        TTexture * pDepth { nullptr };   // GL_DEPTH_COMPONENT24
+        TTexture * pRT1   { nullptr };   // oct-normal (RG) + metallic (B) + AO (A) — GL_RGBA16F
+        TTexture * pRT2   { nullptr };   // emissive (RGB) — GL_R11F_G11F_B10F
+        TTexture * pDepth { nullptr };   // depth + stencil — GL_DEPTH24_STENCIL8
         glm::uvec2 size   { 0 };
 
         void Create();
@@ -31,6 +32,7 @@ public:
         // Bind G-buffer textures (lighting pass).
         TTexture * GetAlbedoRoughnessTex() const { return pRT0; }
         TTexture * GetNormalMetallicTex()  const { return pRT1; }
+        TTexture * GetEmissiveTex()        const { return pRT2; }
         TTexture * GetDepthTex()           const { return pDepth; }
 };
 
