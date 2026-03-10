@@ -1,0 +1,10 @@
+{
+    "shader": { "path": "shader_program/pbr_geometry.sesp" },
+    "variables": [
+        { "name": "BaseColor", "vec4_val": [0.56, 0.57, 0.58, 1.0] },
+        { "name": "Roughness", "float_val": 0.7 },
+        { "name": "Metallic",  "float_val": 1.0 },
+        { "name": "AO",        "float_val": 1.0 },
+        { "name": "Emissive",  "vec3_val": [0.0, 0.0, 0.0] }
+    ]
+}
