@@ -1,0 +1,8 @@
+{
+        "vertex" : {
+                "name" : "shader/lighting_pass_vertex.sesl"
+        },
+        "fragment" : {
+                "name" : "shader/ssao_frag.sesl"
+        }
+}

@@ -1,0 +1,8 @@
+{
+        "vertex" : {
+                "name" : "shader/point_light_vert.sesl"
+        },
+        "fragment" : {
+                "name" : "shader/point_light_frag.sesl"
+        }
+}

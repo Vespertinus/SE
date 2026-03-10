@@ -1,0 +1,19 @@
+type: VERTEX
+source:
+ - |
+        #version 330 core
+
+        in vec3 Position;
+
+        uniform vec3  LightPos;
+        uniform float LightRadius;
+        uniform mat4  VPMatrix;
+
+        out vec2 TexCoord_NDC;
+
+        void main() {
+            vec4 clipPos = VPMatrix * vec4(Position * LightRadius + LightPos, 1.0);
+            gl_Position  = clipPos;
+            TexCoord_NDC = (clipPos.xy / clipPos.w) * 0.5 + 0.5;
+        }
+

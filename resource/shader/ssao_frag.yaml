@@ -1,0 +1,151 @@
+type: FRAGMENT
+source:
+ - |
+        #version 330 core
+
+        in vec2 TexCoord;
+
+        uniform sampler2D NormalTex;  // RT1 oct-normal.rg
+        uniform sampler2D BufferTex;  // depth
+        uniform sampler2D NoiseTex;   // 4x4 random rotation (GL_REPEAT)
+
+        uniform mat4 InvVPMatrix;
+        uniform mat4 VPMatrix;
+        uniform vec2 NoiseScale;  // screen_size / 4
+
+        out float FragColor;
+
+        vec3 DecodeNormal(vec2 enc) {
+            vec3 n = vec3(enc.xy, 1.0 - abs(enc.x) - abs(enc.y));
+            if (n.z < 0.0) {
+                n.xy = (1.0 - abs(n.yx)) * sign(n.xy);
+            }
+            return normalize(n);
+        }
+
+        // 64-sample hemisphere kernel in tangent space (z >= 0)
+        const vec3 SampleKernel[64] = vec3[64](
+            vec3( 0.0174,  0.0000,  0.0985),
+            vec3( 0.0148,  0.0148,  0.1182),
+            vec3( 0.0000,  0.0244,  0.1379),
+            vec3(-0.0135,  0.0135,  0.1084),
+            vec3(-0.0226,  0.0000,  0.1281),
+            vec3(-0.0184, -0.0184,  0.1478),
+            vec3( 0.0000, -0.0174,  0.0985),
+            vec3( 0.0148, -0.0148,  0.1182),
+            vec3( 0.0684,  0.0000,  0.1880),
+            vec3( 0.0532,  0.0532,  0.2068),
+            vec3( 0.0000,  0.0821,  0.2256),
+            vec3(-0.0508,  0.0508,  0.1974),
+            vec3(-0.0787,  0.0000,  0.2162),
+            vec3(-0.0605, -0.0605,  0.2350),
+            vec3( 0.0000, -0.0684,  0.1880),
+            vec3( 0.0532, -0.0532,  0.2068),
+            vec3( 0.1500,  0.0000,  0.2598),
+            vec3( 0.1166,  0.1166,  0.2858),
+            vec3( 0.0000,  0.1800,  0.3118),
+            vec3(-0.1096,  0.1096,  0.2685),
+            vec3(-0.1700,  0.0000,  0.2944),
+            vec3(-0.1308, -0.1308,  0.3204),
+            vec3( 0.0000, -0.1500,  0.2598),
+            vec3( 0.1131, -0.1131,  0.2771),
+            vec3( 0.2701,  0.0000,  0.3217),
+            vec3( 0.2046,  0.2046,  0.3447),
+            vec3( 0.0000,  0.3086,  0.3677),
+            vec3(-0.1955,  0.1955,  0.3294),
+            vec3(-0.2958,  0.0000,  0.3524),
+            vec3(-0.2225, -0.2225,  0.3753),
+            vec3( 0.0000, -0.2701,  0.3217),
+            vec3( 0.2000, -0.2000,  0.3370),
+            vec3( 0.4290,  0.0000,  0.3601),
+            vec3( 0.3198,  0.3198,  0.3794),
+            vec3( 0.0000,  0.4749,  0.3987),
+            vec3(-0.3088,  0.3088,  0.3665),
+            vec3(-0.4596,  0.0000,  0.3858),
+            vec3(-0.3413, -0.3413,  0.4051),
+            vec3( 0.0000, -0.4290,  0.3601),
+            vec3( 0.3143, -0.3143,  0.3729),
+            vec3( 0.6062,  0.0000,  0.3500),
+            vec3( 0.4468,  0.4468,  0.3650),
+            vec3( 0.0000,  0.6582,  0.3800),
+            vec3(-0.4347,  0.4347,  0.3550),
+            vec3(-0.6408,  0.0000,  0.3700),
+            vec3(-0.4714, -0.4714,  0.3850),
+            vec3( 0.0000, -0.6062,  0.3500),
+            vec3( 0.4407, -0.4407,  0.3600),
+            vec3( 0.7896,  0.0000,  0.2873),
+            vec3( 0.5720,  0.5720,  0.2941),
+            vec3( 0.0000,  0.8272,  0.3010),
+            vec3(-0.5653,  0.5653,  0.2907),
+            vec3(-0.8178,  0.0000,  0.2975),
+            vec3(-0.5919, -0.5919,  0.3044),
+            vec3( 0.0000, -0.7896,  0.2873),
+            vec3( 0.5720, -0.5720,  0.2941),
+            vec3( 0.9161,  0.0000,  0.1618),
+            vec3( 0.6617,  0.6617,  0.1653),
+            vec3( 0.0000,  0.9555,  0.1688),
+            vec3(-0.6548,  0.6548,  0.1636),
+            vec3(-0.9456,  0.0000,  0.1670),
+            vec3(-0.6828, -0.6828,  0.1705),
+            vec3( 0.0000, -0.9161,  0.1618),
+            vec3( 0.6617, -0.6617,  0.1653)
+        );
+
+        const float SSAO_RADIUS = 0.5;
+
+        void main() {
+            float depth = texture(BufferTex, TexCoord).r;
+
+            // Skip sky/background pixels
+            if (depth >= 0.9999) {
+                FragColor = 1.0;
+                return;
+            }
+
+            // Reconstruct world position
+            vec4 clip    = vec4(TexCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+            vec4 world   = InvVPMatrix * clip;
+            vec3 fragPos = world.xyz / world.w;
+
+            // Get world-space normal
+            vec3 N = DecodeNormal(texture(NormalTex, TexCoord).rg);
+
+            // Get random rotation vector from tiling noise texture
+            vec2 noiseUV = TexCoord * NoiseScale;
+            vec2 noise   = texture(NoiseTex, noiseUV).rg;
+            vec3 randomVec = normalize(vec3(noise, 0.0));
+
+            // Build TBN from normal + random rotation
+            vec3 T = normalize(randomVec - N * dot(randomVec, N));
+            vec3 B = cross(N, T);
+            mat3 TBN = mat3(T, B, N);
+
+            float occlusion = 0.0;
+
+            for (int i = 0; i < 64; ++i) {
+                // World-space sample position
+                vec3 sampleWorld = fragPos + TBN * SampleKernel[i] * SSAO_RADIUS;
+
+                // Project to screen space to find depth at sample location
+                vec4 sampleClip = VPMatrix * vec4(sampleWorld, 1.0);
+                vec2 sampleUV   = (sampleClip.xy / sampleClip.w) * 0.5 + 0.5;
+                sampleUV        = clamp(sampleUV, 0.0, 1.0);
+
+                // Depth at that screen position
+                float sceneDepth = texture(BufferTex, sampleUV).r;
+
+                // Reconstruct world Z for range check
+                vec4 sceneClip  = vec4(sampleUV * 2.0 - 1.0, sceneDepth * 2.0 - 1.0, 1.0);
+                vec4 sceneWorld = InvVPMatrix * sceneClip;
+                sceneWorld.xyz /= sceneWorld.w;
+
+                float sampleDist = length(sampleWorld - fragPos);
+                float sceneDist  = length(sceneWorld.xyz - fragPos);
+
+                float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / max(sampleDist, 0.001));
+                occlusion += (sceneDist < sampleDist ? 1.0 : 0.0) * rangeCheck;
+            }
+
+            FragColor = 1.0 - (occlusion / 64.0);
+        }
+

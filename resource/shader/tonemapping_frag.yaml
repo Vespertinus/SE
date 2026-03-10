@@ -1,0 +1,23 @@
+type: FRAGMENT
+source:
+ - |
+        #version 330 core
+
+        in vec2 TexCoord;
+
+        uniform sampler2D HdrTex;
+
+        out vec4 FragColor;
+
+        void main() {
+            vec3 hdr = texture(HdrTex, TexCoord).rgb;
+
+            // Reinhard tone mapping
+            vec3 mapped = hdr / (hdr + vec3(1.0));
+
+            // Gamma correction (sRGB)
+            mapped = pow(mapped, vec3(1.0 / 2.2));
+
+            FragColor = vec4(mapped, 1.0);
+        }
+
