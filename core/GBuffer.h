@@ -4,12 +4,13 @@
 
 #include <GLUtil.h>
 #include <glm/vec2.hpp>
+#include <FrameBuffer.h>
 
 namespace SE {
 
 class GBuffer {
 
-        uint32_t   fbo_id { 0 };
+        FrameBuffer oFBO;
         TTexture * pRT0   { nullptr };   // albedo (RGB) + roughness (A) — GL_RGBA8
         TTexture * pRT1   { nullptr };   // oct-normal (RG) + metallic (B) + AO (A) — GL_RGBA16F
         TTexture * pRT2   { nullptr };   // emissive (RGB) — GL_R11F_G11F_B10F

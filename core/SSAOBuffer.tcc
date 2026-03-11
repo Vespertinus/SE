@@ -32,28 +32,24 @@ void SSAOBuffer::Create() {
                 StoreTexture2DRenderTarget::Settings(GL_UNSIGNED_BYTE));
 
         // SSAO FBO
-        glGenFramebuffers(1, &fbo_ssao);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_ssao);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pSSAOTex->GetID(), 0);
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-                log_e("SSAO FBO incomplete");
-        }
+        oFboSSAO.Create();
+        oFboSSAO.Bind();
+        oFboSSAO.AttachColor(0, pSSAOTex);
+        oFboSSAO.CheckComplete();
 
         // Blur FBO
-        glGenFramebuffers(1, &fbo_blur);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_blur);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pBlurTex->GetID(), 0);
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-                log_e("SSAO blur FBO incomplete");
-        }
+        oFboBlur.Create();
+        oFboBlur.Bind();
+        oFboBlur.AttachColor(0, pBlurTex);
+        oFboBlur.CheckComplete();
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        oFboBlur.Unbind();
 }
 
 void SSAOBuffer::Destroy() noexcept {
 
-        if (fbo_ssao) { glDeleteFramebuffers(1, &fbo_ssao); fbo_ssao = 0; }
-        if (fbo_blur)  { glDeleteFramebuffers(1, &fbo_blur);  fbo_blur  = 0; }
+        oFboSSAO.Destroy();
+        oFboBlur.Destroy();
 
         auto & rm = TResourceManager::Instance();
         if (pSSAOTex) { rm.Destroy<TTexture>(pSSAOTex->RID()); pSSAOTex = nullptr; }
@@ -79,19 +75,21 @@ void SSAOBuffer::Resize(glm::uvec2 new_size) {
 
 void SSAOBuffer::Bind() {
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_ssao);
-        glViewport(0, 0, size.x, size.y);
+        oFboSSAO.Bind();
+        GetSystem<GraphicsState>().SetViewport(0, 0,
+                static_cast<int32_t>(size.x), static_cast<int32_t>(size.y));
 }
 
 void SSAOBuffer::BindBlur() {
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_blur);
-        glViewport(0, 0, size.x, size.y);
+        oFboBlur.Bind();
+        GetSystem<GraphicsState>().SetViewport(0, 0,
+                static_cast<int32_t>(size.x), static_cast<int32_t>(size.y));
 }
 
 void SSAOBuffer::Unbind() {
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        oFboSSAO.Unbind();
 }
 
 

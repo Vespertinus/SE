@@ -59,5 +59,34 @@ enum class DepthFunc : uint32_t {
         GEQUAL
 };
 
+enum class BlendFactor : uint32_t {
+        ZERO,
+        ONE,
+        SRC_COLOR,
+        ONE_MINUS_SRC_COLOR,
+        DST_COLOR,
+        ONE_MINUS_DST_COLOR,
+        SRC_ALPHA,
+        ONE_MINUS_SRC_ALPHA,
+        DST_ALPHA,
+        ONE_MINUS_DST_ALPHA
+};
+
+enum class CullFace : uint32_t {
+        FRONT,
+        BACK,
+        FRONT_AND_BACK
+};
+
+enum class ClearBuffer : uint32_t {
+        COLOR   = 1,
+        DEPTH   = 2,
+        STENCIL = 4
+};
+
+inline ClearBuffer operator|(ClearBuffer a, ClearBuffer b) {
+        return static_cast<ClearBuffer>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
 }
 #endif

@@ -4,13 +4,14 @@
 
 #include <GLUtil.h>
 #include <glm/vec2.hpp>
+#include <FrameBuffer.h>
 
 namespace SE {
 
 class SSAOBuffer {
 
-        uint32_t   fbo_ssao  { 0 };   // raw SSAO output FBO
-        uint32_t   fbo_blur  { 0 };   // SSAO blurred output FBO
+        FrameBuffer oFboSSAO;
+        FrameBuffer oFboBlur;
         TTexture * pSSAOTex  { nullptr };  // GL_R8
         TTexture * pBlurTex  { nullptr };  // GL_R8
         TTexture * pNoiseTex { nullptr };  // 4×4 GL_RG16F (random rotations, GL_REPEAT)

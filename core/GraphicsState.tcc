@@ -428,5 +428,69 @@ const FrameState & GraphicsState::GetFrameState() const {
         return oFrame;
 }
 
+void GraphicsState::Clear(ClearBuffer flags) {
+
+        GLbitfield mask = 0;
+        uint32_t   f    = static_cast<uint32_t>(flags);
+        if (f & static_cast<uint32_t>(ClearBuffer::COLOR))   { mask |= GL_COLOR_BUFFER_BIT;   }
+        if (f & static_cast<uint32_t>(ClearBuffer::DEPTH))   { mask |= GL_DEPTH_BUFFER_BIT;   }
+        if (f & static_cast<uint32_t>(ClearBuffer::STENCIL)) { mask |= GL_STENCIL_BUFFER_BIT; }
+        glClear(mask);
+}
+
+void GraphicsState::SetBlend(bool enable) {
+
+        if (enable == blend_enabled) { return; }
+        blend_enabled = enable;
+        if (enable) { glEnable(GL_BLEND);  }
+        else        { glDisable(GL_BLEND); }
+}
+
+void GraphicsState::SetBlendFunc(BlendFactor src, BlendFactor dst) {
+
+        if (src == blend_src && dst == blend_dst) { return; }
+        blend_src = src;
+        blend_dst = dst;
+
+        static const GLenum vBlendMapping[] = {
+                GL_ZERO,
+                GL_ONE,
+                GL_SRC_COLOR,
+                GL_ONE_MINUS_SRC_COLOR,
+                GL_DST_COLOR,
+                GL_ONE_MINUS_DST_COLOR,
+                GL_SRC_ALPHA,
+                GL_ONE_MINUS_SRC_ALPHA,
+                GL_DST_ALPHA,
+                GL_ONE_MINUS_DST_ALPHA
+        };
+
+        glBlendFunc(vBlendMapping[static_cast<uint32_t>(src)],
+                    vBlendMapping[static_cast<uint32_t>(dst)]);
+}
+
+void GraphicsState::SetCullFace(bool enable, CullFace face) {
+
+        if (enable != cull_enabled) {
+                cull_enabled = enable;
+                if (enable) { glEnable(GL_CULL_FACE);  }
+                else        { glDisable(GL_CULL_FACE); }
+        }
+        if (face != cull_face) {
+                cull_face = face;
+                static const GLenum vCullMapping[] = {
+                        GL_FRONT, GL_BACK, GL_FRONT_AND_BACK
+                };
+                glCullFace(vCullMapping[static_cast<uint32_t>(cull_face)]);
+        }
+}
+
+void GraphicsState::SetViewport(int32_t x, int32_t y, int32_t w, int32_t h) {
+
+        glm::ivec4 vp(x, y, w, h);
+        if (vp == viewport) { return; }
+        viewport = vp;
+        glViewport(x, y, w, h);
+}
 
 } // namespace SE

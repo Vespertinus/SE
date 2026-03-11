@@ -50,23 +50,19 @@ void DeferredRenderer<TVisibilityManager>::CreateHdrBuffer() {
         pHdrTex = CreateResource<TTexture>("hdr/accum", ts,
                         StoreTexture2DRenderTarget::Settings(GL_FLOAT));
 
-        glGenFramebuffers(1, &hdr_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,       GL_TEXTURE_2D, pHdrTex->GetID(),          0);
+        oHdrFBO.Create();
+        oHdrFBO.Bind();
+        oHdrFBO.AttachColor(0, pHdrTex);
         // Share depth-stencil from GBuffer (enables depth test during light volumes pass)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, oGBuffer.GetDepthTex()->GetID(), 0);
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-                log_e("HDR FBO incomplete, status: {:#x}", static_cast<uint32_t>(status));
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        oHdrFBO.AttachDepthStencil(oGBuffer.GetDepthTex());
+        oHdrFBO.CheckComplete();
+        oHdrFBO.Unbind();
 }
 
 template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::DestroyHdrBuffer() noexcept {
 
-        if (hdr_fbo) { glDeleteFramebuffers(1, &hdr_fbo); hdr_fbo = 0; }
+        oHdrFBO.Destroy();
         if (pHdrTex) {
                 TResourceManager::Instance().Destroy<TTexture>(pHdrTex->RID());
                 pHdrTex = nullptr;
@@ -197,12 +193,14 @@ template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::GeometryPass() {
 
         oGBuffer.Bind();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
 
-        GetSystem<GraphicsState>().SetViewProjection(pCamera->GetWorldMVP());
+        auto & gs = GetSystem<GraphicsState>();
+        gs.Clear(ClearBuffer::COLOR | ClearBuffer::DEPTH);
+        gs.SetDepthTest(true);
+        gs.SetDepthMask(true);
+        gs.SetDepthFunc(DepthFunc::LESS);
+
+        gs.SetViewProjection(pCamera->GetWorldMVP());
 
         for (auto * pCmd : vRenderCommands) {
                 pCmd->Draw();
@@ -219,11 +217,12 @@ template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::SSAOPass() {
 
         oSSAOBuffer.Bind();
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
 
         auto & gs = GetSystem<GraphicsState>();
+        gs.Clear(ClearBuffer::COLOR);
+        gs.SetDepthTest(false);
+        gs.SetDepthMask(false);
+
         gs.SetShaderProgram(pSSAOShader);
 
         gs.SetTexture(TextureUnit::NORMAL, oGBuffer.GetNormalMetallicTex());
@@ -256,11 +255,12 @@ template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::SSAOBlurPass() {
 
         oSSAOBuffer.BindBlur();
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
 
         auto & gs = GetSystem<GraphicsState>();
+        gs.Clear(ClearBuffer::COLOR);
+        gs.SetDepthTest(false);
+        gs.SetDepthMask(false);
+
         gs.SetShaderProgram(pSSAOBlurShader);
 
         gs.SetTexture(TextureUnit::SSAO_TEX, oSSAOBuffer.GetSSAOTex());
@@ -281,13 +281,14 @@ void DeferredRenderer<TVisibilityManager>::SSAOBlurPass() {
 template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::AmbientDirPass() {
 
-        glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_BLEND);
-        glDepthMask(GL_FALSE);
-        glDisable(GL_DEPTH_TEST);
+        oHdrFBO.Bind();
 
         auto & gs = GetSystem<GraphicsState>();
+        gs.Clear(ClearBuffer::COLOR);
+        gs.SetBlend(false);
+        gs.SetDepthMask(false);
+        gs.SetDepthTest(false);
+
         gs.SetShaderProgram(pAmbientDirShader);
 
         gs.SetTexture(TextureUnit::DIFFUSE,  oGBuffer.GetAlbedoRoughnessTex());
@@ -321,7 +322,7 @@ void DeferredRenderer<TVisibilityManager>::AmbientDirPass() {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
-        glDepthMask(GL_TRUE);
+        gs.SetDepthMask(true);
 }
 
 template <class TVisibilityManager>
@@ -330,15 +331,14 @@ void DeferredRenderer<TVisibilityManager>::PointLightPass() {
         if (vPointLights.empty()) { return; }
 
         // HDR FBO still bound from AmbientDirPass.
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        glDepthMask(GL_FALSE);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_GEQUAL);
-        glCullFace(GL_FRONT);
-        glEnable(GL_CULL_FACE);
-
         auto & gs = GetSystem<GraphicsState>();
+        gs.SetBlend(true);
+        gs.SetBlendFunc(BlendFactor::ONE, BlendFactor::ONE);
+        gs.SetDepthMask(false);
+        gs.SetDepthTest(true);
+        gs.SetDepthFunc(DepthFunc::GEQUAL);
+        gs.SetCullFace(true, CullFace::FRONT);
+
         gs.SetShaderProgram(pPointLightShader);
 
         gs.SetTexture(TextureUnit::DIFFUSE, oGBuffer.GetAlbedoRoughnessTex());
@@ -377,25 +377,26 @@ void DeferredRenderer<TVisibilityManager>::PointLightPass() {
         glBindVertexArray(0);
 
         // Restore state
-        glDisable(GL_BLEND);
-        glDepthFunc(GL_LESS);
-        glCullFace(GL_BACK);
-        glDisable(GL_CULL_FACE);
-        glDepthMask(GL_TRUE);
-        glEnable(GL_DEPTH_TEST);
+        gs.SetBlend(false);
+        gs.SetDepthFunc(DepthFunc::LESS);
+        gs.SetCullFace(false);
+        gs.SetDepthMask(true);
+        gs.SetDepthTest(true);
 }
 
 template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::ToneMapPass() {
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, screen_size.x, screen_size.y);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-        glDisable(GL_BLEND);
+        oHdrFBO.Unbind();
 
         auto & gs = GetSystem<GraphicsState>();
+        gs.SetViewport(0, 0,
+                static_cast<int32_t>(screen_size.x), static_cast<int32_t>(screen_size.y));
+        gs.Clear(ClearBuffer::COLOR);
+        gs.SetDepthTest(false);
+        gs.SetDepthMask(false);
+        gs.SetBlend(false);
+
         gs.SetShaderProgram(pToneMapShader);
 
         gs.SetTexture(TextureUnit::HDR, pHdrTex);
@@ -404,9 +405,8 @@ void DeferredRenderer<TVisibilityManager>::ToneMapPass() {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
-        glUseProgram(0);
-        glDepthMask(GL_TRUE);
-        glEnable(GL_DEPTH_TEST);
+        gs.SetDepthMask(true);
+        gs.SetDepthTest(true);
 }
 
 template <class TVisibilityManager>

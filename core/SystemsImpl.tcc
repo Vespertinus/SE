@@ -4,6 +4,7 @@
 #include <GraphicsConfig.tcc>
 #include <DebugRenderer.tcc>
 #include <InputManager.tcc>
+#include <FrameBuffer.tcc>
 #include <GBuffer.tcc>
 #include <SSAOBuffer.tcc>
 #endif

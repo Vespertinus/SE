@@ -52,7 +52,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
         CalcDuration oLoopDuration;
 
-        glClear(oSettings.clear_flag);
+        GetSystem<GraphicsState>().Clear(oSettings.clear_flag);
 
         auto & oEventManager = GetSystem<EventManager>();
         oEventManager.TriggerEvent(EUpdate{0.0f});
@@ -87,7 +87,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::ResizeViewport(const in
         glm::uvec2 screen_size(oSettings.width, oSettings.height);
 
         oRenderingCtx.UpdateDimension(oSettings.width, oSettings.height);
-        glViewport(0, 0, oSettings.width, oSettings.height);
+        GetSystem<GraphicsState>().SetViewport(0, 0, oSettings.width, oSettings.height);
 
         GetSystem<GraphicsState>().SetScreenSize(screen_size);
         GetSystem<TRenderer>().SetScreenSize(screen_size);

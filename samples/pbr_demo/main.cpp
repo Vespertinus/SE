@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
         oCamSettings.far_clip                   = 1000;
         oCamSettings.projection                 = SE::Camera::Projection::PERSPECTIVE;
 
-        oSettings.clear_flag                    = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+        oSettings.clear_flag                    = SE::ClearBuffer::COLOR | SE::ClearBuffer::DEPTH;
 
         oSettings.oWindowSettings.width         = 1280;
         oSettings.oWindowSettings.height        = 720;

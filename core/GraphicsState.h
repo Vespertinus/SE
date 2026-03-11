@@ -38,6 +38,12 @@ class GraphicsState {
         bool                    depth_test{false};
         bool                    depth_write{true};
         bool                    color_write{true};
+        bool                    blend_enabled{false};
+        BlendFactor             blend_src{BlendFactor::ONE};
+        BlendFactor             blend_dst{BlendFactor::ZERO};
+        bool                    cull_enabled{false};
+        CullFace                cull_face{CullFace::BACK};
+        glm::ivec4              viewport{0, 0, 800, 600};
 
         //TODO initialize from GL limit, store in global graphics config
         std::array<TTexture *, 16> vTextureUnits{};
@@ -118,10 +124,11 @@ class GraphicsState {
         void                            SetDepthTest(const bool enable);
         void                            SetDepthMask(const bool enable);
         void                            SetColorMask(const bool enable);
-        /*
-        void                            Clear(const ClearBufferType flags);
-        void                            SetCullMode(const CullType value);*/
-        //void                            SetBlendMode(type, alpha to coverage?);
+        void                            Clear(ClearBuffer flags);
+        void                            SetBlend(bool enable);
+        void                            SetBlendFunc(BlendFactor src, BlendFactor dst);
+        void                            SetCullFace(bool enable, CullFace face = CullFace::BACK);
+        void                            SetViewport(int32_t x, int32_t y, int32_t w, int32_t h);
 
 };
 

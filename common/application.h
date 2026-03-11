@@ -17,7 +17,7 @@ namespace SE {
 
 struct SysSettings_t {
 
-        int                     clear_flag;
+        ClearBuffer             clear_flag;
         bool                    grab_mouse;
         bool                    hide_mouse;
 
@@ -26,7 +26,7 @@ struct SysSettings_t {
         std::string             sResourceDir;
 
         SysSettings_t() :
-                clear_flag(0),
+                clear_flag(static_cast<ClearBuffer>(0)),
                 grab_mouse(true),
                 hide_mouse(true)
         { ;; }

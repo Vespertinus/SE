@@ -65,7 +65,7 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 
         glm::uvec2      screen_size(new_width, new_height);
 
-        glViewport(0, 0, new_width, new_height);
+        GetSystem<GraphicsState>().SetViewport(0, 0, new_width, new_height);
 
         GetSystem<InputManager>().SetWindowExtents(new_width, new_height);
         GetSystem<GraphicsState>().SetScreenSize(screen_size);
@@ -76,7 +76,8 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 
 template <class TLoop> void Application<TLoop>::Run() {
 
-        glClear(oSettings.clear_flag);
+        GetSystem<GraphicsState>().Clear(oSettings.clear_flag);
+
         auto & oEventManager = TEngine::Instance().Get<EventManager>();
 
         float last_frame_time = GetSystem<GraphicsState>().FrameStart();

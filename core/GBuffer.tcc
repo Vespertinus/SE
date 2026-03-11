@@ -29,27 +29,20 @@ void GBuffer::Create() {
         pDepth = CreateResource<TTexture>("gbuffer/depth", oTexStock,
                         StoreTexture2DRenderTarget::Settings(GL_UNSIGNED_INT_24_8));
 
-        glGenFramebuffers(1, &fbo_id);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,      GL_TEXTURE_2D, pRT0->GetID(),   0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,      GL_TEXTURE_2D, pRT1->GetID(),   0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,      GL_TEXTURE_2D, pRT2->GetID(),   0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, pDepth->GetID(), 0);
-
-        GLenum attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-        glDrawBuffers(3, attachments);
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-                log_e("GBuffer FBO incomplete, status: {:#x}", static_cast<uint32_t>(status));
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        oFBO.Create();
+        oFBO.Bind();
+        oFBO.AttachColor(0, pRT0);
+        oFBO.AttachColor(1, pRT1);
+        oFBO.AttachColor(2, pRT2);
+        oFBO.AttachDepthStencil(pDepth);
+        oFBO.SetDrawBuffers({0, 1, 2});
+        oFBO.CheckComplete();
+        oFBO.Unbind();
 }
 
 void GBuffer::Destroy() noexcept {
 
-        if (fbo_id) { glDeleteFramebuffers(1, &fbo_id); fbo_id = 0; }
+        oFBO.Destroy();
 
         auto & rm = TResourceManager::Instance();
         if (pRT0)   { rm.Destroy<TTexture>(pRT0->RID());   pRT0   = nullptr; }
@@ -78,13 +71,14 @@ void GBuffer::Resize(glm::uvec2 new_size) {
 
 void GBuffer::Bind() {
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
-        glViewport(0, 0, size.x, size.y);
+        oFBO.Bind();
+        GetSystem<GraphicsState>().SetViewport(0, 0,
+                static_cast<int32_t>(size.x), static_cast<int32_t>(size.y));
 }
 
 void GBuffer::Unbind() {
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        oFBO.Unbind();
 }
 
 } // namespace SE

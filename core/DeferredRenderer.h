@@ -23,8 +23,8 @@ template <class TVisibilityManager> class DeferredRenderer {
         GBuffer  oGBuffer;
 
         // HDR accumulation buffer (shares depth-stencil with GBuffer)
-        uint32_t   hdr_fbo  { 0 };
-        TTexture * pHdrTex  { nullptr };
+        FrameBuffer oHdrFBO;
+        TTexture  * pHdrTex { nullptr };
 
         // SSAO
         SSAOBuffer oSSAOBuffer;

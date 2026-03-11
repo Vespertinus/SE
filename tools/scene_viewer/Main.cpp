@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
                         SE::Camera::Projection::ORTHO :
                         SE::Camera::Projection::PERSPECTIVE;
 
-                oSettings.clear_flag                  = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+                oSettings.clear_flag                  = SE::ClearBuffer::COLOR | SE::ClearBuffer::DEPTH;
                 oSettings.hide_mouse                  = false;
                 oSettings.grab_mouse                  = false;
 

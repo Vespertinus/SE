@@ -18,14 +18,14 @@
 namespace SE {
 
 struct SysSettings_t {
-	int                     clear_flag;
+	ClearBuffer             clear_flag;
         std::string             sResourceDir;
         std::vector<GLubyte>  & vRenderBuffer;
         uint32_t                width;
         uint32_t                height;
 
         SysSettings_t(
-                const int new_clear_flag,
+                const ClearBuffer new_clear_flag,
                 uint32_t new_width,
                 uint32_t new_height,
                 std::vector<GLubyte>  & vNewRenderBuffer) :
