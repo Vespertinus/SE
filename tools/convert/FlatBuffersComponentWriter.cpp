@@ -58,17 +58,38 @@ TComponentOffset SerializeModel(
 
                                 if (!oItem.second.serialized_fb) {
 
-                                        //TODO currently serialize only external texture
-                                        auto texture_stock_fb = vTextures.emplace_back(CreateTextureHolder(
-                                                                oBuilder,
-                                                                0,
-                                                                oBuilder.CreateString(oItem.second.sPath),
-                                                                0,
-                                                                StoreSettings::NONE,
-                                                                0,
-                                                                static_cast<SE::FlatBuffers::TextureUnit>(oItem.first) )
-                                                        );
-                                        oItem.second.serialized_fb = texture_stock_fb.o;
+                                        flatbuffers::Offset<SE::FlatBuffers::TextureStock> stock_fb  = 0;
+                                        flatbuffers::Offset<flatbuffers::String>           path_fb   = 0;
+                                        flatbuffers::Offset<flatbuffers::String>           name_fb   = 0;
+                                        flatbuffers::Offset<void>                          store_union_fb = 0;
+                                        StoreSettings                                      store_type = StoreSettings::NONE;
+
+                                        if (oItem.second.oStock.raw_image != nullptr) {
+                                                // Embedded image
+                                                stock_fb = CreateTextureStockDirect(
+                                                        oBuilder,
+                                                        &oItem.second.vImageData,
+                                                        oItem.second.oStock.format,
+                                                        oItem.second.oStock.internal_format,
+                                                        oItem.second.oStock.width,
+                                                        oItem.second.oStock.height);
+                                                name_fb = oBuilder.CreateString(oItem.second.sName);
+                                                store_union_fb = CreateStoreTexture2D(oBuilder).Union();
+                                                store_type     = StoreSettings::StoreTexture2D;
+                                        }
+                                        else if (!oItem.second.sPath.empty()) {
+                                                path_fb = oBuilder.CreateString(oItem.second.sPath);
+                                        }
+
+                                        auto texture_holder_fb = vTextures.emplace_back(CreateTextureHolder(
+                                                        oBuilder,
+                                                        stock_fb,
+                                                        path_fb,
+                                                        name_fb,
+                                                        store_type,
+                                                        store_union_fb,
+                                                        static_cast<SE::FlatBuffers::TextureUnit>(oItem.first)));
+                                        oItem.second.serialized_fb = texture_holder_fb.o;
                                 }
                                 else {
                                         vTextures.emplace_back(oItem.second.serialized_fb);

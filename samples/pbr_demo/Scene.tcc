@@ -24,7 +24,7 @@ Scene::Scene(const Settings & oSettings) :
         // --- 1×1 procedural textures ---
         auto * pWhiteTex    = CreateTex1x1("pbr_white",   255, 255, 255, 255);
         auto * pNormalTex   = CreateTex1x1("pbr_normal",  128, 128, 255, 255);
-        auto * pSpecularTex = CreateTex1x1("pbr_specular",255, 255,   0, 255);
+        auto * pSpecularTex = CreateTex1x1("pbr_specular",  0, 255, 255, 255);
 
         // --- Materials (5 variations) ---
         const char * matPaths[] = {

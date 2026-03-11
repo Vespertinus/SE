@@ -15,7 +15,7 @@ source:
 
         uniform sampler2D DiffuseTex;   // albedo / base colour
         uniform sampler2D NormalTex;    // tangent-space normal map
-        uniform sampler2D SpecularTex;  // roughness (R), metallic (G)
+        uniform sampler2D SpecularTex;  // roughness (G), metallic (B) — glTF metallicRoughness
 
         // BaseColor (vec4)
         // RGB is the albedo/base color of the material, and A as opacity 
@@ -66,7 +66,7 @@ source:
         void main() {
             vec3 albedo = texture(DiffuseTex, TexCoord).rgb * BaseColor.rgb;
 
-            vec2 specRM = texture(SpecularTex, TexCoord).rg;
+            vec2 specRM = texture(SpecularTex, TexCoord).gb;
             float rough = specRM.r * Roughness;
             float metal = specRM.g * Metallic;
 

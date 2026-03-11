@@ -126,6 +126,9 @@ using TPackVertexIndex = void (*)(MeshData::TIndexVariant & oData, const uint32_
 struct TextureData {
 
         std::string                     sPath;
+        std::string                     sName;
+        //THINK rewrite to store as is in encoded format and later decode on load
+        std::vector<uint8_t>            vImageData;   // owns decoded RGBA pixels for embedded images
         TextureStock                    oStock;
         uint32_t                        serialized_fb{};
 };

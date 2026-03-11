@@ -7,7 +7,7 @@ source:
         in vec3 Position; //THINK vec4
         in vec3 Normal;
         in vec2 TexCoord0;
-        in vec3 Tangent;
+        in vec4 Tangent;
 
         // Engine-provided system uniforms
         uniform mat4 MVPMatrix;   // projection * view * model (clip-space)
@@ -25,10 +25,10 @@ source:
             mat3 normalMat = mat3(MVMatrix);
             v_Normal = normalize(normalMat * Normal);
 
-            vec3 T = normalize(normalMat * Tangent);
+            vec3 T = normalize(normalMat * Tangent.xyz);
             vec3 N = v_Normal;
             T = normalize(T - dot(T, N) * N);
-            vec3 B = cross(N, T);
+            vec3 B = cross(N, T) * Tangent.w;
             v_TBN = mat3(T, B, N);
 
             TexCoord = TexCoord0;

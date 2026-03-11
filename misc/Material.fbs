@@ -45,7 +45,9 @@ enum TextureUnit : uint8 {
         UNIT_ENV             = 3,
         UNIT_SHADOW          = 4,
         UNIT_BUFFER          = 5,
+        UNIT_RENDER_BUFFER   = 6,
         UNIT_CUSTOM          = 7,
+        UNIT_EMISSIVE        = 8,
 }
 
 table TextureHolder {

@@ -23,4 +23,6 @@ Dependency:
  * Tools:
    * [Autodesk fbxsdk: for fbx importing. Tested with FBX SDK 2018](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2018-0)
    * [tinyobjloader: wavefront obj (and mtl ) format parser](https://github.com/syoyo/tinyobjloader)
+   * [tinygltf: tiny glTF library(loader/saver)](https://github.com/syoyo/tinygltf)
+   * [nlohmann/json: JSON for Modern C++](https://github.com/nlohmann/json)
 

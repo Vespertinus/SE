@@ -15,6 +15,7 @@
 #include "FlatBuffersMeshWriter.h"
 
 #include "FBXReader.h"
+#include "GLTFReader.h"
 #include "FlatBuffersSceneTreeWriter.h"
 
 
@@ -218,6 +219,37 @@ int main(int argc, char **argv) {
                                 throw (std::runtime_error("Write failed, err_code = " + std::to_string(err_code)) );
                         }
 
+                }
+                else if (sExt == ".gltf" || sExt == ".glb") {
+                        GLTFReader oReader;
+                        NodeData oRoot;
+                        err_code = oReader.ReadScene(sInput, oRoot, oCtx);
+                        if (err_code) {
+                                throw (std::runtime_error("Loading failed, err_code = " + std::to_string(err_code)) );
+                        }
+
+                        log_i("Imported: node cnt: {}, mesh cnt: {}, total triangles cnt: {}, total_vertices_cnt: {}, materials cnt: {}, textures cnt: {}",
+                                        oCtx.node_cnt,
+                                        oCtx.mesh_cnt,
+                                        oCtx.total_triangles_cnt,
+                                        oCtx.total_vertices_cnt,
+                                        oCtx.material_cnt,
+                                        oCtx.textures_cnt);
+
+                        if (to_mesh) {
+                                auto * pMeshData = GetMesh(oRoot);
+                                if (!pMeshData) {
+                                        throw(std::runtime_error("failed to find mesh inside scene"));
+                                }
+                                err_code = WriteMesh(sOutput + ".sems", *pMeshData);
+                        }
+                        else {
+                                err_code = WriteSceneTree(sOutput + ".sesc", oRoot);
+                        }
+
+                        if (err_code) {
+                                throw (std::runtime_error("Write failed, err_code = " + std::to_string(err_code)) );
+                        }
                 }
                 else {
                         log_e("unsupported file extension: '{}'", sExt);

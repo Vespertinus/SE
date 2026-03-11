@@ -89,12 +89,14 @@ enum class TextureUnit : uint8_t {
   UNIT_ENV = 3,
   UNIT_SHADOW = 4,
   UNIT_BUFFER = 5,
+  UNIT_RENDER_BUFFER = 6,
   UNIT_CUSTOM = 7,
+  UNIT_EMISSIVE = 8,
   MIN = UNIT_DIFFUSE,
-  MAX = UNIT_CUSTOM
+  MAX = UNIT_EMISSIVE
 };
 
-inline const TextureUnit (&EnumValuesTextureUnit())[7] {
+inline const TextureUnit (&EnumValuesTextureUnit())[9] {
   static const TextureUnit values[] = {
     TextureUnit::UNIT_DIFFUSE,
     TextureUnit::UNIT_NORMAL,
@@ -102,28 +104,31 @@ inline const TextureUnit (&EnumValuesTextureUnit())[7] {
     TextureUnit::UNIT_ENV,
     TextureUnit::UNIT_SHADOW,
     TextureUnit::UNIT_BUFFER,
-    TextureUnit::UNIT_CUSTOM
+    TextureUnit::UNIT_RENDER_BUFFER,
+    TextureUnit::UNIT_CUSTOM,
+    TextureUnit::UNIT_EMISSIVE
   };
   return values;
 }
 
 inline const char * const *EnumNamesTextureUnit() {
-  static const char * const names[9] = {
+  static const char * const names[10] = {
     "UNIT_DIFFUSE",
     "UNIT_NORMAL",
     "UNIT_SPECULAR",
     "UNIT_ENV",
     "UNIT_SHADOW",
     "UNIT_BUFFER",
-    "",
+    "UNIT_RENDER_BUFFER",
     "UNIT_CUSTOM",
+    "UNIT_EMISSIVE",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameTextureUnit(TextureUnit e) {
-  if (flatbuffers::IsOutRange(e, TextureUnit::UNIT_DIFFUSE, TextureUnit::UNIT_CUSTOM)) return "";
+  if (flatbuffers::IsOutRange(e, TextureUnit::UNIT_DIFFUSE, TextureUnit::UNIT_EMISSIVE)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesTextureUnit()[index];
 }
