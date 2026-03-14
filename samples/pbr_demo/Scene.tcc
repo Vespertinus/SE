@@ -16,7 +16,7 @@ static H<TTexture> CreateTex1x1(const char * name, uint8_t r, uint8_t g, uint8_t
 }
 
 Scene::Scene(const Settings & oSettings) :
-        pSceneTree(CreatRaweResource<TSceneTree>("pbr_demo", true)) {
+        pSceneTree(CreateRawResource<TSceneTree>("pbr_demo", true)) {
 
         // --- Sphere mesh ---
         auto hMesh = CreateSphereMesh(16, 32);
