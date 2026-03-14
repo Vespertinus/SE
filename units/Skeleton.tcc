@@ -57,10 +57,10 @@ CharacterShell::CharacterShell(
         ResourceHolder(new_rid, sName) {
 
         if (pShell->skeleton()->path() != nullptr) {
-                pSkeleton = CreateResource<Skeleton>(GetSystem<Config>().sResourceDir + pShell->skeleton()->path()->c_str());
+                pSkeleton = CreateRawResource<Skeleton>(GetSystem<Config>().sResourceDir + pShell->skeleton()->path()->c_str());
         }
         else if (pShell->skeleton()->name() != nullptr && pShell->skeleton()->skeleton() != nullptr) {
-                pSkeleton = CreateResource<Skeleton>(
+                pSkeleton = CreateRawResource<Skeleton>(
                                 pShell->skeleton()->name()->c_str(),
                                 pShell->skeleton()->skeleton());
         }

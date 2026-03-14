@@ -20,7 +20,8 @@ class Scene {
         private:
         SE::Camera                    * pCamera;
         SE::TSceneTree::TSceneNode      pCameraNode;
-        SE::TSceneTree                * pSceneTree;
+        SE::H<SE::TSceneTree>           hSceneTree;
+        SE::TSceneTree                * pSceneTree { nullptr };
         Settings                        oSettings;
         SE::HELPERS::ImGuiWrapper       oImGui;
         bool                            toggle_controller{false};

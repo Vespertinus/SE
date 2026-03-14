@@ -3,7 +3,7 @@
 
 namespace SE {
 
-static TTexture * CreateTex1x1(const char * name, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+static H<TTexture> CreateTex1x1(const char * name, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
         uint8_t pixels[4] = { r, g, b, a };
         TextureStock oStock;
         oStock.raw_image      = pixels;
@@ -16,15 +16,15 @@ static TTexture * CreateTex1x1(const char * name, uint8_t r, uint8_t g, uint8_t 
 }
 
 Scene::Scene(const Settings & oSettings) :
-        pSceneTree(CreateResource<TSceneTree>("pbr_demo", true)) {
+        pSceneTree(CreatRaweResource<TSceneTree>("pbr_demo", true)) {
 
         // --- Sphere mesh ---
-        auto * pMesh = CreateSphereMesh(16, 32);
+        auto hMesh = CreateSphereMesh(16, 32);
 
         // --- 1×1 procedural textures ---
-        auto * pWhiteTex    = CreateTex1x1("pbr_white",   255, 255, 255, 255);
-        auto * pNormalTex   = CreateTex1x1("pbr_normal",  128, 128, 255, 255);
-        auto * pSpecularTex = CreateTex1x1("pbr_specular",  0, 255, 255, 255);
+        auto hWhiteTex    = CreateTex1x1("pbr_white",   255, 255, 255, 255);
+        auto hNormalTex   = CreateTex1x1("pbr_normal",  128, 128, 255, 255);
+        auto hSpecularTex = CreateTex1x1("pbr_specular",  0, 255, 255, 255);
 
         // --- Materials (5 variations) ---
         const char * matPaths[] = {
@@ -40,14 +40,15 @@ Scene::Scene(const Settings & oSettings) :
         const float xpos[] = { -4.f, -2.f, 0.f, 2.f, 4.f };
 
         for (int i = 0; i < 5; ++i) {
-                auto * pMat = CreateResource<Material>(matPaths[i]);
-                pMat->SetTexture(TextureUnit::DIFFUSE,  pWhiteTex);
-                pMat->SetTexture(TextureUnit::NORMAL,   pNormalTex);
-                pMat->SetTexture(TextureUnit::SPECULAR, pSpecularTex);
+                auto hMat = CreateResource<Material>(matPaths[i]);
+                auto * pMat = GetResource(hMat);
+                pMat->SetTexture(TextureUnit::DIFFUSE,  hWhiteTex);
+                pMat->SetTexture(TextureUnit::NORMAL,   hNormalTex);
+                pMat->SetTexture(TextureUnit::SPECULAR, hSpecularTex);
 
                 auto pNode = pSceneTree->Create(nodeNames[i]);
                 pNode->SetPos(glm::vec3(xpos[i], 0.f, 0.f));
-                auto res = pNode->CreateComponent<StaticModel>(pMesh, pMat);
+                auto res = pNode->CreateComponent<StaticModel>(hMesh, hMat);
                 if (res != uSUCCESS) {
                         throw std::runtime_error("failed to create StaticModel");
                 }

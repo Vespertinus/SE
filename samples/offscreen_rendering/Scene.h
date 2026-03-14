@@ -6,10 +6,10 @@ namespace SAMPLES {
 
 class Scene {
 
-        SE::Camera      * pCamera;
-        SE::TTexture    * pTex01;
-        SE::TTexture    * pTex02;
-        SE::TSceneTree  * pSceneTree;
+        SE::Camera               * pCamera;
+        SE::H<SE::TTexture>   hTex01;
+        SE::H<SE::TTexture>   hTex02;
+        SE::H<SE::TSceneTree> hSceneTree;
 
         public:
         struct Settings {

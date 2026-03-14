@@ -15,14 +15,14 @@ DeferredRenderer<TVisibilityManager>::DeferredRenderer() :
 
         auto & cfg = GetSystem<SE::Config>();
 
-        pAmbientDirShader = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/ambient_dir.sesp");
-        pPointLightShader = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/point_light.sesp");
-        pSSAOShader       = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/ssao.sesp");
-        pSSAOBlurShader   = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/ssao_blur.sesp");
-        pToneMapShader    = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/tonemapping.sesp");
+        hAmbientDirShader = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/ambient_dir.sesp");
+        hPointLightShader = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/point_light.sesp");
+        hSSAOShader       = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/ssao.sesp");
+        hSSAOBlurShader   = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/ssao_blur.sesp");
+        hToneMapShader    = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/tonemapping.sesp");
 
         //THINK only one block.. reuse cam variables accross shaders
-        pLightingBlock = std::make_unique<UniformBlock>(pAmbientDirShader, UniformUnitInfo::Type::LIGHTING);
+        pLightingBlock = std::make_unique<UniformBlock>(GetResource(hAmbientDirShader), UniformUnitInfo::Type::LIGHTING);
 }
 
 template <class TVisibilityManager>
@@ -30,11 +30,11 @@ DeferredRenderer<TVisibilityManager>::~DeferredRenderer() noexcept {
 
         DestroyHdrBuffer();
 
-        DestroyResource<ShaderProgram>(pAmbientDirShader);
-        DestroyResource<ShaderProgram>(pPointLightShader);
-        DestroyResource<ShaderProgram>(pSSAOShader);
-        DestroyResource<ShaderProgram>(pSSAOBlurShader);
-        DestroyResource<ShaderProgram>(pToneMapShader);
+        DestroyResource(hAmbientDirShader);
+        DestroyResource(hPointLightShader);
+        DestroyResource(hSSAOShader);
+        DestroyResource(hSSAOBlurShader);
+        DestroyResource(hToneMapShader);
 
         if (quad_vao)    { glDeleteVertexArrays(1, &quad_vao);    quad_vao    = 0; }
         if (quad_vbo)    { glDeleteBuffers(1, &quad_vbo);         quad_vbo    = 0; }
@@ -47,12 +47,12 @@ template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::CreateHdrBuffer() {
 
         TextureStock ts { nullptr, 0, GL_RGBA, GL_RGBA16F, screen_size.x, screen_size.y };
-        pHdrTex = CreateResource<TTexture>("hdr/accum", ts,
+        hHdrTex = CreateResource<TTexture>("hdr/accum", ts,
                         StoreTexture2DRenderTarget::Settings(GL_FLOAT));
 
         oHdrFBO.Create();
         oHdrFBO.Bind();
-        oHdrFBO.AttachColor(0, pHdrTex);
+        oHdrFBO.AttachColor(0, GetResource(hHdrTex));
         // Share depth-stencil from GBuffer (enables depth test during light volumes pass)
         oHdrFBO.AttachDepthStencil(oGBuffer.GetDepthTex());
         oHdrFBO.CheckComplete();
@@ -63,9 +63,9 @@ template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::DestroyHdrBuffer() noexcept {
 
         oHdrFBO.Destroy();
-        if (pHdrTex) {
-                TResourceManager::Instance().Destroy<TTexture>(pHdrTex->RID());
-                pHdrTex = nullptr;
+        if (hHdrTex.IsValid()) {
+                TResourceManager::Instance().Destroy(hHdrTex);
+                hHdrTex = H<TTexture>::Null();
         }
 }
 
@@ -223,7 +223,7 @@ void DeferredRenderer<TVisibilityManager>::SSAOPass() {
         gs.SetDepthTest(false);
         gs.SetDepthMask(false);
 
-        gs.SetShaderProgram(pSSAOShader);
+        gs.SetShaderProgram(GetResource(hSSAOShader));
 
         gs.SetTexture(TextureUnit::NORMAL, oGBuffer.GetNormalMetallicTex());
         gs.SetTexture(TextureUnit::BUFFER, oGBuffer.GetDepthTex());
@@ -261,7 +261,7 @@ void DeferredRenderer<TVisibilityManager>::SSAOBlurPass() {
         gs.SetDepthTest(false);
         gs.SetDepthMask(false);
 
-        gs.SetShaderProgram(pSSAOBlurShader);
+        gs.SetShaderProgram(GetResource(hSSAOBlurShader));
 
         gs.SetTexture(TextureUnit::SSAO_TEX, oSSAOBuffer.GetSSAOTex());
 
@@ -289,7 +289,7 @@ void DeferredRenderer<TVisibilityManager>::AmbientDirPass() {
         gs.SetDepthMask(false);
         gs.SetDepthTest(false);
 
-        gs.SetShaderProgram(pAmbientDirShader);
+        gs.SetShaderProgram(GetResource(hAmbientDirShader));
 
         gs.SetTexture(TextureUnit::DIFFUSE,  oGBuffer.GetAlbedoRoughnessTex());
         gs.SetTexture(TextureUnit::NORMAL,   oGBuffer.GetNormalMetallicTex());
@@ -339,7 +339,7 @@ void DeferredRenderer<TVisibilityManager>::PointLightPass() {
         gs.SetDepthFunc(DepthFunc::GEQUAL);
         gs.SetCullFace(true, CullFace::FRONT);
 
-        gs.SetShaderProgram(pPointLightShader);
+        gs.SetShaderProgram(GetResource(hPointLightShader));
 
         gs.SetTexture(TextureUnit::DIFFUSE, oGBuffer.GetAlbedoRoughnessTex());
         gs.SetTexture(TextureUnit::NORMAL,  oGBuffer.GetNormalMetallicTex());
@@ -397,9 +397,9 @@ void DeferredRenderer<TVisibilityManager>::ToneMapPass() {
         gs.SetDepthMask(false);
         gs.SetBlend(false);
 
-        gs.SetShaderProgram(pToneMapShader);
+        gs.SetShaderProgram(GetResource(hToneMapShader));
 
-        gs.SetTexture(TextureUnit::HDR, pHdrTex);
+        gs.SetTexture(TextureUnit::HDR, GetResource(hHdrTex));
 
         glBindVertexArray(quad_vao);
         glDrawArrays(GL_TRIANGLES, 0, 6);

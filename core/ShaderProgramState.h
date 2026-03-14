@@ -84,7 +84,7 @@ class UniformBlock {
 
 class ShaderProgramState {
 
-        using TexturesMap = std::unordered_map<TextureUnit, TTexture *>;
+        using TexturesMap = std::unordered_map<TextureUnit, H<TTexture>>;
 
         ShaderProgram         * pShader;
         /** material also must contain render state settings (blending, depth, etc) */
@@ -101,7 +101,7 @@ class ShaderProgramState {
 
         ret_code_t              SetBlock(const UniformUnitInfo::Type unit_id, const UniformBlock * pBlock);
         ret_code_t              SetTextures(const UniformUnitInfo::Type unit_id, const TexturesMap * pTextures);
-        ret_code_t              SetTexture(const TextureUnit unit_index, TTexture * pTex);
+        ret_code_t              SetTexture(const TextureUnit unit_index, H<TTexture> hTex);
         //GetBlock ?
         ret_code_t              Validate() const;
         void                    Apply() const;

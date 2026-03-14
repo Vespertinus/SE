@@ -6,12 +6,17 @@
 
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/flexbuffers.h"
+#include "flatbuffers/flex_flat_util.h"
 
-#include "Mesh_generated.h"
+// Ensure the included flatbuffers.h is the same version as when this file was
+// generated, otherwise it may not be compatible.
+static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+              FLATBUFFERS_VERSION_MINOR == 5 &&
+              FLATBUFFERS_VERSION_REVISION == 26,
+             "Non-compatible flatbuffers version included");
+
 #include "Material_generated.h"
-#include "Common_generated.h"
-#include "ShaderComponent_generated.h"
-#include "ShaderProgram_generated.h"
+#include "Mesh_generated.h"
 
 namespace SE {
 namespace FlatBuffers {
@@ -77,7 +82,7 @@ inline const char * const *EnumNamesComponentU() {
 }
 
 inline const char *EnumNameComponentU(ComponentU e) {
-  if (flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::AppComponent)) return "";
+  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::AppComponent)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesComponentU()[index];
 }
@@ -98,10 +103,10 @@ template<> struct ComponentUTraits<SE::FlatBuffers::AppComponent> {
   static const ComponentU enum_value = ComponentU::AppComponent;
 };
 
-bool VerifyComponentU(flatbuffers::Verifier &verifier, const void *obj, ComponentU type);
-bool VerifyComponentUVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<ComponentU> *types);
+bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj, ComponentU type);
+bool VerifyComponentUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<ComponentU> *types);
 
-struct StaticModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct StaticModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef StaticModelBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MESH = 4,
@@ -113,7 +118,7 @@ struct StaticModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const SE::FlatBuffers::MaterialHolder *material() const {
     return GetPointer<const SE::FlatBuffers::MaterialHolder *>(VT_MATERIAL);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_MESH) &&
            verifier.VerifyTable(mesh()) &&
@@ -125,37 +130,37 @@ struct StaticModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct StaticModelBuilder {
   typedef StaticModel Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_mesh(flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_mesh(::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh) {
     fbb_.AddOffset(StaticModel::VT_MESH, mesh);
   }
-  void add_material(flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material) {
+  void add_material(::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material) {
     fbb_.AddOffset(StaticModel::VT_MATERIAL, material);
   }
-  explicit StaticModelBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit StaticModelBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<StaticModel> Finish() {
+  ::flatbuffers::Offset<StaticModel> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<StaticModel>(end);
+    auto o = ::flatbuffers::Offset<StaticModel>(end);
     fbb_.Required(o, StaticModel::VT_MESH);
     return o;
   }
 };
 
-inline flatbuffers::Offset<StaticModel> CreateStaticModel(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
-    flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0) {
+inline ::flatbuffers::Offset<StaticModel> CreateStaticModel(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0) {
   StaticModelBuilder builder_(_fbb);
   builder_.add_material(material);
   builder_.add_mesh(mesh);
   return builder_.Finish();
 }
 
-struct BindSQT FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct BindSQT FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef BindSQTBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BIND_ROT = 4,
@@ -171,19 +176,19 @@ struct BindSQT FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const SE::FlatBuffers::Vec3 *bind_scale() const {
     return GetStruct<const SE::FlatBuffers::Vec3 *>(VT_BIND_SCALE);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<SE::FlatBuffers::Vec4>(verifier, VT_BIND_ROT) &&
-           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_BIND_POS) &&
-           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_BIND_SCALE) &&
+           VerifyField<SE::FlatBuffers::Vec4>(verifier, VT_BIND_ROT, 4) &&
+           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_BIND_POS, 4) &&
+           VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_BIND_SCALE, 4) &&
            verifier.EndTable();
   }
 };
 
 struct BindSQTBuilder {
   typedef BindSQT Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
   void add_bind_rot(const SE::FlatBuffers::Vec4 *bind_rot) {
     fbb_.AddStruct(BindSQT::VT_BIND_ROT, bind_rot);
   }
@@ -193,19 +198,19 @@ struct BindSQTBuilder {
   void add_bind_scale(const SE::FlatBuffers::Vec3 *bind_scale) {
     fbb_.AddStruct(BindSQT::VT_BIND_SCALE, bind_scale);
   }
-  explicit BindSQTBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit BindSQTBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<BindSQT> Finish() {
+  ::flatbuffers::Offset<BindSQT> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<BindSQT>(end);
+    auto o = ::flatbuffers::Offset<BindSQT>(end);
     return o;
   }
 };
 
-inline flatbuffers::Offset<BindSQT> CreateBindSQT(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<BindSQT> CreateBindSQT(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     const SE::FlatBuffers::Vec4 *bind_rot = nullptr,
     const SE::FlatBuffers::Vec3 *bind_pos = nullptr,
     const SE::FlatBuffers::Vec3 *bind_scale = nullptr) {
@@ -216,52 +221,52 @@ inline flatbuffers::Offset<BindSQT> CreateBindSQT(
   return builder_.Finish();
 }
 
-struct Joint FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct Joint FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef JointBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
     VT_PARENT_INDEX = 6
   };
-  const flatbuffers::String *name() const {
-    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
   uint8_t parent_index() const {
     return GetField<uint8_t>(VT_PARENT_INDEX, 0);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyField<uint8_t>(verifier, VT_PARENT_INDEX) &&
+           VerifyField<uint8_t>(verifier, VT_PARENT_INDEX, 1) &&
            verifier.EndTable();
   }
 };
 
 struct JointBuilder {
   typedef Joint Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(Joint::VT_NAME, name);
   }
   void add_parent_index(uint8_t parent_index) {
     fbb_.AddElement<uint8_t>(Joint::VT_PARENT_INDEX, parent_index, 0);
   }
-  explicit JointBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit JointBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<Joint> Finish() {
+  ::flatbuffers::Offset<Joint> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Joint>(end);
+    auto o = ::flatbuffers::Offset<Joint>(end);
     fbb_.Required(o, Joint::VT_NAME);
     return o;
   }
 };
 
-inline flatbuffers::Offset<Joint> CreateJoint(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::String> name = 0,
+inline ::flatbuffers::Offset<Joint> CreateJoint(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
     uint8_t parent_index = 0) {
   JointBuilder builder_(_fbb);
   builder_.add_name(name);
@@ -269,8 +274,8 @@ inline flatbuffers::Offset<Joint> CreateJoint(
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<Joint> CreateJointDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<Joint> CreateJointDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
     uint8_t parent_index = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
@@ -280,15 +285,15 @@ inline flatbuffers::Offset<Joint> CreateJointDirect(
       parent_index);
 }
 
-struct Skeleton FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct Skeleton FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SkeletonBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_JOINTS = 4
   };
-  const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Joint>> *joints() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Joint>> *>(VT_JOINTS);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>> *joints() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>> *>(VT_JOINTS);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_JOINTS) &&
            verifier.VerifyVector(joints()) &&
@@ -299,41 +304,41 @@ struct Skeleton FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct SkeletonBuilder {
   typedef Skeleton Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_joints(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Joint>>> joints) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_joints(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>>> joints) {
     fbb_.AddOffset(Skeleton::VT_JOINTS, joints);
   }
-  explicit SkeletonBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit SkeletonBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<Skeleton> Finish() {
+  ::flatbuffers::Offset<Skeleton> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Skeleton>(end);
+    auto o = ::flatbuffers::Offset<Skeleton>(end);
     fbb_.Required(o, Skeleton::VT_JOINTS);
     return o;
   }
 };
 
-inline flatbuffers::Offset<Skeleton> CreateSkeleton(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::Joint>>> joints = 0) {
+inline ::flatbuffers::Offset<Skeleton> CreateSkeleton(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>>> joints = 0) {
   SkeletonBuilder builder_(_fbb);
   builder_.add_joints(joints);
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<Skeleton> CreateSkeletonDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<flatbuffers::Offset<SE::FlatBuffers::Joint>> *joints = nullptr) {
-  auto joints__ = joints ? _fbb.CreateVector<flatbuffers::Offset<SE::FlatBuffers::Joint>>(*joints) : 0;
+inline ::flatbuffers::Offset<Skeleton> CreateSkeletonDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>> *joints = nullptr) {
+  auto joints__ = joints ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::Joint>>(*joints) : 0;
   return SE::FlatBuffers::CreateSkeleton(
       _fbb,
       joints__);
 }
 
-struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SkeletonHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SKELETON = 4,
@@ -343,13 +348,13 @@ struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const SE::FlatBuffers::Skeleton *skeleton() const {
     return GetPointer<const SE::FlatBuffers::Skeleton *>(VT_SKELETON);
   }
-  const flatbuffers::String *path() const {
-    return GetPointer<const flatbuffers::String *>(VT_PATH);
+  const ::flatbuffers::String *path() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_PATH);
   }
-  const flatbuffers::String *name() const {
-    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_SKELETON) &&
            verifier.VerifyTable(skeleton()) &&
@@ -363,33 +368,33 @@ struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct SkeletonHolderBuilder {
   typedef SkeletonHolder Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_skeleton(flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_skeleton(::flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton) {
     fbb_.AddOffset(SkeletonHolder::VT_SKELETON, skeleton);
   }
-  void add_path(flatbuffers::Offset<flatbuffers::String> path) {
+  void add_path(::flatbuffers::Offset<::flatbuffers::String> path) {
     fbb_.AddOffset(SkeletonHolder::VT_PATH, path);
   }
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(SkeletonHolder::VT_NAME, name);
   }
-  explicit SkeletonHolderBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit SkeletonHolderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<SkeletonHolder> Finish() {
+  ::flatbuffers::Offset<SkeletonHolder> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<SkeletonHolder>(end);
+    auto o = ::flatbuffers::Offset<SkeletonHolder>(end);
     return o;
   }
 };
 
-inline flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolder(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton = 0,
-    flatbuffers::Offset<flatbuffers::String> path = 0,
-    flatbuffers::Offset<flatbuffers::String> name = 0) {
+inline ::flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolder(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> path = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
   SkeletonHolderBuilder builder_(_fbb);
   builder_.add_name(name);
   builder_.add_path(path);
@@ -397,9 +402,9 @@ inline flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolder(
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolderDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton = 0,
+inline ::flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolderDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton = 0,
     const char *path = nullptr,
     const char *name = nullptr) {
   auto path__ = path ? _fbb.CreateString(path) : 0;
@@ -411,19 +416,19 @@ inline flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolderDirect(
       name__);
 }
 
-struct CharacterShell FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct CharacterShell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef CharacterShellBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SKELETON_ROOT_NODE = 4,
     VT_SKELETON = 6
   };
-  const flatbuffers::String *skeleton_root_node() const {
-    return GetPointer<const flatbuffers::String *>(VT_SKELETON_ROOT_NODE);
+  const ::flatbuffers::String *skeleton_root_node() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_SKELETON_ROOT_NODE);
   }
   const SE::FlatBuffers::SkeletonHolder *skeleton() const {
     return GetPointer<const SE::FlatBuffers::SkeletonHolder *>(VT_SKELETON);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_SKELETON_ROOT_NODE) &&
            verifier.VerifyString(skeleton_root_node()) &&
@@ -435,41 +440,41 @@ struct CharacterShell FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct CharacterShellBuilder {
   typedef CharacterShell Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_skeleton_root_node(flatbuffers::Offset<flatbuffers::String> skeleton_root_node) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_skeleton_root_node(::flatbuffers::Offset<::flatbuffers::String> skeleton_root_node) {
     fbb_.AddOffset(CharacterShell::VT_SKELETON_ROOT_NODE, skeleton_root_node);
   }
-  void add_skeleton(flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton) {
+  void add_skeleton(::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton) {
     fbb_.AddOffset(CharacterShell::VT_SKELETON, skeleton);
   }
-  explicit CharacterShellBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit CharacterShellBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<CharacterShell> Finish() {
+  ::flatbuffers::Offset<CharacterShell> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<CharacterShell>(end);
+    auto o = ::flatbuffers::Offset<CharacterShell>(end);
     fbb_.Required(o, CharacterShell::VT_SKELETON_ROOT_NODE);
     fbb_.Required(o, CharacterShell::VT_SKELETON);
     return o;
   }
 };
 
-inline flatbuffers::Offset<CharacterShell> CreateCharacterShell(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::String> skeleton_root_node = 0,
-    flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0) {
+inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShell(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> skeleton_root_node = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0) {
   CharacterShellBuilder builder_(_fbb);
   builder_.add_skeleton(skeleton);
   builder_.add_skeleton_root_node(skeleton_root_node);
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<CharacterShell> CreateCharacterShellDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShellDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *skeleton_root_node = nullptr,
-    flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0) {
+    ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0) {
   auto skeleton_root_node__ = skeleton_root_node ? _fbb.CreateString(skeleton_root_node) : 0;
   return SE::FlatBuffers::CreateCharacterShell(
       _fbb,
@@ -477,7 +482,7 @@ inline flatbuffers::Offset<CharacterShell> CreateCharacterShellDirect(
       skeleton);
 }
 
-struct CharacterShellHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct CharacterShellHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef CharacterShellHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SHELL = 4,
@@ -487,13 +492,13 @@ struct CharacterShellHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
   const SE::FlatBuffers::CharacterShell *shell() const {
     return GetPointer<const SE::FlatBuffers::CharacterShell *>(VT_SHELL);
   }
-  const flatbuffers::String *path() const {
-    return GetPointer<const flatbuffers::String *>(VT_PATH);
+  const ::flatbuffers::String *path() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_PATH);
   }
-  const flatbuffers::String *name() const {
-    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_SHELL) &&
            verifier.VerifyTable(shell()) &&
@@ -507,33 +512,33 @@ struct CharacterShellHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
 
 struct CharacterShellHolderBuilder {
   typedef CharacterShellHolder Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_shell(flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_shell(::flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell) {
     fbb_.AddOffset(CharacterShellHolder::VT_SHELL, shell);
   }
-  void add_path(flatbuffers::Offset<flatbuffers::String> path) {
+  void add_path(::flatbuffers::Offset<::flatbuffers::String> path) {
     fbb_.AddOffset(CharacterShellHolder::VT_PATH, path);
   }
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(CharacterShellHolder::VT_NAME, name);
   }
-  explicit CharacterShellHolderBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit CharacterShellHolderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<CharacterShellHolder> Finish() {
+  ::flatbuffers::Offset<CharacterShellHolder> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<CharacterShellHolder>(end);
+    auto o = ::flatbuffers::Offset<CharacterShellHolder>(end);
     return o;
   }
 };
 
-inline flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolder(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell = 0,
-    flatbuffers::Offset<flatbuffers::String> path = 0,
-    flatbuffers::Offset<flatbuffers::String> name = 0) {
+inline ::flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolder(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> path = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
   CharacterShellHolderBuilder builder_(_fbb);
   builder_.add_name(name);
   builder_.add_path(path);
@@ -541,9 +546,9 @@ inline flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolder(
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolderDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell = 0,
+inline ::flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolderDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell = 0,
     const char *path = nullptr,
     const char *name = nullptr) {
   auto path__ = path ? _fbb.CreateString(path) : 0;
@@ -555,7 +560,7 @@ inline flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolderDirec
       name__);
 }
 
-struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef AnimatedModelBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MESH = 4,
@@ -576,22 +581,22 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const SE::FlatBuffers::TextureHolder *blendshapes() const {
     return GetPointer<const SE::FlatBuffers::TextureHolder *>(VT_BLENDSHAPES);
   }
-  const flatbuffers::Vector<float> *blendshapes_weights() const {
-    return GetPointer<const flatbuffers::Vector<float> *>(VT_BLENDSHAPES_WEIGHTS);
+  const ::flatbuffers::Vector<float> *blendshapes_weights() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_BLENDSHAPES_WEIGHTS);
   }
   const SE::FlatBuffers::CharacterShellHolder *shell() const {
     return GetPointer<const SE::FlatBuffers::CharacterShellHolder *>(VT_SHELL);
   }
-  const flatbuffers::Vector<uint8_t> *joints_indexes() const {
-    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_JOINTS_INDEXES);
+  const ::flatbuffers::Vector<uint8_t> *joints_indexes() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_JOINTS_INDEXES);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *joints_inv_bind_pose() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *>(VT_JOINTS_INV_BIND_POSE);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *joints_inv_bind_pose() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *>(VT_JOINTS_INV_BIND_POSE);
   }
   const SE::FlatBuffers::BindSQT *mesh_bind_pos() const {
     return GetPointer<const SE::FlatBuffers::BindSQT *>(VT_MESH_BIND_POS);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_MESH) &&
            verifier.VerifyTable(mesh()) &&
@@ -616,54 +621,54 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct AnimatedModelBuilder {
   typedef AnimatedModel Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_mesh(flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_mesh(::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh) {
     fbb_.AddOffset(AnimatedModel::VT_MESH, mesh);
   }
-  void add_material(flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material) {
+  void add_material(::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material) {
     fbb_.AddOffset(AnimatedModel::VT_MATERIAL, material);
   }
-  void add_blendshapes(flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes) {
+  void add_blendshapes(::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes) {
     fbb_.AddOffset(AnimatedModel::VT_BLENDSHAPES, blendshapes);
   }
-  void add_blendshapes_weights(flatbuffers::Offset<flatbuffers::Vector<float>> blendshapes_weights) {
+  void add_blendshapes_weights(::flatbuffers::Offset<::flatbuffers::Vector<float>> blendshapes_weights) {
     fbb_.AddOffset(AnimatedModel::VT_BLENDSHAPES_WEIGHTS, blendshapes_weights);
   }
-  void add_shell(flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell) {
+  void add_shell(::flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell) {
     fbb_.AddOffset(AnimatedModel::VT_SHELL, shell);
   }
-  void add_joints_indexes(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> joints_indexes) {
+  void add_joints_indexes(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> joints_indexes) {
     fbb_.AddOffset(AnimatedModel::VT_JOINTS_INDEXES, joints_indexes);
   }
-  void add_joints_inv_bind_pose(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::BindSQT>>> joints_inv_bind_pose) {
+  void add_joints_inv_bind_pose(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>>> joints_inv_bind_pose) {
     fbb_.AddOffset(AnimatedModel::VT_JOINTS_INV_BIND_POSE, joints_inv_bind_pose);
   }
-  void add_mesh_bind_pos(flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos) {
+  void add_mesh_bind_pos(::flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos) {
     fbb_.AddOffset(AnimatedModel::VT_MESH_BIND_POS, mesh_bind_pos);
   }
-  explicit AnimatedModelBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit AnimatedModelBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<AnimatedModel> Finish() {
+  ::flatbuffers::Offset<AnimatedModel> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<AnimatedModel>(end);
+    auto o = ::flatbuffers::Offset<AnimatedModel>(end);
     fbb_.Required(o, AnimatedModel::VT_MESH);
     return o;
   }
 };
 
-inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
-    flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
-    flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
-    flatbuffers::Offset<flatbuffers::Vector<float>> blendshapes_weights = 0,
-    flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell = 0,
-    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> joints_indexes = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<SE::FlatBuffers::BindSQT>>> joints_inv_bind_pose = 0,
-    flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos = 0) {
+inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> blendshapes_weights = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> joints_indexes = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>>> joints_inv_bind_pose = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos = 0) {
   AnimatedModelBuilder builder_(_fbb);
   builder_.add_mesh_bind_pos(mesh_bind_pos);
   builder_.add_joints_inv_bind_pose(joints_inv_bind_pose);
@@ -676,19 +681,19 @@ inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
-    flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
-    flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
+inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
     const std::vector<float> *blendshapes_weights = nullptr,
-    flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell = 0,
     const std::vector<uint8_t> *joints_indexes = nullptr,
-    const std::vector<flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *joints_inv_bind_pose = nullptr,
-    flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos = 0) {
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *joints_inv_bind_pose = nullptr,
+    ::flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos = 0) {
   auto blendshapes_weights__ = blendshapes_weights ? _fbb.CreateVector<float>(*blendshapes_weights) : 0;
   auto joints_indexes__ = joints_indexes ? _fbb.CreateVector<uint8_t>(*joints_indexes) : 0;
-  auto joints_inv_bind_pose__ = joints_inv_bind_pose ? _fbb.CreateVector<flatbuffers::Offset<SE::FlatBuffers::BindSQT>>(*joints_inv_bind_pose) : 0;
+  auto joints_inv_bind_pose__ = joints_inv_bind_pose ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>>(*joints_inv_bind_pose) : 0;
   return SE::FlatBuffers::CreateAnimatedModel(
       _fbb,
       mesh,
@@ -701,7 +706,7 @@ inline flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
       mesh_bind_pos);
 }
 
-struct AppComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct AppComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef AppComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SUB_TYPE = 4,
@@ -710,54 +715,57 @@ struct AppComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint16_t sub_type() const {
     return GetField<uint16_t>(VT_SUB_TYPE, 0);
   }
-  const flatbuffers::Vector<uint8_t> *data() const {
-    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_DATA);
+  const ::flatbuffers::Vector<uint8_t> *data() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DATA);
   }
   flexbuffers::Reference data_flexbuffer_root() const {
-    return flexbuffers::GetRoot(data()->Data(), data()->size());
+    const auto _f = data();
+    return _f ? flexbuffers::GetRoot(_f->Data(), _f->size())
+              : flexbuffers::Reference();
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_SUB_TYPE) &&
+           VerifyField<uint16_t>(verifier, VT_SUB_TYPE, 2) &&
            VerifyOffset(verifier, VT_DATA) &&
            verifier.VerifyVector(data()) &&
+           flexbuffers::VerifyNestedFlexBuffer(data(), verifier) &&
            verifier.EndTable();
   }
 };
 
 struct AppComponentBuilder {
   typedef AppComponent Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
   void add_sub_type(uint16_t sub_type) {
     fbb_.AddElement<uint16_t>(AppComponent::VT_SUB_TYPE, sub_type, 0);
   }
-  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data) {
+  void add_data(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> data) {
     fbb_.AddOffset(AppComponent::VT_DATA, data);
   }
-  explicit AppComponentBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit AppComponentBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<AppComponent> Finish() {
+  ::flatbuffers::Offset<AppComponent> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<AppComponent>(end);
+    auto o = ::flatbuffers::Offset<AppComponent>(end);
     return o;
   }
 };
 
-inline flatbuffers::Offset<AppComponent> CreateAppComponent(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<AppComponent> CreateAppComponent(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t sub_type = 0,
-    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> data = 0) {
   AppComponentBuilder builder_(_fbb);
   builder_.add_data(data);
   builder_.add_sub_type(sub_type);
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<AppComponent> CreateAppComponentDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<AppComponent> CreateAppComponentDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t sub_type = 0,
     const std::vector<uint8_t> *data = nullptr) {
   auto data__ = data ? _fbb.CreateVector<uint8_t>(*data) : 0;
@@ -767,7 +775,7 @@ inline flatbuffers::Offset<AppComponent> CreateAppComponentDirect(
       data__);
 }
 
-struct Component FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_COMPONENT_TYPE = 4,
@@ -789,9 +797,9 @@ struct Component FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const SE::FlatBuffers::AppComponent *component_as_AppComponent() const {
     return component_type() == SE::FlatBuffers::ComponentU::AppComponent ? static_cast<const SE::FlatBuffers::AppComponent *>(component()) : nullptr;
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, VT_COMPONENT_TYPE) &&
+           VerifyField<uint8_t>(verifier, VT_COMPONENT_TYPE, 1) &&
            VerifyOffsetRequired(verifier, VT_COMPONENT) &&
            VerifyComponentU(verifier, component(), component_type()) &&
            verifier.EndTable();
@@ -812,37 +820,37 @@ template<> inline const SE::FlatBuffers::AppComponent *Component::component_as<S
 
 struct ComponentBuilder {
   typedef Component Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
   void add_component_type(SE::FlatBuffers::ComponentU component_type) {
     fbb_.AddElement<uint8_t>(Component::VT_COMPONENT_TYPE, static_cast<uint8_t>(component_type), 0);
   }
-  void add_component(flatbuffers::Offset<void> component) {
+  void add_component(::flatbuffers::Offset<void> component) {
     fbb_.AddOffset(Component::VT_COMPONENT, component);
   }
-  explicit ComponentBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ComponentBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<Component> Finish() {
+  ::flatbuffers::Offset<Component> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Component>(end);
+    auto o = ::flatbuffers::Offset<Component>(end);
     fbb_.Required(o, Component::VT_COMPONENT);
     return o;
   }
 };
 
-inline flatbuffers::Offset<Component> CreateComponent(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<Component> CreateComponent(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     SE::FlatBuffers::ComponentU component_type = SE::FlatBuffers::ComponentU::NONE,
-    flatbuffers::Offset<void> component = 0) {
+    ::flatbuffers::Offset<void> component = 0) {
   ComponentBuilder builder_(_fbb);
   builder_.add_component(component);
   builder_.add_component_type(component_type);
   return builder_.Finish();
 }
 
-inline bool VerifyComponentU(flatbuffers::Verifier &verifier, const void *obj, ComponentU type) {
+inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj, ComponentU type) {
   switch (type) {
     case ComponentU::NONE: {
       return true;
@@ -863,10 +871,10 @@ inline bool VerifyComponentU(flatbuffers::Verifier &verifier, const void *obj, C
   }
 }
 
-inline bool VerifyComponentUVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<ComponentU> *types) {
+inline bool VerifyComponentUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<ComponentU> *types) {
   if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
-  for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+  for (::flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyComponentU(
         verifier,  values->Get(i), types->GetEnum<ComponentU>(i))) {
       return false;
@@ -876,32 +884,32 @@ inline bool VerifyComponentUVector(flatbuffers::Verifier &verifier, const flatbu
 }
 
 inline const SE::FlatBuffers::Component *GetComponent(const void *buf) {
-  return flatbuffers::GetRoot<SE::FlatBuffers::Component>(buf);
+  return ::flatbuffers::GetRoot<SE::FlatBuffers::Component>(buf);
 }
 
 inline const SE::FlatBuffers::Component *GetSizePrefixedComponent(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Component>(buf);
+  return ::flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::Component>(buf);
 }
 
 inline bool VerifyComponentBuffer(
-    flatbuffers::Verifier &verifier) {
+    ::flatbuffers::Verifier &verifier) {
   return verifier.VerifyBuffer<SE::FlatBuffers::Component>(nullptr);
 }
 
 inline bool VerifySizePrefixedComponentBuffer(
-    flatbuffers::Verifier &verifier) {
+    ::flatbuffers::Verifier &verifier) {
   return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::Component>(nullptr);
 }
 
 inline void FinishComponentBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::Component> root) {
+    ::flatbuffers::FlatBufferBuilder &fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::Component> root) {
   fbb.Finish(root);
 }
 
 inline void FinishSizePrefixedComponentBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::Component> root) {
+    ::flatbuffers::FlatBufferBuilder &fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::Component> root) {
   fbb.FinishSizePrefixed(root);
 }
 

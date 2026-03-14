@@ -161,6 +161,16 @@ template <class StoreStrategyList, class LoadStrategyList> uint32_t Texture<Stor
 */
 
 template <class StoreStrategyList, class LoadStrategyList>
+std::string Texture<StoreStrategyList, LoadStrategyList>::Str() const {
+        return fmt::format("Texture name: '{}', id: {}, type: {:#x}, size: ({}, {})",
+                        sName,
+                        id,
+                        gl_type,
+                        oDimensions.first,
+                        oDimensions.second);
+}
+
+template <class StoreStrategyList, class LoadStrategyList>
         std::string Texture<StoreStrategyList, LoadStrategyList>::StrDump(const size_t indent) const {
 
         std::string sResult = fmt::format("{:>{}} Texture: name: '{}', id: {}, type: {}, size: ({}, {})",

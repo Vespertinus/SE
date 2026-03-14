@@ -516,7 +516,7 @@ VisualHelpers::VisualHelpers() {
         PrepareBBox();
 
         //TODO rewrite path handling after switching on global app settings
-        pShader  = CreateResource<SE::ShaderProgram>(GetSystem<Config>().sResourceDir + "shader_program/simple_color.sesp");
+        hShader = CreateResource<SE::ShaderProgram>(GetSystem<Config>().sResourceDir + "shader_program/simple_color.sesp");
 
 }
 
@@ -530,7 +530,7 @@ VisualHelpers::~VisualHelpers() noexcept {
 
 void VisualHelpers::DrawLocalAxes() {
 
-        GetSystem<GraphicsState>().SetShaderProgram(pShader);
+        GetSystem<GraphicsState>().SetShaderProgram(GetResource(hShader));
         GetSystem<GraphicsState>().DrawArrays(local_axes_vao, GL_LINES, 0, 6);
 }
 
@@ -538,7 +538,7 @@ void VisualHelpers::DrawBBox(const BoundingBox & oBBox) {
 
         UpdateBBox(oBBox);
 
-        GetSystem<GraphicsState>().SetShaderProgram(pShader);
+        GetSystem<GraphicsState>().SetShaderProgram(GetResource(hShader));
         GetSystem<GraphicsState>().DrawArrays(bbox_vao, GL_LINES, 0, 24);
 }
 

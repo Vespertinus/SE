@@ -18,13 +18,13 @@ class DebugRenderer {
          data layout:
          |pos:3x float|color: 4x ubyte|
          */
-        uint32_t                        debug_vao;
-        Material                      * pMaterial;
-        GeometryEntity                  oGeom;
-        Transform                       oRootTransform;
-        uint32_t                        red;
-        uint32_t                        green;
-        uint32_t                        blue;
+        uint32_t        debug_vao;
+        H<Material>     hMaterial;
+        GeometryEntity  oGeom;
+        Transform       oRootTransform;
+        uint32_t        red;
+        uint32_t        green;
+        uint32_t        blue;
 
         void            Update(const Event & oEvent);
         void            Clean(const Event & oEvent);

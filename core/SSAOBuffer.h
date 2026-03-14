@@ -10,12 +10,12 @@ namespace SE {
 
 class SSAOBuffer {
 
-        FrameBuffer oFboSSAO;
-        FrameBuffer oFboBlur;
-        TTexture * pSSAOTex  { nullptr };  // GL_R8
-        TTexture * pBlurTex  { nullptr };  // GL_R8
-        TTexture * pNoiseTex { nullptr };  // 4×4 GL_RG16F (random rotations, GL_REPEAT)
-        glm::uvec2 size      { 0 };
+        FrameBuffer      oFboSSAO;
+        FrameBuffer      oFboBlur;
+        H<TTexture> hSSAOTex;   // GL_R8
+        H<TTexture> hBlurTex;   // GL_R8
+        H<TTexture> hNoiseTex;  // 4×4 GL_RG16F (random rotations, GL_REPEAT)
+        glm::uvec2       size      { 0 };
 
         void Create();
         void Destroy() noexcept;
@@ -31,9 +31,9 @@ public:
         void BindBlur(); // bind fbo_blur for blur pass output
         void Unbind();
 
-        TTexture * GetSSAOTex()  const { return pSSAOTex; }
-        TTexture * GetBlurTex()  const { return pBlurTex; }
-        TTexture * GetNoiseTex() const { return pNoiseTex; }
+        TTexture * GetSSAOTex()  const;
+        TTexture * GetBlurTex()  const;
+        TTexture * GetNoiseTex() const;
 };
 
 } // namespace SE

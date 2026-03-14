@@ -4,6 +4,13 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/sinks/stdout_sinks.h>
+#include <StrID.h>
+
+template<> struct fmt::formatter<SE::StrID> : fmt::formatter<uint64_t> {
+        auto format(SE::StrID id, fmt::format_context & ctx) const {
+                return fmt::formatter<uint64_t>::format(static_cast<uint64_t>(id), ctx);
+        }
+};
 
 extern std::shared_ptr<spdlog::logger> gLogger;
 

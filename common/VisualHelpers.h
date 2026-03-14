@@ -54,7 +54,7 @@ class VisualHelpers {
         uint32_t        local_axes_vao,
                         bbox_vao,
                         bbox_vbo;
-        ShaderProgram * pShader;
+        H<ShaderProgram> hShader;
 
         void PrepareAxes();
         void PrepareBBox();

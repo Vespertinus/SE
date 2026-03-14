@@ -8,7 +8,7 @@ GraphicsConfig::GraphicsConfig() {
 
         sVendor         = reinterpret_cast<const char *>(glGetString(GL_VENDOR));
         sRenderer       = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
-        auto * pGLSLVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+        auto * pGLSLVersion = reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION));
 
         if (sVendor.empty() || sRenderer.empty()) {
                 throw(std::runtime_error("failed to get OpenGL vendor or renderer"));

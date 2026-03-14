@@ -1,8 +1,8 @@
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.10.0)
 
 project(SimpleEngine C CXX)
-project(SimpleEngine VERSION 0.2.0)
+project(SimpleEngine VERSION 0.3.0)
 
 option(GPU                      "Compile with direct rendering support"  ON)
 option(ASAN                     "Compile with address sanitizer"         OFF)
@@ -23,6 +23,7 @@ link_directories(               /usr/lib
                                 ~/usr/lib
                                 )
 
+set(CMAKE_FIND_USE_PACKAGE_REGISTRY OFF)
 set(CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/cmake_mods"
                                 "${CMAKE_MODULE_PATH}" )
 

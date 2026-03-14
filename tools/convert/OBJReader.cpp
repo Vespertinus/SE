@@ -22,6 +22,7 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
                        ModelData & oModel,
                        ImportCtx & oCtx) {
 
+        std::string                             warn;
         std::string                             err;
         tinyobj::attrib_t                       oAttrib;
         std::vector<tinyobj::shape_t>           vShapes;
@@ -44,9 +45,13 @@ SE::ret_code_t ReadOBJ(const std::string & sPath,
         bool ret = tinyobj::LoadObj(&oAttrib,
                                     &vShapes,
                                     &vMaterials,
+                                    &warn,
                                     &err,
                                     sPath.c_str(),
                                     sBaseDir.c_str());
+        if (!warn.empty()) {
+                log_w("loading obj file '{}', warning: '{}'", sPath, warn);
+        }
         if (!err.empty()) {
                 log_e("failed to load obj file '{}', reason: '{}'", sPath, err);
                 return SE::uREAD_FILE_ERROR;

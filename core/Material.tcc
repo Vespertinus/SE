@@ -3,8 +3,7 @@ namespace SE  {
 
 
 Material::Material(const std::string & sName, const rid_t new_rid) :
-        ResourceHolder(new_rid, sName),
-        pShader(nullptr) {
+        ResourceHolder(new_rid, sName) {
 
         static const size_t max_file_size = 1024 * 1024 * 10;
 
@@ -46,21 +45,26 @@ Material::Material(
         Load(pMaterial);
 }
 
-Material::Material(const std::string & sName, const rid_t new_rid, SE::ShaderProgram * pNewShader) :
+Material::Material(const std::string & sName, const rid_t new_rid, H<SE::ShaderProgram> hNewShader) :
         ResourceHolder(new_rid, sName),
-        pShader(pNewShader) {
+        hShader(hNewShader) {
 
-        if (pShader->GetBlockDescriptor(UniformUnitInfo::Type::MATERIAL) ) {
-
+        auto * pShader = GetShader();
+        if (pShader && pShader->GetBlockDescriptor(UniformUnitInfo::Type::MATERIAL)) {
                 pBlock = std::make_unique<UniformBlock>(pShader, UniformUnitInfo::Type::MATERIAL);
         }
+}
+
+ShaderProgram * Material::GetShader() const {
+
+        return GetResource(hShader);
 }
 
 std::string Material::Str() const {
 
         return fmt::format("Material name: '{}', shader: '{}', textures cnt: {}, variables cnt: {}",
                         sName,
-                        pShader->Name(),
+                        GetShader()->Name(),
                         mTextures.size(),
                         mShaderVariables.size());
 }
@@ -77,23 +81,12 @@ void Material::Apply() const {
                                 oShaderVar.second);
         }
 }
-/*
-void Material::SetShader(SE::ShaderProgram * pNewShader) {
-
-        mShaderVariables.clear();
-        mTextures.clear();
-
-        pShader = pNewShader;
-
-        //TODO fill variables list?;
-        //FIXME reallocate block.. and ShaderProgramState
-}*/
 
 void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
 
         //setup shader
         if (pMaterial->shader()->path() != nullptr) {
-                pShader  = CreateResource<ShaderProgram>(
+                hShader = CreateResource<ShaderProgram>(
                                 GetSystem<Config>().sResourceDir + pMaterial->shader()->path()->c_str() );
         }
         else if (pMaterial->shader()->shader() != nullptr) {
@@ -107,8 +100,9 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
                                                         sName)));
         }
 
-        if (pShader->GetBlockDescriptor(UniformUnitInfo::Type::MATERIAL) ) {
+        auto * pShader = GetShader();
 
+        if (pShader->GetBlockDescriptor(UniformUnitInfo::Type::MATERIAL)) {
                 pBlock = std::make_unique<UniformBlock>(pShader, UniformUnitInfo::Type::MATERIAL);
         }
 
@@ -118,9 +112,9 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
         for (uint32_t i = 0; i < textures_cnt; ++i) {
 
                 auto * pTextureHolder = pMaterial->textures()->Get(i);
-                auto * pTex = LoadTexture(pTextureHolder);
+                auto hTex = LoadTexture(pTextureHolder);
 
-                if (!pTex) {
+                if (!hTex.IsValid()) {
 
                         throw(std::runtime_error(fmt::format("wrong texture state, path {:p}, name {:p}, stock: {:p}, material name: '{}'",
                                                         (void *)pTextureHolder->path(),
@@ -128,7 +122,7 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
                                                         (void *)pTextureHolder->stock(),
                                                         sName)));
                 }
-                mTextures.emplace(static_cast<TextureUnit>(pTextureHolder->unit()), pTex);
+                mTextures.emplace(static_cast<TextureUnit>(pTextureHolder->unit()), hTex);
         }
 
         ret_code_t res;
@@ -179,8 +173,9 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
 
 }
 
-ret_code_t Material::SetTexture(const StrID name, TTexture * pTex) {
+ret_code_t Material::SetTexture(const StrID name, H<TTexture> hTex) {
 
+        auto * pShader = GetShader();
         auto oTexInfo = pShader->GetTextureInfo(name);
 
         if (!oTexInfo) {
@@ -190,13 +185,14 @@ ret_code_t Material::SetTexture(const StrID name, TTexture * pTex) {
                 return uWRONG_INPUT_DATA;
         }
 
-        mTextures.insert_or_assign(oTexInfo->get().unit_index, pTex);
+        mTextures.insert_or_assign(oTexInfo->get().unit_index, hTex);
 
         return uSUCCESS;
 }
 
-ret_code_t Material::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
+ret_code_t Material::SetTexture(const TextureUnit unit_index, H<TTexture> hTex) {
 
+        auto * pShader = GetShader();
         if (!pShader->OwnTextureUnit(unit_index)) {
                 uint32_t unit_num = static_cast<uint32_t>(unit_index);
                 log_e("texture unit {} unused, shader program: '{}'",
@@ -205,7 +201,7 @@ ret_code_t Material::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
                 return uWRONG_INPUT_DATA;
         }
 
-        mTextures.insert_or_assign(unit_index, pTex);
+        mTextures.insert_or_assign(unit_index, hTex);
         return uSUCCESS;
 }
 
@@ -213,22 +209,16 @@ TTexture * Material::GetTexture(const TextureUnit unit_index) const {
 
         auto it = mTextures.find(unit_index);
         if (it != mTextures.end()) {
-                return it->second;
+                return GetResource(it->second);
         }
         return nullptr;
 }
 
-ShaderProgram * Material::GetShader() const {
 
-        return pShader;
-}
+H<TTexture> LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
 
-
-
-TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
-
-        TTexture * pTex;
-        auto LoadTex = [](auto store_type, auto * pHolder, auto && ... args) -> TTexture * {
+        H<TTexture> hTex;
+        auto LoadTex = [](auto store_type, auto * pHolder, auto && ... args) -> H<TTexture> {
 
                 switch (store_type) {
 
@@ -255,12 +245,12 @@ TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
                                 }
                         default:
                                 log_e("unknown StoreSettings type: '{}'", SE::FlatBuffers::EnumNameStoreSettings(store_type));
-                                return nullptr;
+                                return H<SE::TTexture>::Null();
                 }
         };
 
         if (pTextureHolder->path() != nullptr) {
-                pTex = LoadTex(
+                hTex = LoadTex(
                                 pTextureHolder->store_type(),
                                 pTextureHolder,
                                 pTextureHolder->path()->c_str());
@@ -278,7 +268,7 @@ TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
                         pTextureHolder->stock()->height()
                 };
 
-                pTex = LoadTex(
+                hTex = LoadTex(
                                 pTextureHolder->store_type(),
                                 pTextureHolder,
                                 pTextureHolder->name()->c_str(),
@@ -290,10 +280,10 @@ TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
                                 (void *)pTextureHolder->path(),
                                 (void *)pTextureHolder->name(),
                                 (void *)pTextureHolder->stock() );
-                return nullptr;
+                return H<TTexture>::Null();
         }
 
-        return pTex;
+        return hTex;
 }
 
 const UniformBlock * Material::GetUniformBlock() const {
@@ -309,7 +299,7 @@ const Material::TexturesMap * Material::GetTextures() const {
 
 std::string Material::StrDump(const size_t indent) const {
 
-        std::string sResult = fmt::format("{:>{}} Material: shader: '{}'\n", ">", indent, pShader->Name());
+        std::string sResult = fmt::format("{:>{}} Material: shader: '{}'\n", ">", indent, GetShader()->Name());
         if (pBlock) {
                 sResult += pBlock->StrDump(indent + 2) + "\n";
         }
@@ -387,11 +377,14 @@ std::string Material::StrDump(const size_t indent) const {
                                 ">",
                                 indent + 4,
                                 static_cast<int32_t>(oTexItem.first));
-                sResult += oTexItem.second->StrDump(indent + 4) + "\n";
+                if (auto * pTex = GetResource(oTexItem.second)) {
+                        sResult += pTex->StrDump(indent + 4) + "\n";
+                }
         }
 
         return sResult;
 }
 
 }
+
 

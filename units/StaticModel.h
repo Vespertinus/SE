@@ -14,8 +14,8 @@ class StaticModel {
 
         protected:
 
-        TMesh                         * pMesh;
-        Material                      * pMaterial;
+        H<TMesh>                   hMesh;
+        H<Material>                hMaterial;
         TSceneTree::TSceneNodeExact   * pNode;
         std::vector<RenderCommand>      vRenderCommands;
 
@@ -27,15 +27,15 @@ class StaticModel {
 
         StaticModel(TSceneTree::TSceneNodeExact * pNewNode);
         StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
-                    TMesh * pNewMesh,
-                    Material * pNewMaterial);
+                    H<TMesh> hNewMesh,
+                    H<Material> hNewMaterial);
         StaticModel(TSceneTree::TSceneNodeExact  * pNewNode,
                     const SE::FlatBuffers::StaticModel * pModel);
         ~StaticModel() noexcept;
 
         //Update... ?
-        void            SetMesh(TMesh * pNewMesh);
-        void            SetMaterial(Material * pNewMaterial);
+        void            SetMesh(H<TMesh> hNewMesh);
+        void            SetMaterial(H<Material> hNewMaterial);
         Material *      GetMaterial() const;
         void            Enable();
         void            Disable();

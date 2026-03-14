@@ -15,8 +15,8 @@ class Scene {
         HELPERS::Elipse   oBigElipse;
         //DEBUG code ___End_____
 
-        Camera          * pCamera;
-        TSceneTree      * pSceneTree;
+        Camera            * pCamera;
+        H<TSceneTree>  hSceneTree;
 
         public:
         //empty settings

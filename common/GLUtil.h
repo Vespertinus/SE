@@ -114,7 +114,7 @@ static inline void PrintGLInfo() {
                 throw(std::runtime_error("failed to get OpenGL vendor or renderer"));
         }
 
-        log_d("OpenGL version: {}.{}, vendor: '{}', renderer: '{}'", gl_major, gl_minor, pVendor, pRenderer);
+        log_d("OpenGL version: {}.{}, vendor: '{}', renderer: '{}'", gl_major, gl_minor, reinterpret_cast<const char*>(pVendor), reinterpret_cast<const char*>(pRenderer));
 
         glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &val);
         log_d("GL_MAX_VERTEX_ATTRIBS: {}", val);
@@ -149,7 +149,7 @@ static inline void PrintGLInfo() {
         log_d("{} extensions supported", val);
 
         for (auto i = 0; i < val; ++i) {
-                log_d("'{}'", glGetStringi(GL_EXTENSIONS, i));
+                log_d("'{}'", reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i)));
         }
 }
 

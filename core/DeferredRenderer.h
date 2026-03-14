@@ -23,8 +23,8 @@ template <class TVisibilityManager> class DeferredRenderer {
         GBuffer  oGBuffer;
 
         // HDR accumulation buffer (shares depth-stencil with GBuffer)
-        FrameBuffer oHdrFBO;
-        TTexture  * pHdrTex { nullptr };
+        FrameBuffer      oHdrFBO;
+        H<TTexture> hHdrTex;
 
         // SSAO
         SSAOBuffer oSSAOBuffer;
@@ -41,11 +41,11 @@ template <class TVisibilityManager> class DeferredRenderer {
         uint32_t sphere_index_count { 0 };
 
         // Shader programs
-        ShaderProgram * pAmbientDirShader  { nullptr };
-        ShaderProgram * pPointLightShader  { nullptr };
-        ShaderProgram * pSSAOShader        { nullptr };
-        ShaderProgram * pSSAOBlurShader    { nullptr };
-        ShaderProgram * pToneMapShader     { nullptr };
+        H<ShaderProgram> hAmbientDirShader;
+        H<ShaderProgram> hPointLightShader;
+        H<ShaderProgram> hSSAOShader;
+        H<ShaderProgram> hSSAOBlurShader;
+        H<ShaderProgram> hToneMapShader;
 
         // Lighting UBO for ambient+directional pass
         std::unique_ptr<UniformBlock> pLightingBlock;

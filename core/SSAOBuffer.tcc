@@ -13,10 +13,11 @@ void SSAOBuffer::CreateNoiseTex() {
         for (auto & v : noise) { v = dist(rng); }
 
         TextureStock ts { nullptr, 0, GL_RG, GL_RG16F, 4, 4 };
-        pNoiseTex = CreateResource<TTexture>("ssao/noise", ts,
+        hNoiseTex = CreateResource<TTexture>("ssao/noise", ts,
                 StoreTexture2DRenderTarget::Settings(GL_FLOAT, GL_NEAREST, GL_NEAREST, GL_REPEAT));
 
         // Upload noise data (StoreTexture2DRenderTarget allocates empty texture, so sub-upload)
+        auto * pNoiseTex = GetResource(hNoiseTex);
         glBindTexture(GL_TEXTURE_2D, pNoiseTex->GetID());
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4, 4, GL_RG, GL_FLOAT, noise);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -26,21 +27,21 @@ void SSAOBuffer::Create() {
 
         TextureStock ts { nullptr, 0, GL_RED, GL_R8, size.x, size.y };
 
-        pSSAOTex = CreateResource<TTexture>("ssao/raw", ts,
+        hSSAOTex = CreateResource<TTexture>("ssao/raw", ts,
                 StoreTexture2DRenderTarget::Settings(GL_UNSIGNED_BYTE));
-        pBlurTex = CreateResource<TTexture>("ssao/blur", ts,
+        hBlurTex = CreateResource<TTexture>("ssao/blur", ts,
                 StoreTexture2DRenderTarget::Settings(GL_UNSIGNED_BYTE));
 
         // SSAO FBO
         oFboSSAO.Create();
         oFboSSAO.Bind();
-        oFboSSAO.AttachColor(0, pSSAOTex);
+        oFboSSAO.AttachColor(0, GetResource(hSSAOTex));
         oFboSSAO.CheckComplete();
 
         // Blur FBO
         oFboBlur.Create();
         oFboBlur.Bind();
-        oFboBlur.AttachColor(0, pBlurTex);
+        oFboBlur.AttachColor(0, GetResource(hBlurTex));
         oFboBlur.CheckComplete();
 
         oFboBlur.Unbind();
@@ -52,16 +53,16 @@ void SSAOBuffer::Destroy() noexcept {
         oFboBlur.Destroy();
 
         auto & rm = TResourceManager::Instance();
-        if (pSSAOTex) { rm.Destroy<TTexture>(pSSAOTex->RID()); pSSAOTex = nullptr; }
-        if (pBlurTex) { rm.Destroy<TTexture>(pBlurTex->RID()); pBlurTex = nullptr; }
+        if (hSSAOTex.IsValid()) { rm.Destroy(hSSAOTex); hSSAOTex = H<TTexture>::Null(); }
+        if (hBlurTex.IsValid()) { rm.Destroy(hBlurTex); hBlurTex = H<TTexture>::Null(); }
 }
 
 SSAOBuffer::~SSAOBuffer() noexcept {
 
         Destroy();
-        if (pNoiseTex) {
-                TResourceManager::Instance().Destroy<TTexture>(pNoiseTex->RID());
-                pNoiseTex = nullptr;
+        if (hNoiseTex.IsValid()) {
+                TResourceManager::Instance().Destroy(hNoiseTex);
+                hNoiseTex = H<TTexture>::Null();
         }
 }
 
@@ -69,7 +70,7 @@ void SSAOBuffer::Resize(glm::uvec2 new_size) {
 
         size = new_size;
         Destroy();
-        if (!pNoiseTex) { CreateNoiseTex(); }
+        if (!hNoiseTex.IsValid()) { CreateNoiseTex(); }
         Create();
 }
 
@@ -92,5 +93,8 @@ void SSAOBuffer::Unbind() {
         oFboSSAO.Unbind();
 }
 
+TTexture * SSAOBuffer::GetSSAOTex()  const { return GetResource(hSSAOTex); }
+TTexture * SSAOBuffer::GetBlurTex()  const { return GetResource(hBlurTex); }
+TTexture * SSAOBuffer::GetNoiseTex() const { return GetResource(hNoiseTex); }
 
 } // namespace SE

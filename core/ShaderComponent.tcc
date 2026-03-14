@@ -62,7 +62,7 @@ void ShaderComponent::Load(const SE::FlatBuffers::ShaderComponent * pShader) {
                 auto & oConfig = GetSystem<Config>();
 
                 for (size_t i = 0; i < dependencies_cnt; ++i) {
-                        ShaderComponent * pDependShader = CreateResource<ShaderComponent>(
+                        ShaderComponent * pDependShader = CreateRawResource<ShaderComponent>(
                                         oConfig.sResourceDir +
                                         pDependenciesFB->Get(i)->c_str());
                         vDependencies.emplace_back(pDependShader);

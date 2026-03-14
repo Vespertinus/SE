@@ -25,6 +25,7 @@
 #include <CommonTypes.h>
 
 #include <ResourceHolder.h>
+#include <ResourceHandle.h>
 #include <ResourceManager.h>
 
 #include <Engine.h>
@@ -51,7 +52,8 @@
 namespace SE {
 
 //global helper functions
-template <class Resource, class ... TConcreateSettings> Resource * CreateResource (const std::string & sName, const TConcreateSettings & ... oSettings);
+template <class Resource, class ... TConcreateSettings> H<Resource> CreateResource (const std::string & sName, const TConcreateSettings & ... oSettings);
+template <class Resource> Resource * GetResource(H<Resource> h);
 template <class TSystem> TSystem & GetSystem();
 
 
@@ -104,9 +106,9 @@ namespace SE {
 
 //engine subsytem types
 using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
-using TRenderer = Renderer<TVisibilityManager>;
+//using TRenderer = Renderer<TVisibilityManager>;
 // To use deferred PBR renderer, replace the line above with:
-//using TRenderer = DeferredRenderer<TVisibilityManager>;
+using TRenderer = DeferredRenderer<TVisibilityManager>;
 
 using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer, InputManager>;
 
@@ -169,14 +171,32 @@ typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourc
 
 
 
-template <class Resource, class ... TConcreateSettings> Resource * CreateResource (const std::string & sPath, const TConcreateSettings & ... oSettings) {
+template <class Resource, class ... TConcreateSettings> H<Resource> CreateResource (const std::string & sPath, const TConcreateSettings & ... oSettings) {
 
         return TResourceManager::Instance().Create<Resource>(sPath, oSettings...);
 }
 
-template <class Resource> void DestroyResource (Resource * pResource) {
+template <class Resource> Resource * GetResource(H<Resource> h) {
 
-        TResourceManager::Instance().Destroy<Resource>(pResource->RID());
+        return TResourceManager::Instance().Get<Resource>(h);
+}
+
+template <class Resource, class ... TConcreateSettings>
+Resource * CreateRawResource(const std::string & sPath, const TConcreateSettings & ... oSettings) {
+        return GetResource(CreateResource<Resource>(sPath, oSettings...));
+}
+
+template <class Resource> void DestroyResource(H<Resource> h) {
+
+        TResourceManager::Instance().Destroy<Resource>(h);
+}
+
+template <class Resource> bool LockResource(H<Resource> h) {
+        return TResourceManager::Instance().Lock<Resource>(h);
+}
+
+template <class Resource> void UnlockResource(H<Resource> h) {
+        TResourceManager::Instance().Unlock<Resource>(h);
 }
 
 template <class TSystem> TSystem & GetSystem() {
@@ -185,6 +205,32 @@ template <class TSystem> TSystem & GetSystem() {
 }
 
 } //namespace SE
+
+namespace detail_h_fmt {
+    template <class T, class = void> struct has_str : std::false_type {};
+    template <class T> struct has_str<T, std::void_t<decltype(std::declval<const T&>().Str())>> : std::true_type {};
+
+    template <class T> std::enable_if_t<has_str<T>::value, std::string> maybe_str(const T * p) {
+        return p ? (' ' + p->Str()) : std::string{};
+    }
+    template <class T> std::enable_if_t<!has_str<T>::value, std::string> maybe_str(const T *) {
+        return {};
+    }
+}
+
+template <class T>
+struct fmt::formatter<SE::H<T>> : fmt::formatter<std::string> {
+    auto format(const SE::H<T> & h, fmt::format_context & ctx) const {
+        if (!h.IsValid()) {
+            //TODO abi::__cxa_demangle
+            auto s = fmt::format("H[null], type: {}", typeid(T).name());
+            return fmt::formatter<std::string>::format(s, ctx);
+        }
+        std::string s = fmt::format("H[idx={}, gen={}]", h.raw.index, h.raw.generation);
+        s += detail_h_fmt::maybe_str(SE::GetResource(h));
+        return fmt::formatter<std::string>::format(s, ctx);
+    }
+};
 
 #define INC_CUSTOM_SYSTEMS_IMPL
 #include <App.h>

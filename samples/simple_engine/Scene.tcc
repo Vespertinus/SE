@@ -6,8 +6,9 @@ namespace SE {
 Scene::Scene(const Settings & oSettings) :
         oSmallElipse(0, 0, 2, 10, 36),
         oBigElipse(0, 0, 2, 100, 36),
-        pSceneTree(CreateResource<TSceneTree>("resource/scene/test-01.sesc")) {
+        hSceneTree(CreateResource<TSceneTree>("resource/scene/test-01.sesc")) {
 
+        auto * pSceneTree = GetResource(hSceneTree);
         se_assert(pSceneTree);
 
         auto pCameraNode = pSceneTree->Create("MainCamera");

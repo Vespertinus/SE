@@ -15,6 +15,4 @@ endfunction()
 
 find_header_library("glm"               glm/glm.hpp "")
 find_header_library("loki"              loki/Typelist.h "")
-find_header_library("spdlog"              spdlog/spdlog.h "")
 
-find_header_library("spdlog"            spdlog/spdlog.h "")

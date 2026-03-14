@@ -2,18 +2,18 @@
 namespace SE {
 
 StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode) :
-        pMesh(CreateResource<SE::TMesh>(GetSystem<Config>().sResourceDir + "mesh/default-01.sems")),
-        pMaterial(CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/wireframe.semt")),
+        hMesh(CreateResource<SE::TMesh>(GetSystem<Config>().sResourceDir + "mesh/default-01.sems")),
+        hMaterial(CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/wireframe.semt")),
         pNode(pNewNode) {
 
         FillRenderCommands();
 }
 
 StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
-                         TMesh * pNewMesh,
-                         Material * pNewMaterial) :
-        pMesh(pNewMesh),
-        pMaterial(pNewMaterial),
+                         H<TMesh> hNewMesh,
+                         H<Material> hNewMaterial) :
+        hMesh(hNewMesh),
+        hMaterial(hNewMaterial),
         pNode(pNewNode) {
 
         FillRenderCommands();
@@ -31,11 +31,11 @@ StaticModel::StaticModel(
         const auto & oConfig = GetSystem<Config>();
 
         if (pModel->mesh()->path() != nullptr) {
-                pMesh = CreateResource<TMesh>(pModel->mesh()->path()->c_str());
+                hMesh = CreateResource<TMesh>(pModel->mesh()->path()->c_str());
         }
         else if (pModel->mesh()->name() != nullptr && pModel->mesh()->mesh() != nullptr) {
 
-                pMesh = CreateResource<TMesh>(pModel->mesh()->name()->c_str(), pModel->mesh()->mesh());
+                hMesh = CreateResource<TMesh>(pModel->mesh()->name()->c_str(), pModel->mesh()->mesh());
         }
         else {
                 throw(std::runtime_error(fmt::format("wrong mesh state, mesh {:p}, name {:p}",
@@ -46,10 +46,10 @@ StaticModel::StaticModel(
 
         if (pModel->material()) {
                 if (pModel->material()->path() != nullptr) {
-                        pMaterial = CreateResource<Material>(oConfig.sResourceDir + pModel->material()->path()->c_str());
+                        hMaterial = CreateResource<Material>(oConfig.sResourceDir + pModel->material()->path()->c_str());
                 }
                 else if (pModel->material()->name() != nullptr && pModel->material()->material() != nullptr) {
-                        pMaterial = CreateResource<Material>(
+                        hMaterial = CreateResource<Material>(
                                         pModel->material()->name()->c_str(),
                                         pModel->material()->material());
                 }
@@ -61,7 +61,7 @@ StaticModel::StaticModel(
                 }
         }
         else {
-                pMaterial = CreateResource<SE::Material>(oConfig.sResourceDir + "material/wireframe.semt");
+                hMaterial = CreateResource<SE::Material>(oConfig.sResourceDir + "material/wireframe.semt");
         }
 
         FillRenderCommands();
@@ -83,15 +83,15 @@ void StaticModel::Disable() {
 }
 
 
-void StaticModel::SetMesh(TMesh * pNewMesh) {
+void StaticModel::SetMesh(H<TMesh> hNewMesh) {
 
-        pMesh = pNewMesh;
+        hMesh = hNewMesh;
         FillRenderCommands();
 }
 
-void StaticModel::SetMaterial(Material * pNewMaterial) {
+void StaticModel::SetMaterial(H<Material> hNewMaterial) {
 
-        pMaterial = pNewMaterial;
+        hMaterial = hNewMaterial;
 
         FillRenderCommands();
         /*
@@ -102,7 +102,7 @@ void StaticModel::SetMaterial(Material * pNewMaterial) {
 
 std::string StaticModel::Str() const {
 
-        return fmt::format("StaticModel: Mesh: '{}', Material: '{}'", pMesh->Name(), pMaterial->Name());
+        return fmt::format("StaticModel: Mesh: '{}', Material: '{}'", GetResource(hMesh)->Name(), GetResource(hMaterial)->Name());
 }
 
 const std::vector<RenderCommand> & StaticModel::GetRenderCommands() const {
@@ -112,13 +112,13 @@ const std::vector<RenderCommand> & StaticModel::GetRenderCommands() const {
 
 void StaticModel::FillRenderCommands() {
 
-        auto & vShapes = pMesh->GetShapes();
+        auto & vShapes = GetResource(hMesh)->GetShapes();
 
         vRenderCommands.clear();
         vRenderCommands.reserve(vShapes.size());
 
         for (auto & oSubMesh : vShapes) {
-                vRenderCommands.emplace_back(&oSubMesh, pMaterial, pNode->GetTransform());
+                vRenderCommands.emplace_back(&oSubMesh, GetResource(hMaterial), pNode->GetTransform());
         }
 
         //TODO if already enabled -> invalidate render commands list!
@@ -129,12 +129,12 @@ void StaticModel::FillRenderCommands() {
 
 Material * StaticModel::GetMaterial() const {
 
-                return pMaterial;
+                return GetResource(hMaterial);
 }
 
 void StaticModel::DrawDebug() const {
 
-        GetSystem<DebugRenderer>().DrawBBox(pMesh->GetBBox(), pNode->GetTransform());
+        GetSystem<DebugRenderer>().DrawBBox(GetResource(hMesh)->GetBBox(), pNode->GetTransform());
 }
 
 }

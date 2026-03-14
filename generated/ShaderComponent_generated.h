@@ -6,6 +6,13 @@
 
 #include "flatbuffers/flatbuffers.h"
 
+// Ensure the included flatbuffers.h is the same version as when this file was
+// generated, otherwise it may not be compatible.
+static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+              FLATBUFFERS_VERSION_MINOR == 5 &&
+              FLATBUFFERS_VERSION_REVISION == 26,
+             "Non-compatible flatbuffers version included");
+
 namespace SE {
 namespace FlatBuffers {
 
@@ -40,33 +47,33 @@ inline const char * const *EnumNamesShaderType() {
 }
 
 inline const char *EnumNameShaderType(ShaderType e) {
-  if (flatbuffers::IsOutRange(e, ShaderType::VERTEX, ShaderType::GEOMETRY)) return "";
+  if (::flatbuffers::IsOutRange(e, ShaderType::VERTEX, ShaderType::GEOMETRY)) return "";
   const size_t index = static_cast<size_t>(e) - static_cast<size_t>(ShaderType::VERTEX);
   return EnumNamesShaderType()[index];
 }
 
-struct ShaderComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct ShaderComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ShaderComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DEPENDENCIES = 4,
     VT_TYPE = 6,
     VT_SOURCE = 8
   };
-  const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *dependencies() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(VT_DEPENDENCIES);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *dependencies() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_DEPENDENCIES);
   }
   SE::FlatBuffers::ShaderType type() const {
     return static_cast<SE::FlatBuffers::ShaderType>(GetField<uint8_t>(VT_TYPE, 2));
   }
-  const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *source() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(VT_SOURCE);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *source() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_SOURCE);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_DEPENDENCIES) &&
            verifier.VerifyVector(dependencies()) &&
            verifier.VerifyVectorOfStrings(dependencies()) &&
-           VerifyField<uint8_t>(verifier, VT_TYPE) &&
+           VerifyField<uint8_t>(verifier, VT_TYPE, 1) &&
            VerifyOffsetRequired(verifier, VT_SOURCE) &&
            verifier.VerifyVector(source()) &&
            verifier.VerifyVectorOfStrings(source()) &&
@@ -76,34 +83,34 @@ struct ShaderComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct ShaderComponentBuilder {
   typedef ShaderComponent Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_dependencies(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> dependencies) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_dependencies(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> dependencies) {
     fbb_.AddOffset(ShaderComponent::VT_DEPENDENCIES, dependencies);
   }
   void add_type(SE::FlatBuffers::ShaderType type) {
     fbb_.AddElement<uint8_t>(ShaderComponent::VT_TYPE, static_cast<uint8_t>(type), 2);
   }
-  void add_source(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> source) {
+  void add_source(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> source) {
     fbb_.AddOffset(ShaderComponent::VT_SOURCE, source);
   }
-  explicit ShaderComponentBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ShaderComponentBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<ShaderComponent> Finish() {
+  ::flatbuffers::Offset<ShaderComponent> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<ShaderComponent>(end);
+    auto o = ::flatbuffers::Offset<ShaderComponent>(end);
     fbb_.Required(o, ShaderComponent::VT_SOURCE);
     return o;
   }
 };
 
-inline flatbuffers::Offset<ShaderComponent> CreateShaderComponent(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> dependencies = 0,
+inline ::flatbuffers::Offset<ShaderComponent> CreateShaderComponent(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> dependencies = 0,
     SE::FlatBuffers::ShaderType type = SE::FlatBuffers::ShaderType::FRAGMENT,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> source = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> source = 0) {
   ShaderComponentBuilder builder_(_fbb);
   builder_.add_source(source);
   builder_.add_dependencies(dependencies);
@@ -111,13 +118,13 @@ inline flatbuffers::Offset<ShaderComponent> CreateShaderComponent(
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<ShaderComponent> CreateShaderComponentDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<flatbuffers::Offset<flatbuffers::String>> *dependencies = nullptr,
+inline ::flatbuffers::Offset<ShaderComponent> CreateShaderComponentDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *dependencies = nullptr,
     SE::FlatBuffers::ShaderType type = SE::FlatBuffers::ShaderType::FRAGMENT,
-    const std::vector<flatbuffers::Offset<flatbuffers::String>> *source = nullptr) {
-  auto dependencies__ = dependencies ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*dependencies) : 0;
-  auto source__ = source ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*source) : 0;
+    const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *source = nullptr) {
+  auto dependencies__ = dependencies ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*dependencies) : 0;
+  auto source__ = source ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*source) : 0;
   return SE::FlatBuffers::CreateShaderComponent(
       _fbb,
       dependencies__,
@@ -126,11 +133,11 @@ inline flatbuffers::Offset<ShaderComponent> CreateShaderComponentDirect(
 }
 
 inline const SE::FlatBuffers::ShaderComponent *GetShaderComponent(const void *buf) {
-  return flatbuffers::GetRoot<SE::FlatBuffers::ShaderComponent>(buf);
+  return ::flatbuffers::GetRoot<SE::FlatBuffers::ShaderComponent>(buf);
 }
 
 inline const SE::FlatBuffers::ShaderComponent *GetSizePrefixedShaderComponent(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::ShaderComponent>(buf);
+  return ::flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::ShaderComponent>(buf);
 }
 
 inline const char *ShaderComponentIdentifier() {
@@ -138,17 +145,22 @@ inline const char *ShaderComponentIdentifier() {
 }
 
 inline bool ShaderComponentBufferHasIdentifier(const void *buf) {
-  return flatbuffers::BufferHasIdentifier(
+  return ::flatbuffers::BufferHasIdentifier(
       buf, ShaderComponentIdentifier());
 }
 
+inline bool SizePrefixedShaderComponentBufferHasIdentifier(const void *buf) {
+  return ::flatbuffers::BufferHasIdentifier(
+      buf, ShaderComponentIdentifier(), true);
+}
+
 inline bool VerifyShaderComponentBuffer(
-    flatbuffers::Verifier &verifier) {
+    ::flatbuffers::Verifier &verifier) {
   return verifier.VerifyBuffer<SE::FlatBuffers::ShaderComponent>(ShaderComponentIdentifier());
 }
 
 inline bool VerifySizePrefixedShaderComponentBuffer(
-    flatbuffers::Verifier &verifier) {
+    ::flatbuffers::Verifier &verifier) {
   return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::ShaderComponent>(ShaderComponentIdentifier());
 }
 
@@ -157,14 +169,14 @@ inline const char *ShaderComponentExtension() {
 }
 
 inline void FinishShaderComponentBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> root) {
+    ::flatbuffers::FlatBufferBuilder &fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> root) {
   fbb.Finish(root, ShaderComponentIdentifier());
 }
 
 inline void FinishSizePrefixedShaderComponentBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> root) {
+    ::flatbuffers::FlatBufferBuilder &fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> root) {
   fbb.FinishSizePrefixed(root, ShaderComponentIdentifier());
 }
 

@@ -30,6 +30,7 @@ ImGuiWrapper::~ImGuiWrapper() {
 
         ImGuiIO& io = ImGui::GetIO();
         io.Fonts->TexID = 0;
+        UnlockResource(hFontTex);
         ImGui::DestroyContext();
 
         glDeleteBuffers(1, &vbo_id);
@@ -80,7 +81,7 @@ void ImGuiWrapper::InitWndData() {
 
 void ImGuiWrapper::InitGLData() {
 
-        pShader  = CreateResource<SE::ShaderProgram>(GetSystem<Config>().sResourceDir + "shader_program/imgui.sesp");
+        hShader = CreateResource<SE::ShaderProgram>(GetSystem<Config>().sResourceDir + "shader_program/imgui.sesp");
 
         uint32_t pos_location,
                  uv_location,
@@ -134,7 +135,7 @@ void ImGuiWrapper::BuildFontTex() {
 
         io.Fonts->GetTexDataAsRGBA32(&pPixels, &width, &height);
 
-        pFontTex = CreateResource<SE::TTexture>(
+        hFontTex = CreateResource<SE::TTexture>(
                         "ImGuiFontTexture",
                         TextureStock {
                                 pPixels,
@@ -146,7 +147,8 @@ void ImGuiWrapper::BuildFontTex() {
                         },
                         StoreTexture2D::Settings(false));
 
-        io.Fonts->TexID = (ImTextureID)pFontTex;
+        LockResource(hFontTex);
+        io.Fonts->TexID = (ImTextureID)GetResource(hFontTex);
 }
 
 void ImGuiWrapper::Render(const Event & oEvent [[maybe_unused]]) {
@@ -199,7 +201,7 @@ void ImGuiWrapper::Render(const Event & oEvent [[maybe_unused]]) {
         auto & oGraphicsState = GetSystem<GraphicsState>();
 
         oGraphicsState.SetVao(vao_id);
-        oGraphicsState.SetShaderProgram(pShader);
+        oGraphicsState.SetShaderProgram(GetResource(hShader));
         oGraphicsState.SetVariable(mat_id, mOrtho);
 
         //gen buf to init gl

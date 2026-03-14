@@ -23,7 +23,7 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
         mBindPose = BuildTransform(pMeshBindPose);
 
         if (pHolder->path() != nullptr) {
-                pShell = CreateResource<CharacterShell>(GetSystem<Config>().sResourceDir + pHolder->path()->c_str(), pTargetNode);
+                hShell = CreateResource<CharacterShell>(GetSystem<Config>().sResourceDir + pHolder->path()->c_str(), pTargetNode);
         }
         else if (pHolder->name() != nullptr && pHolder->shell() != nullptr) {
                 /**TODO
@@ -35,7 +35,7 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                                 pHolder->name()->c_str(),
                                 StrID(pTargetNode->GetScene()->Name()) );
 
-                pShell = CreateResource<CharacterShell>(
+                hShell = CreateResource<CharacterShell>(
                                 sShellName,
                                 pHolder->shell(),
                                 pTargetNode);
@@ -48,6 +48,7 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
                 return uWRONG_INPUT_DATA;
         }
 
+        auto * pShell = GetResource(hShell);
 
         //CHECK scene
         {
@@ -117,30 +118,32 @@ ret_code_t AnimatedModel::SkeletonPart::FillData(
 
 
 AnimatedModel::AnimatedModel(TSceneTree::TSceneNodeExact * pNewNode,
-                             TMesh * pNewMesh,
-                             Material * pNewMaterial,
-                             TTexture * pNewTexBuf,
+                             H<TMesh> hNewMesh,
+                             H<Material> hNewMaterial,
+                             H<TTexture> hNewTexBuf,
                              const uint8_t new_blendshapes_cnt) :
-        StaticModel(pNewNode, pNewMesh, pNewMaterial),
-        pTexBuffer(pNewTexBuf),
+        StaticModel(pNewNode, hNewMesh, hNewMaterial),
+        hTexBuffer(hNewTexBuf),
         blendshapes_cnt(new_blendshapes_cnt) {
 
-        if (!pMaterial->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
+        auto * pMat = GetResource(hMaterial);
+
+        if (!pMat->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
 
                 throw(std::runtime_error(fmt::format(
                                                 "wrong material: '{}', shader: '{}', does not own TextureUnit::BUFFER, node: '{}'",
-                                                pMaterial->Name(),
-                                                pMaterial->GetShader()->Name(),
+                                                pMat->Name(),
+                                                pMat->GetShader()->Name(),
                                                 pNode->GetFullName()
                                                 )));
         }
 
-        pBlock = std::make_unique<UniformBlock>(pMaterial->GetShader(), UniformUnitInfo::Type::ANIMATION);
+        pBlock = std::make_unique<UniformBlock>(pMat->GetShader(), UniformUnitInfo::Type::ANIMATION);
         auto res = pBlock->SetVariable(BS_WEIGHTS_CNT, blendshapes_cnt);
         if (res != uSUCCESS) {
                 throw(std::runtime_error(fmt::format("failed to set blendshape cnt variable: '{}', shader: '{}', node: '{}'",
                                                 BS_WEIGHTS_CNT,
-                                                pMaterial->GetShader()->Name(),
+                                                pMat->GetShader()->Name(),
                                                 pNode->GetFullName())));
         }
 }
@@ -155,11 +158,11 @@ AnimatedModel::AnimatedModel(
         pNode = pNewNode;
 
         if (pModel->mesh()->path() != nullptr) {
-                pMesh = CreateResource<TMesh>(pModel->mesh()->path()->c_str());
+                hMesh = CreateResource<TMesh>(pModel->mesh()->path()->c_str());
         }
         else if (pModel->mesh()->name() != nullptr && pModel->mesh()->mesh() != nullptr) {
 
-                pMesh = CreateResource<TMesh>(pModel->mesh()->name()->c_str(), pModel->mesh()->mesh());
+                hMesh = CreateResource<TMesh>(pModel->mesh()->name()->c_str(), pModel->mesh()->mesh());
         }
         else {
                 throw(std::runtime_error(fmt::format("wrong mesh state, mesh {:p}, name {:p}",
@@ -170,10 +173,10 @@ AnimatedModel::AnimatedModel(
 
         if (pModel->material()) {
                 if (pModel->material()->path() != nullptr) {
-                        pMaterial = CreateResource<Material>(oConfig.sResourceDir + pModel->material()->path()->c_str());
+                        hMaterial = CreateResource<Material>(oConfig.sResourceDir + pModel->material()->path()->c_str());
                 }
                 else if (pModel->material()->name() != nullptr && pModel->material()->material() != nullptr) {
-                        pMaterial = CreateResource<Material>(
+                        hMaterial = CreateResource<Material>(
                                         pModel->material()->name()->c_str(),
                                         pModel->material()->material());
                 }
@@ -185,18 +188,20 @@ AnimatedModel::AnimatedModel(
                 }
         }
         else {
-                pMaterial = CreateResource<SE::Material>(oConfig.sResourceDir + "material/default_morph.semt");
+                hMaterial = CreateResource<SE::Material>(oConfig.sResourceDir + "material/default_morph.semt");
         }
 
-        pBlock = std::make_unique<UniformBlock>(pMaterial->GetShader(), UniformUnitInfo::Type::ANIMATION);
+        auto * pMat = GetResource(hMaterial);
+
+        pBlock = std::make_unique<UniformBlock>(pMat->GetShader(), UniformUnitInfo::Type::ANIMATION);
 
         if (pModel->blendshapes_weights()) {
 
-                if (!pMaterial->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
+                if (!pMat->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
 
                         throw(std::runtime_error(fmt::format(
                                                         "wrong material: '{}', does not own TextureUnit::BUFFER, node: '{}'",
-                                                        pMaterial->Name(),
+                                                        pMat->Name(),
                                                         pNode->GetFullName()
                                                         )));
                 }
@@ -204,12 +209,12 @@ AnimatedModel::AnimatedModel(
 
                 blendshapes_cnt = pModel->blendshapes_weights()->Length();
 
-                pTexBuffer = LoadTexture(pModel->blendshapes());
+                hTexBuffer = LoadTexture(pModel->blendshapes());
 
-                if (!pTexBuffer || static_cast<TextureUnit>(pModel->blendshapes()->unit()) != TextureUnit::BUFFER) {
+                if (!hTexBuffer.IsValid() || static_cast<TextureUnit>(pModel->blendshapes()->unit()) != TextureUnit::BUFFER) {
 
-                        throw(std::runtime_error(fmt::format("failed to load texture buffer from texture holder, tex: {:p}, texture_unit: {}, node: '{}'",
-                                                        (void *)pTexBuffer,
+                        throw(std::runtime_error(fmt::format("failed to load texture buffer from texture holder, tex valid: {}, texture_unit: {}, node: '{}'",
+                                                        hTexBuffer.IsValid(),
                                                         EnumNameTextureUnit(pModel->blendshapes()->unit()),
                                                         pNode->GetFullName())));
                 }
@@ -221,7 +226,7 @@ AnimatedModel::AnimatedModel(
                         if (res != uSUCCESS) {
                                 throw(std::runtime_error(fmt::format("failed to set blendshape weight variable: '{}', shader: '{}', node: '{}'",
                                                                 BS_WEIGHT,
-                                                                pMaterial->GetShader()->Name(),
+                                                                pMat->GetShader()->Name(),
                                                                 pNode->GetFullName())));
                         }
                 }
@@ -230,7 +235,7 @@ AnimatedModel::AnimatedModel(
                 if (res != uSUCCESS) {
                         throw(std::runtime_error(fmt::format("failed to set blendshape cnt variable: '{}', shader: '{}', node: '{}'",
                                                         BS_WEIGHTS_CNT,
-                                                        pMaterial->GetShader()->Name(),
+                                                        pMat->GetShader()->Name(),
                                                         pNode->GetFullName())));
                 }
 
@@ -243,8 +248,8 @@ AnimatedModel::~AnimatedModel() noexcept {
         Disable();
 
         //THINK move to enable \ disable ???
-        if (oSkeletonMeta.pShell) {
-                auto & vJointNodes = oSkeletonMeta.pShell->JointNodes();
+        if (auto * pShell = GetResource(oSkeletonMeta.hShell)) {
+                auto & vJointNodes = pShell->JointNodes();
 
                 for (auto cur_joint : oSkeletonMeta.vJointsIndexes) {
                         auto & pWeakJointNode = vJointNodes[cur_joint];
@@ -264,10 +269,11 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
 
         static StrID IndAttrID("JointIndices");
 
-        if (oSkeletonMeta.pShell && oSkeletonMeta.pShell->JointNodes().size()) {
+        auto * pShell = GetResource(oSkeletonMeta.hShell);
+        if (pShell && pShell->JointNodes().size()) {
 
 
-                for (auto & oAttrInfo : pMesh->GetAttrInfo()) {
+                for (auto & oAttrInfo : GetResource(hMesh)->GetAttrInfo()) {
                         if (oAttrInfo.first == IndAttrID) {
                                 joints_per_vertex = static_cast<uint8_t>(oAttrInfo.second);
                                 break;
@@ -283,7 +289,7 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
                 if (res != uSUCCESS) {
                         log_e("failed to set joints cnt: '{}', shader: '{}', node: '{}'",
                                         oSkeleton.vJointNodes.size(),
-                                        pMaterial->GetShader()->Name(),
+                                        GetResource(hMaterial)->GetShader()->Name(),
                                         pNode->GetFullName());
                         return res;
                 }
@@ -292,12 +298,12 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
                 if (res != uSUCCESS) {
                         log_e("failed to set joints per vertex var: '{}', shader: '{}', node: '{}'",
                                         joints_per_vertex,
-                                        pMaterial->GetShader()->Name(),
+                                        GetResource(hMaterial)->GetShader()->Name(),
                                         pNode->GetFullName());
                         return res;
                 }
 
-                auto & vJointNodes = oSkeletonMeta.pShell->JointNodes();
+                auto & vJointNodes = pShell->JointNodes();
 
                 for (auto cur_joint : oSkeletonMeta.vJointsIndexes) {
                         if (cur_joint >= vJointNodes.size()) {
@@ -335,7 +341,9 @@ void AnimatedModel::TargetTransformChanged(TSceneTree::TSceneNodeExact * pTarget
         skinning_dirty = true;
 }
 
-ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
+ret_code_t AnimatedModel::SetMaterial(H<Material> hNewMaterial) {
+
+        auto * pNewMaterial = GetResource(hNewMaterial);
 
         if (!pNewMaterial->GetShader()->OwnTextureUnit(TextureUnit::BUFFER)) {
 
@@ -401,7 +409,7 @@ ret_code_t AnimatedModel::SetMaterial(Material * pNewMaterial) {
         }
 
 
-        pMaterial = pNewMaterial;
+        hMaterial = hNewMaterial;
         if (oSkeletonMeta.vJointsIndexes.size()) {
                 skinning_dirty = true;
         }
@@ -415,7 +423,7 @@ void AnimatedModel::FillRenderCommands() {
         for (auto & oItem : vRenderCommands) {
                 oItem.State().SetBlock(UniformUnitInfo::Type::ANIMATION, pBlock.get());
                 if (blendshapes_cnt) {
-                        oItem.State().SetTexture(TextureUnit::BUFFER, pTexBuffer);
+                        oItem.State().SetTexture(TextureUnit::BUFFER, hTexBuffer);
                 }
         }
 }
@@ -423,10 +431,10 @@ void AnimatedModel::FillRenderCommands() {
 std::string AnimatedModel::Str() const {
 
         return fmt::format("AnimatedModel: Mesh: '{}', bs cnt: {}, joints: {}, Material: '{}'",
-                        pMesh->Name(),
+                        GetResource(hMesh)->Name(),
                         blendshapes_cnt,
                         oSkeletonMeta.vJointsIndexes.size(),
-                        pMaterial->Name()
+                        GetResource(hMaterial)->Name()
                         );
 }
 
@@ -471,12 +479,13 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
 
         if (!skinning_dirty) { return; }
 
+        auto * pShell = GetResource(oSkeletonMeta.hShell);
         log_d("need to update skinning: node: '{}', shell: '{}', skeleton: '{}'",
                         pNode->GetName(),
-                        oSkeletonMeta.pShell->Name(),
-                        oSkeletonMeta.pShell->GetSkeleton()->Name());
+                        pShell->Name(),
+                        pShell->GetSkeleton()->Name());
 
-        auto & vJointNodes      = oSkeletonMeta.pShell->JointNodes();
+        auto & vJointNodes      = pShell->JointNodes();
 
         for (size_t i = 0; i < oSkeletonMeta.vJointsIndexes.size(); ++i) {
 
@@ -551,10 +560,11 @@ void AnimatedModel::Disable() {
 void AnimatedModel::DrawDebug() const {
 
         StaticModel::DrawDebug();
-        if (!oSkeletonMeta.pShell) { return; }
+        auto * pShell = GetResource(oSkeletonMeta.hShell);
+        if (!pShell) { return; }
 
-        auto & vJointNodes      = oSkeletonMeta.pShell->JointNodes();
-        auto pSkeleton          = oSkeletonMeta.pShell->GetSkeleton();
+        auto & vJointNodes      = pShell->JointNodes();
+        auto pSkeleton          = pShell->GetSkeleton();
 
         for (uint32_t i = 0; i < oSkeletonMeta.vJointsIndexes.size(); ++i) {
 
@@ -577,7 +587,7 @@ void AnimatedModel::DrawDebug() const {
 }
 
 const CharacterShell * AnimatedModel::GetShell() const {
-        return oSkeletonMeta.pShell;
+        return GetResource(oSkeletonMeta.hShell);
 }
 
 const std::vector<uint8_t> & AnimatedModel::GetJointIndexes() const {

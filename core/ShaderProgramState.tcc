@@ -373,7 +373,7 @@ ret_code_t ShaderProgramState::SetTextures(const UniformUnitInfo::Type unit_id, 
         return uSUCCESS;
 }
 
-ret_code_t ShaderProgramState::SetTexture(const TextureUnit unit_index, TTexture * pTex) {
+ret_code_t ShaderProgramState::SetTexture(const TextureUnit unit_index, H<TTexture> hTex) {
 
         if (!pShader->OwnTextureUnit(unit_index)) {
                 uint32_t unit_num = static_cast<uint32_t>(unit_index);
@@ -383,7 +383,7 @@ ret_code_t ShaderProgramState::SetTexture(const TextureUnit unit_index, TTexture
                 return uWRONG_INPUT_DATA;
         }
 
-        mDefaultTextures.insert_or_assign(unit_index, pTex);
+        mDefaultTextures.insert_or_assign(unit_index, hTex);
         return uSUCCESS;
 }
 
@@ -397,11 +397,11 @@ void ShaderProgramState::Apply() const {
 
         for (auto oTexMapItem : mTextures) {
                 for (auto & oTexItem : *(oTexMapItem.second)) {
-                        oGraphicsState.SetTexture(oTexItem.first, oTexItem.second);
+                        oGraphicsState.SetTexture(oTexItem.first, GetResource(oTexItem.second));
                 }
         }
         for (auto & oTexItem : mDefaultTextures) {
-                oGraphicsState.SetTexture(oTexItem.first, oTexItem.second);
+                oGraphicsState.SetTexture(oTexItem.first, GetResource(oTexItem.second));
         }
 
         for (auto & oItem : mShaderBlocks) {
@@ -428,7 +428,9 @@ std::string ShaderProgramState::StrDump(const size_t indent) const {
                                         indent + 4,
                                         static_cast<int32_t>(oItem.first),
                                         static_cast<int32_t>(oTexItem.first));
-                        sResult += oTexItem.second->StrDump(indent + 4) + "\n";
+                        if (auto * pTex = GetResource(oTexItem.second)) {
+                                sResult += pTex->StrDump(indent + 4) + "\n";
+                        }
                 }
         }
 
@@ -438,7 +440,9 @@ std::string ShaderProgramState::StrDump(const size_t indent) const {
                                 ">",
                                 indent + 4,
                                 static_cast<int32_t>(oTexItem.first));
-                sResult += oTexItem.second->StrDump(indent + 4) + "\n";
+                if (auto * pTex = GetResource(oTexItem.second)) {
+                        sResult += pTex->StrDump(indent + 4) + "\n";
+                }
         }
 
         return sResult;

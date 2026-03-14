@@ -10,12 +10,12 @@ namespace SE {
 
 class GBuffer {
 
-        FrameBuffer oFBO;
-        TTexture * pRT0   { nullptr };   // albedo (RGB) + roughness (A) — GL_RGBA8
-        TTexture * pRT1   { nullptr };   // oct-normal (RG) + metallic (B) + AO (A) — GL_RGBA16F
-        TTexture * pRT2   { nullptr };   // emissive (RGB) — GL_R11F_G11F_B10F
-        TTexture * pDepth { nullptr };   // depth + stencil — GL_DEPTH24_STENCIL8
-        glm::uvec2 size   { 0 };
+        FrameBuffer         oFBO;
+        H<TTexture>    hRT0;    // albedo (RGB) + roughness (A) — GL_RGBA8
+        H<TTexture>    hRT1;    // oct-normal (RG) + metallic (B) + AO (A) — GL_RGBA16F
+        H<TTexture>    hRT2;    // emissive (RGB) — GL_R11F_G11F_B10F
+        H<TTexture>    hDepth;  // depth + stencil — GL_DEPTH24_STENCIL8
+        glm::uvec2          size   { 0 };
 
         void Create();
         void Destroy() noexcept;
@@ -31,10 +31,10 @@ public:
         void Unbind();  // bind FBO 0 back
 
         // Bind G-buffer textures (lighting pass).
-        TTexture * GetAlbedoRoughnessTex() const { return pRT0; }
-        TTexture * GetNormalMetallicTex()  const { return pRT1; }
-        TTexture * GetEmissiveTex()        const { return pRT2; }
-        TTexture * GetDepthTex()           const { return pDepth; }
+        TTexture * GetAlbedoRoughnessTex() const;
+        TTexture * GetNormalMetallicTex()  const;
+        TTexture * GetEmissiveTex()        const;
+        TTexture * GetDepthTex()           const;
 };
 
 } // namespace SE

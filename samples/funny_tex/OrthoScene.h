@@ -9,7 +9,7 @@ namespace FUNNY_TEX {
 
 class OrthoScene {
 
-        SE::Material    * pMaterial;
+        SE::H<SE::Material> hMaterial;
         SE::StaticModel * pModel;
         SE::TSceneTree  * pSceneTree;
         SE::Camera      * pCamera;

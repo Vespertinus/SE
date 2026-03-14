@@ -6,6 +6,13 @@
 
 #include "flatbuffers/flatbuffers.h"
 
+// Ensure the included flatbuffers.h is the same version as when this file was
+// generated, otherwise it may not be compatible.
+static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+              FLATBUFFERS_VERSION_MINOR == 5 &&
+              FLATBUFFERS_VERSION_REVISION == 26,
+             "Non-compatible flatbuffers version included");
+
 namespace SE {
 namespace FlatBuffers {
 
@@ -37,10 +44,10 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Float FLATBUFFERS_FINAL_CLASS {
       : value_(0) {
   }
   Float(float _value)
-      : value_(flatbuffers::EndianScalar(_value)) {
+      : value_(::flatbuffers::EndianScalar(_value)) {
   }
   float value() const {
-    return flatbuffers::EndianScalar(value_);
+    return ::flatbuffers::EndianScalar(value_);
   }
 };
 FLATBUFFERS_STRUCT_END(Float, 4);
@@ -60,22 +67,22 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec4 FLATBUFFERS_FINAL_CLASS {
         w_(0) {
   }
   Vec4(float _x, float _y, float _z, float _w)
-      : x_(flatbuffers::EndianScalar(_x)),
-        y_(flatbuffers::EndianScalar(_y)),
-        z_(flatbuffers::EndianScalar(_z)),
-        w_(flatbuffers::EndianScalar(_w)) {
+      : x_(::flatbuffers::EndianScalar(_x)),
+        y_(::flatbuffers::EndianScalar(_y)),
+        z_(::flatbuffers::EndianScalar(_z)),
+        w_(::flatbuffers::EndianScalar(_w)) {
   }
   float x() const {
-    return flatbuffers::EndianScalar(x_);
+    return ::flatbuffers::EndianScalar(x_);
   }
   float y() const {
-    return flatbuffers::EndianScalar(y_);
+    return ::flatbuffers::EndianScalar(y_);
   }
   float z() const {
-    return flatbuffers::EndianScalar(z_);
+    return ::flatbuffers::EndianScalar(z_);
   }
   float w() const {
-    return flatbuffers::EndianScalar(w_);
+    return ::flatbuffers::EndianScalar(w_);
   }
 };
 FLATBUFFERS_STRUCT_END(Vec4, 16);
@@ -93,18 +100,18 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
         z_(0) {
   }
   Vec3(float _x, float _y, float _z)
-      : x_(flatbuffers::EndianScalar(_x)),
-        y_(flatbuffers::EndianScalar(_y)),
-        z_(flatbuffers::EndianScalar(_z)) {
+      : x_(::flatbuffers::EndianScalar(_x)),
+        y_(::flatbuffers::EndianScalar(_y)),
+        z_(::flatbuffers::EndianScalar(_z)) {
   }
   float x() const {
-    return flatbuffers::EndianScalar(x_);
+    return ::flatbuffers::EndianScalar(x_);
   }
   float y() const {
-    return flatbuffers::EndianScalar(y_);
+    return ::flatbuffers::EndianScalar(y_);
   }
   float z() const {
-    return flatbuffers::EndianScalar(z_);
+    return ::flatbuffers::EndianScalar(z_);
   }
 };
 FLATBUFFERS_STRUCT_END(Vec3, 12);
@@ -120,14 +127,14 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec2 FLATBUFFERS_FINAL_CLASS {
         v_(0) {
   }
   Vec2(float _u, float _v)
-      : u_(flatbuffers::EndianScalar(_u)),
-        v_(flatbuffers::EndianScalar(_v)) {
+      : u_(::flatbuffers::EndianScalar(_u)),
+        v_(::flatbuffers::EndianScalar(_v)) {
   }
   float u() const {
-    return flatbuffers::EndianScalar(u_);
+    return ::flatbuffers::EndianScalar(u_);
   }
   float v() const {
-    return flatbuffers::EndianScalar(v_);
+    return ::flatbuffers::EndianScalar(v_);
   }
 };
 FLATBUFFERS_STRUCT_END(Vec2, 8);
@@ -147,22 +154,22 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec4 FLATBUFFERS_FINAL_CLASS {
         w_(0) {
   }
   UVec4(uint32_t _x, uint32_t _y, uint32_t _z, uint32_t _w)
-      : x_(flatbuffers::EndianScalar(_x)),
-        y_(flatbuffers::EndianScalar(_y)),
-        z_(flatbuffers::EndianScalar(_z)),
-        w_(flatbuffers::EndianScalar(_w)) {
+      : x_(::flatbuffers::EndianScalar(_x)),
+        y_(::flatbuffers::EndianScalar(_y)),
+        z_(::flatbuffers::EndianScalar(_z)),
+        w_(::flatbuffers::EndianScalar(_w)) {
   }
   uint32_t x() const {
-    return flatbuffers::EndianScalar(x_);
+    return ::flatbuffers::EndianScalar(x_);
   }
   uint32_t y() const {
-    return flatbuffers::EndianScalar(y_);
+    return ::flatbuffers::EndianScalar(y_);
   }
   uint32_t z() const {
-    return flatbuffers::EndianScalar(z_);
+    return ::flatbuffers::EndianScalar(z_);
   }
   uint32_t w() const {
-    return flatbuffers::EndianScalar(w_);
+    return ::flatbuffers::EndianScalar(w_);
   }
 };
 FLATBUFFERS_STRUCT_END(UVec4, 16);
@@ -180,18 +187,18 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec3 FLATBUFFERS_FINAL_CLASS {
         z_(0) {
   }
   UVec3(uint32_t _x, uint32_t _y, uint32_t _z)
-      : x_(flatbuffers::EndianScalar(_x)),
-        y_(flatbuffers::EndianScalar(_y)),
-        z_(flatbuffers::EndianScalar(_z)) {
+      : x_(::flatbuffers::EndianScalar(_x)),
+        y_(::flatbuffers::EndianScalar(_y)),
+        z_(::flatbuffers::EndianScalar(_z)) {
   }
   uint32_t x() const {
-    return flatbuffers::EndianScalar(x_);
+    return ::flatbuffers::EndianScalar(x_);
   }
   uint32_t y() const {
-    return flatbuffers::EndianScalar(y_);
+    return ::flatbuffers::EndianScalar(y_);
   }
   uint32_t z() const {
-    return flatbuffers::EndianScalar(z_);
+    return ::flatbuffers::EndianScalar(z_);
   }
 };
 FLATBUFFERS_STRUCT_END(UVec3, 12);
@@ -207,14 +214,14 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) UVec2 FLATBUFFERS_FINAL_CLASS {
         v_(0) {
   }
   UVec2(uint32_t _u, uint32_t _v)
-      : u_(flatbuffers::EndianScalar(_u)),
-        v_(flatbuffers::EndianScalar(_v)) {
+      : u_(::flatbuffers::EndianScalar(_u)),
+        v_(::flatbuffers::EndianScalar(_v)) {
   }
   uint32_t u() const {
-    return flatbuffers::EndianScalar(u_);
+    return ::flatbuffers::EndianScalar(u_);
   }
   uint32_t v() const {
-    return flatbuffers::EndianScalar(v_);
+    return ::flatbuffers::EndianScalar(v_);
   }
 };
 FLATBUFFERS_STRUCT_END(UVec2, 8);
@@ -234,35 +241,35 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) ColorARGB FLATBUFFERS_FINAL_CLASS {
         b_(0) {
   }
   ColorARGB(float _a, float _r, float _g, float _b)
-      : a_(flatbuffers::EndianScalar(_a)),
-        r_(flatbuffers::EndianScalar(_r)),
-        g_(flatbuffers::EndianScalar(_g)),
-        b_(flatbuffers::EndianScalar(_b)) {
+      : a_(::flatbuffers::EndianScalar(_a)),
+        r_(::flatbuffers::EndianScalar(_r)),
+        g_(::flatbuffers::EndianScalar(_g)),
+        b_(::flatbuffers::EndianScalar(_b)) {
   }
   float a() const {
-    return flatbuffers::EndianScalar(a_);
+    return ::flatbuffers::EndianScalar(a_);
   }
   float r() const {
-    return flatbuffers::EndianScalar(r_);
+    return ::flatbuffers::EndianScalar(r_);
   }
   float g() const {
-    return flatbuffers::EndianScalar(g_);
+    return ::flatbuffers::EndianScalar(g_);
   }
   float b() const {
-    return flatbuffers::EndianScalar(b_);
+    return ::flatbuffers::EndianScalar(b_);
   }
 };
 FLATBUFFERS_STRUCT_END(ColorARGB, 16);
 
-struct ResourcePath FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct ResourcePath FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ResourcePathBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PATH = 4
   };
-  const flatbuffers::String *path() const {
-    return GetPointer<const flatbuffers::String *>(VT_PATH);
+  const ::flatbuffers::String *path() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_PATH);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_PATH) &&
            verifier.VerifyString(path()) &&
@@ -272,33 +279,33 @@ struct ResourcePath FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct ResourcePathBuilder {
   typedef ResourcePath Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_path(flatbuffers::Offset<flatbuffers::String> path) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_path(::flatbuffers::Offset<::flatbuffers::String> path) {
     fbb_.AddOffset(ResourcePath::VT_PATH, path);
   }
-  explicit ResourcePathBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ResourcePathBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<ResourcePath> Finish() {
+  ::flatbuffers::Offset<ResourcePath> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<ResourcePath>(end);
+    auto o = ::flatbuffers::Offset<ResourcePath>(end);
     fbb_.Required(o, ResourcePath::VT_PATH);
     return o;
   }
 };
 
-inline flatbuffers::Offset<ResourcePath> CreateResourcePath(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::String> path = 0) {
+inline ::flatbuffers::Offset<ResourcePath> CreateResourcePath(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> path = 0) {
   ResourcePathBuilder builder_(_fbb);
   builder_.add_path(path);
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<ResourcePath> CreateResourcePathDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<ResourcePath> CreateResourcePathDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *path = nullptr) {
   auto path__ = path ? _fbb.CreateString(path) : 0;
   return SE::FlatBuffers::CreateResourcePath(

@@ -22,14 +22,14 @@ class AnimatedModel : public StaticModel {
                 std::vector<uint8_t>    vJointsIndexes;
                 std::vector<glm::mat4>  vJointsInvBindPose;
                 glm::mat4               mBindPose;
-                CharacterShell        * pShell{};
+                H<CharacterShell>  hShell{};
 
                 ret_code_t FillData(
                                 const SE::FlatBuffers::AnimatedModel * pModel,
                                 TSceneTree::TSceneNodeExact * pTargetNode);
         };
 
-        TTexture                      * pTexBuffer{};
+        H<TTexture>                     hTexBuffer;
         std::unique_ptr<UniformBlock>   pBlock;
         SkeletonPart                    oSkeletonMeta;
         uint8_t                         blendshapes_cnt{};
@@ -44,9 +44,9 @@ class AnimatedModel : public StaticModel {
 
         //TODO with skeleton
         AnimatedModel(TSceneTree::TSceneNodeExact * pNewNode,
-                      TMesh * pNewMesh,
-                      Material * pNewMaterial,
-                      TTexture * pNewTexBuf,
+                      H<TMesh> hNewMesh,
+                      H<Material> hNewMaterial,
+                      H<TTexture> hNewTexBuf,
                       const uint8_t new_blendshapes_cnt);
         AnimatedModel(TSceneTree::TSceneNodeExact  * pNewNode,
                       const SE::FlatBuffers::AnimatedModel * pModel);
@@ -54,7 +54,7 @@ class AnimatedModel : public StaticModel {
         ret_code_t      PostLoad(const SE::FlatBuffers::AnimatedModel * pModel);
 
         //Update... ?
-        ret_code_t      SetMaterial(Material * pNewMaterial);
+        ret_code_t      SetMaterial(H<Material> hNewMaterial);
         //SetBuffer.. SetBlendShapes
         ret_code_t      SetWeight(const uint8_t index, const float weight);
         float           GetWeight(const uint8_t index);

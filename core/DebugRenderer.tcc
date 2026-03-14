@@ -26,7 +26,7 @@ DebugRenderer::DebugRenderer() :
         green(ConvertColor(0.0f, 1.0f, 0.0f, 1.0f)),
         blue (ConvertColor(0.0f, 0.0f, 1.0f, 1.0f)) {
 
-        pMaterial = CreateResource<Material>(GetSystem<Config>().sResourceDir + "material/default_color.semt");
+        hMaterial = CreateResource<Material>(GetSystem<Config>().sResourceDir + "material/default_color.semt");
 
         glGenVertexArrays(1, &debug_vao);
         glBindVertexArray(debug_vao);
@@ -230,7 +230,7 @@ void DebugRenderer::Update(const Event & oEvent [[maybe_unused]]) {
                 oBuffer.UploadToGPU();
                 static const uint32_t stride = 3 * sizeof(float) + sizeof(uint32_t);
                 oGeom.SetRange(oBuffer.Size() / stride, 0);
-                vRenderCommands.emplace_back(&oGeom, pMaterial, oRootTransform);
+                vRenderCommands.emplace_back(&oGeom, GetResource(hMaterial), oRootTransform);
                 //log_d("item cnt: {}", oBuffer.Size() / stride);
         }
 

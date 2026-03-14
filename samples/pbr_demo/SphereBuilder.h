@@ -10,7 +10,7 @@ namespace SE {
 // Build a unit sphere FlatBuffer mesh with Position(3), Normal(3), Tangent(3), TexCoord0(2)
 // Stride = 44 bytes (11 floats * 4)
 // Indices are uint16; rings×sectors×6 = total index count
-inline TMesh * CreateSphereMesh(int rings, int sectors) {
+inline H<TMesh> CreateSphereMesh(int rings, int sectors) {
 
         const int   verts_per_row = sectors + 1;
         const int   num_verts     = (rings + 1) * verts_per_row;

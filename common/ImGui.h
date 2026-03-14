@@ -9,8 +9,8 @@ namespace HELPERS {
 class ImGuiWrapper {
 
 
-        ShaderProgram         * pShader;
-        TTexture              * pFontTex;
+        H<ShaderProgram>   hShader;
+        H<TTexture>        hFontTex;
         uint32_t                vao_id,
                                 vbo_id,
                                 index_array_id;

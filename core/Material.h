@@ -19,13 +19,13 @@ class Material : public ResourceHolder {
                 glm::uvec2,
                 glm::uvec3,
                 glm::uvec4>;
-        using TexturesMap = std::unordered_map<TextureUnit, TTexture *>;
+        using TexturesMap = std::unordered_map<TextureUnit, H<TTexture>>;
 
-        SE::ShaderProgram                             * pShader;
-        std::unique_ptr<UniformBlock>                   pBlock;
-        std::unordered_map<StrID, TVariant>             mShaderVariables;
-        //std::array<TTexture *, max texture units> vTextures; ...
-        std::unordered_map<TextureUnit, TTexture *>     mTextures;
+        H<SE::ShaderProgram>                             hShader;
+        std::unique_ptr<UniformBlock>                         pBlock;
+        std::unordered_map<StrID, TVariant>                   mShaderVariables;
+        //std::array<H<TTexture>, max texture units> vTextures; ..
+        std::unordered_map<TextureUnit, H<TTexture>>     mTextures;
 
         void Load(const SE::FlatBuffers::Material * pMaterial);
 
@@ -33,17 +33,16 @@ class Material : public ResourceHolder {
 
         Material(const std::string & sName, const rid_t new_rid);
         /** create material with default values */
-        Material(const std::string & sName, const rid_t new_rid, SE::ShaderProgram * pNewShader);
+        Material(const std::string & sName, const rid_t new_rid, H<SE::ShaderProgram> hNewShader);
         Material(const std::string & sName,
                  const rid_t new_rid,
                  const SE::FlatBuffers::Material * pMaterial);
         //Material from input data (ctx\settings), like Texture
 
-        //SetShader does not allow to change shader, ShaderProgramState and many other things would broken
-        ret_code_t                      SetTexture(const StrID name, TTexture * pTex);
-        ret_code_t                      SetTexture(const TextureUnit unit_index, TTexture * pTex);
+        //SetShader does not allow to change shader, ShaderProgramState and many other things would broken 
+        ret_code_t                      SetTexture(const StrID name, H<TTexture> hTex);
+        ret_code_t                      SetTexture(const TextureUnit unit_index, H<TTexture> hTex);
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
-        //SetArrayData struct?
         void                            Apply() const;
         TTexture *                      GetTexture(const TextureUnit unit_index) const;
         ShaderProgram *                 GetShader() const;
@@ -57,6 +56,7 @@ class Material : public ResourceHolder {
 
 template <class T> ret_code_t Material::SetVariable(const StrID name, const T & val) {
 
+        auto * pShader = GetShader();
         //TODO check variable type
         if (pShader->OwnVariable(name)) {
                 mShaderVariables.insert_or_assign(name, val);
@@ -72,7 +72,7 @@ template <class T> ret_code_t Material::SetVariable(const StrID name, const T & 
 }
 
 
-TTexture * LoadTexture(const SE::FlatBuffers::TextureHolder * pTexHolder);
+H<TTexture> LoadTexture(const SE::FlatBuffers::TextureHolder * pTexHolder);
 
 
 } //namespace SE

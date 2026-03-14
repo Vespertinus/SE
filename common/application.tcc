@@ -96,6 +96,8 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         oEventManager.TriggerEvent(EPostRenderUpdate{last_frame_time});
 
+        TResourceManager::Instance().ProcessDeferred();
+
         GetSystem<InputManager>().Capture();
 
         TSimpleFPS::Instance().Update();

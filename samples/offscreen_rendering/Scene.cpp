@@ -10,10 +10,11 @@ namespace SAMPLES {
 
 
 Scene::Scene(const Settings & oSettings) :
-        pTex01(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.tga")),
-        pTex02(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.png")),
-        pSceneTree(SE::CreateResource<SE::TSceneTree>("resource/scene/test-01.sesc")) {
+        hTex01(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.tga")),
+        hTex02(SE::CreateResource<SE::TTexture>("resource/texture/tst_01.png")),
+        hSceneTree(SE::CreateResource<SE::TSceneTree>("resource/scene/test-01.sesc")) {
 
+        auto * pSceneTree = SE::GetResource(hSceneTree);
         auto pCameraNode = pSceneTree->Create("MainCamera");
         auto res = pCameraNode->CreateComponent<SE::Camera>(oSettings.oCamSettings);
         if (res != SE::uSUCCESS) {

@@ -70,6 +70,8 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
         oEventManager.TriggerEvent(EPostRenderUpdate{0.0f});
 
+        TResourceManager::Instance().ProcessDeferred();
+
         glFinish();
 
         log_i("duration = {} ms", oLoopDuration.Get());

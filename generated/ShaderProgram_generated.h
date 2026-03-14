@@ -6,6 +6,13 @@
 
 #include "flatbuffers/flatbuffers.h"
 
+// Ensure the included flatbuffers.h is the same version as when this file was
+// generated, otherwise it may not be compatible.
+static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+              FLATBUFFERS_VERSION_MINOR == 5 &&
+              FLATBUFFERS_VERSION_REVISION == 26,
+             "Non-compatible flatbuffers version included");
+
 #include "Common_generated.h"
 #include "ShaderComponent_generated.h"
 
@@ -21,19 +28,19 @@ struct ShaderProgramBuilder;
 struct ShaderProgramHolder;
 struct ShaderProgramHolderBuilder;
 
-struct Shader FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct Shader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ShaderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
     VT_DATA = 6
   };
-  const flatbuffers::String *name() const {
-    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
   const SE::FlatBuffers::ShaderComponent *data() const {
     return GetPointer<const SE::FlatBuffers::ShaderComponent *>(VT_DATA);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
@@ -45,40 +52,40 @@ struct Shader FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct ShaderBuilder {
   typedef Shader Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(Shader::VT_NAME, name);
   }
-  void add_data(flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> data) {
+  void add_data(::flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> data) {
     fbb_.AddOffset(Shader::VT_DATA, data);
   }
-  explicit ShaderBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ShaderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<Shader> Finish() {
+  ::flatbuffers::Offset<Shader> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Shader>(end);
+    auto o = ::flatbuffers::Offset<Shader>(end);
     fbb_.Required(o, Shader::VT_NAME);
     return o;
   }
 };
 
-inline flatbuffers::Offset<Shader> CreateShader(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::String> name = 0,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> data = 0) {
+inline ::flatbuffers::Offset<Shader> CreateShader(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> data = 0) {
   ShaderBuilder builder_(_fbb);
   builder_.add_data(data);
   builder_.add_name(name);
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<Shader> CreateShaderDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
+inline ::flatbuffers::Offset<Shader> CreateShaderDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> data = 0) {
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> data = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   return SE::FlatBuffers::CreateShader(
       _fbb,
@@ -86,7 +93,7 @@ inline flatbuffers::Offset<Shader> CreateShaderDirect(
       data);
 }
 
-struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ShaderProgramBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_VERTEX = 4,
@@ -102,7 +109,7 @@ struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const SE::FlatBuffers::Shader *geometry() const {
     return GetPointer<const SE::FlatBuffers::Shader *>(VT_GEOMETRY);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_VERTEX) &&
            verifier.VerifyTable(vertex()) &&
@@ -116,35 +123,35 @@ struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 
 struct ShaderProgramBuilder {
   typedef ShaderProgram Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_vertex(flatbuffers::Offset<SE::FlatBuffers::Shader> vertex) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_vertex(::flatbuffers::Offset<SE::FlatBuffers::Shader> vertex) {
     fbb_.AddOffset(ShaderProgram::VT_VERTEX, vertex);
   }
-  void add_fragment(flatbuffers::Offset<SE::FlatBuffers::Shader> fragment) {
+  void add_fragment(::flatbuffers::Offset<SE::FlatBuffers::Shader> fragment) {
     fbb_.AddOffset(ShaderProgram::VT_FRAGMENT, fragment);
   }
-  void add_geometry(flatbuffers::Offset<SE::FlatBuffers::Shader> geometry) {
+  void add_geometry(::flatbuffers::Offset<SE::FlatBuffers::Shader> geometry) {
     fbb_.AddOffset(ShaderProgram::VT_GEOMETRY, geometry);
   }
-  explicit ShaderProgramBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ShaderProgramBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<ShaderProgram> Finish() {
+  ::flatbuffers::Offset<ShaderProgram> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<ShaderProgram>(end);
+    auto o = ::flatbuffers::Offset<ShaderProgram>(end);
     fbb_.Required(o, ShaderProgram::VT_VERTEX);
     fbb_.Required(o, ShaderProgram::VT_FRAGMENT);
     return o;
   }
 };
 
-inline flatbuffers::Offset<ShaderProgram> CreateShaderProgram(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::Shader> vertex = 0,
-    flatbuffers::Offset<SE::FlatBuffers::Shader> fragment = 0,
-    flatbuffers::Offset<SE::FlatBuffers::Shader> geometry = 0) {
+inline ::flatbuffers::Offset<ShaderProgram> CreateShaderProgram(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::Shader> vertex = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::Shader> fragment = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::Shader> geometry = 0) {
   ShaderProgramBuilder builder_(_fbb);
   builder_.add_geometry(geometry);
   builder_.add_fragment(fragment);
@@ -152,7 +159,7 @@ inline flatbuffers::Offset<ShaderProgram> CreateShaderProgram(
   return builder_.Finish();
 }
 
-struct ShaderProgramHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct ShaderProgramHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ShaderProgramHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SHADER = 4,
@@ -162,13 +169,13 @@ struct ShaderProgramHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
   const SE::FlatBuffers::ShaderProgram *shader() const {
     return GetPointer<const SE::FlatBuffers::ShaderProgram *>(VT_SHADER);
   }
-  const flatbuffers::String *path() const {
-    return GetPointer<const flatbuffers::String *>(VT_PATH);
+  const ::flatbuffers::String *path() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_PATH);
   }
-  const flatbuffers::String *name() const {
-    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
-  bool Verify(flatbuffers::Verifier &verifier) const {
+  bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_SHADER) &&
            verifier.VerifyTable(shader()) &&
@@ -182,33 +189,33 @@ struct ShaderProgramHolder FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
 
 struct ShaderProgramHolderBuilder {
   typedef ShaderProgramHolder Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_shader(flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> shader) {
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_shader(::flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> shader) {
     fbb_.AddOffset(ShaderProgramHolder::VT_SHADER, shader);
   }
-  void add_path(flatbuffers::Offset<flatbuffers::String> path) {
+  void add_path(::flatbuffers::Offset<::flatbuffers::String> path) {
     fbb_.AddOffset(ShaderProgramHolder::VT_PATH, path);
   }
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(ShaderProgramHolder::VT_NAME, name);
   }
-  explicit ShaderProgramHolderBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ShaderProgramHolderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<ShaderProgramHolder> Finish() {
+  ::flatbuffers::Offset<ShaderProgramHolder> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<ShaderProgramHolder>(end);
+    auto o = ::flatbuffers::Offset<ShaderProgramHolder>(end);
     return o;
   }
 };
 
-inline flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolder(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> shader = 0,
-    flatbuffers::Offset<flatbuffers::String> path = 0,
-    flatbuffers::Offset<flatbuffers::String> name = 0) {
+inline ::flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolder(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> shader = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> path = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
   ShaderProgramHolderBuilder builder_(_fbb);
   builder_.add_name(name);
   builder_.add_path(path);
@@ -216,9 +223,9 @@ inline flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolder(
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolderDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> shader = 0,
+inline ::flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolderDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> shader = 0,
     const char *path = nullptr,
     const char *name = nullptr) {
   auto path__ = path ? _fbb.CreateString(path) : 0;
@@ -231,11 +238,11 @@ inline flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolderDirect(
 }
 
 inline const SE::FlatBuffers::ShaderProgram *GetShaderProgram(const void *buf) {
-  return flatbuffers::GetRoot<SE::FlatBuffers::ShaderProgram>(buf);
+  return ::flatbuffers::GetRoot<SE::FlatBuffers::ShaderProgram>(buf);
 }
 
 inline const SE::FlatBuffers::ShaderProgram *GetSizePrefixedShaderProgram(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::ShaderProgram>(buf);
+  return ::flatbuffers::GetSizePrefixedRoot<SE::FlatBuffers::ShaderProgram>(buf);
 }
 
 inline const char *ShaderProgramIdentifier() {
@@ -243,17 +250,22 @@ inline const char *ShaderProgramIdentifier() {
 }
 
 inline bool ShaderProgramBufferHasIdentifier(const void *buf) {
-  return flatbuffers::BufferHasIdentifier(
+  return ::flatbuffers::BufferHasIdentifier(
       buf, ShaderProgramIdentifier());
 }
 
+inline bool SizePrefixedShaderProgramBufferHasIdentifier(const void *buf) {
+  return ::flatbuffers::BufferHasIdentifier(
+      buf, ShaderProgramIdentifier(), true);
+}
+
 inline bool VerifyShaderProgramBuffer(
-    flatbuffers::Verifier &verifier) {
+    ::flatbuffers::Verifier &verifier) {
   return verifier.VerifyBuffer<SE::FlatBuffers::ShaderProgram>(ShaderProgramIdentifier());
 }
 
 inline bool VerifySizePrefixedShaderProgramBuffer(
-    flatbuffers::Verifier &verifier) {
+    ::flatbuffers::Verifier &verifier) {
   return verifier.VerifySizePrefixedBuffer<SE::FlatBuffers::ShaderProgram>(ShaderProgramIdentifier());
 }
 
@@ -262,14 +274,14 @@ inline const char *ShaderProgramExtension() {
 }
 
 inline void FinishShaderProgramBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> root) {
+    ::flatbuffers::FlatBufferBuilder &fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> root) {
   fbb.Finish(root, ShaderProgramIdentifier());
 }
 
 inline void FinishSizePrefixedShaderProgramBuffer(
-    flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> root) {
+    ::flatbuffers::FlatBufferBuilder &fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> root) {
   fbb.FinishSizePrefixed(root, ShaderProgramIdentifier());
 }
 

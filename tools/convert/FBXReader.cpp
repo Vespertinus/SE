@@ -233,7 +233,7 @@ static ret_code_t GetUV(
                                 default:
                                         log_e("unsupported UV ReferenceMode in polygon {}, (allowed: Direct or IndexToDirect), current ReferenceMode = {}, Mesh: '{}'",
                                                         polygon_num,
-                                                        pUV->GetReferenceMode(),
+                                                        (int)pUV->GetReferenceMode(),
                                                         pNode->GetName());
                                         return uWRONG_INPUT_DATA;
                         }
@@ -256,14 +256,14 @@ static ret_code_t GetUV(
                                         default:
                                                 log_e("unsupported UV ReferenceMode in polygon {}, (allowed: Direct or IndexToDirect)), current ReferenceMode = {}, Mesh: '{}'",
                                                                 polygon_num,
-                                                                pUV->GetReferenceMode(),
+                                                                (int)pUV->GetReferenceMode(),
                                                                 pNode->GetName());
                                                 return uWRONG_INPUT_DATA;
                                 }
                         }
                         break;
                 default:
-                        log_e("unsupported UV MappingMode = {}, mesh: '{}'", pUV->GetMappingMode(), pNode->GetName() );
+                        log_e("unsupported UV MappingMode = {}, mesh: '{}'", (int)pUV->GetMappingMode(), pNode->GetName() );
                         return uWRONG_INPUT_DATA;
         }
 /*
@@ -612,7 +612,7 @@ static ret_code_t ImportSkin(
         auto skinning_type = pSkinDeformer->GetSkinningType();
 
         if ((skinning_type != FbxSkin::eLinear) && (skinning_type != FbxSkin::eRigid) ) {
-                log_e("unsupportes skinning type: '{}', only linear supported", pSkinDeformer->GetSkinningType());
+                log_e("unsupportes skinning type: '{}', only linear supported", (int)pSkinDeformer->GetSkinningType());
                 return uWRONG_INPUT_DATA;
         }
 
@@ -701,7 +701,7 @@ static ret_code_t ImportSkin(
 
                 pCluster = pSkinDeformer->GetCluster(i);
                 if (pCluster->GetLinkMode() != FbxCluster::ELinkMode::eNormalize) {
-                        log_e("unsupported cluster link mode: '{}'", pCluster->GetLinkMode());
+                        log_e("unsupported cluster link mode: '{}'", (int)pCluster->GetLinkMode());
                         return uWRONG_INPUT_DATA;
                 }
 

@@ -144,12 +144,12 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
 
                 auto * pShaderDataFB = pShaderFB->data();
                 if (pShaderDataFB != nullptr) {
-                        return CreateResource<ShaderComponent>(
+                        return CreateRawResource<ShaderComponent>(
                                         oConfig.sResourceDir + pShaderFB->name()->c_str(),
                                         pShaderDataFB);
                 }
 
-                return CreateResource<ShaderComponent>(oConfig.sResourceDir + pShaderFB->name()->c_str());
+                return CreateRawResource<ShaderComponent>(oConfig.sResourceDir + pShaderFB->name()->c_str());
         };
 
         auto * pVertexShader    = GetShader(pShaderProgram->vertex());

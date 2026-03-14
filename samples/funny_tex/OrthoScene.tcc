@@ -3,16 +3,16 @@ namespace FUNNY_TEX {
 
 
 OrthoScene::OrthoScene(const Settings & oSettings) :
-        pSceneTree(SE::CreateResource<SE::TSceneTree>("funny_tex scene", true)) {
+        pSceneTree(SE::CreateRawResource<SE::TSceneTree>("funny_tex scene", true)) {
 
         using namespace SE;
 
-        auto pPlaneMesh = CreateResource<TMesh>(GetSystem<Config>().sResourceDir + "mesh/unit_plane.sems");
-        pMaterial       = CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/julia_fractal.semt");
+        auto hMesh = CreateResource<TMesh>(GetSystem<Config>().sResourceDir + "mesh/unit_plane.sems");
+        hMaterial  = CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/julia_fractal.semt");
 
         auto pPlaneNode = pSceneTree->Create("plane");
 
-        auto res = pPlaneNode->CreateComponent<StaticModel>(pPlaneMesh, pMaterial);
+        auto res = pPlaneNode->CreateComponent<StaticModel>(hMesh, hMaterial);
         if (res != uSUCCESS) {
                 throw(std::runtime_error("failed to create StaticModel"));
         }
@@ -62,7 +62,7 @@ void OrthoScene::Process() {
         }
 
         static SE::StrID seed_id("CSeed");
-        pMaterial->SetVariable(seed_id, CSeed);
+        GetResource(hMaterial)->SetVariable(seed_id, CSeed);
 
 }
 

@@ -10,8 +10,10 @@ namespace TOOLS {
 static const uint8_t NODE_HIDE = 0x1;
 
 Scene::Scene(const Settings & oNewSettings) :
-        pSceneTree(SE::CreateResource<SE::TSceneTree>(oNewSettings.sScenePath)),
+        hSceneTree(SE::CreateResource<SE::TSceneTree>(oNewSettings.sScenePath)),
         oSettings(oNewSettings) {
+
+        pSceneTree = SE::GetResource(hSceneTree);
 
         pCameraNode = pSceneTree->Create("MainCamera");
         auto res = pCameraNode->CreateComponent<Camera>(oSettings.oCamSettings);

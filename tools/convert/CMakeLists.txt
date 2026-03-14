@@ -21,6 +21,10 @@ if(NOT nlohmann_json_FOUND)
 endif()
 list(APPEND TOOLS_LIBRARIES_LIST nlohmann_json::nlohmann_json)
 
+# TODO rewrite on separate SEBase INTERFACE library with basic dep like spdlog
+find_package(spdlog REQUIRED)
+list(APPEND TOOLS_LIBRARIES_LIST spdlog::spdlog)
+
 find_path(STB_INCLUDE_DIR stb_image.h PATH_SUFFIXES stb)
 if(NOT STB_INCLUDE_DIR)
         message(STATUS "stb_image.h not found, fetching via FetchContent...")
