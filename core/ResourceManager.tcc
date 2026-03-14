@@ -30,6 +30,30 @@ struct ProcessDeferredHelper<Loki::NullType, RM> {
         static void Do(RM &) {}
 };
 
+template <class TList, class RM>
+struct DestroyUnretainedHelper {
+        static void Do(RM & rm) {
+                rm.template DestroyUnretainedPool<typename TList::Head>();
+                DestroyUnretainedHelper<typename TList::Tail, RM>::Do(rm);
+        }
+};
+template <class RM>
+struct DestroyUnretainedHelper<Loki::NullType, RM> {
+        static void Do(RM &) {}
+};
+
+template <class TList, class RM>
+struct ClearAllRetainsHelper {
+        static void Do(RM & rm) {
+                rm.template ClearRetains<typename TList::Head>();
+                ClearAllRetainsHelper<typename TList::Tail, RM>::Do(rm);
+        }
+};
+template <class RM>
+struct ClearAllRetainsHelper<Loki::NullType, RM> {
+        static void Do(RM &) {}
+};
+
 } // namespace detail
 
 
@@ -183,7 +207,7 @@ void ResourceManager<ResourceList>::ProcessDeferredPool() {
                 if (!h.IsValid() || h.raw.index >= pool.slots.size()) { continue; }
                 auto & slot = pool.slots[h.raw.index];
                 if (slot.generation != h.raw.generation) { continue; } // already stale
-                if (slot.lock_count > 0) {
+                if (slot.lock_count > 0 || slot.retain_count > 0) {
                         remaining.push_back(h);                        // re-queue; try again later
                         continue;
                 }
@@ -248,6 +272,71 @@ size_t ResourceManager<ResourceList>::Size() const {
                 if (slot.pResource) { ++count; }
         }
         return count;
+}
+
+
+template <class ResourceList>
+template <class Resource>
+void ResourceManager<ResourceList>::Retain(H<Resource> h) {
+        if (!h.IsValid()) { return; }
+        Pool<Resource> & pool = GetPool<Resource>();
+        if (h.raw.index >= pool.slots.size()) { return; }
+        auto & slot = pool.slots[h.raw.index];
+        if (slot.generation != h.raw.generation) { return; }
+        ++slot.retain_count;
+}
+
+
+template <class ResourceList>
+template <class Resource>
+void ResourceManager<ResourceList>::Unretain(H<Resource> h) {
+        if (!h.IsValid()) { return; }
+        Pool<Resource> & pool = GetPool<Resource>();
+        if (h.raw.index >= pool.slots.size()) { return; }
+        auto & slot = pool.slots[h.raw.index];
+        if (slot.generation != h.raw.generation) { return; }
+        if (slot.retain_count > 0) { --slot.retain_count; }
+}
+
+
+template <class ResourceList>
+template <class Resource>
+void ResourceManager<ResourceList>::ClearRetains() {
+        Pool<Resource> & pool = GetPool<Resource>();
+        for (auto & slot : pool.slots) { slot.retain_count = 0; }
+}
+
+
+template <class ResourceList>
+template <class Resource>
+void ResourceManager<ResourceList>::DestroyUnretainedPool() {
+        Pool<Resource> & pool = GetPool<Resource>();
+        for (uint32_t i = 0; i < pool.slots.size(); ++i) {
+                auto & slot = pool.slots[i];
+                if (!slot.pResource || slot.retain_count > 0) { continue; }
+                H<Resource> h { { i, slot.generation } };
+                if (slot.lock_count == 0) {
+                        pool.path_cache.erase(slot.pResource->RID());
+                        slot.pResource.reset();
+                        ++slot.generation;
+                        pool.free_list.push_back(i);
+                } else {
+                        // locked this frame — fall back to deferred
+                        Destroy(h);
+                }
+        }
+}
+
+
+template <class ResourceList>
+void ResourceManager<ResourceList>::DestroyUnretained() {
+        detail::DestroyUnretainedHelper<ResourceList, ResourceManager<ResourceList>>::Do(*this);
+}
+
+
+template <class ResourceList>
+void ResourceManager<ResourceList>::ClearAllRetains() {
+        detail::ClearAllRetainsHelper<ResourceList, ResourceManager<ResourceList>>::Do(*this);
 }
 
 } // namespace SE

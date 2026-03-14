@@ -20,8 +20,9 @@ protected:
 
         template <class R> struct Pool {
                 struct Slot {
-                        uint32_t           generation  { 0 };
-                        uint32_t           lock_count  { 0 };
+                        uint32_t           generation   { 0 };
+                        uint8_t            lock_count   { 0 };
+                        uint8_t            retain_count { 0 };
                         std::unique_ptr<R> pResource;
                 };
 
@@ -63,6 +64,13 @@ public:
 
         template <class Resource> bool Lock  (H<Resource> h);
         template <class Resource> void Unlock(H<Resource> h);
+
+        template <class Resource> void   Retain       (H<Resource> h);
+        template <class Resource> void   Unretain     (H<Resource> h);
+        template <class Resource> void   ClearRetains ();
+        template <class Resource> void   DestroyUnretainedPool();
+        void DestroyUnretained();
+        void ClearAllRetains();
 
         void ProcessDeferred();
 

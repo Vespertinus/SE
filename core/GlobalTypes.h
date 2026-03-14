@@ -199,6 +199,19 @@ template <class Resource> void UnlockResource(H<Resource> h) {
         TResourceManager::Instance().Unlock<Resource>(h);
 }
 
+template <class Resource> void RetainResource(H<Resource> h) {
+        TResourceManager::Instance().Retain<Resource>(h);
+}
+template <class Resource> void UnretainResource(H<Resource> h) {
+        TResourceManager::Instance().Unretain<Resource>(h);
+}
+inline void DestroyUnretainedResources() {
+        TResourceManager::Instance().DestroyUnretained();
+}
+inline void ClearAllRetainedResources() {
+        TResourceManager::Instance().ClearAllRetains();
+}
+
 template <class TSystem> TSystem & GetSystem() {
 
         return TEngine::Instance().Get<TSystem>();
