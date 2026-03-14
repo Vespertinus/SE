@@ -12,3 +12,4 @@
 #include <Renderer.tcc>
 #include <DeferredRenderer.tcc>
 #include <EventManager.tcc>
+#include <Allocator.tcc>

@@ -34,6 +34,8 @@ class RenderCommand {
         ShaderProgramState & State();
         std::string     StrDump(const size_t indent) const;
 
+        static void* operator new(size_t sz);
+        static void  operator delete(void* ptr) noexcept;
 };
 
 

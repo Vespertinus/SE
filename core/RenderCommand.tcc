@@ -4,6 +4,11 @@
 
 namespace SE {
 
+static PoolAllocator<sizeof(RenderCommand)> sRenderCommandPool{1024};
+
+void* RenderCommand::operator new(size_t)       { return sRenderCommandPool.allocate(); }
+void  RenderCommand::operator delete(void* ptr) noexcept { sRenderCommandPool.deallocate(ptr); }
+
 RenderCommand::RenderCommand(
                 const GeometryEntity * pNewGeom,
                 const Material * pNewMaterial,

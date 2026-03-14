@@ -35,6 +35,7 @@
 #include <InputEvents.h>
 #include <InputManager.h>
 #include <InputCodes.h>
+#include <Allocator.h>
 
 #include <TextureStock.h>
 #include <TGALoader.h>
@@ -110,7 +111,7 @@ using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 // To use deferred PBR renderer, replace the line above with:
 using TRenderer = DeferredRenderer<TVisibilityManager>;
 
-using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, GraphicsState, TRenderer, DebugRenderer, InputManager>;
+using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager>;
 
 using TEngine =
         typename Loki::SingletonHolder<

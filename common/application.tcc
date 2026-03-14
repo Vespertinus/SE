@@ -100,6 +100,8 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         GetSystem<InputManager>().Capture();
 
+        GetSystem<FrameAllocator>().reset();
+
         TSimpleFPS::Instance().Update();
 }
 
