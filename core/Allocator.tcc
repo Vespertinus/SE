@@ -94,7 +94,7 @@ namespace SE {
 
 template<size_t ObjectSize, size_t Alignment>
 PoolAllocator<ObjectSize, Alignment>::PoolAllocator(size_t slot_count)
-        : memory_(static_cast<uint8_t*>(::operator new(slot_count * kSlotSize, std::align_val_t{16})))
+        : memory_(static_cast<uint8_t*>(::operator new(slot_count * kSlotSize, std::align_val_t{Alignment})))
         , free_list_(nullptr)
         , capacity_(slot_count)
         , allocated_(0)
@@ -113,7 +113,7 @@ PoolAllocator<ObjectSize, Alignment>::PoolAllocator(size_t slot_count)
 
 template<size_t ObjectSize, size_t Alignment>
 PoolAllocator<ObjectSize, Alignment>::~PoolAllocator() noexcept {
-        ::operator delete(memory_, capacity_ * kSlotSize, std::align_val_t{16});
+        ::operator delete(memory_, capacity_ * kSlotSize, std::align_val_t{Alignment});
 }
 
 template<size_t ObjectSize, size_t Alignment>

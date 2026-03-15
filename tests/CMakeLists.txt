@@ -41,4 +41,14 @@ target_link_libraries(  world_process_manager_test
 gtest_discover_tests(   scene_tree_test)
 gtest_discover_tests(   world_process_manager_test)
 
+add_executable(         allocator_test
+                        "Main.cpp"
+                        "AllocatorTest.cpp")
+target_link_libraries(  allocator_test
+                        GTest::GTest
+                        ${GMOCK_LIBRARIES}
+                        SECommon
+                        SE)
+gtest_discover_tests(   allocator_test)
+
 #TODO add custom_command for resource processing
