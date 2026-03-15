@@ -1,13 +1,13 @@
 
-#ifndef __PHYSICS_COMPONENT_H__
-#define __PHYSICS_COMPONENT_H__
+#ifndef __RIGID_BODY_H__
+#define __RIGID_BODY_H__
 
 #include <string>
 #include <PhysicsTypes.h>
 
 namespace SE {
 
-class PhysicsComponent {
+class RigidBody {
 
         TSceneTree::TSceneNodeExact* pNode;
         BodyHandle                   hBody;
@@ -15,8 +15,8 @@ class PhysicsComponent {
         bool                         is_kinematic = false;
 
 public:
-        PhysicsComponent(TSceneTree::TSceneNodeExact* pNode, const RigidBodyDesc& desc);
-        ~PhysicsComponent() noexcept;
+        RigidBody(TSceneTree::TSceneNodeExact* pNode, const RigidBodyDesc& desc);
+        ~RigidBody() noexcept;
 
         void Enable();
         void Disable();

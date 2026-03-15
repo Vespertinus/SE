@@ -8,9 +8,9 @@ namespace SE {
 class StaticModel;
 class AnimatedModel;
 class Camera;
-class PhysicsComponent;
+class RigidBody;
 
-using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, PhysicsComponent>;
+using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, RigidBody>;
 
 }
 
@@ -25,7 +25,7 @@ using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, 
 #include <StaticModel.h>
 #include <AnimatedModel.h>
 #include <Camera.h>
-#include <PhysicsComponent.h>
+#include <RigidBody.h>
 
 #endif
 #endif
@@ -37,7 +37,7 @@ using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, 
 #include <StaticModel.tcc>
 #include <AnimatedModel.tcc>
 #include <Camera.tcc>
-#include <PhysicsComponent.tcc>
+#include <RigidBody.tcc>
 
 #endif
 #endif

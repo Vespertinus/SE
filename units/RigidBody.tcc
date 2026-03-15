@@ -4,7 +4,7 @@
 
 namespace SE {
 
-PhysicsComponent::PhysicsComponent(TSceneTree::TSceneNodeExact* pNewNode, const RigidBodyDesc& desc)
+RigidBody::RigidBody(TSceneTree::TSceneNodeExact* pNewNode, const RigidBodyDesc& desc)
         : pNode(pNewNode)
         , oCollider(desc.oCollider)
         , is_kinematic(desc.is_kinematic) {
@@ -18,7 +18,7 @@ PhysicsComponent::PhysicsComponent(TSceneTree::TSceneNodeExact* pNewNode, const 
         }
 }
 
-PhysicsComponent::~PhysicsComponent() noexcept {
+RigidBody::~RigidBody() noexcept {
 
         if (hBody.IsValid()) {
                 if (is_kinematic) {
@@ -29,34 +29,34 @@ PhysicsComponent::~PhysicsComponent() noexcept {
         }
 }
 
-void PhysicsComponent::Enable() {
+void RigidBody::Enable() {
         if (hBody.IsValid()) {
                 GetSystem<PhysicsSystem>().ActivateBody(hBody);
         }
 }
 
-void PhysicsComponent::Disable() {
+void RigidBody::Disable() {
         if (hBody.IsValid()) {
                 GetSystem<PhysicsSystem>().DeactivateBody(hBody);
         }
 }
 
-void PhysicsComponent::TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetNode) {
+void RigidBody::TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetNode) {
         if (!hBody.IsValid()) return;
         auto [vPos, qRot, vScale] = pTargetNode->GetTransform().GetWorldDecomposedQuat();
         GetSystem<PhysicsSystem>().MoveKinematic(hBody, vPos, qRot);
 }
 
-std::string PhysicsComponent::Str() const {
-        return "PhysicsComponent[" + std::to_string(hBody.index) + "]";
+std::string RigidBody::Str() const {
+        return "RigidBody[" + std::to_string(hBody.index) + "]";
 }
 
-void PhysicsComponent::Print(size_t indent) {
+void RigidBody::Print(size_t indent) {
         for (size_t i = 0; i < indent; ++i) putchar(' ');
         puts(Str().c_str());
 }
 
-void PhysicsComponent::DrawDebug() const {
+void RigidBody::DrawDebug() const {
 
         //FIXME component always inside pNode
         if (!pNode) return;
