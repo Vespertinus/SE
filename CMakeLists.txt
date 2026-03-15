@@ -9,6 +9,7 @@ option(ASAN                     "Compile with address sanitizer"         OFF)
 option(OLD_ABI                  "Compile with old CXX ABI"               OFF)
 option(TOOLS                    "Compile tools with their dependencies"  ON)
 option(TESTS                    "build tests"                            OFF)
+option(PHYSICS                  "Enable Jolt Physics integration"        ON)
 
 
 set(LOCAL_INC_DIRS              core common units generated)
@@ -89,6 +90,22 @@ set (COMMON_SOURCES             "${CMAKE_SOURCE_DIR}/common/Chrono.cpp")
 
 if(GPU)
 list(APPEND                     THIRD_PARTY_INC_DIRS "third_party/imgui")
+endif()
+
+if(PHYSICS)
+        set(PHYSICS_REPO        "${CMAKE_SOURCE_DIR}/third_party/JoltPhysics")
+        # Jolt build options — keep settings compatible with engine flags
+        set(OVERRIDE_CXX_FLAGS  OFF CACHE BOOL "" FORCE)
+        set(USE_ASSERTS         OFF CACHE BOOL "" FORCE)
+        set(GENERATE_DEBUG_SYMBOLS OFF CACHE BOOL "" FORCE)
+
+        set(JPH_USE_VK          OFF CACHE BOOL "" FORCE)
+
+        add_subdirectory("${PHYSICS_REPO}/Build" "JoltPhysics_Build")
+        list(APPEND             THIRD_PARTY_INC_DIRS "${PHYSICS_REPO}")
+        list(APPEND             LIBRARIES_LIST Jolt)
+        add_definitions(-DSE_PHYSICS_ENABLED)
+        message(STATUS "Physics: Jolt enabled from ${PHYSICS_REPO}")
 endif()
 
 list(APPEND                     THIRD_PARTY_INC_DIRS "third_party/cpp_delegates")

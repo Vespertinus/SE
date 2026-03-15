@@ -86,10 +86,17 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         oEventManager.TriggerEvent(EUpdate{last_frame_time});
 
+        GetSystem<PhysicsSystem>().Update(last_frame_time);
+
         oEventManager.Process();
         oLoop.Process();
 
         oEventManager.TriggerEvent(EPostUpdate{last_frame_time});
+
+        {
+            float alpha = GetSystem<PhysicsSystem>().GetInterpolationAlpha();
+            GetSystem<PhysicsSystem>().Interpolate(alpha);
+        }
 
         //Render
         TEngine::Instance().Get<TRenderer>().Render();

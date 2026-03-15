@@ -7,6 +7,7 @@
 #include <FrameBuffer.tcc>
 #include <GBuffer.tcc>
 #include <SSAOBuffer.tcc>
+#include <PhysicsSystem.tcc>
 #endif
 //template class, so we need realization also
 #include <Renderer.tcc>

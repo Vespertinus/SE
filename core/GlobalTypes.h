@@ -35,6 +35,9 @@
 #include <InputEvents.h>
 #include <InputManager.h>
 #include <InputCodes.h>
+#include <PhysicsTypes.h>
+#include <PhysicsEvents.h>
+#include <PhysicsSystem.h>
 #include <Allocator.h>
 
 #include <TextureStock.h>
@@ -111,7 +114,7 @@ using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 // To use deferred PBR renderer, replace the line above with:
 using TRenderer = DeferredRenderer<TVisibilityManager>;
 
-using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager>;
+using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager, PhysicsSystem>;
 
 using TEngine =
         typename Loki::SingletonHolder<
@@ -134,6 +137,8 @@ using TSceneTree = typename MP::Typelist2TmplPack<
                 >::Type;
 
 }
+
+#include <PhysicsSystemEx.h>
 
 #define INC_CUSTOM_SYSTEMS_HEADER
 #include <App.h>
