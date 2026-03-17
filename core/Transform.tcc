@@ -137,13 +137,13 @@ void Transform::LookAt(const glm::vec3 & vLocalPoint, const glm::vec3 & vUp) {
 
 void Transform::WorldLookAt(const glm::vec3 & vWorldPoint, const glm::vec3 & vUp) {
 
-        glm::vec3 vLocalPoint = glm::inverse(GetWorld()) * glm::vec4(vWorldPoint, 1.0f);
+        glm::vec3 vLocalPoint = glm::inverse(GetParentWorld()) * glm::vec4(vWorldPoint, 1.0f);
         LookAt(vLocalPoint, vUp);
 }
 
 void Transform::SetWorldPos(const glm::vec3 & vWorldPos) {
 
-        glm::vec3 vLocalPoint = glm::inverse(GetWorld()) * glm::vec4(vWorldPos, 1.0f);
+        glm::vec3 vLocalPoint = glm::inverse(GetParentWorld()) * glm::vec4(vWorldPos, 1.0f);
         SetPos(vLocalPoint);
 }
 
