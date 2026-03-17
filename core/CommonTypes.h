@@ -88,5 +88,39 @@ inline ClearBuffer operator|(ClearBuffer a, ClearBuffer b) {
         return static_cast<ClearBuffer>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 }
 
+enum class VertexAttrib : uint8_t {
+        Position     = 0,
+        Normal       = 1,
+        TexCoord0    = 2,
+        TexCoord1    = 3,
+        TexCoord2    = 4,
+        TexCoord3    = 5,
+        Tangent      = 6,
+        JointWeights = 7,
+        JointIndices = 8,
+        Color        = 9,
+        Custom0      = 10,
+        Custom1      = 11,
+        Unknown      = 255
+};
+
+inline const char * VertexAttribName(VertexAttrib a) {
+        switch (a) {
+                case VertexAttrib::Position:     return "Position";
+                case VertexAttrib::Normal:       return "Normal";
+                case VertexAttrib::TexCoord0:    return "TexCoord0";
+                case VertexAttrib::TexCoord1:    return "TexCoord1";
+                case VertexAttrib::TexCoord2:    return "TexCoord2";
+                case VertexAttrib::TexCoord3:    return "TexCoord3";
+                case VertexAttrib::Tangent:      return "Tangent";
+                case VertexAttrib::JointWeights: return "JointWeights";
+                case VertexAttrib::JointIndices: return "JointIndices";
+                case VertexAttrib::Color:        return "Color";
+                case VertexAttrib::Custom0:      return "Custom0";
+                case VertexAttrib::Custom1:      return "Custom1";
+                default:                         return "Unknown";
+        }
+}
+
 }
 #endif
