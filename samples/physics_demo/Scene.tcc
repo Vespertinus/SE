@@ -140,6 +140,29 @@ Scene::Scene(const Settings & oSettings) :
         }
 
         // -----------------------------------------------------------------------
+        // Mesh-collider staircase (static, 3 steps)
+        // -----------------------------------------------------------------------
+        {
+                std::vector<glm::vec3> physVerts;
+                std::vector<uint32_t>  physIndices;
+                auto hStairMesh = CreateStaircaseMesh(3, 1.0f, 0.35f, 2.0f,
+                                                      physVerts, physIndices, "staircase");
+
+                const glm::vec3 oPos { 3.5f, 0.0f, -3.5f };
+                auto pNode = pSceneTree->Create("MeshStaircase");
+                pNode->SetPos(oPos);
+                pNode->CreateComponent<StaticModel>(hStairMesh, hMatStone);
+
+                RigidBodyDesc desc;
+                desc.oCollider.type          = ColliderDesc::Mesh;
+                desc.oCollider.vMeshVertices = physVerts;
+                desc.oCollider.vMeshIndices  = physIndices;
+                desc.vInitialPosition        = oPos;
+                desc.is_static               = true;
+                pNode->CreateComponent<RigidBody>(desc);
+        }
+
+        // -----------------------------------------------------------------------
         // Goal platform (static, emissive)
         // -----------------------------------------------------------------------
         {

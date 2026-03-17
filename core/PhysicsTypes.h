@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <vector>
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -22,10 +23,13 @@ inline bool operator==(BodyHandle a, BodyHandle b) {
 inline bool operator!=(BodyHandle a, BodyHandle b) { return !(a == b); }
 
 struct ColliderDesc {
-        enum Type { Box, Sphere, Capsule } type = Box;
+        enum Type { Box, Sphere, Capsule, Mesh } type = Box;
         glm::vec3 vHalfExtents {0.5f, 0.5f, 0.5f};  // Box
         float     radius       = 0.5f;               // Sphere / Capsule
         float     half_height  = 0.5f;               // Capsule
+        // Mesh type — populated only for ColliderDesc::Mesh
+        std::vector<glm::vec3> vMeshVertices;
+        std::vector<uint32_t>  vMeshIndices;
 };
 
 struct RigidBodyDesc {

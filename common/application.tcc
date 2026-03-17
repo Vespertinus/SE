@@ -96,8 +96,7 @@ template <class TLoop> void Application<TLoop>::Run() {
         oEventManager.TriggerEvent(EPostUpdate{last_frame_time});
 
         {
-            float alpha = GetSystem<PhysicsSystem>().GetInterpolationAlpha();
-            GetSystem<PhysicsSystem>().Interpolate(alpha);
+            GetSystem<PhysicsSystem>().Interpolate();
         }
 
         //Render

@@ -87,6 +87,8 @@ void RigidBody::DrawDebug() const {
                         }
                         break;
                 }
+                case ColliderDesc::Mesh:
+                        break; // no debug draw for mesh colliders
         }
 }
 

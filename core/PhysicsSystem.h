@@ -37,7 +37,7 @@ public:
 
         // Called from game loop
         void  Update(float game_dt);    // accumulator + fixed steps + drain events
-        void  Interpolate(float alpha); // sync interpolated transforms to scene nodes
+        void  Interpolate(); // sync interpolated transforms to scene nodes
         float GetInterpolationAlpha() const;
 
         bool Raycast(const PhysicsRay& ray, RaycastHit& out, QueryFilter filter = {}) const;

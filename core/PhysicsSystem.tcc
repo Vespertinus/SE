@@ -12,6 +12,7 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Body/BodyLock.h>
@@ -246,6 +247,24 @@ struct PhysicsSystem::Impl {
                                 return new JPH::SphereShape(c.radius);
                         case ColliderDesc::Capsule:
                                 return new JPH::CapsuleShape(c.half_height, c.radius);
+                        case ColliderDesc::Mesh: {
+                                JPH::VertexList jVerts;
+                                jVerts.reserve(c.vMeshVertices.size());
+                                for (const auto & v : c.vMeshVertices)
+                                        jVerts.push_back(JPH::Float3(v.x, v.y, v.z));
+
+                                JPH::IndexedTriangleList jTris;
+                                jTris.reserve(c.vMeshIndices.size() / 3);
+                                for (uint32_t i = 0; i + 2 < c.vMeshIndices.size(); i += 3)
+                                        jTris.push_back(JPH::IndexedTriangle(
+                                                c.vMeshIndices[i], c.vMeshIndices[i+1], c.vMeshIndices[i+2]));
+
+                                JPH::MeshShapeSettings settings(std::move(jVerts), std::move(jTris));
+                                auto result = settings.Create();
+                                if (result.IsValid()) return result.Get();
+                                log_e("PhysicsSystem: MeshShape creation failed");
+                                return new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f)); // fallback
+                        }
                 }
                 return new JPH::SphereShape(0.5f); // fallback
         }
@@ -474,6 +493,10 @@ BodyHandle PhysicsSystem::CreateRigidBody(const RigidBodyDesc& desc) {
         state.qCurrRot    = desc.qInitialRotation;
         state.qPrevRot    = desc.qInitialRotation;
         state.oCollider   = desc.oCollider;
+        state.oCollider.vMeshVertices.clear();
+        state.oCollider.vMeshVertices.shrink_to_fit();
+        state.oCollider.vMeshIndices.clear();
+        state.oCollider.vMeshIndices.shrink_to_fit();
         state.is_trigger  = desc.is_trigger;
         state.is_static   = desc.is_static;
         state.is_kinematic = desc.is_kinematic;
@@ -588,8 +611,9 @@ void* PhysicsSystem::GetNode(BodyHandle h) const {
 }
 
 std::string RigidBodyDesc::Str() const {
-        const char* collider_type = oCollider.type == ColliderDesc::Box    ? "Box"
+        const char* collider_type = oCollider.type == ColliderDesc::Box     ? "Box"
                                   : oCollider.type == ColliderDesc::Sphere ? "Sphere"
+                                  : oCollider.type == ColliderDesc::Mesh   ? "Mesh"
                                                                            : "Capsule";
         return fmt::format(
                 "RigidBodyDesc: pos: ({:.2f}, {:.2f}, {:.2f}), rot: ({:.2f}, {:.2f}, {:.2f}, {:.2f}), "
@@ -672,11 +696,14 @@ void PhysicsSystem::DrawDebug() {
                                 }
                                 break;
                         }
+                        case ColliderDesc::Mesh:
+                                break; // mesh data cleared after creation — no debug draw
                 }
         }
 }
 
-void PhysicsSystem::Interpolate(float alpha) {
+void PhysicsSystem::Interpolate() {
+        const float alpha = pImpl->interpolation_alpha;
         if (!pImpl->initialized) return;
 
         for (auto& [idx, state] : pImpl->mBodyStates) {
