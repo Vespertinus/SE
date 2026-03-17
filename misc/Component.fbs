@@ -65,9 +65,49 @@ table AppComponent {
         data:[ubyte] (flexbuffer);
 }
 
+table BoxCollider {
+        half_extents:Vec3 (required);
+}
+
+table SphereCollider {
+        radius:float = 0.5;
+}
+
+table CapsuleCollider {
+        radius:float = 0.5;
+        half_height:float = 0.5;
+}
+
+table MeshCollider {
+        vertices:[float];   // flattened vec3 triples: x0,y0,z0, x1,y1,z1, ...
+        indices:[uint32];
+}
+
+union ColliderU {
+        BoxCollider,
+        SphereCollider,
+        CapsuleCollider,
+        MeshCollider
+}
+
+table RigidBody {
+        collider:ColliderU (required);
+        initial_rotation:Vec4;        // quaternion stored as (x,y,z,w) — matches glm::quat memory layout
+        is_static:bool        = false;
+        is_kinematic:bool     = false;
+        is_trigger:bool       = false;
+        friction:float        = 0.5;
+        restitution:float     = 0.0;
+        linear_damping:float  = 0.05;
+        angular_damping:float = 0.05;
+        gravity_scale:float   = 1.0;
+        mass:float            = 1.0;
+}
+
 union ComponentU {
         StaticModel,
         AnimatedModel,
+        RigidBody,
 //        Camera,
 //        Light,
 //        etc

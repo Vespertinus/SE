@@ -4,6 +4,7 @@
 
 #include <string>
 #include <PhysicsTypes.h>
+#include <Component_generated.h>
 
 namespace SE {
 
@@ -15,7 +16,11 @@ class RigidBody {
         bool                         is_kinematic = false;
 
 public:
+        using TSerialized = FlatBuffers::RigidBody;
+
         RigidBody(TSceneTree::TSceneNodeExact* pNode, const RigidBodyDesc& desc);
+        RigidBody(TSceneTree::TSceneNodeExact* pNode,
+                  const SE::FlatBuffers::RigidBody* pFB);
         ~RigidBody() noexcept;
 
         void Enable();

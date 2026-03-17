@@ -4,6 +4,82 @@
 
 namespace SE {
 
+static RigidBodyDesc RigidBodyDescFromFB(
+        const SE::FlatBuffers::RigidBody* pFB,
+        TSceneTree::TSceneNodeExact* pNode)
+{
+    using namespace SE::FlatBuffers;
+    RigidBodyDesc desc;
+
+    // Collider
+    switch (pFB->collider_type()) {
+        case ColliderU::BoxCollider: {
+            auto* p = pFB->collider_as_BoxCollider();
+            desc.oCollider.type = ColliderDesc::Box;
+            desc.oCollider.vHalfExtents = {
+                p->half_extents()->x(),
+                p->half_extents()->y(),
+                p->half_extents()->z()
+            };
+            break;
+        }
+        case ColliderU::SphereCollider: {
+            auto* p = pFB->collider_as_SphereCollider();
+            desc.oCollider.type   = ColliderDesc::Sphere;
+            desc.oCollider.radius = p->radius();
+            break;
+        }
+        case ColliderU::CapsuleCollider: {
+            auto* p = pFB->collider_as_CapsuleCollider();
+            desc.oCollider.type        = ColliderDesc::Capsule;
+            desc.oCollider.radius      = p->radius();
+            desc.oCollider.half_height = p->half_height();
+            break;
+        }
+        case ColliderU::MeshCollider: {
+            auto* p = pFB->collider_as_MeshCollider();
+            desc.oCollider.type = ColliderDesc::Mesh;
+            if (p->vertices()) {
+                const float* raw = p->vertices()->data();
+                const size_t n   = p->vertices()->size() / 3;
+                desc.oCollider.vMeshVertices.reserve(n);
+                for (size_t i = 0; i < n; ++i)
+                    desc.oCollider.vMeshVertices.emplace_back(raw[i*3], raw[i*3+1], raw[i*3+2]);
+            }
+            if (p->indices())
+                desc.oCollider.vMeshIndices.assign(p->indices()->begin(), p->indices()->end());
+            break;
+        }
+        default:
+            throw std::runtime_error("RigidBody: unknown collider type in FlatBuffer");
+    }
+
+    // Scalars
+    desc.is_static        = pFB->is_static();
+    desc.is_kinematic     = pFB->is_kinematic();
+    desc.is_trigger       = pFB->is_trigger();
+    desc.friction         = pFB->friction();
+    desc.restitution      = pFB->restitution();
+    desc.linear_damping   = pFB->linear_damping();
+    desc.angular_damping  = pFB->angular_damping();
+    desc.gravity_scale    = pFB->gravity_scale();
+    desc.mass             = pFB->mass();
+
+    // Position from node (already set by scene loader)
+    desc.vInitialPosition = pNode->GetTransform().GetWorldPos();
+
+    // Rotation — Vec4 is [x,y,z,w] matching glm::quat layout
+    if (pFB->initial_rotation()) {
+        desc.qInitialRotation = *reinterpret_cast<const glm::quat*>(pFB->initial_rotation());
+    }
+
+    return desc;
+}
+
+RigidBody::RigidBody(TSceneTree::TSceneNodeExact* pNode,
+                     const SE::FlatBuffers::RigidBody* pFB)
+    : RigidBody(pNode, RigidBodyDescFromFB(pFB, pNode)) {}
+
 RigidBody::RigidBody(TSceneTree::TSceneNodeExact* pNewNode, const RigidBodyDesc& desc)
         : pNode(pNewNode)
         , oCollider(desc.oCollider)

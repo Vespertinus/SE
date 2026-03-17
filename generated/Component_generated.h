@@ -48,33 +48,113 @@ struct AnimatedModelBuilder;
 struct AppComponent;
 struct AppComponentBuilder;
 
+struct BoxCollider;
+struct BoxColliderBuilder;
+
+struct SphereCollider;
+struct SphereColliderBuilder;
+
+struct CapsuleCollider;
+struct CapsuleColliderBuilder;
+
+struct MeshCollider;
+struct MeshColliderBuilder;
+
+struct RigidBody;
+struct RigidBodyBuilder;
+
 struct Component;
 struct ComponentBuilder;
+
+enum class ColliderU : uint8_t {
+  NONE = 0,
+  BoxCollider = 1,
+  SphereCollider = 2,
+  CapsuleCollider = 3,
+  MeshCollider = 4,
+  MIN = NONE,
+  MAX = MeshCollider
+};
+
+inline const ColliderU (&EnumValuesColliderU())[5] {
+  static const ColliderU values[] = {
+    ColliderU::NONE,
+    ColliderU::BoxCollider,
+    ColliderU::SphereCollider,
+    ColliderU::CapsuleCollider,
+    ColliderU::MeshCollider
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesColliderU() {
+  static const char * const names[6] = {
+    "NONE",
+    "BoxCollider",
+    "SphereCollider",
+    "CapsuleCollider",
+    "MeshCollider",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameColliderU(ColliderU e) {
+  if (::flatbuffers::IsOutRange(e, ColliderU::NONE, ColliderU::MeshCollider)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesColliderU()[index];
+}
+
+template<typename T> struct ColliderUTraits {
+  static const ColliderU enum_value = ColliderU::NONE;
+};
+
+template<> struct ColliderUTraits<SE::FlatBuffers::BoxCollider> {
+  static const ColliderU enum_value = ColliderU::BoxCollider;
+};
+
+template<> struct ColliderUTraits<SE::FlatBuffers::SphereCollider> {
+  static const ColliderU enum_value = ColliderU::SphereCollider;
+};
+
+template<> struct ColliderUTraits<SE::FlatBuffers::CapsuleCollider> {
+  static const ColliderU enum_value = ColliderU::CapsuleCollider;
+};
+
+template<> struct ColliderUTraits<SE::FlatBuffers::MeshCollider> {
+  static const ColliderU enum_value = ColliderU::MeshCollider;
+};
+
+bool VerifyColliderU(::flatbuffers::Verifier &verifier, const void *obj, ColliderU type);
+bool VerifyColliderUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<ColliderU> *types);
 
 enum class ComponentU : uint8_t {
   NONE = 0,
   StaticModel = 1,
   AnimatedModel = 2,
-  AppComponent = 3,
+  RigidBody = 3,
+  AppComponent = 4,
   MIN = NONE,
   MAX = AppComponent
 };
 
-inline const ComponentU (&EnumValuesComponentU())[4] {
+inline const ComponentU (&EnumValuesComponentU())[5] {
   static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
     ComponentU::AnimatedModel,
+    ComponentU::RigidBody,
     ComponentU::AppComponent
   };
   return values;
 }
 
 inline const char * const *EnumNamesComponentU() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
+    "RigidBody",
     "AppComponent",
     nullptr
   };
@@ -97,6 +177,10 @@ template<> struct ComponentUTraits<SE::FlatBuffers::StaticModel> {
 
 template<> struct ComponentUTraits<SE::FlatBuffers::AnimatedModel> {
   static const ComponentU enum_value = ComponentU::AnimatedModel;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::RigidBody> {
+  static const ComponentU enum_value = ComponentU::RigidBody;
 };
 
 template<> struct ComponentUTraits<SE::FlatBuffers::AppComponent> {
@@ -775,6 +859,387 @@ inline ::flatbuffers::Offset<AppComponent> CreateAppComponentDirect(
       data__);
 }
 
+struct BoxCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BoxColliderBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_HALF_EXTENTS = 4
+  };
+  const SE::FlatBuffers::Vec3 *half_extents() const {
+    return GetStruct<const SE::FlatBuffers::Vec3 *>(VT_HALF_EXTENTS);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyFieldRequired<SE::FlatBuffers::Vec3>(verifier, VT_HALF_EXTENTS, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct BoxColliderBuilder {
+  typedef BoxCollider Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_half_extents(const SE::FlatBuffers::Vec3 *half_extents) {
+    fbb_.AddStruct(BoxCollider::VT_HALF_EXTENTS, half_extents);
+  }
+  explicit BoxColliderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<BoxCollider> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<BoxCollider>(end);
+    fbb_.Required(o, BoxCollider::VT_HALF_EXTENTS);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<BoxCollider> CreateBoxCollider(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const SE::FlatBuffers::Vec3 *half_extents = nullptr) {
+  BoxColliderBuilder builder_(_fbb);
+  builder_.add_half_extents(half_extents);
+  return builder_.Finish();
+}
+
+struct SphereCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SphereColliderBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_RADIUS = 4
+  };
+  float radius() const {
+    return GetField<float>(VT_RADIUS, 0.5f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_RADIUS, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct SphereColliderBuilder {
+  typedef SphereCollider Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_radius(float radius) {
+    fbb_.AddElement<float>(SphereCollider::VT_RADIUS, radius, 0.5f);
+  }
+  explicit SphereColliderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<SphereCollider> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<SphereCollider>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<SphereCollider> CreateSphereCollider(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float radius = 0.5f) {
+  SphereColliderBuilder builder_(_fbb);
+  builder_.add_radius(radius);
+  return builder_.Finish();
+}
+
+struct CapsuleCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef CapsuleColliderBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_RADIUS = 4,
+    VT_HALF_HEIGHT = 6
+  };
+  float radius() const {
+    return GetField<float>(VT_RADIUS, 0.5f);
+  }
+  float half_height() const {
+    return GetField<float>(VT_HALF_HEIGHT, 0.5f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_RADIUS, 4) &&
+           VerifyField<float>(verifier, VT_HALF_HEIGHT, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct CapsuleColliderBuilder {
+  typedef CapsuleCollider Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_radius(float radius) {
+    fbb_.AddElement<float>(CapsuleCollider::VT_RADIUS, radius, 0.5f);
+  }
+  void add_half_height(float half_height) {
+    fbb_.AddElement<float>(CapsuleCollider::VT_HALF_HEIGHT, half_height, 0.5f);
+  }
+  explicit CapsuleColliderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<CapsuleCollider> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<CapsuleCollider>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<CapsuleCollider> CreateCapsuleCollider(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float radius = 0.5f,
+    float half_height = 0.5f) {
+  CapsuleColliderBuilder builder_(_fbb);
+  builder_.add_half_height(half_height);
+  builder_.add_radius(radius);
+  return builder_.Finish();
+}
+
+struct MeshCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MeshColliderBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_VERTICES = 4,
+    VT_INDICES = 6
+  };
+  const ::flatbuffers::Vector<float> *vertices() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_VERTICES);
+  }
+  const ::flatbuffers::Vector<uint32_t> *indices() const {
+    return GetPointer<const ::flatbuffers::Vector<uint32_t> *>(VT_INDICES);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_VERTICES) &&
+           verifier.VerifyVector(vertices()) &&
+           VerifyOffset(verifier, VT_INDICES) &&
+           verifier.VerifyVector(indices()) &&
+           verifier.EndTable();
+  }
+};
+
+struct MeshColliderBuilder {
+  typedef MeshCollider Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_vertices(::flatbuffers::Offset<::flatbuffers::Vector<float>> vertices) {
+    fbb_.AddOffset(MeshCollider::VT_VERTICES, vertices);
+  }
+  void add_indices(::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> indices) {
+    fbb_.AddOffset(MeshCollider::VT_INDICES, indices);
+  }
+  explicit MeshColliderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<MeshCollider> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<MeshCollider>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<MeshCollider> CreateMeshCollider(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> vertices = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> indices = 0) {
+  MeshColliderBuilder builder_(_fbb);
+  builder_.add_indices(indices);
+  builder_.add_vertices(vertices);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<MeshCollider> CreateMeshColliderDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<float> *vertices = nullptr,
+    const std::vector<uint32_t> *indices = nullptr) {
+  auto vertices__ = vertices ? _fbb.CreateVector<float>(*vertices) : 0;
+  auto indices__ = indices ? _fbb.CreateVector<uint32_t>(*indices) : 0;
+  return SE::FlatBuffers::CreateMeshCollider(
+      _fbb,
+      vertices__,
+      indices__);
+}
+
+struct RigidBody FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef RigidBodyBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_COLLIDER_TYPE = 4,
+    VT_COLLIDER = 6,
+    VT_INITIAL_ROTATION = 8,
+    VT_IS_STATIC = 10,
+    VT_IS_KINEMATIC = 12,
+    VT_IS_TRIGGER = 14,
+    VT_FRICTION = 16,
+    VT_RESTITUTION = 18,
+    VT_LINEAR_DAMPING = 20,
+    VT_ANGULAR_DAMPING = 22,
+    VT_GRAVITY_SCALE = 24,
+    VT_MASS = 26
+  };
+  SE::FlatBuffers::ColliderU collider_type() const {
+    return static_cast<SE::FlatBuffers::ColliderU>(GetField<uint8_t>(VT_COLLIDER_TYPE, 0));
+  }
+  const void *collider() const {
+    return GetPointer<const void *>(VT_COLLIDER);
+  }
+  template<typename T> const T *collider_as() const;
+  const SE::FlatBuffers::BoxCollider *collider_as_BoxCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::BoxCollider ? static_cast<const SE::FlatBuffers::BoxCollider *>(collider()) : nullptr;
+  }
+  const SE::FlatBuffers::SphereCollider *collider_as_SphereCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::SphereCollider ? static_cast<const SE::FlatBuffers::SphereCollider *>(collider()) : nullptr;
+  }
+  const SE::FlatBuffers::CapsuleCollider *collider_as_CapsuleCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::CapsuleCollider ? static_cast<const SE::FlatBuffers::CapsuleCollider *>(collider()) : nullptr;
+  }
+  const SE::FlatBuffers::MeshCollider *collider_as_MeshCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::MeshCollider ? static_cast<const SE::FlatBuffers::MeshCollider *>(collider()) : nullptr;
+  }
+  const SE::FlatBuffers::Vec4 *initial_rotation() const {
+    return GetStruct<const SE::FlatBuffers::Vec4 *>(VT_INITIAL_ROTATION);
+  }
+  bool is_static() const {
+    return GetField<uint8_t>(VT_IS_STATIC, 0) != 0;
+  }
+  bool is_kinematic() const {
+    return GetField<uint8_t>(VT_IS_KINEMATIC, 0) != 0;
+  }
+  bool is_trigger() const {
+    return GetField<uint8_t>(VT_IS_TRIGGER, 0) != 0;
+  }
+  float friction() const {
+    return GetField<float>(VT_FRICTION, 0.5f);
+  }
+  float restitution() const {
+    return GetField<float>(VT_RESTITUTION, 0.0f);
+  }
+  float linear_damping() const {
+    return GetField<float>(VT_LINEAR_DAMPING, 0.05f);
+  }
+  float angular_damping() const {
+    return GetField<float>(VT_ANGULAR_DAMPING, 0.05f);
+  }
+  float gravity_scale() const {
+    return GetField<float>(VT_GRAVITY_SCALE, 1.0f);
+  }
+  float mass() const {
+    return GetField<float>(VT_MASS, 1.0f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint8_t>(verifier, VT_COLLIDER_TYPE, 1) &&
+           VerifyOffsetRequired(verifier, VT_COLLIDER) &&
+           VerifyColliderU(verifier, collider(), collider_type()) &&
+           VerifyField<SE::FlatBuffers::Vec4>(verifier, VT_INITIAL_ROTATION, 4) &&
+           VerifyField<uint8_t>(verifier, VT_IS_STATIC, 1) &&
+           VerifyField<uint8_t>(verifier, VT_IS_KINEMATIC, 1) &&
+           VerifyField<uint8_t>(verifier, VT_IS_TRIGGER, 1) &&
+           VerifyField<float>(verifier, VT_FRICTION, 4) &&
+           VerifyField<float>(verifier, VT_RESTITUTION, 4) &&
+           VerifyField<float>(verifier, VT_LINEAR_DAMPING, 4) &&
+           VerifyField<float>(verifier, VT_ANGULAR_DAMPING, 4) &&
+           VerifyField<float>(verifier, VT_GRAVITY_SCALE, 4) &&
+           VerifyField<float>(verifier, VT_MASS, 4) &&
+           verifier.EndTable();
+  }
+};
+
+template<> inline const SE::FlatBuffers::BoxCollider *RigidBody::collider_as<SE::FlatBuffers::BoxCollider>() const {
+  return collider_as_BoxCollider();
+}
+
+template<> inline const SE::FlatBuffers::SphereCollider *RigidBody::collider_as<SE::FlatBuffers::SphereCollider>() const {
+  return collider_as_SphereCollider();
+}
+
+template<> inline const SE::FlatBuffers::CapsuleCollider *RigidBody::collider_as<SE::FlatBuffers::CapsuleCollider>() const {
+  return collider_as_CapsuleCollider();
+}
+
+template<> inline const SE::FlatBuffers::MeshCollider *RigidBody::collider_as<SE::FlatBuffers::MeshCollider>() const {
+  return collider_as_MeshCollider();
+}
+
+struct RigidBodyBuilder {
+  typedef RigidBody Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_collider_type(SE::FlatBuffers::ColliderU collider_type) {
+    fbb_.AddElement<uint8_t>(RigidBody::VT_COLLIDER_TYPE, static_cast<uint8_t>(collider_type), 0);
+  }
+  void add_collider(::flatbuffers::Offset<void> collider) {
+    fbb_.AddOffset(RigidBody::VT_COLLIDER, collider);
+  }
+  void add_initial_rotation(const SE::FlatBuffers::Vec4 *initial_rotation) {
+    fbb_.AddStruct(RigidBody::VT_INITIAL_ROTATION, initial_rotation);
+  }
+  void add_is_static(bool is_static) {
+    fbb_.AddElement<uint8_t>(RigidBody::VT_IS_STATIC, static_cast<uint8_t>(is_static), 0);
+  }
+  void add_is_kinematic(bool is_kinematic) {
+    fbb_.AddElement<uint8_t>(RigidBody::VT_IS_KINEMATIC, static_cast<uint8_t>(is_kinematic), 0);
+  }
+  void add_is_trigger(bool is_trigger) {
+    fbb_.AddElement<uint8_t>(RigidBody::VT_IS_TRIGGER, static_cast<uint8_t>(is_trigger), 0);
+  }
+  void add_friction(float friction) {
+    fbb_.AddElement<float>(RigidBody::VT_FRICTION, friction, 0.5f);
+  }
+  void add_restitution(float restitution) {
+    fbb_.AddElement<float>(RigidBody::VT_RESTITUTION, restitution, 0.0f);
+  }
+  void add_linear_damping(float linear_damping) {
+    fbb_.AddElement<float>(RigidBody::VT_LINEAR_DAMPING, linear_damping, 0.05f);
+  }
+  void add_angular_damping(float angular_damping) {
+    fbb_.AddElement<float>(RigidBody::VT_ANGULAR_DAMPING, angular_damping, 0.05f);
+  }
+  void add_gravity_scale(float gravity_scale) {
+    fbb_.AddElement<float>(RigidBody::VT_GRAVITY_SCALE, gravity_scale, 1.0f);
+  }
+  void add_mass(float mass) {
+    fbb_.AddElement<float>(RigidBody::VT_MASS, mass, 1.0f);
+  }
+  explicit RigidBodyBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<RigidBody> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<RigidBody>(end);
+    fbb_.Required(o, RigidBody::VT_COLLIDER);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    SE::FlatBuffers::ColliderU collider_type = SE::FlatBuffers::ColliderU::NONE,
+    ::flatbuffers::Offset<void> collider = 0,
+    const SE::FlatBuffers::Vec4 *initial_rotation = nullptr,
+    bool is_static = false,
+    bool is_kinematic = false,
+    bool is_trigger = false,
+    float friction = 0.5f,
+    float restitution = 0.0f,
+    float linear_damping = 0.05f,
+    float angular_damping = 0.05f,
+    float gravity_scale = 1.0f,
+    float mass = 1.0f) {
+  RigidBodyBuilder builder_(_fbb);
+  builder_.add_mass(mass);
+  builder_.add_gravity_scale(gravity_scale);
+  builder_.add_angular_damping(angular_damping);
+  builder_.add_linear_damping(linear_damping);
+  builder_.add_restitution(restitution);
+  builder_.add_friction(friction);
+  builder_.add_initial_rotation(initial_rotation);
+  builder_.add_collider(collider);
+  builder_.add_is_trigger(is_trigger);
+  builder_.add_is_kinematic(is_kinematic);
+  builder_.add_is_static(is_static);
+  builder_.add_collider_type(collider_type);
+  return builder_.Finish();
+}
+
 struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -794,6 +1259,9 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const SE::FlatBuffers::AnimatedModel *component_as_AnimatedModel() const {
     return component_type() == SE::FlatBuffers::ComponentU::AnimatedModel ? static_cast<const SE::FlatBuffers::AnimatedModel *>(component()) : nullptr;
   }
+  const SE::FlatBuffers::RigidBody *component_as_RigidBody() const {
+    return component_type() == SE::FlatBuffers::ComponentU::RigidBody ? static_cast<const SE::FlatBuffers::RigidBody *>(component()) : nullptr;
+  }
   const SE::FlatBuffers::AppComponent *component_as_AppComponent() const {
     return component_type() == SE::FlatBuffers::ComponentU::AppComponent ? static_cast<const SE::FlatBuffers::AppComponent *>(component()) : nullptr;
   }
@@ -812,6 +1280,10 @@ template<> inline const SE::FlatBuffers::StaticModel *Component::component_as<SE
 
 template<> inline const SE::FlatBuffers::AnimatedModel *Component::component_as<SE::FlatBuffers::AnimatedModel>() const {
   return component_as_AnimatedModel();
+}
+
+template<> inline const SE::FlatBuffers::RigidBody *Component::component_as<SE::FlatBuffers::RigidBody>() const {
+  return component_as_RigidBody();
 }
 
 template<> inline const SE::FlatBuffers::AppComponent *Component::component_as<SE::FlatBuffers::AppComponent>() const {
@@ -850,6 +1322,43 @@ inline ::flatbuffers::Offset<Component> CreateComponent(
   return builder_.Finish();
 }
 
+inline bool VerifyColliderU(::flatbuffers::Verifier &verifier, const void *obj, ColliderU type) {
+  switch (type) {
+    case ColliderU::NONE: {
+      return true;
+    }
+    case ColliderU::BoxCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::BoxCollider *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ColliderU::SphereCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SphereCollider *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ColliderU::CapsuleCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::CapsuleCollider *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ColliderU::MeshCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::MeshCollider *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+
+inline bool VerifyColliderUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<ColliderU> *types) {
+  if (!values || !types) return !values && !types;
+  if (values->size() != types->size()) return false;
+  for (::flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+    if (!VerifyColliderU(
+        verifier,  values->Get(i), types->GetEnum<ColliderU>(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj, ComponentU type) {
   switch (type) {
     case ComponentU::NONE: {
@@ -861,6 +1370,10 @@ inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj,
     }
     case ComponentU::AnimatedModel: {
       auto ptr = reinterpret_cast<const SE::FlatBuffers::AnimatedModel *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::RigidBody: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::RigidBody *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ComponentU::AppComponent: {
