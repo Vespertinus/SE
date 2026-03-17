@@ -85,6 +85,11 @@ typedef Mesh                                                            TMesh;
 
 }
 
+#include <VertexLayout.h>
+#include <MeshBuilder.h>
+#include <MeshGen.h>
+#include <TextureBuilder.h>
+
 #include <Renderer.h>
 #include <DeferredRenderer.h>
 #include <DebugRenderer.h>
