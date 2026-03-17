@@ -1,19 +1,8 @@
 
 #include "SphereBuilder.h"
+#include <TextureBuilder.h>
 
 namespace SE {
-
-static H<TTexture> CreateTex1x1(const char * name, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-        uint8_t pixels[4] = { r, g, b, a };
-        TextureStock oStock;
-        oStock.raw_image      = pixels;
-        oStock.raw_image_size = 4;
-        oStock.format         = GL_RGBA;
-        oStock.internal_format = GL_RGBA8;
-        oStock.width          = 1;
-        oStock.height         = 1;
-        return CreateResource<TTexture>(name, oStock);
-}
 
 Scene::Scene(const Settings & oSettings) :
         pSceneTree(CreateRawResource<TSceneTree>("pbr_demo", true)) {
@@ -22,9 +11,9 @@ Scene::Scene(const Settings & oSettings) :
         auto hMesh = CreateSphereMesh(16, 32);
 
         // --- 1×1 procedural textures ---
-        auto hWhiteTex    = CreateTex1x1("pbr_white",   255, 255, 255, 255);
-        auto hNormalTex   = CreateTex1x1("pbr_normal",  128, 128, 255, 255);
-        auto hSpecularTex = CreateTex1x1("pbr_specular",  0, 255, 255, 255);
+        auto hWhiteTex    = TextureBuilder(1, 1).Fill(255, 255, 255).Upload("pbr_white");
+        auto hNormalTex   = TextureBuilder(1, 1).Fill(128, 128, 255).Upload("pbr_normal");
+        auto hSpecularTex = TextureBuilder(1, 1).Fill(  0, 255, 255).Upload("pbr_specular");
 
         // --- Materials (5 variations) ---
         const char * matPaths[] = {

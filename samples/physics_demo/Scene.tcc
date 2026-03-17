@@ -3,6 +3,7 @@
 
 #include "MeshBuilders.h"
 #include "../pbr_demo/SphereBuilder.h"
+#include <TextureBuilder.h>
 
 
 /* PhysicsDebugController:
@@ -11,22 +12,6 @@
 */
 
 namespace SE {
-
-// ---------------------------------------------------------------------------
-// Helper: 1×1 pixel procedural texture
-// ---------------------------------------------------------------------------
-static H<TTexture> CreateTex1x1pd(const char * name, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-
-        uint8_t pixels[4] = { r, g, b, a };
-        TextureStock oStock;
-        oStock.raw_image        = pixels;
-        oStock.raw_image_size   = 4;
-        oStock.format           = GL_RGBA;
-        oStock.internal_format  = GL_RGBA8;
-        oStock.width            = 1;
-        oStock.height           = 1;
-        return CreateResource<TTexture>(name, oStock);
-}
 
 // ---------------------------------------------------------------------------
 // Scene constructor
@@ -44,9 +29,9 @@ Scene::Scene(const Settings & oSettings) :
         // -----------------------------------------------------------------------
         // Shared 1×1 textures
         // -----------------------------------------------------------------------
-        auto hWhiteTex  = CreateTex1x1pd("pd_white",   255, 255, 255, 255);
-        auto hNormalTex = CreateTex1x1pd("pd_normal",  128, 128, 255, 255);
-        auto hSpecTex   = CreateTex1x1pd("pd_spec",      0, 255, 255, 255);
+        auto hWhiteTex  = TextureBuilder(1, 1).Fill(255, 255, 255).Upload("pd_white");
+        auto hNormalTex = TextureBuilder(1, 1).Fill(128, 128, 255).Upload("pd_normal");
+        auto hSpecTex   = TextureBuilder(1, 1).Fill(  0, 255, 255).Upload("pd_spec");
 
         // -----------------------------------------------------------------------
         // Materials
