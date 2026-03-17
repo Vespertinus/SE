@@ -8,6 +8,9 @@
 #include <GBuffer.tcc>
 #include <SSAOBuffer.tcc>
 #include <PhysicsSystem.tcc>
+#include <MeshBuilder.tcc>
+#include <MeshGen.tcc>
+#include <TextureBuilder.tcc>
 #endif
 //template class, so we need realization also
 #include <Renderer.tcc>
