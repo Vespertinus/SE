@@ -106,7 +106,7 @@ public:
 struct PendingContact {
         bool        is_enter;
         bool        a_trigger, b_trigger;
-        JPH::BodyID oA, oB;
+        JPH::BodyID hA, hB;
         glm::vec3   vNormal, vPoint;
 };
 
@@ -122,9 +122,9 @@ public:
         }
 
         void OnContactAdded(
-                        const JPH::Body& a, 
+                        const JPH::Body& a,
                         const JPH::Body& b,
-                        const JPH::ContactManifold& manifold, 
+                        const JPH::ContactManifold& manifold,
                         JPH::ContactSettings&) override {
 
                 bool a_trig = (a.GetObjectLayer() == PhysLayers::TRIGGER);
@@ -149,17 +149,32 @@ public:
         }
 };
 
+
 // ---- body state for interpolation ------------------------------------------
 
 struct BodyState {
+        BodyHandle hBody;
         glm::vec3  vPrevPos  {0.0f, 0.0f, 0.0f};
         glm::vec3  vCurrPos  {0.0f, 0.0f, 0.0f};
         glm::quat  qPrevRot  {1.0f, 0.0f, 0.0f, 0.0f};
         glm::quat  qCurrRot  {1.0f, 0.0f, 0.0f, 0.0f};
+        ColliderDesc oCollider;
         void*      pNode       = nullptr;  // TSceneTree::TSceneNodeExact*
         bool       is_trigger  = false;
         bool       is_static   = false;
         bool       is_kinematic = false;
+
+        std::string Str() const {
+                return fmt::format(
+                        "BodyState: prev: ({:.2f}, {:.2f}, {:.2f}), curr: ({:.2f}, {:.2f}, {:.2f}), "
+                        "prevRot: ({:.2f}, {:.2f}, {:.2f}, {:.2f}), currRot: ({:.2f}, {:.2f}, {:.2f}, {:.2f}), "
+                        "node: {:p}, static: {}, kinematic: {}, trigger: {}",
+                        vPrevPos.x, vPrevPos.y, vPrevPos.z,
+                        vCurrPos.x, vCurrPos.y, vCurrPos.z,
+                        qPrevRot.w, qPrevRot.x, qPrevRot.y, qPrevRot.z,
+                        qCurrRot.w, qCurrRot.x, qCurrRot.y, qCurrRot.z,
+                        pNode, is_static, is_kinematic, is_trigger);
+        }
 };
 
 // ---- deferred command -------------------------------------------------------
@@ -167,7 +182,7 @@ struct BodyState {
 struct DeferredCmd {
 
         enum Type { Impulse, SetVelocity, Teleport, Destroy, MoveKinematic, Activate, Deactivate } type;
-        JPH::BodyID oId;
+        JPH::BodyID hId;
         glm::vec3   vParam;
         glm::quat   qParam;
 };
@@ -181,6 +196,7 @@ static inline BodyHandle ToHandle(JPH::BodyID id) {
 static inline JPH::BodyID ToJoltID(BodyHandle h) {
         return JPH::BodyID(h.index | (uint32_t(h.generation) << JPH::BodyID::cSequenceNumberShift));
 }
+
 
 static inline glm::vec3 ToGlm(JPH::Vec3Arg v) {
         return {v.GetX(), v.GetY(), v.GetZ()};
@@ -219,6 +235,7 @@ struct PhysicsSystem::Impl {
 
         float  accumulator        = 0.0f;
         float  interpolation_alpha = 0.0f;
+        bool   paused             = false;
 
         // ---- shape creation -------------------------------------------------
         JPH::Ref<JPH::Shape> MakeShape(const ColliderDesc& c) {
@@ -243,32 +260,32 @@ struct PhysicsSystem::Impl {
                 auto& bi = pPhysics->GetBodyInterface();
                 for (auto& cmd : cmds) {
                         if (cmd.type == DeferredCmd::Destroy) {
-                                if (bi.IsAdded(cmd.oId)) bi.RemoveBody(cmd.oId);
-                                bi.DestroyBody(cmd.oId);
-                                mBodyStates.erase(cmd.oId.GetIndex());
+                                if (bi.IsAdded(cmd.hId)) bi.RemoveBody(cmd.hId);
+                                bi.DestroyBody(cmd.hId);
+                                mBodyStates.erase(cmd.hId.GetIndex());
                                 continue;
                         }
-                        if (!bi.IsAdded(cmd.oId)) continue;
+                        if (!bi.IsAdded(cmd.hId)) continue;
                         switch (cmd.type) {
                                 case DeferredCmd::Impulse:
-                                        bi.AddImpulse(cmd.oId, ToJolt(cmd.vParam));
+                                        bi.AddImpulse(cmd.hId, ToJolt(cmd.vParam));
                                         break;
                                 case DeferredCmd::SetVelocity:
-                                        bi.SetLinearVelocity(cmd.oId, ToJolt(cmd.vParam));
+                                        bi.SetLinearVelocity(cmd.hId, ToJolt(cmd.vParam));
                                         break;
                                 case DeferredCmd::Teleport:
-                                        bi.SetPositionAndRotation(cmd.oId, ToJoltR(cmd.vParam), ToJolt(cmd.qParam),
+                                        bi.SetPositionAndRotation(cmd.hId, ToJoltR(cmd.vParam), ToJolt(cmd.qParam),
                                                         JPH::EActivation::Activate);
                                         break;
                                 case DeferredCmd::MoveKinematic:
-                                        bi.MoveKinematic(cmd.oId, ToJoltR(cmd.vParam), ToJolt(cmd.qParam),
+                                        bi.MoveKinematic(cmd.hId, ToJoltR(cmd.vParam), ToJolt(cmd.qParam),
                                                         oCfg.fixed_dt);
                                         break;
                                 case DeferredCmd::Activate:
-                                        bi.ActivateBody(cmd.oId);
+                                        bi.ActivateBody(cmd.hId);
                                         break;
                                 case DeferredCmd::Deactivate:
-                                        bi.DeactivateBody(cmd.oId);
+                                        bi.DeactivateBody(cmd.hId);
                                         break;
                                 default: break;
                         }
@@ -282,7 +299,7 @@ struct PhysicsSystem::Impl {
                         state.vPrevPos = state.vCurrPos;
                         state.qPrevRot = state.qCurrRot;
                         JPH::RVec3 pos; JPH::Quat rot;
-                        bi.GetPositionAndRotation(JPH::BodyID(idx), pos, rot);
+                        bi.GetPositionAndRotation(ToJoltID(state.hBody), pos, rot);
                         state.vCurrPos = ToGlm(pos);
                         state.qCurrRot = ToGlm(rot);
                 }
@@ -293,7 +310,7 @@ struct PhysicsSystem::Impl {
                 auto& bi = pPhysics->GetBodyInterface();
                 for (auto& [idx, state] : mBodyStates) {
                         JPH::RVec3 pos; JPH::Quat rot;
-                        bi.GetPositionAndRotation(JPH::BodyID(idx), pos, rot);
+                        bi.GetPositionAndRotation(ToJoltID(state.hBody), pos, rot);
                         state.vCurrPos = ToGlm(pos);
                         state.qCurrRot = ToGlm(rot);
                 }
@@ -306,8 +323,8 @@ struct PhysicsSystem::Impl {
 
                 auto& em = GetSystem<EventManager>();
                 for (auto& c : contacts) {
-                        BodyHandle ha = ToHandle(c.oA);
-                        BodyHandle hb = ToHandle(c.oB);
+                        BodyHandle ha = ToHandle(c.hA);
+                        BodyHandle hb = ToHandle(c.hB);
                         if (c.is_enter) {
                                 if (c.a_trigger || c.b_trigger) {
                                         BodyHandle hTrigger = c.a_trigger ? ha : hb;
@@ -317,9 +334,9 @@ struct PhysicsSystem::Impl {
                                         em.TriggerEvent(EPhysicsContactEnter{ha, hb, c.vNormal, c.vPoint});
                                 }
                         } else {
-                                auto itA = mBodyStates.find(c.oA.GetIndex());
+                                auto itA = mBodyStates.find(c.hA.GetIndex());
                                 bool a_trig = (itA != mBodyStates.end()) && itA->second.is_trigger;
-                                auto itB = mBodyStates.find(c.oB.GetIndex());
+                                auto itB = mBodyStates.find(c.hB.GetIndex());
                                 bool b_trig = (itB != mBodyStates.end()) && itB->second.is_trigger;
                                 if (a_trig || b_trig) {
                                         BodyHandle hTrigger = a_trig ? ha : hb;
@@ -330,6 +347,19 @@ struct PhysicsSystem::Impl {
                                 }
                         }
                 }
+        }
+
+        // ---- run a single fixed step (shared by Update and StepOnce) --------
+        void RunFixedStep() {
+                FlushCommands();
+                SnapshotCurrentState();
+                pPhysics->Update(
+                        oCfg.fixed_dt,
+                        oCfg.collision_steps,
+                        pTempAlloc.get(),
+                        pJobSystem.get());
+                UpdateCurrentState();
+                DrainContacts();
         }
 };
 
@@ -395,6 +425,8 @@ BodyHandle PhysicsSystem::CreateRigidBody(const RigidBodyDesc& desc) {
 
         assert(pImpl->initialized);
 
+        log_d("{}", desc.Str());
+
         JPH::Ref<JPH::Shape> shape = pImpl->MakeShape(desc.oCollider);
 
         JPH::ObjectLayer layer = desc.is_static     ? PhysLayers::STATIC
@@ -436,13 +468,18 @@ BodyHandle PhysicsSystem::CreateRigidBody(const RigidBodyDesc& desc) {
         BodyHandle h = ToHandle(body->GetID());
 
         BodyState state;
+        state.hBody       = h;
         state.vCurrPos    = desc.vInitialPosition;
         state.vPrevPos    = desc.vInitialPosition;
         state.qCurrRot    = desc.qInitialRotation;
         state.qPrevRot    = desc.qInitialRotation;
+        state.oCollider   = desc.oCollider;
         state.is_trigger  = desc.is_trigger;
         state.is_static   = desc.is_static;
         state.is_kinematic = desc.is_kinematic;
+
+        //log_d("{}", state.Str());
+
         pImpl->mBodyStates[body->GetID().GetIndex()] = state;
 
         return h;
@@ -453,7 +490,7 @@ void PhysicsSystem::DestroyBody(BodyHandle h) {
 
         DeferredCmd cmd;
         cmd.type = DeferredCmd::Destroy;
-        cmd.oId  = ToJoltID(h);
+        cmd.hId  = ToJoltID(h);
         std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
         pImpl->vPendingCmds.push_back(cmd);
 }
@@ -463,7 +500,7 @@ void PhysicsSystem::ApplyImpulse(BodyHandle h, glm::vec3 impulse) {
 
         DeferredCmd cmd;
         cmd.type   = DeferredCmd::Impulse;
-        cmd.oId    = ToJoltID(h);
+        cmd.hId    = ToJoltID(h);
         cmd.vParam = impulse;
         std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
         pImpl->vPendingCmds.push_back(cmd);
@@ -474,7 +511,7 @@ void PhysicsSystem::SetLinearVelocity(BodyHandle h, glm::vec3 vel) {
 
         DeferredCmd cmd;
         cmd.type   = DeferredCmd::SetVelocity;
-        cmd.oId    = ToJoltID(h);
+        cmd.hId    = ToJoltID(h);
         cmd.vParam = vel;
         std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
         pImpl->vPendingCmds.push_back(cmd);
@@ -485,7 +522,7 @@ void PhysicsSystem::Teleport(BodyHandle h, glm::vec3 pos, glm::quat rot) {
 
         DeferredCmd cmd;
         cmd.type   = DeferredCmd::Teleport;
-        cmd.oId    = ToJoltID(h);
+        cmd.hId    = ToJoltID(h);
         cmd.vParam = pos;
         cmd.qParam = rot;
         std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
@@ -497,7 +534,7 @@ void PhysicsSystem::MoveKinematic(BodyHandle h, glm::vec3 pos, glm::quat rot) {
 
         DeferredCmd cmd;
         cmd.type   = DeferredCmd::MoveKinematic;
-        cmd.oId    = ToJoltID(h);
+        cmd.hId    = ToJoltID(h);
         cmd.vParam = pos;
         cmd.qParam = rot;
         std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
@@ -509,7 +546,7 @@ void PhysicsSystem::ActivateBody(BodyHandle h) {
 
         DeferredCmd cmd;
         cmd.type = DeferredCmd::Activate;
-        cmd.oId  = ToJoltID(h);
+        cmd.hId  = ToJoltID(h);
         std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
         pImpl->vPendingCmds.push_back(cmd);
 }
@@ -519,7 +556,7 @@ void PhysicsSystem::DeactivateBody(BodyHandle h) {
 
         DeferredCmd cmd;
         cmd.type = DeferredCmd::Deactivate;
-        cmd.oId  = ToJoltID(h);
+        cmd.hId  = ToJoltID(h);
         std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
         pImpl->vPendingCmds.push_back(cmd);
 }
@@ -550,25 +587,93 @@ void* PhysicsSystem::GetNode(BodyHandle h) const {
         return it->second.pNode;
 }
 
+std::string RigidBodyDesc::Str() const {
+        const char* collider_type = oCollider.type == ColliderDesc::Box    ? "Box"
+                                  : oCollider.type == ColliderDesc::Sphere ? "Sphere"
+                                                                           : "Capsule";
+        return fmt::format(
+                "RigidBodyDesc: pos: ({:.2f}, {:.2f}, {:.2f}), rot: ({:.2f}, {:.2f}, {:.2f}, {:.2f}), "
+                "collider: {}, half: ({:.2f}, {:.2f}, {:.2f}), radius: {:.2f}, "
+                "static: {}, kinematic: {}, trigger: {}, "
+                "mass: {:.2f}, friction: {:.2f}, restitution: {:.2f}, "
+                "ldamp: {:.2f}, adamp: {:.2f}, gravity_scale: {:.2f}",
+                vInitialPosition.x, vInitialPosition.y, vInitialPosition.z,
+                qInitialRotation.w, qInitialRotation.x, qInitialRotation.y, qInitialRotation.z,
+                collider_type,
+                oCollider.vHalfExtents.x, oCollider.vHalfExtents.y, oCollider.vHalfExtents.z,
+                oCollider.radius,
+                is_static, is_kinematic, is_trigger,
+                mass, friction, restitution,
+                linear_damping, angular_damping, gravity_scale);
+}
+
 void PhysicsSystem::Update(float game_dt) {
         if (!pImpl->initialized) return;
+        if (pImpl->paused) {
+                pImpl->interpolation_alpha = 1.0f;
+                return;
+        }
 
         pImpl->accumulator += game_dt;
 
         while (pImpl->accumulator >= pImpl->oCfg.fixed_dt) {
-                pImpl->FlushCommands();
-                pImpl->SnapshotCurrentState();
-                pImpl->pPhysics->Update(
-                                pImpl->oCfg.fixed_dt, 
-                                pImpl->oCfg.collision_steps,
-                                pImpl->pTempAlloc.get(), 
-                                pImpl->pJobSystem.get());
-                pImpl->UpdateCurrentState();
-                pImpl->DrainContacts();
+                pImpl->RunFixedStep();
                 pImpl->accumulator -= pImpl->oCfg.fixed_dt;
         }
 
         pImpl->interpolation_alpha = pImpl->accumulator / pImpl->oCfg.fixed_dt;
+}
+
+void PhysicsSystem::SetPaused(bool paused) {
+        pImpl->paused = paused;
+        if (paused) pImpl->accumulator = 0.0f;
+}
+
+void PhysicsSystem::StepOnce() {
+        if (!pImpl->initialized) return;
+        pImpl->RunFixedStep();
+        pImpl->interpolation_alpha = 1.0f;
+}
+
+void PhysicsSystem::DrawDebug() {
+        if (!pImpl->initialized) return;
+
+        auto & dr = GetSystem<DebugRenderer>();
+
+        for (auto & [idx, state] : pImpl->mBodyStates) {
+
+                const glm::vec4 vColor = state.is_trigger  ? glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)  // cyan
+                                       : state.is_static   ? glm::vec4(0.4f, 0.4f, 1.0f, 1.0f)  // blue
+                                       : state.is_kinematic? glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)  // yellow
+                                       :                     glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);  // orange
+
+                Transform oT;
+                oT.SetPos(state.vCurrPos);
+                oT.SetRotation(state.qCurrRot);
+
+                switch (state.oCollider.type) {
+                        case ColliderDesc::Box: {
+                                BoundingBox bbox(-state.oCollider.vHalfExtents, state.oCollider.vHalfExtents);
+                                dr.DrawBBox(bbox, oT, vColor);
+                                break;
+                        }
+                        case ColliderDesc::Sphere:
+                        case ColliderDesc::Capsule: {
+                                const float r = state.oCollider.radius;
+                                constexpr int N = 32;
+                                for (int i = 0; i < N; ++i) {
+                                        float a0 = glm::radians(360.0f * i       / N);
+                                        float a1 = glm::radians(360.0f * (i + 1) / N);
+                                        float c0 = glm::cos(a0), s0 = glm::sin(a0);
+                                        float c1 = glm::cos(a1), s1 = glm::sin(a1);
+                                        dr.DrawLine(state.vCurrPos + glm::vec3(r*c0, r*s0, 0), state.vCurrPos + glm::vec3(r*c1, r*s1, 0), vColor);
+                                        dr.DrawLine(state.vCurrPos + glm::vec3(r*c0, 0, r*s0), state.vCurrPos + glm::vec3(r*c1, 0, r*s1), vColor);
+                                        dr.DrawLine(state.vCurrPos + glm::vec3(0, r*c0, r*s0), state.vCurrPos + glm::vec3(0, r*c1, r*s1), vColor);
+                                }
+                                break;
+                        }
+                }
+        }
 }
 
 void PhysicsSystem::Interpolate(float alpha) {
@@ -579,6 +684,8 @@ void PhysicsSystem::Interpolate(float alpha) {
 
                 glm::vec3 pos = glm::mix(state.vPrevPos, state.vCurrPos, alpha);
                 glm::quat rot = glm::slerp(state.qPrevRot, state.qCurrRot, alpha);
+
+                //log_d("BodyState[{}]: {}", idx, state.Str());
 
                 auto* pNode = static_cast<TSceneTree::TSceneNodeExact*>(state.pNode);
                 pNode->SetWorldPos(pos);

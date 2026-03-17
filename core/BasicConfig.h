@@ -2,6 +2,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__ 1
 
+#include <PhysicsTypes.h>
+
 namespace SE {
 /*
  TODO
@@ -19,6 +21,7 @@ struct Config {
 
         std::string             sResourceDir    = "resource/";
 
+        PhysicsConfig           oPhysicsConfig;
 
 };
 

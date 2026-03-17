@@ -24,7 +24,6 @@ public:
         void TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetNode);
 
         std::string Str() const;
-        void Print(size_t indent);
         void DrawDebug() const;
 
         BodyHandle GetHandle() const { return hBody; }

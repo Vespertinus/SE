@@ -10,6 +10,8 @@ template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t 
 
         auto & oInputManager = GetSystem<InputManager>();
         oInputManager.Init(window_id, oSettings.grab_mouse, oSettings.hide_mouse);
+
+        GetSystem<PhysicsSystem>().Init(GetSystem<Config>().oPhysicsConfig);
 }
 
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):

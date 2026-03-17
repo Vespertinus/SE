@@ -42,6 +42,11 @@ public:
 
         bool Raycast(const PhysicsRay& ray, RaycastHit& out, QueryFilter filter = {}) const;
 
+        // Debug
+        void DrawDebug();
+        void SetPaused(bool paused);
+        void StepOnce();
+
         bool IsInitialized() const;
 
 private:

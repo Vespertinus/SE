@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -40,6 +41,8 @@ struct RigidBodyDesc {
         float        angular_damping   = 0.05f;
         float        gravity_scale     = 1.0f;
         float        mass              = 1.0f;
+
+        std::string Str() const;
 };
 
 struct RaycastHit {
