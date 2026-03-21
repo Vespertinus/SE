@@ -7,5 +7,6 @@
 #include <ShaderComponent.tcc>
 #include <ShaderProgram.tcc>
 #include <Skeleton.tcc>
+#include <AudioClip.tcc>
 
 #endif

@@ -15,6 +15,7 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
               FLATBUFFERS_VERSION_REVISION == 26,
              "Non-compatible flatbuffers version included");
 
+#include "Audio_generated.h"
 #include "Material_generated.h"
 #include "Mesh_generated.h"
 
@@ -133,28 +134,34 @@ enum class ComponentU : uint8_t {
   StaticModel = 1,
   AnimatedModel = 2,
   RigidBody = 3,
-  AppComponent = 4,
+  AudioEmitter = 4,
+  AudioListener = 5,
+  AppComponent = 6,
   MIN = NONE,
   MAX = AppComponent
 };
 
-inline const ComponentU (&EnumValuesComponentU())[5] {
+inline const ComponentU (&EnumValuesComponentU())[7] {
   static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
     ComponentU::AnimatedModel,
     ComponentU::RigidBody,
+    ComponentU::AudioEmitter,
+    ComponentU::AudioListener,
     ComponentU::AppComponent
   };
   return values;
 }
 
 inline const char * const *EnumNamesComponentU() {
-  static const char * const names[6] = {
+  static const char * const names[8] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
     "RigidBody",
+    "AudioEmitter",
+    "AudioListener",
     "AppComponent",
     nullptr
   };
@@ -181,6 +188,14 @@ template<> struct ComponentUTraits<SE::FlatBuffers::AnimatedModel> {
 
 template<> struct ComponentUTraits<SE::FlatBuffers::RigidBody> {
   static const ComponentU enum_value = ComponentU::RigidBody;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::AudioEmitter> {
+  static const ComponentU enum_value = ComponentU::AudioEmitter;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::AudioListener> {
+  static const ComponentU enum_value = ComponentU::AudioListener;
 };
 
 template<> struct ComponentUTraits<SE::FlatBuffers::AppComponent> {
@@ -1262,6 +1277,12 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const SE::FlatBuffers::RigidBody *component_as_RigidBody() const {
     return component_type() == SE::FlatBuffers::ComponentU::RigidBody ? static_cast<const SE::FlatBuffers::RigidBody *>(component()) : nullptr;
   }
+  const SE::FlatBuffers::AudioEmitter *component_as_AudioEmitter() const {
+    return component_type() == SE::FlatBuffers::ComponentU::AudioEmitter ? static_cast<const SE::FlatBuffers::AudioEmitter *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::AudioListener *component_as_AudioListener() const {
+    return component_type() == SE::FlatBuffers::ComponentU::AudioListener ? static_cast<const SE::FlatBuffers::AudioListener *>(component()) : nullptr;
+  }
   const SE::FlatBuffers::AppComponent *component_as_AppComponent() const {
     return component_type() == SE::FlatBuffers::ComponentU::AppComponent ? static_cast<const SE::FlatBuffers::AppComponent *>(component()) : nullptr;
   }
@@ -1284,6 +1305,14 @@ template<> inline const SE::FlatBuffers::AnimatedModel *Component::component_as<
 
 template<> inline const SE::FlatBuffers::RigidBody *Component::component_as<SE::FlatBuffers::RigidBody>() const {
   return component_as_RigidBody();
+}
+
+template<> inline const SE::FlatBuffers::AudioEmitter *Component::component_as<SE::FlatBuffers::AudioEmitter>() const {
+  return component_as_AudioEmitter();
+}
+
+template<> inline const SE::FlatBuffers::AudioListener *Component::component_as<SE::FlatBuffers::AudioListener>() const {
+  return component_as_AudioListener();
 }
 
 template<> inline const SE::FlatBuffers::AppComponent *Component::component_as<SE::FlatBuffers::AppComponent>() const {
@@ -1374,6 +1403,14 @@ inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj,
     }
     case ComponentU::RigidBody: {
       auto ptr = reinterpret_cast<const SE::FlatBuffers::RigidBody *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::AudioEmitter: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AudioEmitter *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::AudioListener: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AudioListener *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ComponentU::AppComponent: {

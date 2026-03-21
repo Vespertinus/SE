@@ -1,6 +1,7 @@
 
 include "Mesh.fbs";
 include "Material.fbs";
+include "Audio.fbs";
 
 namespace SE.FlatBuffers;
 
@@ -108,10 +109,12 @@ union ComponentU {
         StaticModel,
         AnimatedModel,
         RigidBody,
+        AudioEmitter,
+        AudioListener,
 //        Camera,
 //        Light,
 //        etc
-        AppComponent
+        AppComponent,
 }
 
 table Component {

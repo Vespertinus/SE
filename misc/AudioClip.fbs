@@ -1,0 +1,38 @@
+
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+enum AudioFormat : uint8 { PCM16 = 0, Opus = 1 }
+enum BusHint     : uint8 { Master = 0, Music = 1, SFX = 2, Voice = 3, UI = 4 }
+
+struct SeekEntry {
+    sample_offset : uint64;
+    byte_offset   : uint64;
+}
+
+table AudioClip {
+    schema_version        : uint32 = 1;
+    format                : AudioFormat = PCM16;
+    sample_rate           : uint32;
+    channel_count         : uint8;
+    total_samples         : uint64;
+    normalized_loudness   : float;          // measured LUFS
+    loop_start_sample     : uint64 = 0;
+    loop_end_sample       : uint64 = 0;     // 0 = no loop
+    loop_crossfade_samples: uint32 = 0;     // blending window at loop point
+    pre_skip_samples      : uint32 = 0;     // Opus encoder pre-skip
+    bus_hint              : BusHint = SFX;
+    seek_table            : [SeekEntry];    // 250 ms keyframe interval
+    payload               : [uint8] (required);
+}
+
+table AudioClipHolder {
+        clip : AudioClip;
+        path : string;
+        name : string;
+}
+
+root_type AudioClip;
+file_identifier "SEAC";
+file_extension  "seac";

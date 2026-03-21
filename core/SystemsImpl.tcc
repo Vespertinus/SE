@@ -11,6 +11,8 @@
 #include <MeshBuilder.tcc>
 #include <MeshGen.tcc>
 #include <TextureBuilder.tcc>
+#include <AudioThread.tcc>
+#include <AudioSystem.tcc>
 #endif
 //template class, so we need realization also
 #include <Renderer.tcc>

@@ -1,0 +1,23 @@
+
+include "Common.fbs";
+include "AudioClip.fbs";
+
+namespace SE.FlatBuffers;
+
+table AudioEmitter {
+    clip:AudioClipHolder (required);
+    loop:bool     = false;
+    spatial:bool  = true;
+    auto_play:bool = false;
+    gain:float    = 1.0;
+    pitch:float   = 1.0;
+    ref_dist:float = 1.0;
+    max_dist:float = 100.0;
+    rolloff:float  = 1.0;
+    /// MixBusId: 0=Master 1=Music 2=SFX 3=Voice 4=UI
+    bus:uint8     = 2;
+}
+
+table AudioListener {
+    master_gain:float = 1.0;
+}

@@ -57,6 +57,12 @@ function(link_X11)
 endfunction()
 
 
+if(AUDIO)
+        find_package(OpenAL REQUIRED)
+        list(APPEND LIBRARIES_LIST OpenAL::OpenAL)
+        message(STATUS "Found OpenAL: ${OPENAL_LIBRARY}")
+endif()
+
 list(APPEND LIBRARIES_LIST "m")
 
 

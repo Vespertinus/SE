@@ -9,8 +9,10 @@ class StaticModel;
 class AnimatedModel;
 class Camera;
 class RigidBody;
+class AudioEmitter;
+class AudioListener;
 
-using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, RigidBody>;
+using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, RigidBody, AudioEmitter, AudioListener>;
 
 }
 
@@ -26,6 +28,8 @@ using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, 
 #include <AnimatedModel.h>
 #include <Camera.h>
 #include <RigidBody.h>
+#include <AudioEmitter.h>
+#include <AudioListener.h>
 
 #endif
 #endif
@@ -38,6 +42,8 @@ using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, 
 #include <AnimatedModel.tcc>
 #include <Camera.tcc>
 #include <RigidBody.tcc>
+#include <AudioEmitter.tcc>
+#include <AudioListener.tcc>
 
 #endif
 #endif

@@ -39,6 +39,9 @@
 #include <PhysicsEvents.h>
 #include <PhysicsSystem.h>
 #include <Allocator.h>
+#include <AudioTypes.h>
+#include <AudioClip.h>
+#include <AudioSystem.h>
 
 #include <TextureStock.h>
 #include <TGALoader.h>
@@ -119,7 +122,7 @@ using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
 // To use deferred PBR renderer, replace the line above with:
 using TRenderer = DeferredRenderer<TVisibilityManager>;
 
-using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager, PhysicsSystem>;
+using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager, PhysicsSystem, AudioSystem>;
 
 using TEngine =
         typename Loki::SingletonHolder<
@@ -165,7 +168,7 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 
 namespace SE {
 
-typedef LOKI_TYPELIST_8(
+typedef LOKI_TYPELIST_9(
                 TTexture,
                 Material,
                 TMesh,
@@ -173,10 +176,11 @@ typedef LOKI_TYPELIST_8(
                 ShaderComponent,
                 ShaderProgram,
                 Skeleton,
-                CharacterShell)                                         TResourseList;
+                CharacterShell,
+                AudioClip)                                              TResourseList;
 //THINK
 #ifndef SE_IMPL
-extern template class ResourceManager<TResourseList>;
+extern template class ResourceManager<TResourseList>;  // NOLINT
 #endif
 typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourceManager;
 
