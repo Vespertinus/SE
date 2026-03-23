@@ -51,6 +51,15 @@ void AudioThread::Stop() {
         oRunning.store(false);
 }
 
+bool AudioThread::IsVoiceActive(VoiceHandle h) const {
+        if (!h.IsValid()) return false;
+        for (uint32_t i = 0; i < MAX_VOICES; ++i) {
+                if (vActiveGen[i].load(std::memory_order_relaxed) == h.generation)
+                        return true;
+        }
+        return false;
+}
+
 // ---------------------------------------------------------------------------
 // Thread entry point
 // ---------------------------------------------------------------------------
@@ -218,6 +227,7 @@ void AudioThread::ReclaimFinished() {
                 if (!oSlot.active) continue;
                 if (!oSlot.al_source) {           // stuck slot — clean up defensively
                         FreeStreamState(oSlot);
+                        vActiveGen[static_cast<size_t>(&oSlot - vVoices)].store(0, std::memory_order_relaxed);
                         oSlot.active = false;
                         oSlot.hVoice = VoiceHandle{};
                         continue;
@@ -229,6 +239,7 @@ void AudioThread::ReclaimFinished() {
                 alGetSourcei(oSlot.al_source, AL_SOURCE_STATE, &state);
                 if (state == AL_STOPPED) {
                         alSourcei(oSlot.al_source, AL_BUFFER, 0);
+                        vActiveGen[static_cast<size_t>(&oSlot - vVoices)].store(0, std::memory_order_relaxed);
                         oSlot.active = false;
                         oSlot.hVoice = VoiceHandle{};
                 }
@@ -258,6 +269,7 @@ AudioThread::VoiceSlot* AudioThread::AllocVoice(float priority) {
                 alSourcei(pVictim->al_source, AL_BUFFER, 0);
 #endif
                 FreeStreamState(*pVictim);
+                vActiveGen[static_cast<size_t>(pVictim - vVoices)].store(0, std::memory_order_relaxed);
                 pVictim->active = false;
                 pVictim->hVoice = VoiceHandle{};
                 return pVictim;
@@ -303,12 +315,14 @@ void AudioThread::ExecPlay(const EvtPlayClip& e) {
         pSlot->gain     = e.oFlags.gain;
         pSlot->bus      = e.oFlags.bus;
         pSlot->active   = true;
+        vActiveGen[static_cast<size_t>(pSlot - vVoices)].store(e.hVoice.generation, std::memory_order_relaxed);
 
         if (pClip->IsStreamed()) {
                 // Streamed Opus tier — set up ping-pong buffer queue
                 if (!StartStreamVoice(*pSlot, pClip, e.oFlags.loop)) {
                         log_w("AudioThread::ExecPlay: failed to start stream for '{}'",
                               pClip->Name());
+                        vActiveGen[static_cast<size_t>(pSlot - vVoices)].store(0, std::memory_order_relaxed);
                         pSlot->active = false;
                         pSlot->hVoice = VoiceHandle{};
                         return;
@@ -317,6 +331,7 @@ void AudioThread::ExecPlay(const EvtPlayClip& e) {
                 ALuint buf = pClip->GetALBuffer();
                 if (buf == 0) {
                         log_w("AudioThread::ExecPlay: clip '{}' has no AL buffer", pClip->Name());
+                        vActiveGen[static_cast<size_t>(pSlot - vVoices)].store(0, std::memory_order_relaxed);
                         pSlot->active = false;
                         pSlot->hVoice = VoiceHandle{};
                         return;
@@ -347,6 +362,7 @@ void AudioThread::ExecPlay(const EvtPlayClip& e) {
         if (err != AL_NO_ERROR) {
                 log_w("AudioThread::ExecPlay: alSourcePlay error {}", err);
                 FreeStreamState(*pSlot);
+                vActiveGen[static_cast<size_t>(pSlot - vVoices)].store(0, std::memory_order_relaxed);
                 pSlot->active = false;
                 pSlot->hVoice = VoiceHandle{};
         }
@@ -360,6 +376,7 @@ void AudioThread::ExecStop(const EvtStopVoice& e) {
         alSourceStop(pSlot->al_source);
         alSourcei(pSlot->al_source, AL_BUFFER, 0);
         FreeStreamState(*pSlot);
+        vActiveGen[static_cast<size_t>(pSlot - vVoices)].store(0, std::memory_order_relaxed);
         pSlot->active = false;
         pSlot->hVoice = VoiceHandle{};
 #endif
@@ -635,6 +652,7 @@ void AudioThread::TickStreaming() {
                         alGetSourcei(oSlot.al_source, AL_BUFFERS_QUEUED, &queued);
                         if (queued == 0) {
                                 FreeStreamState(oSlot);
+                                vActiveGen[static_cast<size_t>(&oSlot - vVoices)].store(0, std::memory_order_relaxed);
                                 oSlot.active = false;
                                 oSlot.hVoice = VoiceHandle{};
                         }

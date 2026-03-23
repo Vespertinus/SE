@@ -97,4 +97,9 @@ void AudioSystem::PostSetVoiceGain(VoiceHandle h, float gain) {
         PostEvent(AudioEvent::MakeSetVoiceGain(h, gain));
 }
 
+bool AudioSystem::IsVoiceActive(VoiceHandle h) const {
+        if (!pAudioThread || !h.IsValid()) return false;
+        return pAudioThread->IsVoiceActive(h);
+}
+
 } // namespace SE

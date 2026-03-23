@@ -156,6 +156,14 @@ struct AudioEmitterDesc {
         bool        auto_play = false;
 };
 
+// ---------------------------------------------------------------------------
+// SoundEmitterDesc — plain descriptor used by SoundEmitter component ctor
+// ---------------------------------------------------------------------------
+struct SoundEmitterDesc {
+        std::string sCueName;
+        bool        auto_play = false;
+};
+
 } // namespace SE
 
 #endif

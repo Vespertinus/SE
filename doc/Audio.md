@@ -8,12 +8,17 @@ It is enabled at configure time with the `SE_AUDIO_ENABLED` CMake flag (see §7)
 ### Architecture
 
 ```
-Game Thread                 Audio Thread
------------                 ------------
+Game Thread                        Audio Thread
+-----------                        ------------
 AudioSystem  --[SPSCQueue]--> AudioThread --> OpenAL API --> OS Device
 
-AudioEmitter / AudioListener
-(scene-node listeners; post transform events when the node moves)
+AudioEmitter  — scene-node listener; plays a clip directly via AudioSystem::Play()
+SoundEmitter  — scene-node listener; posts a named cue event via SoundEventSystem::Post()
+AudioListener — scene-node listener; syncs the OpenAL listener pose
+                                               ↑
+SoundEventSystem ─── resolves cue ─────────────┘
+                  ─── selects variation, modulators
+                  ─── AudioSystem::Play(hClip, flags, pos, vel)
 ```
 
 **Core rule:** the game thread never calls OpenAL.
@@ -166,6 +171,8 @@ pNode->CreateComponent<AudioEmitter>(pFlatBufferTable);
 | `oFlags` | `PlayFlags` | (see §5) | Playback settings |
 | `auto_play` | `bool` | `false` | Start playing immediately on construction |
 
+`AudioEmitter` depends only on `AudioSystem`; it has no dependency on `SoundEventSystem`.
+
 **FlatBuffer constructor — `AudioClipHolder` resolution:**
 
 When deserializing from a FlatBuffer, the clip is resolved from the embedded `AudioClipHolder` in priority order:
@@ -179,6 +186,39 @@ When deserializing from a FlatBuffer, the clip is resolved from the embedded `Au
 The destructor automatically stops the voice. `IsPlaying()` returns `true` while a valid `VoiceHandle` is held.
 
 `TargetTransformChanged(pNode)` is called by the scene node whenever its world transform changes. It estimates velocity as `(currentPos - prevPos) / dt`. A `first_tick` guard suppresses the velocity spike on the very first frame.
+
+### `SoundEmitter` (`units/SoundEmitter.h`)
+
+Attach to any scene node that should emit sound through the `SoundEventSystem` cue pipeline.
+
+```cpp
+// From descriptor
+SoundEmitterDesc desc;
+desc.sCueName  = "character.footstep.stone";
+desc.auto_play = true;
+pNode->CreateComponent<SoundEmitter>(desc);
+
+// Trigger manually (with an optional context for modulators)
+CharacterSoundContext ctx;
+ctx.speed   = 3.5f;
+ctx.surface = SurfaceType::STONE;
+pSoundEmitter->Play(ctx);
+```
+
+**`SoundEmitterDesc` fields:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sCueName` | `string` | — | Cue ID to post (e.g. `"character.footstep.stone"`) |
+| `auto_play` | `bool` | `false` | Call `Play()` immediately on construction |
+
+`Play(ctx)` fills `ctx.pEmitter`, `ctx.vPosition`, and `ctx.vVelocity` from the emitter's current state before forwarding to `SoundEventSystem::Post()`. The returned `VoiceHandle` is stored internally; `IsPlaying()` tests it. The destructor stops the active voice and calls `SoundEventSystem::ReleaseEmitter()` to prune per-emitter state.
+
+`TargetTransformChanged(pNode)` estimates velocity from position delta and calls `AudioSystem::PostUpdateEmitter()` if a voice is active.
+
+For a full description of the cue pipeline — variation selection, modulators, cooldowns, polyphony, and cue authoring — see [SoundEventSystem.md](SoundEventSystem.md).
+
+---
 
 ### `AudioListener` (`units/AudioListener.h`)
 

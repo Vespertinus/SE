@@ -54,6 +54,9 @@ public:
         void PostUpdateListener(glm::vec3 pos, glm::vec3 fwd, glm::vec3 up, glm::vec3 vel);
         void PostSetVoiceGain(VoiceHandle h, float gain);
 
+        /** Game-thread-safe: true if the voice is still playing. */
+        bool IsVoiceActive(VoiceHandle h) const;
+
 private:
         VoiceHandle AllocHandle();
         void        PostEvent(const AudioEvent& ev);

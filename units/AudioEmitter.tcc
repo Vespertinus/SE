@@ -57,7 +57,7 @@ AudioEmitter::AudioEmitter(TSceneTree::TSceneNodeExact* pNewNode, const AudioEmi
 
         if (oDesc.auto_play && hClip.IsValid()) {
                 const glm::vec3 vPos = pNode->GetTransform().GetWorldPos();
-                hVoice = GetSystem<AudioSystem>().Play(hClip, oFlags, vPos, {});
+                hVoice     = GetSystem<AudioSystem>().Play(hClip, oFlags, vPos, {});
                 vPrevPos   = vPos;
                 first_tick = false;
                 log_i("AudioEmitter: auto-play '{}' voice gen={}", oDesc.sClipPath, hVoice.generation);
@@ -88,19 +88,21 @@ void AudioEmitter::Disable() {
 }
 
 void AudioEmitter::TargetTransformChanged(TSceneTree::TSceneNodeExact* /*pNode*/) {
-        if (!hVoice.IsValid() || !oFlags.spatial) return;
-
         const float     dt   = GetSystem<GraphicsState>().GetLastFrameTime();
         const glm::vec3 vPos = pNode->GetTransform().GetWorldPos();
-        glm::vec3 vVel(0.0f);
 
         if (!first_tick && dt > 0.0f)
-                vVel = (vPos - vPrevPos) / dt;
+                vVelocity = (vPos - vPrevPos) / dt;
 
         vPrevPos   = vPos;
         first_tick = false;
 
-        GetSystem<AudioSystem>().PostUpdateEmitter(hVoice, vPos, vVel);
+        if (!hVoice.IsValid() || !oFlags.spatial) return;
+        GetSystem<AudioSystem>().PostUpdateEmitter(hVoice, vPos, vVelocity);
+}
+
+glm::vec3 AudioEmitter::GetPosition() const {
+        return pNode->GetTransform().GetWorldPos();
 }
 
 std::string AudioEmitter::Str() const {

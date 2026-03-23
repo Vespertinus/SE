@@ -1,0 +1,50 @@
+
+namespace SE.FlatBuffers;
+
+enum SelectionMode   : uint8 { RANDOM = 0, ROUND_ROBIN = 1, SHUFFLE = 2, PARAMETER = 3, SEQUENTIAL = 4 }
+enum PlayMode        : uint8 { ONE_SHOT = 0, LOOPING = 1, ONE_PER_EMITTER = 2, EXCLUSIVE = 3 }
+enum ModulatorTarget : uint8 { VOLUME = 0, PITCH = 1, PITCH_AND_VOLUME = 2 }
+
+table SoundVariation {
+    clip:         string (required);
+    weight:       float = 1.0;
+    volume_scale: float = 1.0;
+    pitch_scale:  float = 1.0;
+    param_min:    float = 0.0;
+    param_max:    float = 1.0;
+}
+
+table Modulator {
+    parameter:  string (required);
+    target:     ModulatorTarget = VOLUME;
+    input_min:  float = 0.0;
+    input_max:  float = 1.0;
+    output_min: float = 0.0;
+    output_max: float = 1.0;
+    clamp:      bool  = true;
+}
+
+table SoundCue {
+    id:             string (required);
+    selection_mode: SelectionMode = SHUFFLE;
+    play_mode:      PlayMode      = ONE_SHOT;
+    variations:     [SoundVariation];
+    volume_min:     float = 1.0;
+    volume_max:     float = 1.0;
+    pitch_min:      float = 1.0;
+    pitch_max:      float = 1.0;
+    ref_dist:       float = 1.0;
+    max_dist:       float = 40.0;
+    bus:            string;
+    cooldown:       float = 0.0;
+    max_polyphony:  int   = 4;
+    modulators:     [Modulator];
+}
+
+table SoundCueList {
+    cues: [SoundCue] (required);
+}
+
+root_type SoundCueList;
+file_identifier "SECL";
+file_extension  "secl";

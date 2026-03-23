@@ -1,0 +1,7 @@
+
+namespace SE.FlatBuffers;
+
+table SoundEmitter {
+    cue_id:    string (required);
+    auto_play: bool = false;
+}

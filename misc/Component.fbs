@@ -2,6 +2,7 @@
 include "Mesh.fbs";
 include "Material.fbs";
 include "Audio.fbs";
+include "SoundEmitter.fbs";
 
 namespace SE.FlatBuffers;
 
@@ -111,6 +112,7 @@ union ComponentU {
         RigidBody,
         AudioEmitter,
         AudioListener,
+        SoundEmitter,
 //        Camera,
 //        Light,
 //        etc

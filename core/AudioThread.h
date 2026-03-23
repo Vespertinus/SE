@@ -46,6 +46,12 @@ public:
 
         TQueue& Queue() { return oQueue; }
 
+        /**
+         * Game-thread-safe: returns true if the voice is still playing.
+         * Uses per-slot generation atomics written by the audio thread.
+         */
+        bool IsVoiceActive(VoiceHandle h) const;
+
         // -----------------------------------------------------------------------
         // Streaming state (Opus tier) — one per active streamed voice.
         // Declared public so AudioThread.tcc helper functions can reference it.
@@ -117,6 +123,10 @@ private:
         TQueue               oQueue;
         std::thread          oThread;
         std::atomic<bool>    oRunning{false};
+
+        // Per-slot generation written by audio thread, readable from game thread.
+        // Slot is active iff vActiveGen[i] == hVoice.generation (non-zero).
+        std::atomic<uint32_t> vActiveGen[MAX_VOICES]{};
 
         ALCdevice*           pDevice  = nullptr;
         ALCcontext*          pContext = nullptr;

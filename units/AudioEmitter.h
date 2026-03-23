@@ -18,7 +18,8 @@ class AudioEmitter {
         H<AudioClip>                 hClip;
         PlayFlags                    oFlags;
         VoiceHandle                  hVoice;
-        glm::vec3                    vPrevPos{0.0f};
+        glm::vec3                    vPrevPos  {0.0f};
+        glm::vec3                    vVelocity {0.0f};
         bool                         first_tick = true;
 
 public:
@@ -33,8 +34,10 @@ public:
 
         void TargetTransformChanged(TSceneTree::TSceneNodeExact* pNode);
 
-        VoiceHandle GetVoice() const { return hVoice; }
-        bool        IsPlaying() const { return hVoice.IsValid(); }
+        VoiceHandle GetVoice()    const { return hVoice; }
+        bool        IsPlaying()   const { return hVoice.IsValid(); }
+        glm::vec3   GetPosition() const;
+        glm::vec3   GetVelocity() const { return vVelocity; }
 
         std::string Str() const;
         void DrawDebug() const {}
