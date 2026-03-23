@@ -1,0 +1,225 @@
+{
+  "cues": [
+    {
+      "id": "character.footstep.stone",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.8, "volume_max": 1.0,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_stone_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_stone_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.9, "output_max": 1.15 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.85, "output_max": 1.1 }
+      ]
+    },
+    {
+      "id": "character.footstep.metal",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.75, "volume_max": 1.0,
+      "pitch_min": 0.92, "pitch_max": 1.08,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_metal_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_metal_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.9, "output_max": 1.15 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.8, "output_max": 1.05 }
+      ]
+    },
+    {
+      "id": "character.footstep.wood",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.7, "volume_max": 0.95,
+      "pitch_min": 0.93, "pitch_max": 1.07,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_wood_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_wood_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.9, "output_max": 1.15 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.8, "output_max": 1.1 }
+      ]
+    },
+    {
+      "id": "character.footstep.dirt",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.65, "volume_max": 0.9,
+      "pitch_min": 0.94, "pitch_max": 1.06,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_dirt_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_dirt_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.9, "output_max": 1.15 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.8, "output_max": 1.05 }
+      ]
+    },
+    {
+      "id": "character.footstep.water",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.8, "volume_max": 1.0,
+      "pitch_min": 0.9, "pitch_max": 1.1,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_water_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_water_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.85, "output_max": 1.1 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.85, "output_max": 1.1 }
+      ]
+    },
+    {
+      "id": "character.footstep.grass",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.6, "volume_max": 0.85,
+      "pitch_min": 0.94, "pitch_max": 1.06,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_grass_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_grass_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.9, "output_max": 1.12 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.75, "output_max": 1.0 }
+      ]
+    },
+    {
+      "id": "character.footstep.concrete",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.8, "volume_max": 1.0,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_concrete_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_concrete_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.9, "output_max": 1.15 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.85, "output_max": 1.1 }
+      ]
+    },
+    {
+      "id": "character.footstep",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.8, "volume_max": 1.0,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.08, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/footstep_concrete_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/footstep_concrete_02.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "speed",  "target": "PITCH",
+          "input_min": 1.0, "input_max": 6.0, "output_min": 0.9, "output_max": 1.15 },
+        { "parameter": "weight", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 100.0, "output_min": 0.85, "output_max": 1.1 }
+      ]
+    },
+    {
+      "id": "character.weapon.rifle.fire",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.9, "volume_max": 1.0,
+      "pitch_min": 0.97, "pitch_max": 1.03,
+      "cooldown": 0.05, "max_polyphony": 3,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/weapon_rifle_fire_01.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/weapon_rifle_fire_02.seac", "weight": 1.0 },
+        { "clip": "resource/audio/sfx/weapon_rifle_fire_03.seac", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "character.weapon.rifle.empty",
+      "selection_mode": "RANDOM",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.8, "volume_max": 0.9,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.3, "max_polyphony": 1,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/weapon_rifle_empty.seac", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "character.weapon.rifle.reload",
+      "selection_mode": "SEQUENTIAL",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.85, "volume_max": 1.0,
+      "pitch_min": 0.98, "pitch_max": 1.02,
+      "cooldown": 0.0, "max_polyphony": 1,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/weapon_rifle_reload.seac", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "character.jump",
+      "selection_mode": "RANDOM",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.7, "volume_max": 0.9,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.2, "max_polyphony": 1,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/character_jump.seac", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "character.land",
+      "selection_mode": "PARAMETER",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.8, "volume_max": 1.0,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.0, "max_polyphony": 2,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/character_land_soft.seac",
+          "weight": 1.0, "param_min": 0.0, "param_max": 0.5 },
+        { "clip": "resource/audio/sfx/character_land_hard.seac",
+          "weight": 1.0, "param_min": 0.5, "param_max": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "impact", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 1.0, "output_min": 0.5, "output_max": 1.0 }
+      ]
+    }
+  ]
+}

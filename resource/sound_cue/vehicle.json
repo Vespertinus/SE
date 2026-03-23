@@ -1,0 +1,78 @@
+{
+  "cues": [
+    {
+      "id": "vehicle.engine",
+      "selection_mode": "PARAMETER",
+      "play_mode": "LOOPING",
+      "volume_min": 0.9, "volume_max": 1.0,
+      "pitch_min": 1.0, "pitch_max": 1.0,
+      "cooldown": 0.0, "max_polyphony": 1,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/engine_idle.seac",
+          "weight": 1.0, "param_min": 0.00, "param_max": 0.20 },
+        { "clip": "resource/audio/sfx/engine_low.seac",
+          "weight": 1.0, "param_min": 0.20, "param_max": 0.40 },
+        { "clip": "resource/audio/sfx/engine_mid.seac",
+          "weight": 1.0, "param_min": 0.40, "param_max": 0.60 },
+        { "clip": "resource/audio/sfx/engine_high.seac",
+          "weight": 1.0, "param_min": 0.60, "param_max": 0.85 },
+        { "clip": "resource/audio/sfx/engine_redline.seac",
+          "weight": 1.0, "param_min": 0.85, "param_max": 1.00 }
+      ],
+      "modulators": [
+        { "parameter": "rpm_normalized", "target": "PITCH",
+          "input_min": 0.0, "input_max": 1.0, "output_min": 0.9, "output_max": 1.2 },
+        { "parameter": "engine_load", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 1.0, "output_min": 0.6, "output_max": 1.0 }
+      ]
+    },
+    {
+      "id": "vehicle.tire.squeal",
+      "selection_mode": "RANDOM",
+      "play_mode": "ONE_PER_EMITTER",
+      "volume_min": 0.7, "volume_max": 1.0,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.0, "max_polyphony": 1,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/tire_squeal.seac", "weight": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "lateral_slip", "target": "VOLUME",
+          "input_min": 0.3, "input_max": 1.0, "output_min": 0.3, "output_max": 1.0 }
+      ]
+    },
+    {
+      "id": "vehicle.gear_shift",
+      "selection_mode": "SHUFFLE",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.6, "volume_max": 0.9,
+      "pitch_min": 0.93, "pitch_max": 1.07,
+      "cooldown": 0.1, "max_polyphony": 2,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/gear_shift.seac", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "vehicle.collision",
+      "selection_mode": "PARAMETER",
+      "play_mode": "ONE_SHOT",
+      "volume_min": 0.8, "volume_max": 1.0,
+      "pitch_min": 0.95, "pitch_max": 1.05,
+      "cooldown": 0.5, "max_polyphony": 2,
+      "bus": "sfx",
+      "variations": [
+        { "clip": "resource/audio/sfx/collision_soft.seac",
+          "weight": 1.0, "param_min": 0.0, "param_max": 0.5 },
+        { "clip": "resource/audio/sfx/collision_hard.seac",
+          "weight": 1.0, "param_min": 0.5, "param_max": 1.0 }
+      ],
+      "modulators": [
+        { "parameter": "impact", "target": "VOLUME",
+          "input_min": 0.0, "input_max": 1.0, "output_min": 0.4, "output_max": 1.0 }
+      ]
+    }
+  ]
+}
