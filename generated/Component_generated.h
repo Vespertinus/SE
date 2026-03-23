@@ -18,6 +18,7 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
 #include "Audio_generated.h"
 #include "Material_generated.h"
 #include "Mesh_generated.h"
+#include "SoundEmitter_generated.h"
 
 namespace SE {
 namespace FlatBuffers {
@@ -136,12 +137,13 @@ enum class ComponentU : uint8_t {
   RigidBody = 3,
   AudioEmitter = 4,
   AudioListener = 5,
-  AppComponent = 6,
+  SoundEmitter = 6,
+  AppComponent = 7,
   MIN = NONE,
   MAX = AppComponent
 };
 
-inline const ComponentU (&EnumValuesComponentU())[7] {
+inline const ComponentU (&EnumValuesComponentU())[8] {
   static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
@@ -149,19 +151,21 @@ inline const ComponentU (&EnumValuesComponentU())[7] {
     ComponentU::RigidBody,
     ComponentU::AudioEmitter,
     ComponentU::AudioListener,
+    ComponentU::SoundEmitter,
     ComponentU::AppComponent
   };
   return values;
 }
 
 inline const char * const *EnumNamesComponentU() {
-  static const char * const names[8] = {
+  static const char * const names[9] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
     "RigidBody",
     "AudioEmitter",
     "AudioListener",
+    "SoundEmitter",
     "AppComponent",
     nullptr
   };
@@ -196,6 +200,10 @@ template<> struct ComponentUTraits<SE::FlatBuffers::AudioEmitter> {
 
 template<> struct ComponentUTraits<SE::FlatBuffers::AudioListener> {
   static const ComponentU enum_value = ComponentU::AudioListener;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::SoundEmitter> {
+  static const ComponentU enum_value = ComponentU::SoundEmitter;
 };
 
 template<> struct ComponentUTraits<SE::FlatBuffers::AppComponent> {
@@ -1283,6 +1291,9 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const SE::FlatBuffers::AudioListener *component_as_AudioListener() const {
     return component_type() == SE::FlatBuffers::ComponentU::AudioListener ? static_cast<const SE::FlatBuffers::AudioListener *>(component()) : nullptr;
   }
+  const SE::FlatBuffers::SoundEmitter *component_as_SoundEmitter() const {
+    return component_type() == SE::FlatBuffers::ComponentU::SoundEmitter ? static_cast<const SE::FlatBuffers::SoundEmitter *>(component()) : nullptr;
+  }
   const SE::FlatBuffers::AppComponent *component_as_AppComponent() const {
     return component_type() == SE::FlatBuffers::ComponentU::AppComponent ? static_cast<const SE::FlatBuffers::AppComponent *>(component()) : nullptr;
   }
@@ -1313,6 +1324,10 @@ template<> inline const SE::FlatBuffers::AudioEmitter *Component::component_as<S
 
 template<> inline const SE::FlatBuffers::AudioListener *Component::component_as<SE::FlatBuffers::AudioListener>() const {
   return component_as_AudioListener();
+}
+
+template<> inline const SE::FlatBuffers::SoundEmitter *Component::component_as<SE::FlatBuffers::SoundEmitter>() const {
+  return component_as_SoundEmitter();
 }
 
 template<> inline const SE::FlatBuffers::AppComponent *Component::component_as<SE::FlatBuffers::AppComponent>() const {
@@ -1411,6 +1426,10 @@ inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj,
     }
     case ComponentU::AudioListener: {
       auto ptr = reinterpret_cast<const SE::FlatBuffers::AudioListener *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::SoundEmitter: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SoundEmitter *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case ComponentU::AppComponent: {
