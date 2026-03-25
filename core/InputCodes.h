@@ -14,12 +14,14 @@ namespace Keys {
                   S = 's', T = 't', U = 'u', V = 'v', W = 'w', X = 'x',
                   Y = 'y', Z = 'z';
 
-    // Special keys — (1<<30) | SDL_Scancode value
-    constexpr Key RETURN    = (1<<30) | 40;
-    constexpr Key ESCAPE    = (1<<30) | 41;
-    constexpr Key BACKSPACE = (1<<30) | 42;
-    constexpr Key TAB       = (1<<30) | 43;
-    constexpr Key SPACE     = (1<<30) | 44;
+    // Keys with traditional ASCII/control-character values in SDL2
+    constexpr Key RETURN    = '\r';    // 13
+    constexpr Key ESCAPE    = '\033';  // 27
+    constexpr Key BACKSPACE = '\b';    // 8
+    constexpr Key TAB       = '\t';    // 9
+    constexpr Key SPACE     = ' ';     // 32
+
+    // Keys with no traditional value — SDL2 uses (1<<30) | SDL_Scancode
     constexpr Key DELETE_   = (1<<30) | 76;
     constexpr Key RIGHT     = (1<<30) | 79;
     constexpr Key LEFT      = (1<<30) | 80;
@@ -30,6 +32,14 @@ namespace Keys {
     constexpr Key END       = (1<<30) | 77;
     constexpr Key PAGE_UP   = (1<<30) | 75;
     constexpr Key PAGE_DOWN = (1<<30) | 78;
+
+    // Function keys
+    constexpr Key F1  = (1<<30)|58;  constexpr Key F2  = (1<<30)|59;
+    constexpr Key F3  = (1<<30)|60;  constexpr Key F4  = (1<<30)|61;
+    constexpr Key F5  = (1<<30)|62;  constexpr Key F6  = (1<<30)|63;
+    constexpr Key F7  = (1<<30)|64;  constexpr Key F8  = (1<<30)|65;
+    constexpr Key F9  = (1<<30)|66;  constexpr Key F10 = (1<<30)|67;
+    constexpr Key F11 = (1<<30)|68;  constexpr Key F12 = (1<<30)|69;
 } // namespace Keys
 
 // Scan codes (USB HID table, SDL_Scancode-compatible)
@@ -75,6 +85,14 @@ namespace Scancodes {
     constexpr Scancode LEFT       = 80;
     constexpr Scancode DOWN       = 81;
     constexpr Scancode UP         = 82;
+
+    // Function keys (USB HID / SDL_Scancode values)
+    constexpr Scancode F1  = 58;  constexpr Scancode F2  = 59;
+    constexpr Scancode F3  = 60;  constexpr Scancode F4  = 61;
+    constexpr Scancode F5  = 62;  constexpr Scancode F6  = 63;
+    constexpr Scancode F7  = 64;  constexpr Scancode F8  = 65;
+    constexpr Scancode F9  = 66;  constexpr Scancode F10 = 67;
+    constexpr Scancode F11 = 68;  constexpr Scancode F12 = 69;
 } // namespace Scancodes
 
 // Key modifier bitmasks (SDL_Keymod-compatible)
