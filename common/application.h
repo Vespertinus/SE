@@ -15,6 +15,8 @@
 
 namespace SE {
 
+class Event;
+
 struct SysSettings_t {
 
         ClearBuffer             clear_flag;
@@ -65,6 +67,7 @@ template <class TLoop > class Application {
         //private:	//TEMP
         void ResizeViewport(const int32_t & new_width, const int32_t & new_height);
         void Run();
+        void OnQuit(const Event & oEvent);
         TLoop & GetAppLogic();
 
 };

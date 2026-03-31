@@ -1,5 +1,6 @@
 
 #include <CommonEvents.h>
+#include <EventManager.h>
 
 namespace SE {
 
@@ -11,7 +12,9 @@ template <class TLoop> Application<TLoop>::PreInit::PreInit(const SysSettings_t 
         auto & oInputManager = GetSystem<InputManager>();
         oInputManager.Init(window_id, oSettings.grab_mouse, oSettings.hide_mouse);
 
+#ifdef SE_PHYSICS_ENABLED
         GetSystem<PhysicsSystem>().Init(GetSystem<Config>().oPhysicsConfig);
+#endif
 }
 
 template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings  & oLoopSettings):
@@ -31,6 +34,8 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
 
         Init();
 
+        GetSystem<EventManager>().AddListener<EQuit, &Application<TLoop>::OnQuit>(this);
+
         TEngine::Instance().Get<EventManager>().TriggerEvent(EStartApp{});
 
         log_i("Start Loop");
@@ -43,7 +48,17 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
 
 
 
-template <class TLoop> Application<TLoop>::~Application() noexcept { ;; }
+template <class TLoop> Application<TLoop>::~Application() noexcept {
+
+        GetSystem<EventManager>().RemoveListener<EQuit, &Application<TLoop>::OnQuit>(this);
+}
+
+
+
+template <class TLoop> void Application<TLoop>::OnQuit(const Event & /* oEvent */) {
+
+        oMainWindow.RequestQuit();
+}
 
 
 
@@ -72,6 +87,9 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
         GetSystem<InputManager>().SetWindowExtents(new_width, new_height);
         GetSystem<GraphicsState>().SetScreenSize(screen_size);
         GetSystem<TRenderer>().SetScreenSize(screen_size);
+#ifdef SE_UI_ENABLED
+        GetSystem<UISystem>().SetDimensions(new_width, new_height);
+#endif
 }
 
 
@@ -88,16 +106,19 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         oEventManager.TriggerEvent(EUpdate{last_frame_time});
 
+#ifdef SE_PHYSICS_ENABLED
         GetSystem<PhysicsSystem>().Update(last_frame_time);
+#endif
 
         oEventManager.Process();
         oLoop.Process();
+        oEventManager.Process();
 
         oEventManager.TriggerEvent(EPostUpdate{last_frame_time});
 
-        {
-            GetSystem<PhysicsSystem>().Interpolate();
-        }
+#ifdef SE_PHYSICS_ENABLED
+        GetSystem<PhysicsSystem>().Interpolate();
+#endif
 
         //Render
         TEngine::Instance().Get<TRenderer>().Render();

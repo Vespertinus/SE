@@ -105,19 +105,17 @@ template <class ResizeHandler,  class DrawHandler> void SDLWindow<ResizeHandler,
                                         }
                                         break;
 
-                                case SDL_KEYDOWN:
-                                        if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-                                                log_i("quit application");
-                                                running = false;
-                                        }
-                                        break;
-
                                 default:
                                         break;
                         }
                 }
 
                 oDrawHandler();
+
+                if (quit_requested) {
+                        running = false;
+                        quit_requested = false;
+                }
 
                 SDL_GL_SwapWindow(pWindow);
         }

@@ -34,6 +34,7 @@ template <class ResizeHandler,  class DrawHandler> class SDLWindow {
   ResizeHandler      & oResizeHandler;
   DrawHandler        & oDrawHandler;
 
+  bool                  quit_requested{false};
 
   void CreateWindow();
   //void DestroyWindow();
@@ -45,7 +46,8 @@ template <class ResizeHandler,  class DrawHandler> class SDLWindow {
   ~SDLWindow() noexcept;
 
   uint32_t GetWindowID() const;
-  void Loop();
+  void     Loop();
+  void     RequestQuit() { quit_requested = true; }
 
 };
 
