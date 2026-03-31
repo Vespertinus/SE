@@ -63,6 +63,11 @@ if(AUDIO)
         message(STATUS "Found OpenAL: ${OPENAL_LIBRARY}")
 endif()
 
+if(UI)
+        find_package(Freetype REQUIRED)
+        message(STATUS "Found FreeType: ${FREETYPE_LIBRARIES}")
+endif()
+
 list(APPEND LIBRARIES_LIST "m")
 
 

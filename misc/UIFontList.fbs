@@ -1,0 +1,21 @@
+
+namespace SE.FlatBuffers;
+
+enum FontStyle  : uint8 { NORMAL = 0, ITALIC = 1 }
+enum FontWeight : uint8 { NORMAL = 0, BOLD = 1 }
+
+table FontFace {
+    path:     string (required);   // relative to sResourceDir, e.g. "font/Lato-Regular.ttf"
+    family:   string (required);   // CSS family name, e.g. "Lato"
+    style:    FontStyle  = NORMAL;
+    weight:   FontWeight = NORMAL;
+    fallback: bool = false;        // used as fallback when no other font matches
+}
+
+table UIFontList {
+    faces: [FontFace] (required);
+}
+
+root_type UIFontList;
+file_identifier "SEFL";
+file_extension  "sefl";

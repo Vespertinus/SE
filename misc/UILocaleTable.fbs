@@ -1,0 +1,15 @@
+namespace SE.FlatBuffers;
+
+table LocaleEntry {
+    key:   string (required);
+    value: string (required);
+}
+
+table LocaleTable {
+    locale:  string (required);
+    entries: [LocaleEntry] (required);
+}
+
+root_type LocaleTable;
+file_identifier "SELT";
+file_extension  "selt";

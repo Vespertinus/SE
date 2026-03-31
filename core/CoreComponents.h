@@ -7,12 +7,41 @@ namespace SE {
 
 class StaticModel;
 class AnimatedModel;
+class Animator;
 class Camera;
+#ifdef SE_PHYSICS_ENABLED
 class RigidBody;
+#endif
+#ifdef SE_AUDIO_ENABLED
 class AudioEmitter;
 class AudioListener;
+class SoundEmitter;
+#endif
+#ifdef SE_UI_ENABLED
+class UIWidget;
+#endif
 
-using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, RigidBody, AudioEmitter, AudioListener>;
+using TCoreComponentsBase    = MP::TypelistWrapper<StaticModel, AnimatedModel, Animator, Camera>;
+#ifdef SE_PHYSICS_ENABLED
+using TCoreComponentsPhysics = MP::TypelistWrapper<RigidBody>;
+#else
+using TCoreComponentsPhysics = MP::TypelistWrapper<>;
+#endif
+#ifdef SE_AUDIO_ENABLED
+using TCoreComponentsAudio   = MP::TypelistWrapper<AudioEmitter, AudioListener, SoundEmitter>;
+#else
+using TCoreComponentsAudio   = MP::TypelistWrapper<>;
+#endif
+#ifdef SE_UI_ENABLED
+using TCoreComponentsUI      = MP::TypelistWrapper<UIWidget>;
+#else
+using TCoreComponentsUI      = MP::TypelistWrapper<>;
+#endif
+using TCoreComponents = decltype(MP::TypelistConcatenate(
+        MP::TypelistConcatenate(
+                MP::TypelistConcatenate(TCoreComponentsBase{}, TCoreComponentsPhysics{}),
+                TCoreComponentsAudio{}),
+        TCoreComponentsUI{}));
 
 }
 
@@ -26,10 +55,15 @@ using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, 
 
 #include <StaticModel.h>
 #include <AnimatedModel.h>
+#include <Animator.h>
 #include <Camera.h>
 #include <RigidBody.h>
 #include <AudioEmitter.h>
 #include <AudioListener.h>
+#include <SoundEmitter.h>
+#ifdef SE_UI_ENABLED
+#include <ui/UIWidget.h>
+#endif
 
 #endif
 #endif
@@ -40,10 +74,19 @@ using TCoreComponents = MP::TypelistWrapper<StaticModel, AnimatedModel, Camera, 
 
 #include <StaticModel.tcc>
 #include <AnimatedModel.tcc>
+#include <Animator.tcc>
 #include <Camera.tcc>
+#ifdef SE_PHYSICS_ENABLED
 #include <RigidBody.tcc>
+#endif
+#ifdef SE_AUDIO_ENABLED
 #include <AudioEmitter.tcc>
 #include <AudioListener.tcc>
+#include <SoundEmitter.tcc>
+#endif
+#ifdef SE_UI_ENABLED
+#include <ui/UIWidget.tcc>
+#endif
 
 #endif
 #endif

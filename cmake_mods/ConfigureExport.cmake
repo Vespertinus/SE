@@ -64,6 +64,13 @@ install(                        TARGETS
                                 EXPORT SimpleEngineTargets)
 endif()
 
+if(UI)
+install(                        TARGETS
+                                rmlui_core
+                                DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                                EXPORT SimpleEngineTargets)
+endif()
+
 install(                        TARGETS
                                 SE
                                 SECommon
