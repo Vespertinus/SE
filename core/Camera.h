@@ -81,6 +81,7 @@ class Camera {
         void                    ZoomTo(const BoundingBox & oBBox);
         void                    ZoomTo(const float width);
         const       glm::mat4 & GetWorldMVP();
+        const       glm::mat4 & GetProjectionMatrix();
         glm::vec3               GetWorldPos() const;
         void                    LookAt(const float x, const float y, const float z);
         void                    LookAt(const glm::vec3 & center);
@@ -97,6 +98,7 @@ class Camera {
         TSceneTree::TSceneNode  Node() const;
         void                    Enable();
         void                    Disable();
+        void                    TargetTransformChanged(TSceneTree::TSceneNodeExact * pTargetNode);
         void                    Print(const size_t indent);
         std::string             Str() const;
         void                    DrawDebug() const;

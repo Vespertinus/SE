@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include <CommonEvents.h>
 
 namespace SE {
 
@@ -103,6 +104,7 @@ void Camera::RecalcProjection() {
         }
 
         flags ^= Dirty::PROJECTION;
+        GetSystem<EventManager>().QueueEvent(ECameraChanged{});
 }
 
 const glm::mat4 & Camera::GetWorldMVP() {
@@ -112,6 +114,12 @@ const glm::mat4 & Camera::GetWorldMVP() {
         //View matrix -> inverse world
         mModelViewProjection = mProjection * glm::inverse(pNode->GetTransform().GetWorld());
         return mModelViewProjection;
+}
+
+const glm::mat4 & Camera::GetProjectionMatrix() {
+
+        RecalcProjection();
+        return mProjection;
 }
 
 glm::vec3 Camera::GetWorldPos() const {
@@ -244,9 +252,20 @@ void Camera::ToggleProjection() {
         flags |= Dirty::VOLUME;
 }
 
-//THINK
-void Camera::Enable() { ;; }
-void Camera::Disable() { ;; }
+void Camera::Enable() {
+
+        pNode->AddListener(this);
+}
+
+void Camera::Disable() {
+
+        pNode->RemoveListener(this);
+}
+
+void Camera::TargetTransformChanged(TSceneTree::TSceneNodeExact * /* pTargetNode */) {
+
+        GetSystem<EventManager>().QueueEvent(ECameraChanged{});
+}
 
 TSceneTree::TSceneNode Camera::Node() const {
 
