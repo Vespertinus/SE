@@ -8,20 +8,19 @@
 #include <InputEvents.h>
 
 union SDL_Event;
+struct _SDL_GameController;
 
 namespace SE {
 
-class Joystick { //TODO
-        public:
-};
+struct Gamepad { _SDL_GameController * pController; };
 
 class InputManager {
 
-        std::unordered_set<Key>              sKeyDown;
-        std::unordered_set<Key>              sKeyPress;
-        std::unordered_set<Scancode>         sScancodeDown;
-        std::unordered_set<Scancode>         sScancodePress;
-        std::unordered_map<int32_t, Joystick> mJoysticks;
+        std::unordered_set<Key>             sKeyDown;
+        std::unordered_set<Key>             sKeyPress;
+        std::unordered_set<Scancode>        sScancodeDown;
+        std::unordered_set<Scancode>        sScancodePress;
+        std::unordered_map<int32_t, Gamepad> mGamepads;
 
         std::string     sInputText;
 

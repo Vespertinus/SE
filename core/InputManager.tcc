@@ -26,6 +26,7 @@ void InputManager::Init(uint32_t new_window_id, bool grab_mouse, bool hide_mouse
         mouse_visible = !hide_mouse;
         mouse_grabbed = grab_mouse;
 
+        SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
         SDL_ShowCursor(hide_mouse ? SDL_DISABLE : SDL_ENABLE);
 
         if (grab_mouse) {
@@ -123,6 +124,53 @@ void InputManager::HandleEvent(const SDL_Event & event) {
                                         minimized = false;
                                         break;
                         }
+                        break;
+
+                case SDL_CONTROLLERDEVICEADDED: {
+                        const int32_t idx = event.cdevice.which;
+                        SDL_GameController * pCtrl = SDL_GameControllerOpen(idx);
+                        if (pCtrl) {
+                                const int32_t id = SDL_JoystickInstanceID(
+                                        SDL_GameControllerGetJoystick(pCtrl));
+                                mGamepads[id] = Gamepad{pCtrl};
+                        }
+                        break;
+                }
+
+                case SDL_CONTROLLERDEVICEREMOVED: {
+                        const int32_t id = event.cdevice.which;
+                        auto it = mGamepads.find(id);
+                        if (it != mGamepads.end()) {
+                                SDL_GameControllerClose(it->second.pController);
+                                mGamepads.erase(it);
+                        }
+                        break;
+                }
+
+                case SDL_CONTROLLERBUTTONDOWN: {
+                        // SDL_CONTROLLER_BUTTON_* values match GamepadButton enum order exactly
+                        const auto btn = static_cast<GamepadButton>(event.cbutton.button);
+                        if (btn < GamepadButton::COUNT) {
+                                oEventManager.TriggerEvent(
+                                        EGamepadButtonDown{event.cbutton.which, btn});
+                        }
+                        break;
+                }
+
+                case SDL_CONTROLLERBUTTONUP: {
+                        const auto btn = static_cast<GamepadButton>(event.cbutton.button);
+                        if (btn < GamepadButton::COUNT) {
+                                oEventManager.TriggerEvent(
+                                        EGamepadButtonUp{event.cbutton.which, btn});
+                        }
+                        break;
+                }
+
+                case SDL_CONTROLLERAXISMOTION:
+                        oEventManager.TriggerEvent(EGamepadAxis{
+                                event.caxis.which,
+                                static_cast<uint8_t>(event.caxis.axis),
+                                event.caxis.value});
                         break;
 
                 default:
