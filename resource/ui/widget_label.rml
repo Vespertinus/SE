@@ -1,0 +1,24 @@
+<rml>
+<head>
+  <link type="text/rcss" href="theme.rcss"/>
+  <style>
+    body {
+      display: block;
+      position: absolute;
+      width: auto;
+      height: auto;
+    }
+    .label {
+      display: block;
+      font-size: 12dp;
+      color: #ffffff;
+      background-color: rgba(0, 0, 0, 180);
+      padding: 2dp 8dp;
+      border-radius: 3dp;
+    }
+  </style>
+</head>
+<body data-model="widget">
+  <span class="label">{{pos}}</span>
+</body>
+</rml>

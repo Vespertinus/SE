@@ -1,0 +1,56 @@
+<rml>
+<head>
+  <link type="text/rcss" href="theme.rcss"/>
+  <style>
+    body {
+      display: block;
+      position: absolute;
+      width: auto;
+      height: auto;
+    }
+
+    .beacon-panel {
+      position: absolute;
+      left: -48dp;
+      top: -72dp;
+      width: 96dp;
+      background-color: rgba(13, 26, 46, 210);
+      border-width: 1dp;
+      border-color: #ff8c0088;
+      border-radius: 4dp;
+      padding: 4dp 6dp;
+      text-align: center;
+    }
+
+    .beacon-label {
+      display: block;
+      font-size: 11dp;
+      color: #ff8c00;
+    }
+
+    .beacon-ping {
+      display: block;
+      font-size: 16dp;
+      color: #ffaa33;
+    }
+
+    .beacon-dot {
+      display: block;
+      width: 8dp;
+      height: 8dp;
+      background-color: #00ff88;
+      border-radius: 4dp;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 3dp;
+    }
+  </style>
+</head>
+<body data-model="widget">
+  <div data-if="active" class="beacon-panel">
+    <p class="beacon-label">{{label}}</p>
+    <p class="beacon-ping">{{ping}} ms</p>
+    <div class="beacon-dot"></div>
+  </div>
+</body>
+</rml>

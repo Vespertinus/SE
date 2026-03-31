@@ -1,0 +1,198 @@
+/* ============================================================
+   NEXUS ENGINE -- Shared UI Theme
+   Font: LatoLatin (registered family name)
+   Units: dp throughout
+   body background-color is set per-document (NOT here) so that
+   HUD/pause/settings documents remain transparent over the 3D scene.
+   NOTE: RmlUi only gives display:block to <body> by default.
+         Every other element that should be block must say so explicitly.
+   ============================================================ */
+
+body {
+    font-family: LatoLatin;
+    font-size: 16dp;
+    color: #c8e0ff;
+    width: 100%;
+    height: 100%;
+}
+
+.center-column {
+    display: block;
+    width: 420dp;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ---- Panels ---- */
+.panel {
+    display: block;
+    background-color: #0d1a2e;
+    border-width: 1dp;
+    border-color: #00c8ff;
+    border-radius: 4dp;
+    padding: 20dp;
+    margin-bottom: 12dp;
+}
+
+/* ---- Typography ---- */
+.title {
+    display: block;
+    font-size: 42dp;
+    color: #00c8ff;
+    text-align: center;
+    margin-top: 50dp;
+    margin-bottom: 8dp;
+}
+
+.subtitle {
+    display: block;
+    font-size: 13dp;
+    color: #4a6a8a;
+    text-align: center;
+    margin-bottom: 40dp;
+}
+
+.section-title {
+    display: block;
+    font-size: 13dp;
+    color: #00c8ff;
+    margin-bottom: 12dp;
+}
+
+/* ---- Buttons ---- */
+.btn {
+    display: block;
+    width: 100%;
+    padding: 14dp 0dp;
+    margin: 8dp 0dp;
+    font-size: 18dp;
+    text-align: center;
+    background-color: #0d1a2e;
+    border-width: 1dp;
+    border-color: #00c8ff;
+    border-radius: 3dp;
+    color: #c8e0ff;
+}
+
+.btn:hover {
+    background-color: #1a3a5c;
+    color: #ffffff;
+    border-color: #00e8ff;
+}
+
+.btn-amber {
+    display: block;
+    width: 100%;
+    padding: 14dp 0dp;
+    margin: 8dp 0dp;
+    font-size: 18dp;
+    text-align: center;
+    background-color: #1e1000;
+    border-width: 1dp;
+    border-color: #ff8c00;
+    border-radius: 3dp;
+    color: #ff8c00;
+}
+
+.btn-amber:hover {
+    background-color: #3a1e00;
+    color: #ffaa33;
+}
+
+/* ---- HUD stat rows ---- */
+.stat-row {
+    display: block;
+    margin-top: 6dp;
+    margin-bottom: 6dp;
+}
+
+.stat-label {
+    display: inline-block;
+    width: 80dp;
+    color: #4a6a8a;
+    font-size: 13dp;
+}
+
+.stat-value {
+    display: inline-block;
+    color: #00e676;
+    font-size: 13dp;
+}
+
+.stat-bar-bg {
+    display: block;
+    width: 180dp;
+    height: 6dp;
+    background-color: #0a0f1a;
+    border-width: 1dp;
+    border-color: #1a3050;
+    border-radius: 3dp;
+    margin-top: 2dp;
+    margin-bottom: 4dp;
+}
+
+.stat-bar-fill {
+    display: block;
+    height: 6dp;
+    background-color: #00e676;
+    border-radius: 3dp;
+}
+
+.stat-bar-fill-shield {
+    display: block;
+    height: 6dp;
+    background-color: #00c8ff;
+    border-radius: 3dp;
+}
+
+.stat-bar-fill-energy {
+    display: block;
+    height: 6dp;
+    background-color: #ff8c00;
+    border-radius: 3dp;
+}
+
+/* ---- Camera telemetry panel ---- */
+.camera-panel {
+    display: block;
+    background-color: #0d1a2e;
+    border-width: 1dp;
+    border-color: #1a3050;
+    border-radius: 4dp;
+    padding: 12dp;
+}
+
+.cam-label {
+    display: inline-block;
+    width: 50dp;
+    color: #4a6a8a;
+    font-size: 12dp;
+}
+
+.cam-value {
+    display: inline-block;
+    color: #ff8c00;
+    font-size: 12dp;
+}
+
+/* ---- Divider ---- */
+.divider {
+    display: block;
+    height: 1dp;
+    background-color: #1a3050;
+    margin-top: 10dp;
+    margin-bottom: 10dp;
+}
+
+/* ---- Warm theme overrides ---- */
+@media (theme: warm) {
+    .title         { color: #ff8c00; }
+    .subtitle      { color: #7a4a10; }
+    .section-title { color: #ffaa33; }
+    .btn           { border-color: #ff8c00; color: #ff8c00; background-color: #1e1000; }
+    .btn:hover     { background-color: #3a1e00; color: #ffaa33; border-color: #ffaa33; }
+    .panel         { border-color: #ff8c00; }
+    .stat-value    { color: #ffaa33; }
+    .cam-value     { color: #00c8ff; }
+    .stat-bar-fill { background-color: #ff8c00; }
+}

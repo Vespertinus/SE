@@ -1,0 +1,26 @@
+<rml>
+<head>
+    <title>Main Menu</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <style>
+        body { background-color: #08101e; }
+    </style>
+</head>
+<body data-model="loc">
+    <div class="center-column">
+        <p class="title">{{menu_title}}</p>
+        <p class="subtitle">{{menu_subtitle}}</p>
+
+        <div class="panel">
+            <button id="btn-new-mission" class="btn"
+                    data-event="ui.menu.new_mission">{{new_mission}}</button>
+            <button id="btn-credits"    class="btn"
+                    data-event="ui.menu.credits">{{credits}}</button>
+            <button id="btn-settings"   class="btn"
+                    data-event="ui.menu.settings">{{settings}}</button>
+            <button id="btn-quit"       class="btn-amber"
+                    data-event="ui.menu.quit">{{quit}}</button>
+        </div>
+    </div>
+</body>
+</rml>

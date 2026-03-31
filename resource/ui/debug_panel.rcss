@@ -1,0 +1,21 @@
+#debug-panel {
+    position: absolute;
+    top: 210dp;
+    left: 8dp;
+    width: 130dp;
+    background-color: rgba(0, 0, 0, 140);
+    border-radius: 4dp;
+    padding: 6dp 8dp;
+}
+
+#debug-panel button {
+    display: block;
+    width: 100%;
+    margin-bottom: 4dp;
+    font-size: 12dp;
+    text-align: left;
+}
+
+#debug-panel button:last-child {
+    margin-bottom: 0;
+}

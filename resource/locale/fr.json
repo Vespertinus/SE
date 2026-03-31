@@ -1,0 +1,13 @@
+{
+  "locale":  "fr",
+  "entries": [
+    { "key": "menu_title",    "value": "Démo IU" },
+    { "key": "menu_subtitle", "value": "INTERFACE DE CONTRÔLE" },
+    { "key": "new_mission",   "value": "NOUVELLE MISSION" },
+    { "key": "settings",      "value": "PARAMÈTRES" },
+    { "key": "credits",       "value": "CRÉDITS" },
+    { "key": "quit",          "value": "QUITTER" },
+    { "key": "credits_title", "value": "FONCTIONNALITÉS" },
+    { "key": "credits_back",  "value": "RETOUR" }
+  ]
+}

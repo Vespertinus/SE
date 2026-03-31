@@ -1,0 +1,13 @@
+{
+  "locale":  "en",
+  "entries": [
+    { "key": "menu_title",    "value": "UI Demo" },
+    { "key": "menu_subtitle", "value": "MISSION CONTROL INTERFACE" },
+    { "key": "new_mission",   "value": "NEW MISSION" },
+    { "key": "settings",      "value": "SETTINGS" },
+    { "key": "credits",       "value": "CREDITS" },
+    { "key": "quit",          "value": "QUIT" },
+    { "key": "credits_title", "value": "FEATURES DEMONSTRATED" },
+    { "key": "credits_back",  "value": "BACK" }
+  ]
+}

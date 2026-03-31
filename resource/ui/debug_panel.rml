@@ -1,0 +1,13 @@
+<rml>
+<head>
+  <title>Debug</title>
+  <link type="text/rcss" href="theme.rcss"/>
+  <link type="text/rcss" href="debug_panel.rcss"/>
+</head>
+<body data-model="debug">
+  <div id="debug-panel">
+    <button data-event="debug.toggle_grid">{{grid_label}}</button>
+    <button data-event="debug.toggle_debug">{{debug_label}}</button>
+  </div>
+</body>
+</rml>

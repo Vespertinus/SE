@@ -1,0 +1,94 @@
+<rml>
+<head>
+    <title>Settings</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <style>
+        #overlay {
+            display: block;
+            position: absolute;
+            top: 0dp;
+            left: 0dp;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(8, 16, 30, 0.92);
+        }
+        #settings-panel {
+            display: block;
+            width: 400dp;
+            margin-top: 100dp;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .settings-title {
+            display: block;
+            font-size: 28dp;
+            color: #00c8ff;
+            text-align: center;
+            margin-bottom: 24dp;
+        }
+        input {
+            display: block;
+            width: 100%;
+            padding: 10dp 8dp;
+            margin-top: 4dp;
+            font-size: 16dp;
+            background-color: #060e1c;
+            border-width: 1dp;
+            border-color: #00c8ff;
+            border-radius: 3dp;
+            color: #c8e0ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div id="settings-panel">
+            <p class="settings-title">SETTINGS</p>
+
+            <div class="panel">
+                <p class="section-title">THEME</p>
+                <button id="btn-theme-scifi" class="btn"
+                        data-event="ui.settings.theme_scifi">SCI-FI (DEFAULT)</button>
+                <button id="btn-theme-warm"  class="btn-amber"
+                        data-event="ui.settings.theme_warm">WARM</button>
+            </div>
+
+            <div class="panel">
+                <p class="section-title">LANGUAGE</p>
+                <button id="btn-lang-en" class="btn"
+                        data-event="ui.settings.lang_en">ENGLISH</button>
+                <button id="btn-lang-fr" class="btn"
+                        data-event="ui.settings.lang_fr">FRANÇAIS</button>
+            </div>
+
+            <div class="panel">
+                <p class="section-title">CALLSIGN</p>
+                <input id="input-callsign" type="text"
+                       data-event="ui.settings.callsign"
+                       placeholder="OPERATIVE" maxlength="16"/>
+            </div>
+
+            <div class="panel">
+                <p class="section-title">FIELD OF VIEW</p>
+                <button id="btn-fov45" class="btn"
+                        data-event="ui.settings.fov_45">45 deg  -  NARROW</button>
+                <button id="btn-fov60" class="btn"
+                        data-event="ui.settings.fov_60">60 deg  -  STANDARD</button>
+                <button id="btn-fov75" class="btn"
+                        data-event="ui.settings.fov_75">75 deg  -  WIDE</button>
+                <button id="btn-fov90" class="btn"
+                        data-event="ui.settings.fov_90">90 deg  -  ULTRA WIDE</button>
+            </div>
+
+            <div class="panel">
+                <p class="section-title">PROJECTION</p>
+                <button id="btn-proj" class="btn"
+                        data-event="ui.settings.proj_toggle">TOGGLE PROJECTION MODE</button>
+            </div>
+
+            <button id="btn-back" class="btn-amber"
+                    data-event="ui.settings.back">BACK</button>
+        </div>
+    </div>
+</body>
+</rml>

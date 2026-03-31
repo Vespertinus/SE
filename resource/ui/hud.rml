@@ -1,0 +1,127 @@
+<rml>
+<head>
+    <title>HUD</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <style>
+        #hud-stats {
+            display: block;
+            position: absolute;
+            top: 16dp;
+            left: 16dp;
+            width: 220dp;
+        }
+        #hud-camera {
+            display: block;
+            position: absolute;
+            top: 16dp;
+            right: 16dp;
+            width: 200dp;
+        }
+        #hud-grid {
+            display: block;
+            position: absolute;
+            bottom: 16dp;
+            left: 0dp;
+            right: 0dp;
+            width: 360dp;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: rgba(13, 26, 46, 200);
+            border-width: 1dp;
+            border-color: #1a3050;
+            border-radius: 4dp;
+            padding: 6dp 0dp;
+        }
+        .grid-cell {
+            display: inline-block;
+            width: 120dp;
+            text-align: center;
+        }
+        .grid-label {
+            display: block;
+            color: #4a6a8a;
+            font-size: 11dp;
+        }
+        .grid-value {
+            display: block;
+            color: #00c8ff;
+            font-size: 16dp;
+        }
+    </style>
+</head>
+<body data-model="hud">
+    <!-- Vital statistics (top-left) -->
+    <div id="hud-stats" class="panel">
+        <p class="section-title">VITALS</p>
+
+        <div class="stat-row">
+            <span class="stat-label">HP</span>
+            <span class="stat-value">{{health}}</span>
+        </div>
+        <div class="stat-bar-bg">
+            <div class="stat-bar-fill" data-style-width="health_bar_w"></div>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">SHIELD</span>
+            <span class="stat-value">{{shield}}</span>
+        </div>
+        <div class="stat-bar-bg">
+            <div class="stat-bar-fill-shield" data-style-width="shield_bar_w"></div>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">ENERGY</span>
+            <span class="stat-value">{{energy}}</span>
+        </div>
+        <div class="stat-bar-bg">
+            <div class="stat-bar-fill-energy" data-style-width="energy_bar_w"></div>
+        </div>
+    </div>
+
+    <!-- Camera telemetry (top-right) -->
+    <div id="hud-camera" class="camera-panel">
+        <p class="section-title">CAMERA</p>
+
+        <div class="stat-row">
+            <span class="cam-label">X</span>
+            <span class="cam-value">{{cam_x}}</span>
+        </div>
+        <div class="stat-row">
+            <span class="cam-label">Y</span>
+            <span class="cam-value">{{cam_y}}</span>
+        </div>
+        <div class="stat-row">
+            <span class="cam-label">Z</span>
+            <span class="cam-value">{{cam_z}}</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="stat-row">
+            <span class="cam-label">FOV</span>
+            <span class="cam-value">{{cam_fov}}</span>
+        </div>
+        <div class="stat-row">
+            <span class="cam-label">PROJ</span>
+            <span class="cam-value">{{cam_proj}}</span>
+        </div>
+    </div>
+
+    <!-- Status grid (bottom-center): 3-column grid element -->
+    <div id="hud-grid">
+        <div class="grid-cell">
+            <span class="grid-label">SCORE</span>
+            <span class="grid-value">{{score}}</span>
+        </div>
+        <div class="grid-cell">
+            <span class="grid-label">KILLS</span>
+            <span class="grid-value">{{kills}}</span>
+        </div>
+        <div class="grid-cell">
+            <span class="grid-label">TIME</span>
+            <span class="grid-value">{{elapsed}}</span>
+        </div>
+    </div>
+</body>
+</rml>

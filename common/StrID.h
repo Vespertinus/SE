@@ -21,6 +21,7 @@ class StrID {
         StrID(const char * data);
 
         bool operator == (const StrID rhs) const noexcept;
+        bool operator != (const StrID rhs) const noexcept;
         operator uint64_t() const noexcept;
         void operator = (const StrID rhs) noexcept;
 
@@ -48,6 +49,10 @@ inline StrID::StrID(const char * data) : StrID(std::string_view(data)) {
 
 inline bool StrID::operator == (const StrID rhs) const noexcept {
         return hash == rhs.hash;
+}
+
+inline bool StrID::operator != (const StrID rhs) const noexcept {
+        return hash != rhs.hash;
 }
 
 inline StrID::operator uint64_t() const noexcept {

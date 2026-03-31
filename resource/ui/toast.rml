@@ -1,0 +1,30 @@
+<rml>
+<head>
+    <title>Toast</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <style>
+        body { display: block; width: 100%; height: 100%; }
+        #toast {
+            display: block;
+            position: absolute;
+            bottom: 20dp;
+            left: 0dp;
+            right: 0dp;
+            width: 280dp;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: rgba(0, 200, 100, 220);
+            border-width: 1dp;
+            border-color: #00e676;
+            border-radius: 4dp;
+            padding: 10dp 0dp;
+            text-align: center;
+            color: #08101e;
+            font-size: 14dp;
+        }
+    </style>
+</head>
+<body>
+    <div id="toast">SETTINGS SAVED</div>
+</body>
+</rml>
