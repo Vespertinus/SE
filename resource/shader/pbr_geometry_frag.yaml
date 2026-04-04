@@ -13,9 +13,10 @@ source:
         in vec2 TexCoord;
         in mat3 v_TBN;
 
-        uniform sampler2D DiffuseTex;   // albedo / base colour
-        uniform sampler2D NormalTex;    // tangent-space normal map
-        uniform sampler2D SpecularTex;  // roughness (G), metallic (B) — glTF metallicRoughness
+        uniform sampler2D DiffuseTex;    // albedo / base colour
+        uniform sampler2D NormalTex;     // tangent-space normal map
+        uniform sampler2D SpecularTex;   // roughness (G), metallic (B) — glTF metallicRoughness
+        uniform sampler2D EmissiveTex;   // emissive colour map (unit 8)
 
         // BaseColor (vec4)
         // RGB is the albedo/base color of the material, and A as opacity 
@@ -77,6 +78,6 @@ source:
 
             gAlbedoRoughness = vec4(albedo, clamp(rough, 0.04, 1.0));
             gNormalMetallicAO = vec4(octN.x, octN.y, metal, AO);
-            gEmissive = Emissive;
+            gEmissive = texture(EmissiveTex, TexCoord).rgb * Emissive;
         }
 
