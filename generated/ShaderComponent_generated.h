@@ -23,31 +23,37 @@ enum class ShaderType : uint8_t {
   VERTEX = 1,
   FRAGMENT = 2,
   GEOMETRY = 3,
+  COMPUTE = 4,
+  DEPEND = 5,
   MIN = VERTEX,
-  MAX = GEOMETRY
+  MAX = DEPEND
 };
 
-inline const ShaderType (&EnumValuesShaderType())[3] {
+inline const ShaderType (&EnumValuesShaderType())[5] {
   static const ShaderType values[] = {
     ShaderType::VERTEX,
     ShaderType::FRAGMENT,
-    ShaderType::GEOMETRY
+    ShaderType::GEOMETRY,
+    ShaderType::COMPUTE,
+    ShaderType::DEPEND
   };
   return values;
 }
 
 inline const char * const *EnumNamesShaderType() {
-  static const char * const names[4] = {
+  static const char * const names[6] = {
     "VERTEX",
     "FRAGMENT",
     "GEOMETRY",
+    "COMPUTE",
+    "DEPEND",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameShaderType(ShaderType e) {
-  if (::flatbuffers::IsOutRange(e, ShaderType::VERTEX, ShaderType::GEOMETRY)) return "";
+  if (::flatbuffers::IsOutRange(e, ShaderType::VERTEX, ShaderType::DEPEND)) return "";
   const size_t index = static_cast<size_t>(e) - static_cast<size_t>(ShaderType::VERTEX);
   return EnumNamesShaderType()[index];
 }
@@ -56,11 +62,19 @@ struct ShaderComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ShaderComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DEPENDENCIES = 4,
-    VT_TYPE = 6,
-    VT_SOURCE = 8
+    VT_INCLUDE = 6,
+    VT_HEADER = 8,
+    VT_TYPE = 10,
+    VT_SOURCE = 12
   };
   const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *dependencies() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_DEPENDENCIES);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *include() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_INCLUDE);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *header() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_HEADER);
   }
   SE::FlatBuffers::ShaderType type() const {
     return static_cast<SE::FlatBuffers::ShaderType>(GetField<uint8_t>(VT_TYPE, 2));
@@ -73,6 +87,12 @@ struct ShaderComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_DEPENDENCIES) &&
            verifier.VerifyVector(dependencies()) &&
            verifier.VerifyVectorOfStrings(dependencies()) &&
+           VerifyOffset(verifier, VT_INCLUDE) &&
+           verifier.VerifyVector(include()) &&
+           verifier.VerifyVectorOfStrings(include()) &&
+           VerifyOffset(verifier, VT_HEADER) &&
+           verifier.VerifyVector(header()) &&
+           verifier.VerifyVectorOfStrings(header()) &&
            VerifyField<uint8_t>(verifier, VT_TYPE, 1) &&
            VerifyOffsetRequired(verifier, VT_SOURCE) &&
            verifier.VerifyVector(source()) &&
@@ -87,6 +107,12 @@ struct ShaderComponentBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_dependencies(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> dependencies) {
     fbb_.AddOffset(ShaderComponent::VT_DEPENDENCIES, dependencies);
+  }
+  void add_include(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> include) {
+    fbb_.AddOffset(ShaderComponent::VT_INCLUDE, include);
+  }
+  void add_header(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> header) {
+    fbb_.AddOffset(ShaderComponent::VT_HEADER, header);
   }
   void add_type(SE::FlatBuffers::ShaderType type) {
     fbb_.AddElement<uint8_t>(ShaderComponent::VT_TYPE, static_cast<uint8_t>(type), 2);
@@ -109,10 +135,14 @@ struct ShaderComponentBuilder {
 inline ::flatbuffers::Offset<ShaderComponent> CreateShaderComponent(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> dependencies = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> include = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> header = 0,
     SE::FlatBuffers::ShaderType type = SE::FlatBuffers::ShaderType::FRAGMENT,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> source = 0) {
   ShaderComponentBuilder builder_(_fbb);
   builder_.add_source(source);
+  builder_.add_header(header);
+  builder_.add_include(include);
   builder_.add_dependencies(dependencies);
   builder_.add_type(type);
   return builder_.Finish();
@@ -121,13 +151,19 @@ inline ::flatbuffers::Offset<ShaderComponent> CreateShaderComponent(
 inline ::flatbuffers::Offset<ShaderComponent> CreateShaderComponentDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *dependencies = nullptr,
+    const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *include = nullptr,
+    const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *header = nullptr,
     SE::FlatBuffers::ShaderType type = SE::FlatBuffers::ShaderType::FRAGMENT,
     const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *source = nullptr) {
   auto dependencies__ = dependencies ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*dependencies) : 0;
+  auto include__ = include ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*include) : 0;
+  auto header__ = header ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*header) : 0;
   auto source__ = source ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*source) : 0;
   return SE::FlatBuffers::CreateShaderComponent(
       _fbb,
       dependencies__,
+      include__,
+      header__,
       type,
       source__);
 }

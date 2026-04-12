@@ -98,7 +98,8 @@ struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_VERTEX = 4,
     VT_FRAGMENT = 6,
-    VT_GEOMETRY = 8
+    VT_GEOMETRY = 8,
+    VT_COMPUTE = 10
   };
   const SE::FlatBuffers::Shader *vertex() const {
     return GetPointer<const SE::FlatBuffers::Shader *>(VT_VERTEX);
@@ -109,14 +110,19 @@ struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const SE::FlatBuffers::Shader *geometry() const {
     return GetPointer<const SE::FlatBuffers::Shader *>(VT_GEOMETRY);
   }
+  const SE::FlatBuffers::Shader *compute() const {
+    return GetPointer<const SE::FlatBuffers::Shader *>(VT_COMPUTE);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffsetRequired(verifier, VT_VERTEX) &&
+           VerifyOffset(verifier, VT_VERTEX) &&
            verifier.VerifyTable(vertex()) &&
-           VerifyOffsetRequired(verifier, VT_FRAGMENT) &&
+           VerifyOffset(verifier, VT_FRAGMENT) &&
            verifier.VerifyTable(fragment()) &&
            VerifyOffset(verifier, VT_GEOMETRY) &&
            verifier.VerifyTable(geometry()) &&
+           VerifyOffset(verifier, VT_COMPUTE) &&
+           verifier.VerifyTable(compute()) &&
            verifier.EndTable();
   }
 };
@@ -134,6 +140,9 @@ struct ShaderProgramBuilder {
   void add_geometry(::flatbuffers::Offset<SE::FlatBuffers::Shader> geometry) {
     fbb_.AddOffset(ShaderProgram::VT_GEOMETRY, geometry);
   }
+  void add_compute(::flatbuffers::Offset<SE::FlatBuffers::Shader> compute) {
+    fbb_.AddOffset(ShaderProgram::VT_COMPUTE, compute);
+  }
   explicit ShaderProgramBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -141,8 +150,6 @@ struct ShaderProgramBuilder {
   ::flatbuffers::Offset<ShaderProgram> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<ShaderProgram>(end);
-    fbb_.Required(o, ShaderProgram::VT_VERTEX);
-    fbb_.Required(o, ShaderProgram::VT_FRAGMENT);
     return o;
   }
 };
@@ -151,8 +158,10 @@ inline ::flatbuffers::Offset<ShaderProgram> CreateShaderProgram(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::Shader> vertex = 0,
     ::flatbuffers::Offset<SE::FlatBuffers::Shader> fragment = 0,
-    ::flatbuffers::Offset<SE::FlatBuffers::Shader> geometry = 0) {
+    ::flatbuffers::Offset<SE::FlatBuffers::Shader> geometry = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::Shader> compute = 0) {
   ShaderProgramBuilder builder_(_fbb);
+  builder_.add_compute(compute);
   builder_.add_geometry(geometry);
   builder_.add_fragment(fragment);
   builder_.add_vertex(vertex);
