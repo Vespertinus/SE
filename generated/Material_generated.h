@@ -39,6 +39,48 @@ struct MaterialBuilder;
 struct MaterialHolder;
 struct MaterialHolderBuilder;
 
+enum class TextureEncoding : uint8_t {
+  RGBA8 = 0,
+  PNG = 1,
+  JPG = 2,
+  TGA = 3,
+  DDS = 4,
+  KTX2 = 5,
+  MIN = RGBA8,
+  MAX = KTX2
+};
+
+inline const TextureEncoding (&EnumValuesTextureEncoding())[6] {
+  static const TextureEncoding values[] = {
+    TextureEncoding::RGBA8,
+    TextureEncoding::PNG,
+    TextureEncoding::JPG,
+    TextureEncoding::TGA,
+    TextureEncoding::DDS,
+    TextureEncoding::KTX2
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesTextureEncoding() {
+  static const char * const names[7] = {
+    "RGBA8",
+    "PNG",
+    "JPG",
+    "TGA",
+    "DDS",
+    "KTX2",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameTextureEncoding(TextureEncoding e) {
+  if (::flatbuffers::IsOutRange(e, TextureEncoding::RGBA8, TextureEncoding::KTX2)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesTextureEncoding()[index];
+}
+
 enum class StoreSettings : uint8_t {
   NONE = 0,
   StoreTexture2D = 1,
@@ -138,6 +180,48 @@ inline const char *EnumNameTextureUnit(TextureUnit e) {
   return EnumNamesTextureUnit()[index];
 }
 
+enum class BlendMode : uint8_t {
+  Opaque = 0,
+  Masked = 1,
+  Translucent = 2,
+  Additive = 3,
+  Modulate = 4,
+  AlphaComposite = 5,
+  MIN = Opaque,
+  MAX = AlphaComposite
+};
+
+inline const BlendMode (&EnumValuesBlendMode())[6] {
+  static const BlendMode values[] = {
+    BlendMode::Opaque,
+    BlendMode::Masked,
+    BlendMode::Translucent,
+    BlendMode::Additive,
+    BlendMode::Modulate,
+    BlendMode::AlphaComposite
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesBlendMode() {
+  static const char * const names[7] = {
+    "Opaque",
+    "Masked",
+    "Translucent",
+    "Additive",
+    "Modulate",
+    "AlphaComposite",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameBlendMode(BlendMode e) {
+  if (::flatbuffers::IsOutRange(e, BlendMode::Opaque, BlendMode::AlphaComposite)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesBlendMode()[index];
+}
+
 struct TextureStock FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef TextureStockBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -145,7 +229,9 @@ struct TextureStock FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_FORMAT = 6,
     VT_INTERNAL_FORMAT = 8,
     VT_WIDTH = 10,
-    VT_HEIGHT = 12
+    VT_HEIGHT = 12,
+    VT_ENCODED_DATA = 14,
+    VT_ENCODING = 16
   };
   const ::flatbuffers::Vector<uint8_t> *image() const {
     return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_IMAGE);
@@ -162,14 +248,23 @@ struct TextureStock FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   uint32_t height() const {
     return GetField<uint32_t>(VT_HEIGHT, 0);
   }
+  const ::flatbuffers::Vector<uint8_t> *encoded_data() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_ENCODED_DATA);
+  }
+  SE::FlatBuffers::TextureEncoding encoding() const {
+    return static_cast<SE::FlatBuffers::TextureEncoding>(GetField<uint8_t>(VT_ENCODING, 0));
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffsetRequired(verifier, VT_IMAGE) &&
+           VerifyOffset(verifier, VT_IMAGE) &&
            verifier.VerifyVector(image()) &&
            VerifyField<int32_t>(verifier, VT_FORMAT, 4) &&
            VerifyField<int32_t>(verifier, VT_INTERNAL_FORMAT, 4) &&
            VerifyField<uint32_t>(verifier, VT_WIDTH, 4) &&
            VerifyField<uint32_t>(verifier, VT_HEIGHT, 4) &&
+           VerifyOffset(verifier, VT_ENCODED_DATA) &&
+           verifier.VerifyVector(encoded_data()) &&
+           VerifyField<uint8_t>(verifier, VT_ENCODING, 1) &&
            verifier.EndTable();
   }
 };
@@ -193,6 +288,12 @@ struct TextureStockBuilder {
   void add_height(uint32_t height) {
     fbb_.AddElement<uint32_t>(TextureStock::VT_HEIGHT, height, 0);
   }
+  void add_encoded_data(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> encoded_data) {
+    fbb_.AddOffset(TextureStock::VT_ENCODED_DATA, encoded_data);
+  }
+  void add_encoding(SE::FlatBuffers::TextureEncoding encoding) {
+    fbb_.AddElement<uint8_t>(TextureStock::VT_ENCODING, static_cast<uint8_t>(encoding), 0);
+  }
   explicit TextureStockBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -200,7 +301,6 @@ struct TextureStockBuilder {
   ::flatbuffers::Offset<TextureStock> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<TextureStock>(end);
-    fbb_.Required(o, TextureStock::VT_IMAGE);
     return o;
   }
 };
@@ -211,13 +311,17 @@ inline ::flatbuffers::Offset<TextureStock> CreateTextureStock(
     int32_t format = 0,
     int32_t internal_format = 0,
     uint32_t width = 0,
-    uint32_t height = 0) {
+    uint32_t height = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> encoded_data = 0,
+    SE::FlatBuffers::TextureEncoding encoding = SE::FlatBuffers::TextureEncoding::RGBA8) {
   TextureStockBuilder builder_(_fbb);
+  builder_.add_encoded_data(encoded_data);
   builder_.add_height(height);
   builder_.add_width(width);
   builder_.add_internal_format(internal_format);
   builder_.add_format(format);
   builder_.add_image(image);
+  builder_.add_encoding(encoding);
   return builder_.Finish();
 }
 
@@ -227,15 +331,20 @@ inline ::flatbuffers::Offset<TextureStock> CreateTextureStockDirect(
     int32_t format = 0,
     int32_t internal_format = 0,
     uint32_t width = 0,
-    uint32_t height = 0) {
+    uint32_t height = 0,
+    const std::vector<uint8_t> *encoded_data = nullptr,
+    SE::FlatBuffers::TextureEncoding encoding = SE::FlatBuffers::TextureEncoding::RGBA8) {
   auto image__ = image ? _fbb.CreateVector<uint8_t>(*image) : 0;
+  auto encoded_data__ = encoded_data ? _fbb.CreateVector<uint8_t>(*encoded_data) : 0;
   return SE::FlatBuffers::CreateTextureStock(
       _fbb,
       image__,
       format,
       internal_format,
       width,
-      height);
+      height,
+      encoded_data__,
+      encoding);
 }
 
 struct StoreTexture2D FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -621,7 +730,8 @@ struct Material FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SHADER = 4,
     VT_TEXTURES = 6,
-    VT_VARIABLES = 8
+    VT_VARIABLES = 8,
+    VT_BLEND_MODE = 10
   };
   const SE::FlatBuffers::ShaderProgramHolder *shader() const {
     return GetPointer<const SE::FlatBuffers::ShaderProgramHolder *>(VT_SHADER);
@@ -631,6 +741,9 @@ struct Material FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> *variables() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> *>(VT_VARIABLES);
+  }
+  SE::FlatBuffers::BlendMode blend_mode() const {
+    return static_cast<SE::FlatBuffers::BlendMode>(GetField<uint8_t>(VT_BLEND_MODE, 0));
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -642,6 +755,7 @@ struct Material FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_VARIABLES) &&
            verifier.VerifyVector(variables()) &&
            verifier.VerifyVectorOfTables(variables()) &&
+           VerifyField<uint8_t>(verifier, VT_BLEND_MODE, 1) &&
            verifier.EndTable();
   }
 };
@@ -659,6 +773,9 @@ struct MaterialBuilder {
   void add_variables(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>>> variables) {
     fbb_.AddOffset(Material::VT_VARIABLES, variables);
   }
+  void add_blend_mode(SE::FlatBuffers::BlendMode blend_mode) {
+    fbb_.AddElement<uint8_t>(Material::VT_BLEND_MODE, static_cast<uint8_t>(blend_mode), 0);
+  }
   explicit MaterialBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -675,11 +792,13 @@ inline ::flatbuffers::Offset<Material> CreateMaterial(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::ShaderProgramHolder> shader = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::TextureHolder>>> textures = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>>> variables = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>>> variables = 0,
+    SE::FlatBuffers::BlendMode blend_mode = SE::FlatBuffers::BlendMode::Opaque) {
   MaterialBuilder builder_(_fbb);
   builder_.add_variables(variables);
   builder_.add_textures(textures);
   builder_.add_shader(shader);
+  builder_.add_blend_mode(blend_mode);
   return builder_.Finish();
 }
 
@@ -687,14 +806,16 @@ inline ::flatbuffers::Offset<Material> CreateMaterialDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::ShaderProgramHolder> shader = 0,
     const std::vector<::flatbuffers::Offset<SE::FlatBuffers::TextureHolder>> *textures = nullptr,
-    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> *variables = nullptr) {
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> *variables = nullptr,
+    SE::FlatBuffers::BlendMode blend_mode = SE::FlatBuffers::BlendMode::Opaque) {
   auto textures__ = textures ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::TextureHolder>>(*textures) : 0;
   auto variables__ = variables ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>>(*variables) : 0;
   return SE::FlatBuffers::CreateMaterial(
       _fbb,
       shader,
       textures__,
-      variables__);
+      variables__,
+      blend_mode);
 }
 
 struct MaterialHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {

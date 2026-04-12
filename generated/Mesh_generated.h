@@ -781,7 +781,8 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BBOX = 4,
     VT_INDEX_ELEM_START = 6,
-    VT_INDEX_ELEM_COUNT = 8
+    VT_INDEX_ELEM_COUNT = 8,
+    VT_MATERIAL_INDEX = 10
   };
   const SE::FlatBuffers::BoundingBox *bbox() const {
     return GetStruct<const SE::FlatBuffers::BoundingBox *>(VT_BBOX);
@@ -792,11 +793,15 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   uint32_t index_elem_count() const {
     return GetField<uint32_t>(VT_INDEX_ELEM_COUNT, 0);
   }
+  uint16_t material_index() const {
+    return GetField<uint16_t>(VT_MATERIAL_INDEX, 0);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyFieldRequired<SE::FlatBuffers::BoundingBox>(verifier, VT_BBOX, 4) &&
            VerifyField<uint32_t>(verifier, VT_INDEX_ELEM_START, 4) &&
            VerifyField<uint32_t>(verifier, VT_INDEX_ELEM_COUNT, 4) &&
+           VerifyField<uint16_t>(verifier, VT_MATERIAL_INDEX, 2) &&
            verifier.EndTable();
   }
 };
@@ -814,6 +819,9 @@ struct ShapeBuilder {
   void add_index_elem_count(uint32_t index_elem_count) {
     fbb_.AddElement<uint32_t>(Shape::VT_INDEX_ELEM_COUNT, index_elem_count, 0);
   }
+  void add_material_index(uint16_t material_index) {
+    fbb_.AddElement<uint16_t>(Shape::VT_MATERIAL_INDEX, material_index, 0);
+  }
   explicit ShapeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -830,11 +838,13 @@ inline ::flatbuffers::Offset<Shape> CreateShape(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const SE::FlatBuffers::BoundingBox *bbox = nullptr,
     uint32_t index_elem_start = 0,
-    uint32_t index_elem_count = 0) {
+    uint32_t index_elem_count = 0,
+    uint16_t material_index = 0) {
   ShapeBuilder builder_(_fbb);
   builder_.add_index_elem_count(index_elem_count);
   builder_.add_index_elem_start(index_elem_start);
   builder_.add_bbox(bbox);
+  builder_.add_material_index(material_index);
   return builder_.Finish();
 }
 
