@@ -19,7 +19,7 @@ FrameAllocator::FrameAllocator(size_t capacity)
         , high_water_(0) {}
 
 FrameAllocator::~FrameAllocator() noexcept {
-        log_d("FrameAllocator destroyed, high_water=%zu bytes", high_water_);
+        log_d("FrameAllocator destroyed, high_water = {} bytes", high_water_);
         ::operator delete(base_, capacity_, std::align_val_t{16});
 }
 
@@ -27,7 +27,7 @@ void* FrameAllocator::allocate(size_t size, size_t align) {
         uint8_t* aligned = align_up(current_, align);
         uint8_t* next    = aligned + size;
         if (next > base_ + capacity_) {
-                log_e("FrameAllocator exhausted, used=%zu, capacity=%zu", used(), capacity_);
+                log_e("FrameAllocator exhausted, used = {}, capacity = {}", used(), capacity_);
                 se_assert(false);
         }
         current_ = next;
@@ -60,7 +60,7 @@ void* StackAllocator::allocate(size_t size, size_t align) {
         uint8_t* aligned = align_up(top_, align);
         uint8_t* next    = aligned + size;
         if (next > base_ + capacity_) {
-                log_e("StackAllocator exhausted, used=%zu, capacity=%zu", used(), capacity_);
+                log_e("StackAllocator exhausted, used = {}, capacity = {}", used(), capacity_);
                 se_assert(false);
         }
         top_ = next;
@@ -119,7 +119,7 @@ PoolAllocator<ObjectSize, Alignment>::~PoolAllocator() noexcept {
 template<size_t ObjectSize, size_t Alignment>
 void* PoolAllocator<ObjectSize, Alignment>::allocate() {
         if (!free_list_) {
-                log_e("PoolAllocator exhausted, capacity=%zu slots", capacity_);
+                log_e("PoolAllocator exhausted, capacity = {} slots", capacity_);
                 se_assert(false);
         }
         FreeNode* node = free_list_;
