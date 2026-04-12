@@ -360,7 +360,8 @@ void Mesh::Load(const SE::FlatBuffers::Mesh * pMesh) {
                                 pCurShape->index_elem_count(),
                                 pCurShape->index_elem_start(),
                                 se_index_type,
-                                primitive_type );
+                                primitive_type,
+                                pCurShape->material_index() );
 
                 vBBoxes.emplace_back(
                                 *reinterpret_cast<const glm::vec3 *>(&pCurShape->bbox()->min()),

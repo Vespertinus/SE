@@ -14,8 +14,8 @@ class StaticModel {
 
         protected:
 
-        H<TMesh>                   hMesh;
-        H<Material>                hMaterial;
+        H<TMesh>                        hMesh;
+        std::vector<H<Material>>        hMaterials;
         TSceneTree::TSceneNodeExact   * pNode;
         std::vector<RenderCommand>      vRenderCommands;
 
@@ -35,8 +35,9 @@ class StaticModel {
 
         //Update... ?
         void            SetMesh(H<TMesh> hNewMesh);
-        void            SetMaterial(H<Material> hNewMaterial);
-        Material *      GetMaterial() const;
+        void            SetMaterial(H<Material> hNewMaterial);  ///< replaces first (or only) material
+        void            AddMaterial(H<Material> hNewMaterial);  ///< appends a material slot
+        Material *      GetMaterial(size_t idx = 0) const;
         void            Enable();
         void            Disable();
         void            Print(const size_t indent);

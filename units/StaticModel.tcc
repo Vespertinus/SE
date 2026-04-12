@@ -3,9 +3,9 @@ namespace SE {
 
 StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode) :
         hMesh(CreateResource<SE::TMesh>(GetSystem<Config>().sResourceDir + "mesh/default-01.sems")),
-        hMaterial(CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/wireframe.semt")),
         pNode(pNewNode) {
 
+        hMaterials.push_back(CreateResource<SE::Material>(GetSystem<Config>().sResourceDir + "material/wireframe.semt"));
         FillRenderCommands();
 }
 
@@ -13,11 +13,10 @@ StaticModel::StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
                          H<TMesh> hNewMesh,
                          H<Material> hNewMaterial) :
         hMesh(hNewMesh),
-        hMaterial(hNewMaterial),
         pNode(pNewNode) {
 
+        hMaterials.push_back(hNewMaterial);
         FillRenderCommands();
-
 }
 
 StaticModel::StaticModel() { ;; }
@@ -44,24 +43,25 @@ StaticModel::StaticModel(
                                                 )));
         }
 
-        if (pModel->material()) {
-                if (pModel->material()->path() != nullptr) {
-                        hMaterial = CreateResource<Material>(oConfig.sResourceDir + pModel->material()->path()->c_str());
-                }
-                else if (pModel->material()->name() != nullptr && pModel->material()->material() != nullptr) {
-                        hMaterial = CreateResource<Material>(
-                                        pModel->material()->name()->c_str(),
-                                        pModel->material()->material());
-                }
-                else {
-                        throw(std::runtime_error(fmt::format("wrong material state, material {:p}, name {:p}",
-                                                        (void *)pModel->material()->material(),
-                                                        (void *)pModel->material()->name()
-                                                        )));
+        if (pModel->materials() && pModel->materials()->size() > 0) {
+                for (uint32_t i = 0; i < pModel->materials()->size(); ++i) {
+                        const auto * pMat = pModel->materials()->Get(i);
+                        if (pMat->path() != nullptr) {
+                                hMaterials.push_back(CreateResource<Material>(oConfig.sResourceDir + pMat->path()->c_str()));
+                        }
+                        else if (pMat->name() != nullptr && pMat->material() != nullptr) {
+                                hMaterials.push_back(CreateResource<Material>(pMat->name()->c_str(), pMat->material()));
+                        }
+                        else {
+                                throw(std::runtime_error(fmt::format("wrong material state at index {}, material {:p}, name {:p}",
+                                                        i,
+                                                        (void *)pMat->material(),
+                                                        (void *)pMat->name())));
+                        }
                 }
         }
         else {
-                hMaterial = CreateResource<SE::Material>(oConfig.sResourceDir + "material/wireframe.semt");
+                hMaterials.push_back(CreateResource<SE::Material>(oConfig.sResourceDir + "material/wireframe.semt"));
         }
 
         FillRenderCommands();
@@ -91,18 +91,28 @@ void StaticModel::SetMesh(H<TMesh> hNewMesh) {
 
 void StaticModel::SetMaterial(H<Material> hNewMaterial) {
 
-        hMaterial = hNewMaterial;
-
+        if (hMaterials.empty()) {
+                hMaterials.push_back(hNewMaterial);
+        }
+        else {
+                hMaterials[0] = hNewMaterial;
+        }
         FillRenderCommands();
-        /*
-        for (auto & oItem : vRenderCommands) {
-                oItem.SetMaterial(pNewMaterial);
-        }*/
+}
+
+void StaticModel::AddMaterial(H<Material> hNewMaterial) {
+
+        hMaterials.push_back(hNewMaterial);
+        FillRenderCommands();
 }
 
 std::string StaticModel::Str() const {
 
-        return fmt::format("StaticModel: Mesh: '{}', Material: '{}'", GetResource(hMesh)->Name(), GetResource(hMaterial)->Name());
+        std::string sMat = hMaterials.empty() ? "none" : GetResource(hMaterials[0])->Name();
+        return fmt::format("StaticModel: Mesh: '{}', Materials: {} (first: '{}')",
+                        GetResource(hMesh)->Name(),
+                        hMaterials.size(),
+                        sMat);
 }
 
 const std::vector<RenderCommand> & StaticModel::GetRenderCommands() const {
@@ -118,7 +128,18 @@ void StaticModel::FillRenderCommands() {
         vRenderCommands.reserve(vShapes.size());
 
         for (auto & oSubMesh : vShapes) {
-                vRenderCommands.emplace_back(&oSubMesh, GetResource(hMaterial), pNode->GetTransform());
+                uint16_t mat_idx = oSubMesh.GetMaterialIndex();
+                Material * pMat;
+                if (hMaterials.empty()) {
+                        pMat = nullptr;
+                }
+                else if (mat_idx < static_cast<uint16_t>(hMaterials.size())) {
+                        pMat = GetResource(hMaterials[mat_idx]);
+                }
+                else {
+                        pMat = GetResource(hMaterials[0]);
+                }
+                vRenderCommands.emplace_back(&oSubMesh, pMat, pNode->GetTransform());
         }
 
         //TODO if already enabled -> invalidate render commands list!
@@ -127,9 +148,10 @@ void StaticModel::FillRenderCommands() {
         //2 level state, node + component? Enable, Disable, UpdateState?
 }
 
-Material * StaticModel::GetMaterial() const {
+Material * StaticModel::GetMaterial(size_t idx) const {
 
-                return GetResource(hMaterial);
+        if (idx < hMaterials.size()) return GetResource(hMaterials[idx]);
+        return nullptr;
 }
 
 void StaticModel::DrawDebug() const {

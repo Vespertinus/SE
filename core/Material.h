@@ -26,6 +26,7 @@ class Material : public ResourceHolder {
         std::unordered_map<StrID, TVariant>                   mShaderVariables;
         //std::array<H<TTexture>, max texture units> vTextures; ..
         std::unordered_map<TextureUnit, H<TTexture>>     mTextures;
+        BlendMode                                        blendMode{BlendMode::Opaque};
 
         void Load(const SE::FlatBuffers::Material * pMaterial);
 
@@ -39,7 +40,7 @@ class Material : public ResourceHolder {
                  const SE::FlatBuffers::Material * pMaterial);
         //Material from input data (ctx\settings), like Texture
 
-        //SetShader does not allow to change shader, ShaderProgramState and many other things would broken 
+        //SetShader does not allow to change shader, ShaderProgramState and many other things would broken
         ret_code_t                      SetTexture(const StrID name, H<TTexture> hTex);
         ret_code_t                      SetTexture(const TextureUnit unit_index, H<TTexture> hTex);
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
@@ -48,6 +49,8 @@ class Material : public ResourceHolder {
         ShaderProgram *                 GetShader() const;
         const UniformBlock *            GetUniformBlock() const;
         const TexturesMap *             GetTextures() const;
+        BlendMode                       GetBlendMode() const;
+        void                            SetBlendMode(BlendMode mode);
 
         std::string                     Str() const;
         std::string                     StrDump(const size_t indent) const;

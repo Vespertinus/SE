@@ -74,6 +74,7 @@ table Shape {
         bbox:BoundingBox (required);
         index_elem_start:uint32 = 0;
         index_elem_count:uint32;
+        material_index:uint16 = 0;
 }
 
 table Mesh {

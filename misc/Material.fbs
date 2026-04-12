@@ -12,12 +12,23 @@ namespace SE.FlatBuffers;
 //        LoadSettings + //currently unused
 //        StoreSettings;
 
+enum TextureEncoding : uint8 {
+        RGBA8 = 0,   // raw decoded pixels (legacy / GLTF embedded)
+        PNG   = 1,
+        JPG   = 2,
+        TGA   = 3,
+        DDS   = 4,   // GPU-compressed BC1..BC7 (future)
+        KTX2  = 5    // Basis/UASTC (future)
+}
+
 table TextureStock {
-        image:[ubyte] (required);
+        image:[ubyte];           // raw decoded RGBA8 pixels (legacy path, was required)
         format:int;
         internal_format:int;
         width:uint;
         height:uint;
+        encoded_data:[ubyte];    // original compressed file bytes (PNG/JPG/TGA/DDS/KTX2)
+        encoding:TextureEncoding = RGBA8;
 }
 
 //TODO change int to enums
@@ -76,10 +87,20 @@ table ShaderVariable {
 */
 }
 
+enum BlendMode : uint8 {
+        Opaque        = 0,
+        Masked        = 1,
+        Translucent   = 2,
+        Additive      = 3,
+        Modulate      = 4,
+        AlphaComposite = 5
+}
+
 table Material {
         shader:ShaderProgramHolder (required);
         textures:[TextureHolder];
         variables:[ShaderVariable];
+        blend_mode:BlendMode = Opaque;
 }
 
 table MaterialHolder {

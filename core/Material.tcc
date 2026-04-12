@@ -1,4 +1,6 @@
 
+#include <opencv2/opencv.hpp>
+
 namespace SE  {
 
 
@@ -71,7 +73,9 @@ std::string Material::Str() const {
 
 void Material::Apply() const {
 
-        //TODO set render state for material, alpha cut, blending, depth test etc
+        // Apply render state: blend mode, depth, culling, etc.
+        auto & gs = GetSystem<GraphicsState>();
+        gs.SetBlendMode(blendMode);
 
         for (auto & oShaderVar : mShaderVariables) {
 
@@ -171,6 +175,73 @@ void Material::Load(const SE::FlatBuffers::Material * pMaterial) {
                 log_d("material: '{}' set variable: '{}'", sName, pVar->name()->c_str());
         }
 
+        blendMode = static_cast<BlendMode>(pMaterial->blend_mode());
+
+        // Default fallback textures: materials that don't provide a map for a slot used by their
+        // shader get a neutral 1×1 texture so previous draw calls' bindings don't bleed through.
+        // CreateResource deduplicates by name — each texture is created once and shared.
+
+        if (pShader->OwnTextureUnit(TextureUnit::DIFFUSE) &&
+            mTextures.find(TextureUnit::DIFFUSE) == mTextures.end()) {
+                static const uint8_t kWhite[4] = {255, 255, 255, 255};
+                TextureStock ts;
+                ts.raw_image       = kWhite;
+                ts.raw_image_size  = 4;
+                ts.format          = GL_RGBA;
+                ts.internal_format = GL_RGBA8;
+                ts.width           = 1;
+                ts.height          = 1;
+                mTextures.emplace(TextureUnit::DIFFUSE,
+                        CreateResource<TTexture>("engine/default/white_diffuse", ts,
+                                StoreTexture2D::Settings(false)));
+        }
+
+        if (pShader->OwnTextureUnit(TextureUnit::NORMAL) &&
+            mTextures.find(TextureUnit::NORMAL) == mTextures.end()) {
+                // (128,128,255) encodes tangent-space (0,0,1) — no normal perturbation
+                static const uint8_t kFlatNormal[4] = {128, 128, 255, 255};
+                TextureStock ts;
+                ts.raw_image       = kFlatNormal;
+                ts.raw_image_size  = 4;
+                ts.format          = GL_RGBA;
+                ts.internal_format = GL_RGBA8;
+                ts.width           = 1;
+                ts.height          = 1;
+                mTextures.emplace(TextureUnit::NORMAL,
+                        CreateResource<TTexture>("engine/default/flat_normal", ts,
+                                StoreTexture2D::Settings(false)));
+        }
+
+        if (pShader->OwnTextureUnit(TextureUnit::SPECULAR) &&
+            mTextures.find(TextureUnit::SPECULAR) == mTextures.end()) {
+                static const uint8_t kWhite[4] = {255, 255, 255, 255};
+                TextureStock ts;
+                ts.raw_image       = kWhite;
+                ts.raw_image_size  = 4;
+                ts.format          = GL_RGBA;
+                ts.internal_format = GL_RGBA8;
+                ts.width           = 1;
+                ts.height          = 1;
+                mTextures.emplace(TextureUnit::SPECULAR,
+                        CreateResource<TTexture>("engine/default/white_specular", ts,
+                                StoreTexture2D::Settings(false)));
+        }
+
+        if (pShader->OwnTextureUnit(TextureUnit::EMISSIVE) &&
+            mTextures.find(TextureUnit::EMISSIVE) == mTextures.end()) {
+                static const uint8_t kWhite[4] = {255, 255, 255, 255};
+                TextureStock ts;
+                ts.raw_image       = kWhite;
+                ts.raw_image_size  = 4;
+                ts.format          = GL_RGBA;
+                ts.internal_format = GL_RGBA8;
+                ts.width           = 1;
+                ts.height          = 1;
+                mTextures.emplace(TextureUnit::EMISSIVE,
+                        CreateResource<TTexture>("engine/default/white_emissive", ts,
+                                StoreTexture2D::Settings(false)));
+        }
+
 }
 
 ret_code_t Material::SetTexture(const StrID name, H<TTexture> hTex) {
@@ -230,11 +301,16 @@ H<TTexture> LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
                         case SE::FlatBuffers::StoreSettings::StoreTexture2D:
                                 {
                                         auto * pStore = pHolder->store_as_StoreTexture2D();
-                                        StoreTexture2D::Settings oSettings(
-                                                        pStore->mipmap(),
-                                                        pStore->wrap(),
-                                                        pStore->min_filter(),
-                                                        pStore->mag_filter());
+                                        // FlatBuffers defaults to 0 for int fields; substitute
+                                        // valid GL enums when the writer omitted explicit values.
+                                        constexpr int32_t SE_GL_CLAMP_TO_EDGE       = 0x812F;
+                                        constexpr int32_t SE_GL_LINEAR              = 0x2601;
+                                        constexpr int32_t SE_GL_LINEAR_MIPMAP_LINEAR = 0x2703;
+                                        bool    mipmap = pStore->mipmap();
+                                        int32_t wrap   = pStore->wrap()       ? pStore->wrap()       : SE_GL_CLAMP_TO_EDGE;
+                                        int32_t min_f  = pStore->min_filter() ? pStore->min_filter() : (mipmap ? SE_GL_LINEAR_MIPMAP_LINEAR : SE_GL_LINEAR);
+                                        int32_t mag_f  = pStore->mag_filter() ? pStore->mag_filter() : SE_GL_LINEAR;
+                                        StoreTexture2D::Settings oSettings(mipmap, wrap, min_f, mag_f);
 
                                         return CreateResource<SE::TTexture>(args..., oSettings);
                                 }
@@ -256,7 +332,44 @@ H<TTexture> LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
                                 pTextureHolder->path()->c_str());
 
         }
-        else if (pTextureHolder->name() != nullptr && pTextureHolder->stock() != nullptr) {
+        else if (pTextureHolder->name() != nullptr &&
+                 pTextureHolder->stock() != nullptr &&
+                 pTextureHolder->stock()->encoded_data() != nullptr) {
+
+                // inline_all: decode compressed texture bytes (PNG/JPG/TGA etc.) on first use
+                const auto * pEncData = pTextureHolder->stock()->encoded_data();
+                std::vector<uint8_t> vRaw(pEncData->Data(), pEncData->Data() + pEncData->size());
+                cv::Mat oDecoded = cv::imdecode(vRaw, cv::IMREAD_UNCHANGED);
+                if (oDecoded.empty()) {
+                        log_e("LoadTexture: cv::imdecode failed for '{}'",
+                              pTextureHolder->name()->c_str());
+                        return H<TTexture>::Null();
+                }
+                cv::flip(oDecoded, oDecoded, 0);  // GL convention: V=0 = image bottom
+                // GL constants (avoid GL header dependency in Material.tcc)
+                constexpr int SE_MT_GL_BGRA  = 0x80E1;
+                constexpr int SE_MT_GL_BGR   = 0x80E0;
+                constexpr int SE_MT_GL_RGBA8 = 0x8058;
+
+                uint32_t bpp = static_cast<uint32_t>(oDecoded.channels());
+                TextureStock oStock{
+                        oDecoded.ptr(),
+                        static_cast<uint32_t>(oDecoded.total() * oDecoded.elemSize()),
+                        (bpp == 4) ? SE_MT_GL_BGRA : SE_MT_GL_BGR,
+                        SE_MT_GL_RGBA8,
+                        static_cast<uint32_t>(oDecoded.cols),
+                        static_cast<uint32_t>(oDecoded.rows)
+                };
+
+                hTex = LoadTex(
+                                pTextureHolder->store_type(),
+                                pTextureHolder,
+                                pTextureHolder->name()->c_str(),
+                                oStock);
+
+        }
+        else if (pTextureHolder->name() != nullptr && pTextureHolder->stock() != nullptr &&
+                 pTextureHolder->stock()->image() != nullptr) {
 
                 //TODO texture create from FlatBuffers::TextureStock
                 TextureStock oStock{
@@ -295,6 +408,14 @@ const UniformBlock * Material::GetUniformBlock() const {
 const Material::TexturesMap * Material::GetTextures() const {
 
         return &mTextures;
+}
+
+BlendMode Material::GetBlendMode() const {
+        return blendMode;
+}
+
+void Material::SetBlendMode(BlendMode mode) {
+        blendMode = mode;
 }
 
 std::string Material::StrDump(const size_t indent) const {
