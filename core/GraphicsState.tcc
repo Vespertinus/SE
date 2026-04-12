@@ -469,6 +469,32 @@ void GraphicsState::SetBlendFunc(BlendFactor src, BlendFactor dst) {
                     vBlendMapping[static_cast<uint32_t>(dst)]);
 }
 
+void GraphicsState::SetBlendMode(BlendMode mode) {
+
+        switch (mode) {
+                case BlendMode::Opaque:
+                case BlendMode::Masked:
+                        SetBlend(false);
+                        break;
+                case BlendMode::Translucent:
+                        SetBlend(true);
+                        SetBlendFunc(BlendFactor::SRC_ALPHA, BlendFactor::ONE_MINUS_SRC_ALPHA);
+                        break;
+                case BlendMode::Additive:
+                        SetBlend(true);
+                        SetBlendFunc(BlendFactor::ONE, BlendFactor::ONE);
+                        break;
+                case BlendMode::Modulate:
+                        SetBlend(true);
+                        SetBlendFunc(BlendFactor::DST_COLOR, BlendFactor::ZERO);
+                        break;
+                case BlendMode::AlphaComposite:
+                        SetBlend(true);
+                        SetBlendFunc(BlendFactor::ONE, BlendFactor::ONE_MINUS_SRC_ALPHA);
+                        break;
+        }
+}
+
 void GraphicsState::SetCullFace(bool enable, CullFace face) {
 
         if (enable != cull_enabled) {

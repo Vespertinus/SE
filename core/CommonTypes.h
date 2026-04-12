@@ -78,6 +78,18 @@ enum class CullFace : uint32_t {
         FRONT_AND_BACK
 };
 
+// Unreal-style blend mode — controls how fragment output combines with the framebuffer.
+// Opaque/Masked route through the geometry (deferred) pass;
+// Translucent/Additive/Modulate/AlphaComposite route through the forward transparent pass.
+enum class BlendMode : uint32_t {
+        Opaque,          // Fully solid, no blending, depth write ON
+        Masked,          // Binary alpha discard (alpha-test), depth write ON
+        Translucent,     // Standard alpha-blend: SRC_ALPHA, ONE_MINUS_SRC_ALPHA
+        Additive,        // Additive blend: ONE, ONE
+        Modulate,        // Multiply/darken: DST_COLOR, ZERO
+        AlphaComposite   // Premultiplied alpha: ONE, ONE_MINUS_SRC_ALPHA
+};
+
 enum class ClearBuffer : uint32_t {
         COLOR   = 1,
         DEPTH   = 2,

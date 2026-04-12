@@ -127,6 +127,7 @@ class GraphicsState {
         void                            Clear(ClearBuffer flags);
         void                            SetBlend(bool enable);
         void                            SetBlendFunc(BlendFactor src, BlendFactor dst);
+        void                            SetBlendMode(BlendMode mode);
         void                            SetCullFace(bool enable, CullFace face = CullFace::BACK);
         void                            SetViewport(int32_t x, int32_t y, int32_t w, int32_t h);
 
