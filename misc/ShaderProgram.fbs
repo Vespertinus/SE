@@ -10,9 +10,10 @@ table Shader {
 }
 
 table ShaderProgram {
-        vertex:Shader(required);
-        fragment:Shader (required);
+        vertex:Shader;
+        fragment:Shader;
         geometry:Shader;
+        compute:Shader;
         //variables..
 }
 

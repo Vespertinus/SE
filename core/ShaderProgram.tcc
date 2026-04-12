@@ -135,7 +135,7 @@ ShaderProgram::~ShaderProgram() noexcept {
 
 void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
 
-        uint32_t shader_cnt = 2;
+        uint32_t shader_cnt = 0;
         int      status;
         auto   & oConfig = GetSystem<Config>();
 
@@ -155,12 +155,18 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
         auto * pVertexShader    = GetShader(pShaderProgram->vertex());
         auto * pFragmentShader  = GetShader(pShaderProgram->fragment());
         auto * pGeometryShader  = GetShader(pShaderProgram->geometry());
+        auto * pComputeShader   = GetShader(pShaderProgram->compute());
 
-        if (!pVertexShader) {
-                throw (std::runtime_error( "ShaderProgram::Load: failed to get vertex shader, program name: " + sName));
-        }
-        if (!pFragmentShader) {
-                throw (std::runtime_error( "ShaderProgram::Load: failed to get fragment shader, program name: " + sName));
+        // Compute-only programs skip vertex/fragment requirement
+        bool isComputeOnly = (pComputeShader != nullptr && pVertexShader == nullptr && pFragmentShader == nullptr);
+
+        if (!isComputeOnly) {
+                if (!pVertexShader) {
+                        throw (std::runtime_error( "ShaderProgram::Load: failed to get vertex shader, program name: " + sName));
+                }
+                if (!pFragmentShader) {
+                        throw (std::runtime_error( "ShaderProgram::Load: failed to get fragment shader, program name: " + sName));
+                }
         }
 
         gl_id = glCreateProgram();
@@ -168,56 +174,78 @@ void ShaderProgram::Load(const FlatBuffers::ShaderProgram * pShaderProgram) {
                 throw (std::runtime_error( "ShaderProgram::Load: failed to create gl program, name: " + sName));
         }
 
-        //bind attributes
-        for (auto & oAttribLocation : mAttributeLocation) {
-                glBindAttribLocation(gl_id, oAttribLocation.second, oAttribLocation.first.c_str());
-        }
-        if (CheckOpenGLError() != uSUCCESS) {
-
-                glDeleteProgram(gl_id);
-                throw (std::runtime_error( "ShaderProgram::Load: failed to bind vertex attribute location"));
-        }
-
-        //TODO hierarchical dependencies are not yet supported
-        glAttachShader(gl_id, pVertexShader->Get());
-        const auto & vVertDependencies = pVertexShader->GetDependencies();
-        for (auto * pItem : vVertDependencies) {
-                glAttachShader(gl_id, pItem->Get());
+        if (isComputeOnly) {
+                // Compute-only program: no vertex attributes, just attach and link
+                glAttachShader(gl_id, pComputeShader->Get());
                 ++shader_cnt;
-        }
-        glAttachShader(gl_id, pFragmentShader->Get());
-        const auto & vFragDependencies = pFragmentShader->GetDependencies();
-        for (auto * pItem : vFragDependencies) {
-                glAttachShader(gl_id, pItem->Get());
-                ++shader_cnt;
-        }
-
-        if (pGeometryShader != nullptr) {
-                glAttachShader(gl_id, pGeometryShader->Get());
-                ++shader_cnt;
-                const auto & vDependencies = pGeometryShader->GetDependencies();
-                for (auto * pItem : vDependencies) {
+                const auto & vCompDependencies = pComputeShader->GetDependencies();
+                for (auto * pItem : vCompDependencies) {
                         glAttachShader(gl_id, pItem->Get());
                         ++shader_cnt;
                 }
-        }
 
-        log_d("attach {} shaders to program '{}'", shader_cnt, sName);
+                log_d("attach {} compute shaders to program '{}'", shader_cnt, sName);
 
-        glLinkProgram(gl_id);
+                glLinkProgram(gl_id);
 
-        glDetachShader(gl_id, pVertexShader->Get());
-        for (auto * pItem : vVertDependencies) {
-                glDetachShader(gl_id, pItem->Get());
-        }
-        glDetachShader(gl_id, pFragmentShader->Get());
-        for (auto * pItem : vFragDependencies) {
-                glDetachShader(gl_id, pItem->Get());
-        }
-        if (pGeometryShader != nullptr) {
-                glDetachShader(gl_id, pGeometryShader->Get());
-                for (auto * pItem : pGeometryShader->GetDependencies()) {
+                glDetachShader(gl_id, pComputeShader->Get());
+                for (auto * pItem : vCompDependencies) {
                         glDetachShader(gl_id, pItem->Get());
+                }
+        } else {
+                // Traditional graphics pipeline: vertex + fragment (+ optional geometry)
+
+                //bind attributes
+                for (auto & oAttribLocation : mAttributeLocation) {
+                        glBindAttribLocation(gl_id, oAttribLocation.second, oAttribLocation.first.c_str());
+                }
+                if (CheckOpenGLError() != uSUCCESS) {
+
+                        glDeleteProgram(gl_id);
+                        throw (std::runtime_error( "ShaderProgram::Load: failed to bind vertex attribute location"));
+                }
+
+                //TODO hierarchical dependencies are not yet supported
+                glAttachShader(gl_id, pVertexShader->Get());
+                const auto & vVertDependencies = pVertexShader->GetDependencies();
+                for (auto * pItem : vVertDependencies) {
+                        glAttachShader(gl_id, pItem->Get());
+                        ++shader_cnt;
+                }
+                glAttachShader(gl_id, pFragmentShader->Get());
+                const auto & vFragDependencies = pFragmentShader->GetDependencies();
+                for (auto * pItem : vFragDependencies) {
+                        glAttachShader(gl_id, pItem->Get());
+                        ++shader_cnt;
+                }
+
+                if (pGeometryShader != nullptr) {
+                        glAttachShader(gl_id, pGeometryShader->Get());
+                        ++shader_cnt;
+                        const auto & vDependencies = pGeometryShader->GetDependencies();
+                        for (auto * pItem : vDependencies) {
+                                glAttachShader(gl_id, pItem->Get());
+                                ++shader_cnt;
+                        }
+                }
+
+                log_d("attach {} shaders to program '{}'", shader_cnt, sName);
+
+                glLinkProgram(gl_id);
+
+                glDetachShader(gl_id, pVertexShader->Get());
+                for (auto * pItem : vVertDependencies) {
+                        glDetachShader(gl_id, pItem->Get());
+                }
+                glDetachShader(gl_id, pFragmentShader->Get());
+                for (auto * pItem : vFragDependencies) {
+                        glDetachShader(gl_id, pItem->Get());
+                }
+                if (pGeometryShader != nullptr) {
+                        glDetachShader(gl_id, pGeometryShader->Get());
+                        for (auto * pItem : pGeometryShader->GetDependencies()) {
+                                glDetachShader(gl_id, pItem->Get());
+                        }
                 }
         }
 
@@ -290,6 +318,25 @@ ret_code_t ShaderProgram::SetVariable(const StrID name, int32_t val) {
                 return uWRONG_INPUT_DATA;
         }
         glUniform1iv(it->second.location, 1, &val);
+        return uSUCCESS;
+}
+
+ret_code_t ShaderProgram::SetVariable(const StrID name, uint32_t val) {
+
+        auto it = mVariables.find(name);
+        if (it == mVariables.end()) {
+                log_e("can't find variable with strid = '{}' in shader program: '{}'", name, sName);
+                return uWRONG_INPUT_DATA;
+        }
+
+        if (it->second.type != GL_UNSIGNED_INT) {
+                log_e("wrong type 'uint', variable '{}' expect {}, in shader program: '{}'",
+                                it->second.sName,
+                                it->second.type,
+                                sName);
+                return uWRONG_INPUT_DATA;
+        }
+        glUniform1uiv(it->second.location, 1, &val);
         return uSUCCESS;
 }
 

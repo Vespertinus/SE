@@ -13,7 +13,7 @@ class ShaderComponent : public ResourceHolder {
         uint32_t                        gl_id;
         SE::FlatBuffers::ShaderType     type;
 
-        void Load(const SE::FlatBuffers::ShaderComponent * pShader);
+        void Load(const SE::FlatBuffers::ShaderComponent * pShader, int8_t parent_type = -1);
 
         public:
         ShaderComponent(const std::string & sName,
@@ -21,6 +21,10 @@ class ShaderComponent : public ResourceHolder {
         ShaderComponent(const std::string & sName,
                         const rid_t         new_rid,
                         const SE::FlatBuffers::ShaderComponent * pShader);
+        /** Load dependency from file with parent shader type override */
+        ShaderComponent(const std::string & sName,
+                        const rid_t         new_rid,
+                        int8_t              parent_type);
         ~ShaderComponent() noexcept;
 
         uint32_t Get() const;

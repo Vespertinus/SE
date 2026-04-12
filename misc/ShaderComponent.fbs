@@ -4,11 +4,15 @@ namespace SE.FlatBuffers;
 enum ShaderType : uint8 {
         VERTEX   = 1,
         FRAGMENT = 2,
-        GEOMETRY = 3
+        GEOMETRY = 3,
+        COMPUTE  = 4,
+        DEPEND   = 5
 }
 
 table ShaderComponent {
         dependencies:[string];
+        include:[string];
+        header:[string];
         type:ShaderType = FRAGMENT;
         source:[string] (required);
 }
