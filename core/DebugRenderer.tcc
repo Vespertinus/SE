@@ -295,5 +295,53 @@ void DebugRenderer::DrawGrid(const Transform & oTransform, const float size, con
         }
 }
 
+void DebugRenderer::DrawSphere(const glm::vec3 & pos, float radius, const glm::vec4 & vColor) {
+
+        DrawSphere(pos, radius, ConvertColor(vColor));
+}
+
+void DebugRenderer::DrawSphere(const glm::vec3 & pos, float radius, uint32_t color) {
+
+        static const int segments = 16;
+        static const int rings    = 8;
+        static const float kTwoPi = glm::two_pi<float>();
+        static const float kPi    = glm::pi<float>();
+
+        // Longitude lines (meridians)
+        for (int i = 0; i < segments; ++i) {
+                const float phi     = kTwoPi * static_cast<float>(i) / static_cast<float>(segments);
+                const float cPhi = std::cos(phi);
+                const float sPhi = std::sin(phi);
+                for (int j = 0; j <= rings; ++j) {
+                        const float theta     = kPi * static_cast<float>(j)     / static_cast<float>(rings);
+                        const float nextTheta = kPi * static_cast<float>(j + 1) / static_cast<float>(rings);
+
+                        const float sT  = std::sin(theta);
+                        const float cT  = std::cos(theta);
+                        const float sNT = std::sin(nextTheta);
+                        const float cNT = std::cos(nextTheta);
+
+                        const glm::vec3 p1 = pos + radius * glm::vec3(sT * cPhi, cT, sT * sPhi);
+                        const glm::vec3 p2 = pos + radius * glm::vec3(sNT * cPhi, cNT, sNT * sPhi);
+                        DrawLine(p1, p2, color);
+                }
+        }
+
+        // Latitude lines (parallels)
+        for (int j = 1; j < rings; ++j) {
+                const float theta = kPi * static_cast<float>(j) / static_cast<float>(rings);
+                const float sT    = std::sin(theta);
+                const float cT    = std::cos(theta);
+                for (int i = 0; i <= segments; ++i) {
+                        const float phi     = kTwoPi * static_cast<float>(i)     / static_cast<float>(segments);
+                        const float nextPhi = kTwoPi * static_cast<float>(i + 1) / static_cast<float>(segments);
+
+                        const glm::vec3 p1 = pos + radius * glm::vec3(sT * std::cos(phi),     cT, sT * std::sin(phi));
+                        const glm::vec3 p2 = pos + radius * glm::vec3(sT * std::cos(nextPhi), cT, sT * std::sin(nextPhi));
+                        DrawLine(p1, p2, color);
+                }
+        }
+}
+
 
 };

@@ -65,6 +65,10 @@ class DebugRenderer {
         void            DrawBBox(const BoundingBox & oBBox, const Transform & oTransform, const glm::vec4 & vColor);
         void            DrawLocalAxes(const Transform & oTransform);
         void            DrawGrid(const Transform & oTransform, const float size = 10.0f, const float step = 1.0f);
+
+        /** Draw wireframe sphere (latitude + longitude rings) */
+        void            DrawSphere(const glm::vec3 & pos, float radius, const glm::vec4 & vColor = glm::vec4(0.2f, 1.0f, 0.2f, 1.0f));
+        void            DrawSphere(const glm::vec3 & pos, float radius, uint32_t color);
         /*TODO
          quad
          cross
