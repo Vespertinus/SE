@@ -66,6 +66,7 @@ ret_code_t StoreTexture2D::Store(const TextureStock & oTextureStock, uint32_t & 
 
         //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropic_filter);
 
+        const GLenum pixel_type = oTextureStock.gl_type ? oTextureStock.gl_type : GL_UNSIGNED_BYTE;
         glTexImage2D(GL_TEXTURE_2D,
                         0,
                         oTextureStock.internal_format,
@@ -73,7 +74,7 @@ ret_code_t StoreTexture2D::Store(const TextureStock & oTextureStock, uint32_t & 
                         oTextureStock.height,
                         0,
                         oTextureStock.format,
-                        GL_UNSIGNED_BYTE,
+                        pixel_type,
                         oTextureStock.raw_image);
         if (oSettings.mipmap_enabled) {
                 glGenerateMipmap(GL_TEXTURE_2D);
