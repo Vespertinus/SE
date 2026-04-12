@@ -68,6 +68,10 @@ template <class StoreStrategyList, class LoadStrategyList>
                 log_d("file '{}' ext '{}', call OpenCVImgLoader", sName.c_str(), sExt.c_str());
                 Create(oStoreStrategySettings, typename OpenCVImgLoader::Settings());
         }
+        else if (sExt == ".ktx") {
+                log_d("file '{}' ext '{}', call KTXLoader", sName.c_str(), sExt.c_str());
+                Create(oStoreStrategySettings, typename KTXLoader::Settings());
+        }
         else {
                 char buf[256];
                 snprintf(buf, sizeof(buf), "Texture::Texture: unsupported image extension: '%s'", sName.c_str());
