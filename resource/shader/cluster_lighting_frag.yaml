@@ -1,0 +1,213 @@
+type: FRAGMENT
+include:
+  - shader/cluster_common.sesl
+header:
+ - |
+        #version 430 core
+source:
+ - |
+        // ============================================================
+        // Clustered shading — unified deferred lighting fragment shader
+        // Computes directional light, ambient (IBL + SSAO), emissive,
+        // and ALL clustered point lights in a single pass.
+        // ============================================================
+
+        in vec2 TexCoord;
+
+        uniform mat4      InvVPMatrix;
+        uniform mat4      VPMatrix;
+        uniform vec3      CamPos;
+
+        // Directional light
+        uniform vec3      DirLightDir;
+        uniform vec3      DirLightColor;
+        uniform float     DirLightIntensity;
+        uniform mat4      DirLightVPMatrix;
+
+        // Cluster config
+        uniform float     NearZ;
+        uniform float     FarZ;
+
+        // G-buffer textures
+        uniform sampler2D DiffuseTex;   // RT0: albedo.rgb + roughness.a
+        uniform sampler2D NormalTex;    // RT1: oct-normal.rg + metallic.b + ao.a
+        uniform sampler2D GBufferEmissiveTex;  // RT2: emissive.rgb
+        uniform sampler2D BufferTex;    // depth
+        uniform sampler2D SSAOTex;      // SSAO blurred
+        uniform sampler2D ShadowTex;    // shadow map
+        uniform samplerCube IrradianceTex;
+        uniform samplerCube PrefilteredEnvTex;
+
+        // IBL controls
+        uniform mat3  IBLRotation;   // identity = no rotation; yaw to align env with scene
+        uniform float IBLScale;      // intensity multiplier (default 1.0)
+
+        out vec4 FragColor;
+
+        const float PI = 3.14159265359;
+
+        // ---- G-buffer decoding (reused from ambient_dir_frag / point_light_frag) ----
+
+        vec3 DecodeNormal(vec2 enc) {
+            vec3 n = vec3(enc.xy, 1.0 - abs(enc.x) - abs(enc.y));
+            if (n.z < 0.0) {
+                n.xy = (1.0 - abs(n.yx)) * sign(n.xy);
+            }
+            return normalize(n);
+        }
+
+        float DistributionGGX(vec3 N, vec3 H, float roughness) {
+            float a      = roughness * roughness;
+            float a2     = a * a;
+            float NdotH  = max(dot(N, H), 0.0);
+            float NdotH2 = NdotH * NdotH;
+            float denom  = NdotH2 * (a2 - 1.0) + 1.0;
+            return a2 / max(PI * denom * denom, 0.0001);
+        }
+
+        float GeometrySchlickGGX(float NdotV, float roughness) {
+            float r = roughness + 1.0;
+            float k = (r * r) / 8.0;
+            return NdotV / (NdotV * (1.0 - k) + k);
+        }
+
+        float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+            float NdotV = max(dot(N, V), 0.0);
+            float NdotL = max(dot(N, L), 0.0);
+            return GeometrySchlickGGX(NdotV, roughness) * GeometrySchlickGGX(NdotL, roughness);
+        }
+
+        vec3 FresnelSchlick(float cosTheta, vec3 F0) {
+            return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+        }
+
+        // Fresnel with roughness attenuation — used for IBL ambient kS/kD split
+        // (plain FresnelSchlick overestimates specular for rough surfaces in IBL)
+        vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+            return F0 + (max(vec3(1.0 - roughness), F0) - F0)
+                      * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+        }
+
+        // Analytical split-sum BRDF approximation (Karis 2014 / UE4 Mobile)
+        // Returns (F_scale, F_bias): specular_env = prefiltered * (F0 * r.x + r.y)
+        vec2 ApproxEnvBRDF(float roughness, float NdotV) {
+            const vec4 c0 = vec4(-1.0, -0.0275, -0.572,  0.022);
+            const vec4 c1 = vec4( 1.0,  0.0425,  1.04,  -0.04);
+            vec4  r    = roughness * c0 + c1;
+            float a004 = min(r.x * r.x, exp2(-9.28 * NdotV)) * r.x + r.y;
+            return vec2(-1.04, 1.04) * a004 + r.zw;
+        }
+
+        vec3 CookTorrance(vec3 N, vec3 V, vec3 L, vec3 albedo, float roughness, float metallic,
+                          vec3 F0, vec3 radiance) {
+            vec3  H   = normalize(V + L);
+            float NDF = DistributionGGX(N, H, roughness);
+            float G   = GeometrySmith(N, V, L, roughness);
+            vec3  F   = FresnelSchlick(max(dot(H, V), 0.0), F0);
+
+            vec3  spec  = (NDF * G * F) / (4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001);
+            vec3  kD    = (vec3(1.0) - F) * (1.0 - metallic);
+            float NdotL = max(dot(N, L), 0.0);
+            return (kD * albedo / PI + spec) * radiance * NdotL;
+        }
+
+        float ShadowFactor(vec3 fragPos, vec3 N) {
+            vec4 lightClip = DirLightVPMatrix * vec4(fragPos, 1.0);
+            vec3 proj      = lightClip.xyz / lightClip.w * 0.5 + 0.5;
+            if (proj.z > 1.0 || proj.z < 0.0) return 1.0;
+
+            float bias = max(0.005 * (1.0 - dot(N, normalize(-DirLightDir))), 0.001);
+            vec2  texelSize = 1.0 / vec2(textureSize(ShadowTex, 0));
+            float shadow    = 0.0;
+            for (int x = -1; x <= 1; ++x) {
+                for (int y = -1; y <= 1; ++y) {
+                    float pcfDepth = texture(ShadowTex, proj.xy + vec2(x, y) * texelSize).r;
+                    shadow += (proj.z - bias > pcfDepth) ? 0.0 : 1.0;
+                }
+            }
+            return shadow / 9.0;
+        }
+
+        // ---- Point light shading ----
+
+        vec3 ShadePointLight(Light light, vec3 fragPos, vec3 N, vec3 V,
+                             vec3 albedo, float rough, float metal, vec3 F0) {
+            vec3  toLight = light.position - fragPos;
+            float dist    = length(toLight);
+            if (dist >= light.radius) return vec3(0.0);
+
+            vec3  L     = toLight / dist;
+            float atten = clamp(1.0 - dist / light.radius, 0.0, 1.0);
+            atten       = atten * atten;
+            vec3 radiance = light.color * light.intensity * atten;
+
+            return CookTorrance(N, V, L, albedo, rough, metal, F0, radiance);
+        }
+
+        void main() {
+            // Reconstruct world position from depth
+            float depth = texture(BufferTex, TexCoord).r;
+            vec4 clip    = vec4(TexCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+            vec4 world   = InvVPMatrix * clip;
+            vec3 fragPos = world.xyz / world.w;
+
+            // Sample G-buffer
+            vec4 albedoR   = texture(DiffuseTex,  TexCoord);
+            vec4 normalM   = texture(NormalTex,   TexCoord);
+            vec3 emissive  = texture(GBufferEmissiveTex, TexCoord).rgb;
+
+            vec3  albedo = albedoR.rgb;
+            float rough  = clamp(albedoR.a, 0.04, 1.0);
+            vec3  N      = DecodeNormal(normalM.rg);
+            float metal  = normalM.b;
+            float aoMat  = normalM.a;
+
+            // SSAO
+            float ssao = texture(SSAOTex, TexCoord).r;
+            float ao   = aoMat * ssao;
+
+            vec3 V  = normalize(CamPos - fragPos);
+            vec3 F0 = mix(vec3(0.04), albedo, metal);
+
+            // ---- Clustered point lights ----
+            // ComputeClusterCoord expects positive linear view-space depth, not raw [0,1] NDC depth.
+            float ndcZ      = depth * 2.0 - 1.0;
+            float viewDepth = (2.0 * NearZ * FarZ) / (FarZ + NearZ - ndcZ * (FarZ - NearZ));
+            uvec3 clusterCoord = ComputeClusterCoord(TexCoord, viewDepth, NearZ, FarZ);
+            uint  clusterID    = ComputeClusterIndex(clusterCoord);
+
+            vec3 Lo = vec3(0.0);
+            uint start = clusters[clusterID].lightStart;
+            uint count = clusters[clusterID].lightCount;
+            for (uint i = 0u; i < count; ++i) {
+                Light light = lights[lightIndices[start + i]];
+                Lo += ShadePointLight(light, fragPos, N, V, albedo, rough, metal, F0);
+            }
+
+            // ---- Directional light ----
+            vec3 dirRadiance = DirLightColor * DirLightIntensity;
+            vec3 Ldir        = normalize(-DirLightDir);
+            float shadow     = ShadowFactor(fragPos, N);
+            vec3  dirContrib = CookTorrance(N, V, Ldir, albedo, rough, metal, F0, dirRadiance) * shadow;
+
+            // ---- Ambient (IBL) ----
+            float NdotV_amb    = max(dot(N, V), 0.0);
+            vec3  kS           = FresnelSchlickRoughness(NdotV_amb, F0, rough);
+            vec3  kD           = (vec3(1.0) - kS) * (1.0 - metal);
+
+            vec3  ibl_N        = IBLRotation * N;
+            vec3  ibl_R        = IBLRotation * reflect(-V, N);
+
+            vec3  irradiance   = texture(IrradianceTex, ibl_N).rgb;
+            vec3  ambient_diff = kD * irradiance * albedo / PI;
+
+            float max_lod      = float(textureQueryLevels(PrefilteredEnvTex) - 1);
+            vec3  prefiltered  = textureLod(PrefilteredEnvTex, ibl_R, rough * max_lod).rgb;
+            vec2  envBRDF      = ApproxEnvBRDF(rough, NdotV_amb);
+            vec3  ambient_spec = prefiltered * (kS * envBRDF.x + envBRDF.y);
+
+            vec3  ambient      = (ambient_diff + ambient_spec) * ao * IBLScale;
+
+            vec3 color = ambient + Lo + dirContrib + emissive;
+            FragColor = vec4(color, 1.0);
+        }

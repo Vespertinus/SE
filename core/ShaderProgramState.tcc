@@ -344,7 +344,8 @@ std::string UniformBlock::StrDump(const size_t indent) const {
 
 ShaderProgramState::ShaderProgramState(const Material * pNewMaterial) :
         pShader(pNewMaterial->GetShader()),
-        pMaterial(pNewMaterial) {
+        pMaterial(pNewMaterial),
+        blendMode(pNewMaterial->GetBlendMode()) {
 
 }
 
@@ -395,6 +396,9 @@ void ShaderProgramState::Apply() const {
 
         pMaterial->Apply();
 
+        // Apply blend mode from this state (may be overridden by material's own blend mode via pMaterial->Apply)
+        oGraphicsState.SetBlendMode(blendMode);
+
         for (auto oTexMapItem : mTextures) {
                 for (auto & oTexItem : *(oTexMapItem.second)) {
                         oGraphicsState.SetTexture(oTexItem.first, GetResource(oTexItem.second));
@@ -407,6 +411,55 @@ void ShaderProgramState::Apply() const {
         for (auto & oItem : mShaderBlocks) {
                 oItem.second->Apply();
         }
+}
+
+void ShaderProgramState::ApplyMaterialStateOnly() const {
+
+        auto & oGraphicsState = GetSystem<GraphicsState>();
+
+        // Apply material shader variables (no shader change, no blend — pass owns blend state)
+        pMaterial->Apply();
+
+        // Apply textures
+        for (auto oTexMapItem : mTextures) {
+                for (auto & oTexItem : *(oTexMapItem.second)) {
+                        oGraphicsState.SetTexture(oTexItem.first, GetResource(oTexItem.second));
+                }
+        }
+        for (auto & oTexItem : mDefaultTextures) {
+                oGraphicsState.SetTexture(oTexItem.first, GetResource(oTexItem.second));
+        }
+
+        // Apply uniform blocks
+        for (auto & oItem : mShaderBlocks) {
+                oItem.second->Apply();
+        }
+}
+
+ret_code_t ShaderProgramState::Validate() const {
+
+        if (!pShader) {
+                log_e("shader program state has no shader");
+                return uLOGIC_ERROR;
+        }
+
+        for (auto & oItem : mShaderBlocks) {
+                if (!oItem.second) {
+                        log_e("shader program state has no block for unit: '{}'",
+                                        static_cast<int32_t>(oItem.first));
+                        return uLOGIC_ERROR;
+                }
+        }
+
+        return uSUCCESS;
+}
+
+void ShaderProgramState::SetBlendMode(BlendMode mode) {
+        blendMode = mode;
+}
+
+BlendMode ShaderProgramState::GetBlendMode() const {
+        return blendMode;
 }
 
 std::string ShaderProgramState::StrDump(const size_t indent) const {

@@ -37,6 +37,15 @@ void FrameBuffer::AttachDepthStencil(TTexture * pTex) {
                                0);
 }
 
+void FrameBuffer::AttachDepth(TTexture * pTex) {
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER,
+                               GL_DEPTH_ATTACHMENT,
+                               GL_TEXTURE_2D,
+                               pTex->GetID(),
+                               0);
+}
+
 void FrameBuffer::SetDrawBuffers(std::initializer_list<uint32_t> slots) {
 
         std::vector<GLenum> attachments;

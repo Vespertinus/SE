@@ -19,6 +19,7 @@ public:
 
         void AttachColor(uint32_t slot, TTexture * pTex);
         void AttachDepthStencil(TTexture * pTex);
+        void AttachDepth(TTexture * pTex);
         void SetDrawBuffers(std::initializer_list<uint32_t> slots);
         bool CheckComplete() const;
 

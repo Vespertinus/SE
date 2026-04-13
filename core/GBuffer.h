@@ -30,6 +30,8 @@ public:
         void Bind();    // bind as render target (geometry pass)
         void Unbind();  // bind FBO 0 back
 
+        uint32_t GetFBO() const { return oFBO.ID(); }
+
         // Bind G-buffer textures (lighting pass).
         TTexture * GetAlbedoRoughnessTex() const;
         TTexture * GetNormalMetallicTex()  const;

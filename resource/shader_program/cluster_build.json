@@ -1,0 +1,5 @@
+{
+        "compute" : {
+                "name" : "shader/cluster_build_comp.sesl"
+        }
+}

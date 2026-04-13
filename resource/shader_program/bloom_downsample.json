@@ -1,0 +1,4 @@
+{
+        "vertex"   : { "name" : "shader/fullscreen_quad_vert.sesl" },
+        "fragment" : { "name" : "shader/bloom_downsample_frag.sesl" }
+}

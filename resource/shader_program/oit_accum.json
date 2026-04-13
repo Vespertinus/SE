@@ -1,0 +1,8 @@
+{
+        "vertex" : {
+                "name" : "shader/forward_lit_vert.sesl"
+        },
+        "fragment" : {
+                "name" : "shader/oit_accum_frag.sesl"
+        }
+}

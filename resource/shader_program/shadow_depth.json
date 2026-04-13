@@ -1,0 +1,4 @@
+{
+        "vertex"   : { "name" : "shader/shadow_depth_vert.sesl" },
+        "fragment" : { "name" : "shader/shadow_depth_frag.sesl" }
+}

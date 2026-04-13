@@ -1,0 +1,5 @@
+type: FRAGMENT
+source:
+ - |
+        #version 330 core
+        void main() {}

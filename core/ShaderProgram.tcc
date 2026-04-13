@@ -9,14 +9,21 @@ static const std::unordered_map<StrID, TextureUnit> mTextureUnitMapping = {
         { "NormalTex",          TextureUnit::NORMAL },
         { "SpecularTex",        TextureUnit::SPECULAR },
         { "EnvTex",             TextureUnit::ENV },
+        { "IrradianceTex",      TextureUnit::ENV },
+        { "BloomTex",           TextureUnit::CUSTOM },
         { "ShadowTex",          TextureUnit::SHADOW },
         { "BufferTex",          TextureUnit::BUFFER },
-        { "RenderBufferTex",    TextureUnit::RENDER_BUFFER },
+        { "LdrTex",             TextureUnit::BUFFER },
+        { "RenderBufferTex",      TextureUnit::RENDER_BUFFER },
+        { "GBufferEmissiveTex",   TextureUnit::RENDER_BUFFER },
         { "CustomTex",          TextureUnit::CUSTOM },
         { "EmissiveTex",        TextureUnit::EMISSIVE },
         { "HdrTex",             TextureUnit::HDR },
         { "SSAOTex",            TextureUnit::SSAO_TEX },
-        { "NoiseTex",           TextureUnit::NOISE }
+        { "NoiseTex",           TextureUnit::NOISE },
+        { "OitAccumTex",        TextureUnit::OIT_ACCUM },
+        { "OitRevealTex",       TextureUnit::OIT_REVEALAGE },
+        { "PrefilteredEnvTex",  TextureUnit::PREFILTERED_ENV }
 };
 
 //TODO store gl_type for type checking on load

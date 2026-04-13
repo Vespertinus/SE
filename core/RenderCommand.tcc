@@ -52,7 +52,32 @@ void RenderCommand::Draw() const {
         pGeom->Draw();
 }
 
+void RenderCommand::DrawDepth() const {
+
+        GetSystem<GraphicsState>().SetTransform(oTransform.GetWorld());
+        pGeom->Draw();
+}
+
+void RenderCommand::DrawTransparent() const {
+
+        oState.ApplyMaterialStateOnly();
+        GetSystem<GraphicsState>().SetTransform(oTransform.GetWorld());
+        pGeom->Draw();
+}
+
+uint64_t RenderCommand::GetSortKey() const {
+        return 0; //TEMP,FIXME
+}
+
+const Transform & RenderCommand::GetTransform() const {
+        return oTransform;
+}
+
 ShaderProgramState & RenderCommand::State() {
+        return oState;
+}
+
+const ShaderProgramState & RenderCommand::State() const {
         return oState;
 }
 

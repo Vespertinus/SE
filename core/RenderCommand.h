@@ -27,11 +27,15 @@ class RenderCommand {
                       const Transform & oNewTransform);
 
         void            Draw() const;
+        void            DrawDepth() const;
+        void            DrawTransparent() const;
         //Update?
         uint64_t        GetSortKey() const;
+        const Transform & GetTransform() const;
         //SetMaterial SetGeom SetTransform;?
         /** modify blocks via State().SetBlock() */
         ShaderProgramState & State();
+        const ShaderProgramState & State() const;
         std::string     StrDump(const size_t indent) const;
 
         static void* operator new(size_t sz);

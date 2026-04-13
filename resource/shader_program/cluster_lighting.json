@@ -3,6 +3,6 @@
                 "name" : "shader/fullscreen_quad_vert.sesl"
         },
         "fragment" : {
-                "name" : "shader/ssao_blur_frag.sesl"
+                "name" : "shader/cluster_lighting_frag.sesl"
         }
 }

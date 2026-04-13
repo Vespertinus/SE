@@ -1,49 +1,69 @@
-
 namespace SE {
 
-template <class ... TRenderableComponents> AllVisible<TRenderableComponents ...>::AllVisible() : changed (false) {
+template <class ... TRenderableComponents>
+AllVisible<TRenderableComponents ...>::AllVisible() {
 
         mActiveRenderables.reserve(1000);
-        vVisibleRenderables.reserve(1000);
-
+        vOpaqueCommands.reserve(1000);
+        vTransparentCommands.reserve(200);
 }
 
 template <class ... TRenderableComponents>
-        template <class TRenderable >
-                void AllVisible<TRenderableComponents ...>::AddRenderable(TRenderable * pComponent) {
+template <class TRenderable >
+void AllVisible<TRenderableComponents ...>::AddRenderable(TRenderable * pComponent) {
 
-        mActiveRenderables.emplace(reinterpret_cast<uintptr_t>(pComponent), TVariant(pComponent)/*test*/);
+        mActiveRenderables.emplace(reinterpret_cast<uintptr_t>(pComponent), TVariant(pComponent));
         changed = true;
 }
 
 template <class ... TRenderableComponents>
-        template <class TRenderable >
-                void AllVisible<TRenderableComponents ...>::RemoveRenderable(TRenderable * pComponent) {
+template <class TRenderable >
+void AllVisible<TRenderableComponents ...>::RemoveRenderable(TRenderable * pComponent) {
 
         mActiveRenderables.erase(reinterpret_cast<uintptr_t>(pComponent));
         changed = true;
 }
 
-
 template <class ... TRenderableComponents>
-        const std::vector<typename std::variant<TRenderableComponents * ...> *> & AllVisible<TRenderableComponents...>::
-                GetVisible(bool & data_changed) {
+typename AllVisible<TRenderableComponents ...>::VisibilityResult
+AllVisible<TRenderableComponents ...>::GetVisible(const glm::vec3 & cameraPos) {
 
-        data_changed = changed;
+        cameraChanged = (cameraPos != lastCameraPos);
+        lastCameraPos = cameraPos;
 
-        if (changed) {
+        const bool needRebuild = changed || cameraChanged;
 
-                vVisibleRenderables.clear();
+        if (needRebuild) {
 
-                for (auto & item : mActiveRenderables) {
+                if (changed) {
+                        // Full rebuild: re-gather all commands from renderables
+                        vOpaqueCommands.clear();
+                        vTransparentCommands.clear();
 
-                        vVisibleRenderables.emplace_back(&item.second);
+                        for (auto & item : mActiveRenderables) {
+                                TVariant * pVar = &item.second;
+                                std::visit([this](auto * pRenderable) {
+                                        auto & cmds = pRenderable->GetRenderCommands();
+                                        for (auto & oCmd : cmds) {
+                                                BlendMode mode = oCmd.State().GetBlendMode();
+                                                if (mode == BlendMode::Opaque || mode == BlendMode::Masked) {
+                                                        vOpaqueCommands.emplace_back(&oCmd);
+                                                } else {
+                                                        vTransparentCommands.emplace_back(&oCmd);
+                                                }
+                                        }
+                                }, *pVar);
+                        }
                 }
 
                 changed = false;
         }
 
-        return vVisibleRenderables;
+        return VisibilityResult {
+                vOpaqueCommands,
+                vTransparentCommands,
+                needRebuild
+        };
 }
 
 }

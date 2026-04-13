@@ -1,0 +1,62 @@
+type: DEPEND
+source:
+ - |
+        // ============================================================
+        // Clustered shading — shared SSBO struct declarations
+        // Included as a dependency by cluster_build_comp and
+        // cluster_lighting_frag.
+        // ============================================================
+
+        struct ClusterData {
+            vec4  aabbMin;      // xyz = view-space AABB min, w unused
+            vec4  aabbMax;      // xyz = view-space AABB max, w unused
+            uint  lightStart;   // offset into LightIndexBuffer
+            uint  lightCount;   // written by compute dispatch
+            uint  _pad0;
+            uint  _pad1;
+        };
+
+        layout(std430, binding = 0) buffer ClusterHeaders {
+            uint  tileCountX;
+            uint  tileCountY;
+            uint  depthSliceCount;
+            uint  _pad0;
+            ClusterData clusters[];
+        };
+
+        layout(std430, binding = 1) buffer LightIndexBuffer {
+            uint  lightIndices[];
+        };
+
+        struct Light {
+            vec3  position;
+            float radius;
+            vec3  color;
+            float intensity;
+        };
+
+        layout(std430, binding = 2) buffer LightDataBuffer {
+            Light lights[];
+        };
+
+        // ---- Helpers ----
+
+        // Compute cluster coordinate from screen UV + view-space depth
+        uvec3 ComputeClusterCoord(vec2 screenUV, float viewDepth, float nearZ, float farZ) {
+            // Tile position
+            uvec2 tileUV = uvec2(screenUV * vec2(tileCountX, tileCountY));
+            tileUV = clamp(tileUV, uvec2(0), uvec2(tileCountX - 1, tileCountY - 1));
+
+            // Depth slice via logarithmic search
+            float ratio = farZ / nearZ;
+            float logFactor = log(ratio) / float(depthSliceCount);
+            uint slice = uint(clamp(
+                int(log(viewDepth / nearZ) / logFactor),
+                0, int(depthSliceCount) - 1));
+
+            return uvec3(tileUV, slice);
+        }
+
+        uint ComputeClusterIndex(uvec3 coord) {
+            return coord.z * tileCountX * tileCountY + coord.y * tileCountX + coord.x;
+        }

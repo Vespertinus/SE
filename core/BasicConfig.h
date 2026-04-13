@@ -20,6 +20,7 @@ struct Config {
                                 height          = 768;
 
         std::string             sResourceDir    = "resource/";
+        std::string             sDebugDir       = "debug_out";
 
         PhysicsConfig           oPhysicsConfig;
 

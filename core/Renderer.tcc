@@ -16,22 +16,18 @@ template <class TVisibilityManager>
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::PrepareVisible() {
 
-        bool changed = false;
+        auto result = pManager->GetVisible(pCamera->GetWorldPos());
 
-        auto & vVisibleRenderables = pManager->GetVisible(changed);
-
-        if (!changed) { return; }
+        if (!result.changed) { return; }
 
         vRenderCommands.clear();
-
-        for (auto * pRenderable : vVisibleRenderables) {
-                std::visit([this](auto * pRenderableComponent) {
-                        auto & vComponentRenderCommands = pRenderableComponent->GetRenderCommands();
-                        for (auto & oRenderCommand : vComponentRenderCommands) {
-                                vRenderCommands.emplace_back(&oRenderCommand);
-                        }
-                },
-                *pRenderable);
+        // Opaque first, then transparent (already back-to-front sorted by visibility system)
+        vRenderCommands.reserve(result.opaque.size() + result.transparent.size());
+        for (const auto * pCmd : result.opaque) {
+                vRenderCommands.emplace_back(pCmd);
+        }
+        for (const auto * pCmd : result.transparent) {
+                vRenderCommands.emplace_back(pCmd);
         }
 
         //TODO sort vRenderCommands

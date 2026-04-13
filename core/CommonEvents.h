@@ -25,8 +25,9 @@ struct EStartApp { ;; };
 
 struct EFrameStart { };
 
-struct EQuit {};          // post to request application shutdown
-struct ECameraChanged {}; // fired when camera position, orientation, or projection changes
+struct EQuit {};              // post to request application shutdown
+struct ECameraChanged {};     // fired when camera position, orientation, or projection changes
+struct ECameraProjChanged {}; // fired only when the camera projection matrix changes
 
 /** Fired by the animation system when an AnimEvent time is crossed during playback. */
 struct EAnimEvent {

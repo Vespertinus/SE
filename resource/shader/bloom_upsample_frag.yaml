@@ -1,0 +1,23 @@
+type: FRAGMENT
+source:
+ - |
+        #version 330 core
+
+        in vec2 TexCoord;
+
+        uniform sampler2D DiffuseTex;   // smaller mip being upsampled
+        uniform sampler2D NormalTex;    // same-resolution level to blend in
+        uniform vec2  TexelSize;        // texel size of DiffuseTex (smaller)
+        out vec4 FragColor;
+
+        void main() {
+            const float w[3] = float[](0.25, 0.5, 0.25);
+            vec3 up = vec3(0.0);
+            for (int y = -1; y <= 1; ++y)
+                for (int x = -1; x <= 1; ++x)
+                    up += w[x + 1] * w[y + 1] *
+                          texture(DiffuseTex, TexCoord + vec2(x, y) * TexelSize).rgb;
+            vec3 add = texture(NormalTex, TexCoord).rgb;
+            FragColor = vec4(up + add, 1.0);
+        }
+

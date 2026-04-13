@@ -1,6 +1,6 @@
 {
         "vertex" : {
-                "name" : "shader/lighting_pass_vertex.sesl"
+                "name" : "shader/fullscreen_quad_vert.sesl"
         },
         "fragment" : {
                 "name" : "shader/tonemapping_frag.sesl"

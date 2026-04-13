@@ -14,10 +14,14 @@ struct PointLight {
 };
 
 struct DirLight {
-        glm::vec3 direction { 0.f, -1.f, 0.f };   // normalised
-        float     intensity { 1.f };
-        glm::vec3 color     { 1.f, 1.f, 1.f };
-        float     _pad      { 0.f };
+        glm::vec3 direction    { 0.f, -1.f, 0.f };   // normalised
+        float     intensity    { 1.f };
+        glm::vec3 color        { 1.f, 1.f, 1.f };
+        float     _pad         { 0.f };
+        // Shadow frustum (orthographic, centred on origin along light direction)
+        float     shadow_ortho { 20.f };  // half-extent (world units)
+        float     shadow_near  { 0.1f };
+        float     shadow_far   { 50.f };
 };
 
 } // namespace SE

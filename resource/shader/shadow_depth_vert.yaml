@@ -1,0 +1,13 @@
+type: VERTEX
+source:
+ - |
+        #version 330 core
+
+        in vec3 Position;
+
+        uniform mat4 MVPMatrix;   // light VP (set via gs.SetViewProjection)
+        uniform mat4 MVMatrix;    // model matrix (set via gs.SetTransform)
+
+        void main() {
+            gl_Position = MVPMatrix * MVMatrix * vec4(Position, 1.0);
+        }

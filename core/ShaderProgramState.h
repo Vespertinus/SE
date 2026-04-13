@@ -93,6 +93,7 @@ class ShaderProgramState {
         std::unordered_map<UniformUnitInfo::Type, const UniformBlock *> mShaderBlocks;
         std::unordered_map<UniformUnitInfo::Type, const TexturesMap * > mTextures;//THINK remove mapping for each Uniform Block store only
         TexturesMap             mDefaultTextures;
+        BlendMode               blendMode{BlendMode::Opaque};
         //uint64_t                hash; //from tex + uniform buf id + block_id
 
         public:
@@ -102,9 +103,12 @@ class ShaderProgramState {
         ret_code_t              SetBlock(const UniformUnitInfo::Type unit_id, const UniformBlock * pBlock);
         ret_code_t              SetTextures(const UniformUnitInfo::Type unit_id, const TexturesMap * pTextures);
         ret_code_t              SetTexture(const TextureUnit unit_index, H<TTexture> hTex);
+        void                    SetBlendMode(BlendMode mode);
+        BlendMode               GetBlendMode() const;
         //GetBlock ?
         ret_code_t              Validate() const;
         void                    Apply() const;
+        void                    ApplyMaterialStateOnly() const;  // textures, blocks, blend — no shader change
         //uint64_t                GetSortKey() const;
         std::string             StrDump(const size_t indent) const;
 };

@@ -1,0 +1,26 @@
+type: FRAGMENT
+source:
+ - |
+        #version 330 core
+
+        in vec2 TexCoord;
+
+        uniform sampler2D OitAccumTex;
+        uniform sampler2D OitRevealTex;
+
+        out vec4 FragColor;
+
+        void main() {
+            vec4  accum  = texture(OitAccumTex,  TexCoord);
+            float reveal = texture(OitRevealTex, TexCoord).r;
+
+            // Early-out: no transparent coverage on this pixel
+            if (accum.a < 1e-4 && reveal > 0.9999) discard;
+
+            // Weighted average colour, divided by sum-of-weights
+            vec3  avg   = accum.rgb / max(accum.a, 1e-5);
+            // Combined alpha of the transparent layer: 1 - Π(1 - αᵢ)
+            float alpha = 1.0 - reveal;
+
+            FragColor = vec4(avg, alpha);
+        }

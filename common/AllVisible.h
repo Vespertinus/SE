@@ -1,7 +1,8 @@
-
 #ifndef __ALL_VISIBLE_H__
 #define __ALL_VISIBLE_H__ 1
 
+#include <algorithm>
+#include <RenderCommand.h>
 
 namespace SE {
 
@@ -11,19 +12,29 @@ template <class ... TRenderableComponents > class AllVisible {
 
         using TVariant = std::variant<TRenderableComponents * ...>;
 
+        // Result of a visibility query — references to internal lists, valid until next GetVisible call.
+        struct VisibilityResult {
+                const std::vector<RenderCommand const *> & opaque;       // unsorted
+                const std::vector<RenderCommand const *> & transparent;  // unsorted
+                bool changed{false};
+        };
+
         private:
 
         std::unordered_map <std::uintptr_t, TVariant>   mActiveRenderables;
-        /** same elements in case of rendering all */
-        std::vector<TVariant *>                         vVisibleRenderables;
-        bool                                            changed;
+        // Pre-built command lists, populated on GetVisible
+        std::vector<RenderCommand const *>              vOpaqueCommands;
+        std::vector<RenderCommand const *>              vTransparentCommands;
+        bool                                            changed{true};
+        glm::vec3                                       lastCameraPos{0.f};
+        bool                                            cameraChanged{true};
 
         public:
 
         AllVisible();
         template <class TRenderable > void AddRenderable(TRenderable * pComponent);
         template <class TRenderable > void RemoveRenderable(TRenderable * pComponent);
-        const std::vector<TVariant *> & GetVisible(bool & data_changed);
+        VisibilityResult GetVisible(const glm::vec3 & cameraPos);
 };
 
 
@@ -32,6 +43,3 @@ template <class ... TRenderableComponents > class AllVisible {
 #include <AllVisible.tcc>
 
 #endif
-
-
-

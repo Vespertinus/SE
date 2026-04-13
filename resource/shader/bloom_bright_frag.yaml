@@ -1,0 +1,27 @@
+type: FRAGMENT
+source:
+ - |
+        #version 330 core
+
+        in vec2 TexCoord;
+
+        uniform sampler2D HdrTex;
+        uniform vec2  TexelSize;
+        uniform float BloomThreshold;
+
+        out vec4 FragColor;
+
+        void main() {
+            vec3 c = vec3(0.0);
+            c += texture(HdrTex, TexCoord + vec2(-0.5, -0.5) * TexelSize).rgb;
+            c += texture(HdrTex, TexCoord + vec2( 0.5, -0.5) * TexelSize).rgb;
+            c += texture(HdrTex, TexCoord + vec2(-0.5,  0.5) * TexelSize).rgb;
+            c += texture(HdrTex, TexCoord + vec2( 0.5,  0.5) * TexelSize).rgb;
+            c *= 0.25;
+
+            float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+            c *= max(lum - BloomThreshold, 0.0) / max(lum, 0.0001);
+
+            FragColor = vec4(c, 1.0);
+        }
+

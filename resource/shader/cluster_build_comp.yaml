@@ -1,0 +1,80 @@
+type: COMPUTE
+include:
+  - shader/cluster_common.sesl
+header:
+ - |
+        #version 430 core
+source:
+ - |
+        // ============================================================
+        // Clustered shading — cluster build compute shader
+        // One invocation per cluster; dispatched as 1D linear:
+        //   glDispatchCompute((totalClusters + 15) / 16, 1, 1)
+        // Tests each light against the cluster's precomputed view-space
+        // AABB using a sphere-AABB overlap test and writes light indices.
+        // ============================================================
+
+        layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
+
+        uniform mat4  ViewMatrix;    // world → view space
+        uniform uint  TotalLightCount;
+
+        // Debug counter SSBO (binding 3) — only used when debug_next_frame is set
+        layout(std430, binding = 3) buffer DebugCounter {
+            uint totalLightsAssigned;
+            uint debugDepthPass;
+            uint debugFrustumPass;
+            uint debugLoopIter;
+        };
+
+        void main() {
+            // Each invocation = one cluster (tileX, tileY, depthSlice)
+            // Map 2D workgroup → 1D cluster index
+            uint totalTilesX = tileCountX;
+            uint totalTilesY = tileCountY;
+            uint totalSlices = depthSliceCount;
+
+            // Linear invocation index within the dispatch
+            uint invocationIdx = gl_GlobalInvocationID.x;
+            uint totalClusters = totalTilesX * totalTilesY * totalSlices;
+            if (invocationIdx >= totalClusters) return;
+
+            // Reset this cluster's light counter for the current frame
+            clusters[invocationIdx].lightCount = 0u;
+
+            // Reset total debug counter (only invocation 0)
+            if (invocationIdx == 0u) {
+                totalLightsAssigned = 0u;
+                debugDepthPass = 0u;
+                debugFrustumPass = 0u;
+                debugLoopIter = 0u;
+            }
+
+            // Test each light against pre-computed view-space AABB (sphere-AABB overlap)
+            uint lightCount = 0u;
+            for (uint i = 0u; i < TotalLightCount; ++i) {
+                atomicAdd(debugLoopIter, 1u);
+                Light light = lights[i];
+
+                // Transform light position to view space
+                vec3 lpos = (ViewMatrix * vec4(light.position, 1.0)).xyz;
+
+                // Sphere-AABB overlap test (all in view space)
+                vec3 closest = clamp(lpos,
+                                     clusters[invocationIdx].aabbMin.xyz,
+                                     clusters[invocationIdx].aabbMax.xyz);
+                vec3 delta = closest - lpos;
+                if (dot(delta, delta) > light.radius * light.radius) continue;
+                atomicAdd(debugFrustumPass, 1u);
+
+                // Light overlaps this cluster — add to list
+                if (lightCount < 16u) {  // MAX_LIGHTS_PER_CLUSTER
+                    uint idx = atomicAdd(clusters[invocationIdx].lightCount, 1u);
+                    if (idx < 16u) {
+                        lightIndices[clusters[invocationIdx].lightStart + idx] = i;
+                        atomicAdd(totalLightsAssigned, 1u);  // debug counter
+                    }
+                    lightCount++;
+                }
+            }
+        }
