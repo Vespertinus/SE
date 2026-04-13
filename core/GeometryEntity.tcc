@@ -9,7 +9,8 @@ GeometryEntity::GeometryEntity(
                         primitive_type(new_primitive_type),
                         index_type(WITHOUT_INDEX),
                         start(vertex_start),
-                        count(vertex_count) {
+                        count(vertex_count),
+                        material_index(0) {
 }
 
 GeometryEntity::GeometryEntity(
@@ -17,12 +18,14 @@ GeometryEntity::GeometryEntity(
                 const uint32_t index_count,
                 const uint32_t index_start,
                 const uint32_t new_index_type,
-                const uint32_t new_primitive_type) :
+                const uint32_t new_primitive_type,
+                const uint16_t new_material_index) :
                         vao_id(new_vao_id),
                         primitive_type(new_primitive_type),
                         index_type(new_index_type),
                         start(index_start),
-                        count(index_count) {
+                        count(index_count),
+                        material_index(new_material_index) {
 }
 
 void GeometryEntity::Draw() const {
@@ -48,6 +51,11 @@ void GeometryEntity::Draw() const {
 uint32_t GeometryEntity::GetIndicesCnt() const {
 
         return count;
+}
+
+uint16_t GeometryEntity::GetMaterialIndex() const {
+
+        return material_index;
 }
 
 void GeometryEntity::SetVAO(const uint32_t new_vao_id) {

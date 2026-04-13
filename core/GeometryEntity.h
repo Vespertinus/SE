@@ -14,6 +14,7 @@ class GeometryEntity {
         uint32_t        index_type;
         uint32_t        start;
         uint32_t        count;
+        uint16_t        material_index;
 
         public:
 
@@ -26,7 +27,8 @@ class GeometryEntity {
                        const uint32_t index_count,
                        const uint32_t index_start,
                        const uint32_t index_type,
-                       const uint32_t new_primitive_type);
+                       const uint32_t new_primitive_type,
+                       const uint16_t new_material_index = 0);
 
         void Draw() const;
         uint32_t GetKey();
@@ -36,6 +38,7 @@ class GeometryEntity {
         std::string StrDump(const size_t indent) const;
         //uint32_t GetPrimitiveCnt() const;//TODO
         uint32_t GetIndicesCnt() const;
+        uint16_t GetMaterialIndex() const;
         uint32_t GetVAO() const;//THINK
         void     SetVAO(const uint32_t new_vao_id);
         void     SetRange(const uint32_t vertex_count, const uint32_t vertex_start);
