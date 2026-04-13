@@ -80,6 +80,7 @@ class Camera {
         void                    Zoom(const float factor);
         void                    ZoomTo(const BoundingBox & oBBox);
         void                    ZoomTo(const float width);
+        const Volume &          GetVolume() const { return oVolume; }
         const       glm::mat4 & GetWorldMVP();
         const       glm::mat4 & GetProjectionMatrix();
         glm::vec3               GetWorldPos() const;

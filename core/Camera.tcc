@@ -105,6 +105,7 @@ void Camera::RecalcProjection() {
 
         flags ^= Dirty::PROJECTION;
         GetSystem<EventManager>().QueueEvent(ECameraChanged{});
+        GetSystem<EventManager>().QueueEvent(ECameraProjChanged{});
 }
 
 const glm::mat4 & Camera::GetWorldMVP() {
