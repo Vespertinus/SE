@@ -1,5 +1,6 @@
 
 include "Component.fbs";
+include "AnimationClip.fbs";
 
 namespace SE.FlatBuffers;
 
@@ -19,6 +20,7 @@ table SceneTree {
 
         //resources:[Resource] (required);
         root:Node (required);
+        animation_clips:[AnimClipHolder];
 }
 
 root_type SceneTree;

@@ -33,7 +33,7 @@ struct ECameraProjChanged {}; // fired only when the camera projection matrix ch
 struct EAnimEvent {
         std::string name;       ///< event name (e.g. "footstep.left")
         float       value;      ///< optional float payload from clip data
-        StrID       stateName;  ///< name of the state that owns the clip
+        StrID       state_name;  ///< name of the state that owns the clip
 };
 
 //THINK StartFrame EndFrame?

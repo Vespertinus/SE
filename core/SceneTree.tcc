@@ -2,8 +2,15 @@
 #include <fstream>
 #include <MPTraits.h>
 #include <MPUtil.h>
+#include <ResourceHandle.h>
+#include <AnimClip.h>
 
 namespace SE {
+
+// Forward-declare CreateResource to avoid circular include:
+// GlobalTypes.h includes SceneTree.h, so we cannot #include GlobalTypes.h here.
+template <class Resource, class ... TArgs>
+H<Resource> CreateResource(const std::string &, const TArgs & ...);
 
 template <class ... TComponents > SceneTree<TComponents ...>::SceneTree(
                 const std::string & sName,
@@ -142,6 +149,26 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
         }
 
         auto * pSceneFB = SE::FlatBuffers::GetSceneTree(&vBuffer[0]);
+
+        // Register embedded animation clips BEFORE loading the scene tree so that
+        // Animator constructors (which run during Load) can find them via Init().
+        // Normalise sName by stripping a leading "./" so the key matches the
+        // canonical path stored by the convert tool (e.g. "sesc:fox.sesc:Survey").
+        {
+                std::string sKeyBase = sName;
+                if (sKeyBase.size() >= 2 && sKeyBase[0] == '.' && sKeyBase[1] == '/') {
+                        sKeyBase = sKeyBase.substr(2);
+                }
+                if (auto * pClips = pSceneFB->animation_clips()) {
+                        for (uint32_t i = 0; i < pClips->size(); ++i) {
+                                const auto * pHolder = pClips->Get(i);
+                                if (!pHolder->name() || !pHolder->clip()) continue;
+                                std::string sKey = "sesc:" + sKeyBase + ":" + pHolder->name()->str();
+                                CreateResource<AnimClip>(sKey, pHolder->clip());
+                                log_d("SceneTree: registered embedded AnimClip '{}'", sKey);
+                        }
+                }
+        }
 
         Load(pSceneFB->root());
 }

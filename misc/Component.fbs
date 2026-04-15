@@ -3,6 +3,8 @@ include "Mesh.fbs";
 include "Material.fbs";
 include "Audio.fbs";
 include "SoundEmitter.fbs";
+include "AnimationSkeleton.fbs";
+include "AnimationGraph.fbs";
 
 namespace SE.FlatBuffers;
 
@@ -12,7 +14,7 @@ namespace SE.FlatBuffers;
 
 table StaticModel {
         mesh:MeshHolder (required);
-        material:MaterialHolder;
+        materials:[MaterialHolder];
 }
 
 table BindSQT {
@@ -22,30 +24,8 @@ table BindSQT {
         bind_scale:Vec3;
 }
 
-table Joint {
-        name:string (required);
-        parent_index:uint8;
-}
-
-table Skeleton {
-        joints:[Joint] (required);
-}
-
-table SkeletonHolder {
-        skeleton:Skeleton;
-        path:string;
-        name:string;
-}
-
 table CharacterShell {
         skeleton_root_node:string (required);
-        skeleton:SkeletonHolder (required);
-}
-
-table CharacterShellHolder {
-        shell:CharacterShell;
-        path:string;
-        name:string;
 }
 
 table AnimatedModel {
@@ -54,8 +34,9 @@ table AnimatedModel {
         //blendshapes or skeleton must exist
         blendshapes:TextureHolder;//or as vertex buffer
         blendshapes_weights:[float];
-        shell:CharacterShellHolder;
-        joints_indexes:[uint8];
+        skeleton:SkeletonHolder;
+        skeleton_root_node:string;
+        joints_indexes:[uint16];
         joints_inv_bind_pose:[BindSQT];
         mesh_bind_pos:BindSQT;
 }
@@ -106,6 +87,10 @@ table RigidBody {
         mass:float            = 1.0;
 }
 
+table Animator {
+        animation_graph: AnimationGraph (required);
+}
+
 union ComponentU {
         StaticModel,
         AnimatedModel,
@@ -117,6 +102,7 @@ union ComponentU {
 //        Light,
 //        etc
         AppComponent,
+        Animator,
 }
 
 table Component {

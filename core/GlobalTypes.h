@@ -42,14 +42,17 @@
 #include <AudioTypes.h>
 #include <AudioClip.h>
 #include <AudioSystem.h>
+#include <SoundEventSystem.h>
 
 #include <TextureStock.h>
 #include <TGALoader.h>
 #include <OpenCVImgLoader.h>
+#include <KTXLoader.h>
 #include <Texture.h>
 #include <StoreTexture2D.h>
 #include <StoreTextureBufferObject.h>
 #include <StoreTexture2DRenderTarget.h>
+#include <StoreTextureCubeMap.h>
 //#include <Skeleton.h>
 
 
@@ -64,14 +67,18 @@ template <class Resource> Resource * GetResource(H<Resource> h);
 template <class TSystem> TSystem & GetSystem();
 
 
-typedef LOKI_TYPELIST_2(TGALoader, OpenCVImgLoader)                     TextureLoadStrategyList;
-typedef LOKI_TYPELIST_3(StoreTexture2D, StoreTextureBufferObject, StoreTexture2DRenderTarget) TextureStoreStrategyList;
+typedef LOKI_TYPELIST_3(TGALoader, OpenCVImgLoader, KTXLoader)           TextureLoadStrategyList;
+typedef LOKI_TYPELIST_4(StoreTexture2D, StoreTextureBufferObject, StoreTexture2DRenderTarget, StoreTextureCubeMap) TextureStoreStrategyList;
 typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture;
 
 }
 
 #include <ShaderComponent.h>
 #include <ShaderProgram.h>
+#ifdef SE_UI_ENABLED
+#include <ui/UITypes.h>
+#include <ui/UISystem.h>
+#endif
 #include <GraphicsState.h>
 #include <UniformBuffer.h>
 #include <ShaderProgramState.h>
@@ -93,8 +100,11 @@ typedef Mesh                                                            TMesh;
 #include <MeshGen.h>
 #include <TextureBuilder.h>
 
-#include <Renderer.h>
+#if SE_DEFERRED_RENDERER
 #include <DeferredRenderer.h>
+#else
+#include <Renderer.h>
+#endif
 #include <DebugRenderer.h>
 //TEMP
 #include <AllVisible.h>
@@ -118,11 +128,35 @@ namespace SE {
 
 //engine subsytem types
 using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
-//using TRenderer = Renderer<TVisibilityManager>;
-// To use deferred PBR renderer, replace the line above with:
+#if SE_DEFERRED_RENDERER
 using TRenderer = DeferredRenderer<TVisibilityManager>;
+#else
+using TRenderer = Renderer<TVisibilityManager>;
+#endif
 
-using TCoreSystems = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager, PhysicsSystem, AudioSystem>;
+// Build TCoreSystems by concatenating conditional partial lists
+using TCoreSystemsBase = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager>;
+
+#ifdef SE_PHYSICS_ENABLED
+using TCoreSystemsPhysics = MP::TypelistWrapper<PhysicsSystem>;
+#else
+using TCoreSystemsPhysics = MP::TypelistWrapper<>;
+#endif
+#ifdef SE_AUDIO_ENABLED
+using TCoreSystemsAudio = MP::TypelistWrapper<AudioSystem, SoundEventSystem>;
+#else
+using TCoreSystemsAudio = MP::TypelistWrapper<>;
+#endif
+#ifdef SE_UI_ENABLED
+using TCoreSystemsUI = MP::TypelistWrapper<UISystem>;
+#else
+using TCoreSystemsUI = MP::TypelistWrapper<>;
+#endif
+using TCoreSystems = decltype(MP::TypelistConcatenate(
+        MP::TypelistConcatenate(
+                MP::TypelistConcatenate(TCoreSystemsBase{}, TCoreSystemsPhysics{}),
+                TCoreSystemsAudio{}),
+        TCoreSystemsUI{}));
 
 using TEngine =
         typename Loki::SingletonHolder<
@@ -146,7 +180,9 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 
 }
 
+#ifdef SE_PHYSICS_ENABLED
 #include <PhysicsSystemEx.h>
+#endif
 
 #define INC_CUSTOM_SYSTEMS_HEADER
 #include <App.h>
@@ -154,7 +190,9 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 
 //TODO INC Resource list
 //TSceneTree dependent resources
+#include <AnimClip.h>
 #include <Skeleton.h>
+#include <AnimGraph.h>
 
 #define INC_CORE_COMPONENTS_HEADER
 #include <CoreComponents.h>
@@ -168,6 +206,19 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 
 namespace SE {
 
+#ifdef SE_AUDIO_ENABLED
+typedef LOKI_TYPELIST_10(
+                TTexture,
+                Material,
+                TMesh,
+                TSceneTree,
+                ShaderComponent,
+                ShaderProgram,
+                AudioClip,
+                AnimClip,
+                Skeleton,
+                AnimGraph)                                              TResourseList;
+#else
 typedef LOKI_TYPELIST_9(
                 TTexture,
                 Material,
@@ -175,9 +226,10 @@ typedef LOKI_TYPELIST_9(
                 TSceneTree,
                 ShaderComponent,
                 ShaderProgram,
+                AnimClip,
                 Skeleton,
-                CharacterShell,
-                AudioClip)                                              TResourseList;
+                AnimGraph)                                              TResourseList;
+#endif
 //THINK
 #ifndef SE_IMPL
 extern template class ResourceManager<TResourseList>;  // NOLINT

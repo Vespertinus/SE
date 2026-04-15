@@ -2,12 +2,12 @@
 #define __ANIMATED_MODEL_H__ 1
 
 #include <Component_generated.h>
+#include <ResourceHandle.h>
 #include <StrID.h>
 
 namespace SE {
 
 class Skeleton;
-class CharacterShell;
 
 class AnimatedModel : public StaticModel {
 
@@ -19,10 +19,11 @@ class AnimatedModel : public StaticModel {
 
         struct SkeletonPart {
 
-                std::vector<uint8_t>    vJointsIndexes;
+                std::vector<uint16_t>   vJointsIndexes;
                 std::vector<glm::mat4>  vJointsInvBindPose;
                 glm::mat4               mBindPose;
-                H<CharacterShell>  hShell{};
+                std::string             sSkeletonRootNode;
+                H<Skeleton>             hSkeleton;
 
                 ret_code_t FillData(
                                 const SE::FlatBuffers::AnimatedModel * pModel,
@@ -32,6 +33,7 @@ class AnimatedModel : public StaticModel {
         H<TTexture>                     hTexBuffer;
         std::unique_ptr<UniformBlock>   pBlock;
         SkeletonPart                    oSkeletonMeta;
+        std::vector<TSceneTree::TSceneNodeWeak> vJointNodes;
         uint8_t                         blendshapes_cnt{};
         /** supported max 4 */ //THINK inside Mesh
         uint8_t                         joints_per_vertex{};
@@ -61,15 +63,18 @@ class AnimatedModel : public StaticModel {
         uint8_t         BlendShapesCnt() const;
         void            Print(const size_t indent);
         std::string     Str() const;
-        void            TargetTransformChanged(TSceneTree::TSceneNodeExact * pTargetNode);
-        //void            TargetDeleted(TSceneNodeExact * pTargetNode);
+        void            BindSkeleton(H<Skeleton> hSkel);
+        void            MarkSkinningDirty();
+        void            TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetNode);
         void            Enable();
         void            Disable();
         void            PostUpdate(const Event & oEvent);
         void            DrawDebug() const;
-        const CharacterShell * GetShell() const;
-        const std::vector<uint8_t> & GetJointIndexes() const;
-        std::vector<uint8_t> & GetJointIndexes();
+        const std::string & GetSkeletonRootNode() const;
+        const std::vector<uint16_t> & GetJointIndexes() const;
+        std::vector<uint16_t> & GetJointIndexes();
+        const std::vector<TSceneTree::TSceneNodeWeak>& JointNodes() const { return vJointNodes; }
+        H<Skeleton> GetSkeletonHandle() const { return oSkeletonMeta.hSkeleton; }
 };
 
 }

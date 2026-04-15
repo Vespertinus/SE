@@ -1,0 +1,75 @@
+type: VERTEX
+source:
+ - |
+        #version 330 core
+
+        in vec3  Position;
+        in vec3  Normal;
+        in vec2  TexCoord0;
+        in vec4  Tangent;
+        in vec4  JointWeights;
+        in uvec4 JointIndices;
+
+        uniform samplerBuffer BufferTex;
+        uniform mat4 MVPMatrix;
+        uniform mat4 MVMatrix;
+
+        uniform Animation {
+                int   BlendShapesCnt;
+                float BlendShapesWeights[12];
+                uint  JointsPerVertex;
+                mat4  JointsMatrices[100];
+        };
+
+        out vec3 v_WorldPos;
+        out vec3 v_Normal;
+        out vec2 TexCoord;
+        out mat3 v_TBN;
+
+        void main() {
+                // Blendshape deformation (position only, matching morph_tex_vertex.yaml).
+                // BufferTex is not sampled when BlendShapesCnt == 0.
+                vec4 BlendedPosition = vec4(Position, 1.0);
+                for (int i = 0; i < BlendShapesCnt; ++i) {
+                        vec3 bs;
+                        bs.x = texelFetch(BufferTex, (gl_VertexID * 3 * BlendShapesCnt) + i * 3 + 0).x;
+                        bs.y = texelFetch(BufferTex, (gl_VertexID * 3 * BlendShapesCnt) + i * 3 + 1).x;
+                        bs.z = texelFetch(BufferTex, (gl_VertexID * 3 * BlendShapesCnt) + i * 3 + 2).x;
+                        BlendedPosition += vec4(BlendShapesWeights[i] * bs, 0.0);
+                }
+
+                // Skeletal skinning applied after blendshapes (same order as morph_tex_vertex.yaml).
+                if (JointsPerVertex > 0u) {
+                        mat4 SkinMatrix = JointsMatrices[JointIndices[0]] * JointWeights[0];
+                        for (uint j = 1u; j < JointsPerVertex; ++j)
+                                SkinMatrix += JointsMatrices[JointIndices[j]] * JointWeights[j];
+
+                        BlendedPosition = SkinMatrix * BlendedPosition;
+
+                        // Transform normal and tangent by the skin rotation then by the model
+                        // matrix — consistent with the static shader using mat3(MVMatrix).
+                        mat3 skinRot  = mat3(SkinMatrix);
+                        mat3 modelRot = mat3(MVMatrix);
+                        v_Normal = normalize(modelRot * (skinRot * Normal));
+
+                        vec3 T = normalize(modelRot * (skinRot * Tangent.xyz));
+                        vec3 N = v_Normal;
+                        T = normalize(T - dot(T, N) * N);
+                        vec3 B = cross(N, T) * Tangent.w;
+                        v_TBN = mat3(T, B, N);
+                } else {
+                        mat3 normalMat = mat3(MVMatrix);
+                        v_Normal = normalize(normalMat * Normal);
+
+                        vec3 T = normalize(normalMat * Tangent.xyz);
+                        vec3 N = v_Normal;
+                        T = normalize(T - dot(T, N) * N);
+                        vec3 B = cross(N, T) * Tangent.w;
+                        v_TBN = mat3(T, B, N);
+                }
+
+                vec4 worldPos = MVMatrix * BlendedPosition;
+                v_WorldPos    = worldPos.xyz;
+                TexCoord      = TexCoord0;
+                gl_Position   = MVPMatrix * worldPos;
+        }

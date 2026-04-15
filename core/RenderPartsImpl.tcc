@@ -5,4 +5,6 @@
 #include <UniformBuffer.tcc>
 #include <ShaderProgramState.tcc>
 #include <VertexBuffer.tcc>
+#include <ClusterSSBO.tcc>
+#include <ImageUtil.tcc>
 #endif

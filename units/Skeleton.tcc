@@ -1,143 +1,167 @@
 
+#ifdef SE_IMPL
+
+#include <Skeleton.h>
+#include <Logging.h>
+
+#include <AnimationSkeleton_generated.h>
+#include <flatbuffers/flatbuffers.h>
+
+#include <algorithm>
+#include <cstring>
+#include <fstream>
+#include <vector>
+
 namespace SE {
 
-Skeleton::Skeleton(
-                const std::string & sName,
-                const rid_t new_rid,
-                const SE::FlatBuffers::Skeleton * pSkeleton) :
-        ResourceHolder(new_rid, sName) {
+// ---------------------------------------------------------------------------
+// Path-based constructor
+// ---------------------------------------------------------------------------
+Skeleton::Skeleton(const std::string& sName, rid_t rid)
+        : ResourceHolder(rid, sName) {
 
-        uint32_t joints_cnt = pSkeleton->joints()->Length();
-        se_assert(joints_cnt <= 255);
-        vJoints.reserve(joints_cnt);
+        std::ifstream f(sName, std::ios::binary | std::ios::ate);
+        if (!f.is_open()) {
+                log_e("Skeleton: failed to open '{}'", sName);
+                return;
+        }
+        size_t sz = static_cast<size_t>(f.tellg());
+        f.seekg(0);
+        std::vector<uint8_t> buf(sz);
+        f.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(sz));
 
-        for (uint32_t i = 0; i < joints_cnt; ++i) {
-                auto pCurJoint = pSkeleton->joints()->Get(i);
-                vJoints.emplace_back(Joint{
-                                pCurJoint->name()->c_str(),
-                                pCurJoint->parent_index()
-                                }
-                                );
+        // Verify "SESK" file identifier
+        flatbuffers::Verifier verifier(buf.data(), buf.size());
+        if (!SE::FlatBuffers::VerifySkeletonBuffer(verifier)) {
+                log_e("Skeleton: FlatBuffer verify failed for '{}'", sName);
+                return;
         }
 
-        log_d("name: '{}', joints cnt: {}", sName, vJoints.size());
+        auto* fb = SE::FlatBuffers::GetSkeleton(buf.data());
+        LoadFromFB(fb);
+        size = static_cast<uint32_t>(sz);
 }
 
-Skeleton::Skeleton(const std::string & sName, const rid_t new_rid) : ResourceHolder(new_rid, sName) {
+// ---------------------------------------------------------------------------
+// Inline FlatBuffer constructor
+// ---------------------------------------------------------------------------
+Skeleton::Skeleton(const std::string& sName, rid_t rid,
+                   const SE::FlatBuffers::Skeleton* pFB)
+        : ResourceHolder(rid, sName) {
 
-        //TODO load from file
-        log_e("unimplemented yet");
-        abort();
+        LoadFromFB(pFB);
 }
 
-uint8_t Skeleton::GetJointsCnt() const {
-        return vJoints.size();
-}
+// ---------------------------------------------------------------------------
+// Decode FlatBuffer data into runtime structures
+// ---------------------------------------------------------------------------
+void Skeleton::LoadFromFB(const SE::FlatBuffers::Skeleton* pFB) {
 
-const std::vector<Joint> & Skeleton::Joints() const {
-        return vJoints;
-}
-
-
-CharacterShell::CharacterShell(
-                const std::string & sName,
-                const rid_t new_rid,
-                TSceneTree::TSceneNodeExact * pTargetNode) : ResourceHolder(new_rid, sName) {
-
-        //TODO load from file
-        log_e("unimplemented yet");
-        abort();
-}
-
-CharacterShell::CharacterShell(
-                const std::string & sName,
-                const rid_t new_rid,
-                const SE::FlatBuffers::CharacterShell * pShell,
-                TSceneTree::TSceneNodeExact * pTargetNode) :
-        ResourceHolder(new_rid, sName) {
-
-        if (pShell->skeleton()->path() != nullptr) {
-                pSkeleton = CreateRawResource<Skeleton>(GetSystem<Config>().sResourceDir + pShell->skeleton()->path()->c_str());
-        }
-        else if (pShell->skeleton()->name() != nullptr && pShell->skeleton()->skeleton() != nullptr) {
-                pSkeleton = CreateRawResource<Skeleton>(
-                                pShell->skeleton()->name()->c_str(),
-                                pShell->skeleton()->skeleton());
-        }
-        else {
-                throw(std::runtime_error(fmt::format(
-                                                "wrong skeleton holder state, skeleton {:p}, name {:p}",
-                                                (void *)pShell->skeleton()->skeleton(),
-                                                (void *)pShell->skeleton()->name()
-                                                )));
-
+        if (!pFB || !pFB->bones()) {
+                log_e("Skeleton: LoadFromFB: null or empty skeleton for '{}'", sName);
+                return;
         }
 
-        auto * pScene = pTargetNode->GetScene();
-        se_assert(pScene);
+        const uint32_t boneCount = static_cast<uint32_t>(pFB->bones()->size());
+        vBones.reserve(boneCount);
 
-        auto * vNodes = pScene->FindLocalName(pShell->skeleton_root_node()->c_str());
+        for (const auto* fbBone : *pFB->bones()) {
+                if (!fbBone) continue;
 
-        if (!vNodes || vNodes->size() != 1) {
+                BoneData bone;
 
-                throw(std::runtime_error(fmt::format(
-                                                "failed to find skeleton root node ('{}'), skeleton name: '{}', target node: '{}'",
-                                                pShell->skeleton_root_node()->c_str(),
-                                                pSkeleton->Name(),
-                                                pTargetNode->GetName()
-                                                )));
-        }
-
-        auto & pRootNode = (*vNodes)[0];
-
-        auto & vJoints = pSkeleton->Joints();
-        vJointNodes.reserve(vJointNodes.size());
-        for (auto & oJoint : vJoints) {
-                auto pJointNode = pRootNode->FindChild(oJoint.sName, true);
-                if (!pJointNode) {
-
-                        throw(std::runtime_error(fmt::format(
-                                                        "failed to find skeleton node ('{}') inside root '{}', skeleton name: '{}', target node: '{}'",
-                                                        oJoint.sName,
-                                                        pShell->skeleton_root_node()->c_str(),
-                                                        pSkeleton->Name(),
-                                                        pTargetNode->GetName()
-                                                        )));
+                // Name
+                if (fbBone->name()) {
+                        std::strncpy(bone.name, fbBone->name()->c_str(), sizeof(bone.name) - 1);
+                        bone.name[sizeof(bone.name) - 1] = '\0';
                 }
-                vJointNodes.emplace_back(pJointNode);
+
+                bone.parentIndex = fbBone->parent_index();
+
+                // Bind pose — position
+                if (fbBone->bind_pos()) {
+                        bone.bindPos = glm::vec3(fbBone->bind_pos()->x(),
+                                                 fbBone->bind_pos()->y(),
+                                                 fbBone->bind_pos()->z());
+                }
+
+                // Bind pose — rotation (FlatBuffer Vec4 stores x,y,z,w matching glm layout)
+                if (fbBone->bind_rot()) {
+                        bone.bindRot = glm::quat(fbBone->bind_rot()->w(),  // glm: w,x,y,z ctor
+                                                 fbBone->bind_rot()->x(),
+                                                 fbBone->bind_rot()->y(),
+                                                 fbBone->bind_rot()->z());
+                }
+
+                // Bind pose — scale
+                if (fbBone->bind_scale()) {
+                        bone.bindScale = glm::vec3(fbBone->bind_scale()->x(),
+                                                   fbBone->bind_scale()->y(),
+                                                   fbBone->bind_scale()->z());
+                }
+
+                // Inverse bind matrix — stored as four column Vec4s
+                if (fbBone->inv_bind_matrix()) {
+                        const auto* m = fbBone->inv_bind_matrix();
+                        // glm::mat4 is column-major; construct from column vectors
+                        bone.invBindMatrix = glm::mat4(
+                                glm::vec4(m->col0().x(), m->col0().y(), m->col0().z(), m->col0().w()),
+                                glm::vec4(m->col1().x(), m->col1().y(), m->col1().z(), m->col1().w()),
+                                glm::vec4(m->col2().x(), m->col2().y(), m->col2().z(), m->col2().w()),
+                                glm::vec4(m->col3().x(), m->col3().y(), m->col3().z(), m->col3().w())
+                        );
+                }
+
+                vBones.push_back(bone);
         }
 
-}
+        // --- Bone masks ---
+        if (pFB->masks()) {
+                vMasks.reserve(pFB->masks()->size());
+                for (const auto* fbMask : *pFB->masks()) {
+                        if (!fbMask || !fbMask->name()) continue;
 
+                        BoneMask mask;
+                        mask.name = StrID(fbMask->name()->str());
 
-Skeleton * CharacterShell::GetSkeleton() const {
+                        // Initialise all weights to 0 (fully base layer)
+                        mask.weights.assign(boneCount, 0.0f);
 
-        return pSkeleton;
-}
+                        if (fbMask->entries()) {
+                                for (const auto* entry : *fbMask->entries()) {
+                                        if (!entry) continue;
+                                        const uint16_t idx = entry->bone_index();
+                                        if (idx < boneCount) {
+                                                mask.weights[idx] = entry->weight();
+                                        }
+                                }
+                        }
 
-const std::vector<TSceneTree::TSceneNodeWeak> & CharacterShell::JointNodes() {
-        return vJointNodes;
-}
-
-glm::mat4 BuildTransform(const SE::FlatBuffers::BindSQT * pBindPose) {
-
-        glm::mat4 mBind;
-
-        if (pBindPose) {
-
-                glm::quat bind_qrot     = *reinterpret_cast<const glm::quat *>(pBindPose->bind_rot());
-                glm::vec3 bind_pos      = *reinterpret_cast<const glm::vec3 *>(pBindPose->bind_pos());
-                glm::vec3 bind_scale    = *reinterpret_cast<const glm::vec3 *>(pBindPose->bind_scale());
-
-                glm::mat4 mTranslate    = glm::translate(glm::mat4(1.0), bind_pos);
-                glm::mat4 mScale        = glm::scale (glm::mat4(1.0), bind_scale);
-                glm::mat4 mRotation     = glm::toMat4(bind_qrot);
-
-                mBind  = mTranslate * mRotation * mScale;
+                        vMasks.push_back(std::move(mask));
+                }
         }
 
-        return mBind;
+        log_d("Skeleton: loaded '{}' bones={} masks={}",
+              sName, vBones.size(), vMasks.size());
 }
 
+// ---------------------------------------------------------------------------
+const Skeleton::BoneMask* Skeleton::FindMask(StrID name) const {
 
+        for (const auto& mask : vMasks) {
+                if (mask.name == name) {
+                        return &mask;
+                }
+        }
+        return nullptr;
 }
+
+// ---------------------------------------------------------------------------
+std::string Skeleton::Str() const {
+        return fmt::format("Skeleton['{}' bones={} masks={}]",
+                           sName, vBones.size(), vMasks.size());
+}
+
+} // namespace SE
+
+#endif // SE_IMPL

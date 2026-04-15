@@ -1,0 +1,47 @@
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+enum CurveFormat : uint8 {
+    ConstantF32 = 0,
+    StepF32     = 1,
+    HermiteF32  = 2,
+    Quantized16 = 3,
+    LinearF32   = 4
+}
+
+table CurveChannel {
+    bone_index: uint16;
+    // target: 0-2=pos xyz, 3-6=rot xyzw, 7-9=scale xyz
+    target:     uint8;
+    format:     CurveFormat = HermiteF32;
+    times:      [float];
+    values:     [float];       // for Quantized16 these are pre-dequantized at load time
+    tangents:   [float];       // hermite tangents; absent for step/constant
+    quant_min:  float = 0.0;
+    quant_max:  float = 1.0;
+}
+
+table AnimEvent {
+    time:  float;
+    name:  string (required);
+    value: float = 0.0;
+}
+
+table AnimationClip {
+    schema_version: uint32 = 1;
+    duration:       float;
+    looping:        bool = false;
+    channels:       [CurveChannel];
+    events:         [AnimEvent];   // must be sorted by time at export
+}
+
+table AnimClipHolder {
+    name: string;           // resource cache key
+    path: string;           // path to external .seak file (future use)
+    clip: AnimationClip;    // inline clip data (used in inline_all mode)
+}
+
+root_type AnimationClip;
+file_identifier "SEAK";
+file_extension  "seak";

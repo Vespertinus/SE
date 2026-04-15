@@ -1,0 +1,130 @@
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+// --- Parameters ---
+
+enum AnimParamType : uint8 { Float = 0, Bool = 1, Int = 2, Trigger = 3 }
+
+table AnimParam {
+    name:      string (required);
+    type:      AnimParamType = Float;
+    float_val: float = 0.0;
+    bool_val:  bool  = false;
+    int_val:   int32 = 0;
+}
+
+// --- Conditions ---
+
+enum ConditionOp : uint8 {
+    Greater   = 0,
+    Less      = 1,
+    Equal     = 2,
+    NotEqual  = 3,
+    IsTrue    = 4,
+    IsFalse   = 5,
+    Triggered = 6
+}
+
+table AnimCondition {
+    parameter: string (required);
+    op:        ConditionOp = IsTrue;
+    threshold: float = 0.0;
+}
+
+// --- Transitions ---
+
+enum TransitionMode : uint8 { CrossFade = 0, Frozen = 1, AdditiveBlend = 2 }
+
+table AnimTransition {
+    from:          string (required);
+    to:            string (required);
+    duration:      float = 0.2;
+    exit_time:     float = 1.0;    // normalized [0,1] — how far into src before allowed
+    has_exit_time: bool  = false;
+    can_interrupt: bool  = false;
+    mode:          TransitionMode = CrossFade;
+    conditions:    [AnimCondition];
+}
+
+// --- Blend tree ---
+
+enum BlendTreeNodeType : uint8 { Clip = 0, Blend1D = 1, Blend2D = 2, Additive = 3, Layer = 4 }
+enum Blend2DAlgorithm  : uint8 { SimpleDirectional = 0, FreeformCartesian = 1 }
+enum LayerBlendMode    : uint8 { Override = 0, AdditiveLayer = 1 }
+
+table ClipNodeData {
+    clip_path:     string (required);
+    playback_rate: float = 1.0;
+    mirror:        bool  = false;
+}
+
+table Blend1DNodeData {
+    parameter:     string (required);
+    thresholds:    [float];
+    child_indices: [uint16];    // indices into state's nodes[] array
+}
+
+struct BlendPoint2D {
+    x: float;
+    y: float;
+}
+
+table Blend2DNodeData {
+    param_x:       string (required);
+    param_y:       string (required);
+    positions:     [BlendPoint2D];
+    child_indices: [uint16];
+    algorithm:     Blend2DAlgorithm = FreeformCartesian;
+}
+
+table AdditiveNodeData {
+    base_index:     uint16;
+    additive_index: uint16;
+    weight:         float = 1.0;
+    weight_param:   string;       // empty string = use weight field
+}
+
+table LayerNodeData {
+    base_index:   uint16;
+    layer_index:  uint16;
+    mask_name:    string (required);
+    weight:       float = 1.0;
+    weight_param: string;
+    blend_mode:   LayerBlendMode = Override;
+}
+
+union BlendNodeDataU {
+    ClipNodeData,
+    Blend1DNodeData,
+    Blend2DNodeData,
+    AdditiveNodeData,
+    LayerNodeData
+}
+
+table BlendTreeNode {
+    data: BlendNodeDataU (required);
+}
+
+// --- State ---
+
+table AnimState {
+    id:    string (required);
+    nodes: [BlendTreeNode] (required);   // flat; index 0 is the root node
+    speed: float = 1.0;
+    mirror: bool = false;
+}
+
+// --- Full graph ---
+
+table AnimationGraph {
+    schema_version: uint32 = 1;
+    params:         [AnimParam];
+    states:         [AnimState] (required);
+    transitions:    [AnimTransition];
+    entry_state:    string (required);
+}
+
+root_type AnimationGraph;
+file_identifier "SEAG";
+file_extension  "seag";

@@ -24,6 +24,10 @@ int main(int argc, char **argv) {
         SE::SysSettings_t oSettings;
         SE::Camera::Settings oCamSettings;
         string            sScenePath;
+        string            sIblIrrPath;
+        string            sIblLdPath;
+        float             ibl_scale;
+        float             ibl_rotation;
         bool              vdebug;
         bool              enable_all;
 
@@ -42,6 +46,10 @@ int main(int argc, char **argv) {
                         ("resource",     bpo::value<string>()->default_value("resource/"),      "resource dir (<dir path>)")
                         ("vdebug",       bpo::value<bool>()->default_value(false),              "visual debug helpers")
                         ("enable_all",   bpo::value<bool>()->default_value(false),              "enable all disabled nodes")
+                        ("ibl_irr",      bpo::value<string>()->default_value(""),               "irradiance cubemap KTX file (<path>.ktx)")
+                        ("ibl_ld",       bpo::value<string>()->default_value(""),               "prefiltered specular IBL KTX file (<path>.ktx)")
+                        ("ibl_scale",    bpo::value<float>()->default_value(1.0f),              "IBL intensity multiplier (default 1.0)")
+                        ("ibl_rotation", bpo::value<float>()->default_value(0.0f),              "IBL yaw rotation in degrees (align env with directional light)")
                         ;
 
                 bpo::variables_map vm;
@@ -88,8 +96,12 @@ int main(int argc, char **argv) {
                 if (vm.count("scene") ) {
                         sScenePath  = vm["scene"].as<string>();
                 }
-                vdebug     = vm["vdebug"].as<bool>();
-                enable_all = vm["enable_all"].as<bool>();
+                vdebug       = vm["vdebug"].as<bool>();
+                enable_all   = vm["enable_all"].as<bool>();
+                sIblIrrPath  = vm["ibl_irr"].as<string>();
+                sIblLdPath   = vm["ibl_ld"].as<string>();
+                ibl_scale    = vm["ibl_scale"].as<float>();
+                ibl_rotation = vm["ibl_rotation"].as<float>();
 
                 SE::TEngine::Instance().Init<SE::Config>();
 
@@ -127,7 +139,8 @@ int main(int argc, char **argv) {
 
 
         try {
-                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath, vdebug, enable_all, oCamSettings });
+                SE::Application<SE::TOOLS::Scene> App(oSettings, SE::TOOLS::Scene::Settings{sScenePath, vdebug, enable_all, oCamSettings,
+                        sIblIrrPath, sIblLdPath, ibl_scale, ibl_rotation});
         }
         catch (std::exception & ex) {
                 log_e("exception catched = {}", ex.what());

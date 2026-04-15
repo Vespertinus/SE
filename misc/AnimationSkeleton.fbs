@@ -1,0 +1,46 @@
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+// 4x4 column-major matrix stored as 4 columns of Vec4
+struct ColMat4 {
+    col0: Vec4;
+    col1: Vec4;
+    col2: Vec4;
+    col3: Vec4;
+}
+
+table SkeletonBone {
+    name:            string (required);
+    parent_index:    uint16 = 65535;   // 65535 = no parent (root)
+    bind_pos:        Vec3;
+    bind_rot:        Vec4;             // quaternion stored as x,y,z,w (glm layout)
+    bind_scale:      Vec3;
+    inv_bind_matrix: ColMat4;
+}
+
+table BoneMaskEntry {
+    bone_index: uint16;
+    weight:     float;
+}
+
+table BoneMask {
+    name:    string (required);
+    entries: [BoneMaskEntry];
+}
+
+table Skeleton {
+    schema_version: uint32 = 1;
+    bones:          [SkeletonBone] (required);   // topologically sorted: parent_index < bone_index
+    masks:          [BoneMask];
+}
+
+table SkeletonHolder {
+    skeleton: Skeleton;   // inline embedded skeleton data
+    path:     string;     // path to .sesk file
+    name:     string;     // resource cache key
+}
+
+root_type Skeleton;
+file_identifier "SESK";
+file_extension  "sesk";
