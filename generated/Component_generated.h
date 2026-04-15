@@ -15,6 +15,8 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
               FLATBUFFERS_VERSION_REVISION == 26,
              "Non-compatible flatbuffers version included");
 
+#include "AnimationGraph_generated.h"
+#include "AnimationSkeleton_generated.h"
 #include "Audio_generated.h"
 #include "Material_generated.h"
 #include "Mesh_generated.h"
@@ -29,20 +31,8 @@ struct StaticModelBuilder;
 struct BindSQT;
 struct BindSQTBuilder;
 
-struct Joint;
-struct JointBuilder;
-
-struct Skeleton;
-struct SkeletonBuilder;
-
-struct SkeletonHolder;
-struct SkeletonHolderBuilder;
-
 struct CharacterShell;
 struct CharacterShellBuilder;
-
-struct CharacterShellHolder;
-struct CharacterShellHolderBuilder;
 
 struct AnimatedModel;
 struct AnimatedModelBuilder;
@@ -64,6 +54,9 @@ struct MeshColliderBuilder;
 
 struct RigidBody;
 struct RigidBodyBuilder;
+
+struct Animator;
+struct AnimatorBuilder;
 
 struct Component;
 struct ComponentBuilder;
@@ -139,11 +132,12 @@ enum class ComponentU : uint8_t {
   AudioListener = 5,
   SoundEmitter = 6,
   AppComponent = 7,
+  Animator = 8,
   MIN = NONE,
-  MAX = AppComponent
+  MAX = Animator
 };
 
-inline const ComponentU (&EnumValuesComponentU())[8] {
+inline const ComponentU (&EnumValuesComponentU())[9] {
   static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
@@ -152,13 +146,14 @@ inline const ComponentU (&EnumValuesComponentU())[8] {
     ComponentU::AudioEmitter,
     ComponentU::AudioListener,
     ComponentU::SoundEmitter,
-    ComponentU::AppComponent
+    ComponentU::AppComponent,
+    ComponentU::Animator
   };
   return values;
 }
 
 inline const char * const *EnumNamesComponentU() {
-  static const char * const names[9] = {
+  static const char * const names[10] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
@@ -167,13 +162,14 @@ inline const char * const *EnumNamesComponentU() {
     "AudioListener",
     "SoundEmitter",
     "AppComponent",
+    "Animator",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameComponentU(ComponentU e) {
-  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::AppComponent)) return "";
+  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::Animator)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesComponentU()[index];
 }
@@ -210,6 +206,10 @@ template<> struct ComponentUTraits<SE::FlatBuffers::AppComponent> {
   static const ComponentU enum_value = ComponentU::AppComponent;
 };
 
+template<> struct ComponentUTraits<SE::FlatBuffers::Animator> {
+  static const ComponentU enum_value = ComponentU::Animator;
+};
+
 bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj, ComponentU type);
 bool VerifyComponentUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<ComponentU> *types);
 
@@ -217,20 +217,21 @@ struct StaticModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef StaticModelBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MESH = 4,
-    VT_MATERIAL = 6
+    VT_MATERIALS = 6
   };
   const SE::FlatBuffers::MeshHolder *mesh() const {
     return GetPointer<const SE::FlatBuffers::MeshHolder *>(VT_MESH);
   }
-  const SE::FlatBuffers::MaterialHolder *material() const {
-    return GetPointer<const SE::FlatBuffers::MaterialHolder *>(VT_MATERIAL);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> *materials() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> *>(VT_MATERIALS);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_MESH) &&
            verifier.VerifyTable(mesh()) &&
-           VerifyOffset(verifier, VT_MATERIAL) &&
-           verifier.VerifyTable(material()) &&
+           VerifyOffset(verifier, VT_MATERIALS) &&
+           verifier.VerifyVector(materials()) &&
+           verifier.VerifyVectorOfTables(materials()) &&
            verifier.EndTable();
   }
 };
@@ -242,8 +243,8 @@ struct StaticModelBuilder {
   void add_mesh(::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh) {
     fbb_.AddOffset(StaticModel::VT_MESH, mesh);
   }
-  void add_material(::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material) {
-    fbb_.AddOffset(StaticModel::VT_MATERIAL, material);
+  void add_materials(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>>> materials) {
+    fbb_.AddOffset(StaticModel::VT_MATERIALS, materials);
   }
   explicit StaticModelBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -260,11 +261,22 @@ struct StaticModelBuilder {
 inline ::flatbuffers::Offset<StaticModel> CreateStaticModel(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
-    ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>>> materials = 0) {
   StaticModelBuilder builder_(_fbb);
-  builder_.add_material(material);
+  builder_.add_materials(materials);
   builder_.add_mesh(mesh);
   return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<StaticModel> CreateStaticModelDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> *materials = nullptr) {
+  auto materials__ = materials ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>>(*materials) : 0;
+  return SE::FlatBuffers::CreateStaticModel(
+      _fbb,
+      mesh,
+      materials__);
 }
 
 struct BindSQT FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -328,219 +340,18 @@ inline ::flatbuffers::Offset<BindSQT> CreateBindSQT(
   return builder_.Finish();
 }
 
-struct Joint FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef JointBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_NAME = 4,
-    VT_PARENT_INDEX = 6
-  };
-  const ::flatbuffers::String *name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
-  }
-  uint8_t parent_index() const {
-    return GetField<uint8_t>(VT_PARENT_INDEX, 0);
-  }
-  bool Verify(::flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyOffsetRequired(verifier, VT_NAME) &&
-           verifier.VerifyString(name()) &&
-           VerifyField<uint8_t>(verifier, VT_PARENT_INDEX, 1) &&
-           verifier.EndTable();
-  }
-};
-
-struct JointBuilder {
-  typedef Joint Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
-    fbb_.AddOffset(Joint::VT_NAME, name);
-  }
-  void add_parent_index(uint8_t parent_index) {
-    fbb_.AddElement<uint8_t>(Joint::VT_PARENT_INDEX, parent_index, 0);
-  }
-  explicit JointBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<Joint> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<Joint>(end);
-    fbb_.Required(o, Joint::VT_NAME);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<Joint> CreateJoint(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
-    uint8_t parent_index = 0) {
-  JointBuilder builder_(_fbb);
-  builder_.add_name(name);
-  builder_.add_parent_index(parent_index);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<Joint> CreateJointDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    const char *name = nullptr,
-    uint8_t parent_index = 0) {
-  auto name__ = name ? _fbb.CreateString(name) : 0;
-  return SE::FlatBuffers::CreateJoint(
-      _fbb,
-      name__,
-      parent_index);
-}
-
-struct Skeleton FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef SkeletonBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_JOINTS = 4
-  };
-  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>> *joints() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>> *>(VT_JOINTS);
-  }
-  bool Verify(::flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyOffsetRequired(verifier, VT_JOINTS) &&
-           verifier.VerifyVector(joints()) &&
-           verifier.VerifyVectorOfTables(joints()) &&
-           verifier.EndTable();
-  }
-};
-
-struct SkeletonBuilder {
-  typedef Skeleton Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_joints(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>>> joints) {
-    fbb_.AddOffset(Skeleton::VT_JOINTS, joints);
-  }
-  explicit SkeletonBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<Skeleton> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<Skeleton>(end);
-    fbb_.Required(o, Skeleton::VT_JOINTS);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<Skeleton> CreateSkeleton(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>>> joints = 0) {
-  SkeletonBuilder builder_(_fbb);
-  builder_.add_joints(joints);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<Skeleton> CreateSkeletonDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::Joint>> *joints = nullptr) {
-  auto joints__ = joints ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::Joint>>(*joints) : 0;
-  return SE::FlatBuffers::CreateSkeleton(
-      _fbb,
-      joints__);
-}
-
-struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef SkeletonHolderBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_SKELETON = 4,
-    VT_PATH = 6,
-    VT_NAME = 8
-  };
-  const SE::FlatBuffers::Skeleton *skeleton() const {
-    return GetPointer<const SE::FlatBuffers::Skeleton *>(VT_SKELETON);
-  }
-  const ::flatbuffers::String *path() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_PATH);
-  }
-  const ::flatbuffers::String *name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
-  }
-  bool Verify(::flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_SKELETON) &&
-           verifier.VerifyTable(skeleton()) &&
-           VerifyOffset(verifier, VT_PATH) &&
-           verifier.VerifyString(path()) &&
-           VerifyOffset(verifier, VT_NAME) &&
-           verifier.VerifyString(name()) &&
-           verifier.EndTable();
-  }
-};
-
-struct SkeletonHolderBuilder {
-  typedef SkeletonHolder Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_skeleton(::flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton) {
-    fbb_.AddOffset(SkeletonHolder::VT_SKELETON, skeleton);
-  }
-  void add_path(::flatbuffers::Offset<::flatbuffers::String> path) {
-    fbb_.AddOffset(SkeletonHolder::VT_PATH, path);
-  }
-  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
-    fbb_.AddOffset(SkeletonHolder::VT_NAME, name);
-  }
-  explicit SkeletonHolderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<SkeletonHolder> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<SkeletonHolder>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolder(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> path = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
-  SkeletonHolderBuilder builder_(_fbb);
-  builder_.add_name(name);
-  builder_.add_path(path);
-  builder_.add_skeleton(skeleton);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolderDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<SE::FlatBuffers::Skeleton> skeleton = 0,
-    const char *path = nullptr,
-    const char *name = nullptr) {
-  auto path__ = path ? _fbb.CreateString(path) : 0;
-  auto name__ = name ? _fbb.CreateString(name) : 0;
-  return SE::FlatBuffers::CreateSkeletonHolder(
-      _fbb,
-      skeleton,
-      path__,
-      name__);
-}
-
 struct CharacterShell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef CharacterShellBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_SKELETON_ROOT_NODE = 4,
-    VT_SKELETON = 6
+    VT_SKELETON_ROOT_NODE = 4
   };
   const ::flatbuffers::String *skeleton_root_node() const {
     return GetPointer<const ::flatbuffers::String *>(VT_SKELETON_ROOT_NODE);
-  }
-  const SE::FlatBuffers::SkeletonHolder *skeleton() const {
-    return GetPointer<const SE::FlatBuffers::SkeletonHolder *>(VT_SKELETON);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_SKELETON_ROOT_NODE) &&
            verifier.VerifyString(skeleton_root_node()) &&
-           VerifyOffsetRequired(verifier, VT_SKELETON) &&
-           verifier.VerifyTable(skeleton()) &&
            verifier.EndTable();
   }
 };
@@ -552,9 +363,6 @@ struct CharacterShellBuilder {
   void add_skeleton_root_node(::flatbuffers::Offset<::flatbuffers::String> skeleton_root_node) {
     fbb_.AddOffset(CharacterShell::VT_SKELETON_ROOT_NODE, skeleton_root_node);
   }
-  void add_skeleton(::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton) {
-    fbb_.AddOffset(CharacterShell::VT_SKELETON, skeleton);
-  }
   explicit CharacterShellBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -563,108 +371,25 @@ struct CharacterShellBuilder {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<CharacterShell>(end);
     fbb_.Required(o, CharacterShell::VT_SKELETON_ROOT_NODE);
-    fbb_.Required(o, CharacterShell::VT_SKELETON);
     return o;
   }
 };
 
 inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShell(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::String> skeleton_root_node = 0,
-    ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0) {
+    ::flatbuffers::Offset<::flatbuffers::String> skeleton_root_node = 0) {
   CharacterShellBuilder builder_(_fbb);
-  builder_.add_skeleton(skeleton);
   builder_.add_skeleton_root_node(skeleton_root_node);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShellDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const char *skeleton_root_node = nullptr,
-    ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0) {
+    const char *skeleton_root_node = nullptr) {
   auto skeleton_root_node__ = skeleton_root_node ? _fbb.CreateString(skeleton_root_node) : 0;
   return SE::FlatBuffers::CreateCharacterShell(
       _fbb,
-      skeleton_root_node__,
-      skeleton);
-}
-
-struct CharacterShellHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef CharacterShellHolderBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_SHELL = 4,
-    VT_PATH = 6,
-    VT_NAME = 8
-  };
-  const SE::FlatBuffers::CharacterShell *shell() const {
-    return GetPointer<const SE::FlatBuffers::CharacterShell *>(VT_SHELL);
-  }
-  const ::flatbuffers::String *path() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_PATH);
-  }
-  const ::flatbuffers::String *name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
-  }
-  bool Verify(::flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_SHELL) &&
-           verifier.VerifyTable(shell()) &&
-           VerifyOffset(verifier, VT_PATH) &&
-           verifier.VerifyString(path()) &&
-           VerifyOffset(verifier, VT_NAME) &&
-           verifier.VerifyString(name()) &&
-           verifier.EndTable();
-  }
-};
-
-struct CharacterShellHolderBuilder {
-  typedef CharacterShellHolder Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_shell(::flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell) {
-    fbb_.AddOffset(CharacterShellHolder::VT_SHELL, shell);
-  }
-  void add_path(::flatbuffers::Offset<::flatbuffers::String> path) {
-    fbb_.AddOffset(CharacterShellHolder::VT_PATH, path);
-  }
-  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
-    fbb_.AddOffset(CharacterShellHolder::VT_NAME, name);
-  }
-  explicit CharacterShellHolderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<CharacterShellHolder> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<CharacterShellHolder>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolder(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> path = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
-  CharacterShellHolderBuilder builder_(_fbb);
-  builder_.add_name(name);
-  builder_.add_path(path);
-  builder_.add_shell(shell);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<CharacterShellHolder> CreateCharacterShellHolderDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShell> shell = 0,
-    const char *path = nullptr,
-    const char *name = nullptr) {
-  auto path__ = path ? _fbb.CreateString(path) : 0;
-  auto name__ = name ? _fbb.CreateString(name) : 0;
-  return SE::FlatBuffers::CreateCharacterShellHolder(
-      _fbb,
-      shell,
-      path__,
-      name__);
+      skeleton_root_node__);
 }
 
 struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -674,10 +399,11 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_MATERIAL = 6,
     VT_BLENDSHAPES = 8,
     VT_BLENDSHAPES_WEIGHTS = 10,
-    VT_SHELL = 12,
-    VT_JOINTS_INDEXES = 14,
-    VT_JOINTS_INV_BIND_POSE = 16,
-    VT_MESH_BIND_POS = 18
+    VT_SKELETON = 12,
+    VT_SKELETON_ROOT_NODE = 14,
+    VT_JOINTS_INDEXES = 16,
+    VT_JOINTS_INV_BIND_POSE = 18,
+    VT_MESH_BIND_POS = 20
   };
   const SE::FlatBuffers::MeshHolder *mesh() const {
     return GetPointer<const SE::FlatBuffers::MeshHolder *>(VT_MESH);
@@ -691,11 +417,14 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<float> *blendshapes_weights() const {
     return GetPointer<const ::flatbuffers::Vector<float> *>(VT_BLENDSHAPES_WEIGHTS);
   }
-  const SE::FlatBuffers::CharacterShellHolder *shell() const {
-    return GetPointer<const SE::FlatBuffers::CharacterShellHolder *>(VT_SHELL);
+  const SE::FlatBuffers::SkeletonHolder *skeleton() const {
+    return GetPointer<const SE::FlatBuffers::SkeletonHolder *>(VT_SKELETON);
   }
-  const ::flatbuffers::Vector<uint8_t> *joints_indexes() const {
-    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_JOINTS_INDEXES);
+  const ::flatbuffers::String *skeleton_root_node() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_SKELETON_ROOT_NODE);
+  }
+  const ::flatbuffers::Vector<uint16_t> *joints_indexes() const {
+    return GetPointer<const ::flatbuffers::Vector<uint16_t> *>(VT_JOINTS_INDEXES);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *joints_inv_bind_pose() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *>(VT_JOINTS_INV_BIND_POSE);
@@ -713,8 +442,10 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(blendshapes()) &&
            VerifyOffset(verifier, VT_BLENDSHAPES_WEIGHTS) &&
            verifier.VerifyVector(blendshapes_weights()) &&
-           VerifyOffset(verifier, VT_SHELL) &&
-           verifier.VerifyTable(shell()) &&
+           VerifyOffset(verifier, VT_SKELETON) &&
+           verifier.VerifyTable(skeleton()) &&
+           VerifyOffset(verifier, VT_SKELETON_ROOT_NODE) &&
+           verifier.VerifyString(skeleton_root_node()) &&
            VerifyOffset(verifier, VT_JOINTS_INDEXES) &&
            verifier.VerifyVector(joints_indexes()) &&
            VerifyOffset(verifier, VT_JOINTS_INV_BIND_POSE) &&
@@ -742,10 +473,13 @@ struct AnimatedModelBuilder {
   void add_blendshapes_weights(::flatbuffers::Offset<::flatbuffers::Vector<float>> blendshapes_weights) {
     fbb_.AddOffset(AnimatedModel::VT_BLENDSHAPES_WEIGHTS, blendshapes_weights);
   }
-  void add_shell(::flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell) {
-    fbb_.AddOffset(AnimatedModel::VT_SHELL, shell);
+  void add_skeleton(::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton) {
+    fbb_.AddOffset(AnimatedModel::VT_SKELETON, skeleton);
   }
-  void add_joints_indexes(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> joints_indexes) {
+  void add_skeleton_root_node(::flatbuffers::Offset<::flatbuffers::String> skeleton_root_node) {
+    fbb_.AddOffset(AnimatedModel::VT_SKELETON_ROOT_NODE, skeleton_root_node);
+  }
+  void add_joints_indexes(::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> joints_indexes) {
     fbb_.AddOffset(AnimatedModel::VT_JOINTS_INDEXES, joints_indexes);
   }
   void add_joints_inv_bind_pose(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>>> joints_inv_bind_pose) {
@@ -772,15 +506,17 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
     ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
     ::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<float>> blendshapes_weights = 0,
-    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> joints_indexes = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> skeleton_root_node = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> joints_indexes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>>> joints_inv_bind_pose = 0,
     ::flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos = 0) {
   AnimatedModelBuilder builder_(_fbb);
   builder_.add_mesh_bind_pos(mesh_bind_pos);
   builder_.add_joints_inv_bind_pose(joints_inv_bind_pose);
   builder_.add_joints_indexes(joints_indexes);
-  builder_.add_shell(shell);
+  builder_.add_skeleton_root_node(skeleton_root_node);
+  builder_.add_skeleton(skeleton);
   builder_.add_blendshapes_weights(blendshapes_weights);
   builder_.add_blendshapes(blendshapes);
   builder_.add_material(material);
@@ -794,12 +530,14 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
     ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
     ::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
     const std::vector<float> *blendshapes_weights = nullptr,
-    ::flatbuffers::Offset<SE::FlatBuffers::CharacterShellHolder> shell = 0,
-    const std::vector<uint8_t> *joints_indexes = nullptr,
+    ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0,
+    const char *skeleton_root_node = nullptr,
+    const std::vector<uint16_t> *joints_indexes = nullptr,
     const std::vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *joints_inv_bind_pose = nullptr,
     ::flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos = 0) {
   auto blendshapes_weights__ = blendshapes_weights ? _fbb.CreateVector<float>(*blendshapes_weights) : 0;
-  auto joints_indexes__ = joints_indexes ? _fbb.CreateVector<uint8_t>(*joints_indexes) : 0;
+  auto skeleton_root_node__ = skeleton_root_node ? _fbb.CreateString(skeleton_root_node) : 0;
+  auto joints_indexes__ = joints_indexes ? _fbb.CreateVector<uint16_t>(*joints_indexes) : 0;
   auto joints_inv_bind_pose__ = joints_inv_bind_pose ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>>(*joints_inv_bind_pose) : 0;
   return SE::FlatBuffers::CreateAnimatedModel(
       _fbb,
@@ -807,7 +545,8 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
       material,
       blendshapes,
       blendshapes_weights__,
-      shell,
+      skeleton,
+      skeleton_root_node__,
       joints_indexes__,
       joints_inv_bind_pose__,
       mesh_bind_pos);
@@ -1263,6 +1002,49 @@ inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(
   return builder_.Finish();
 }
 
+struct Animator FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimatorBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_ANIMATION_GRAPH = 4
+  };
+  const SE::FlatBuffers::AnimationGraph *animation_graph() const {
+    return GetPointer<const SE::FlatBuffers::AnimationGraph *>(VT_ANIMATION_GRAPH);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_ANIMATION_GRAPH) &&
+           verifier.VerifyTable(animation_graph()) &&
+           verifier.EndTable();
+  }
+};
+
+struct AnimatorBuilder {
+  typedef Animator Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_animation_graph(::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> animation_graph) {
+    fbb_.AddOffset(Animator::VT_ANIMATION_GRAPH, animation_graph);
+  }
+  explicit AnimatorBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Animator> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Animator>(end);
+    fbb_.Required(o, Animator::VT_ANIMATION_GRAPH);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Animator> CreateAnimator(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> animation_graph = 0) {
+  AnimatorBuilder builder_(_fbb);
+  builder_.add_animation_graph(animation_graph);
+  return builder_.Finish();
+}
+
 struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -1296,6 +1078,9 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   const SE::FlatBuffers::AppComponent *component_as_AppComponent() const {
     return component_type() == SE::FlatBuffers::ComponentU::AppComponent ? static_cast<const SE::FlatBuffers::AppComponent *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::Animator *component_as_Animator() const {
+    return component_type() == SE::FlatBuffers::ComponentU::Animator ? static_cast<const SE::FlatBuffers::Animator *>(component()) : nullptr;
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1332,6 +1117,10 @@ template<> inline const SE::FlatBuffers::SoundEmitter *Component::component_as<S
 
 template<> inline const SE::FlatBuffers::AppComponent *Component::component_as<SE::FlatBuffers::AppComponent>() const {
   return component_as_AppComponent();
+}
+
+template<> inline const SE::FlatBuffers::Animator *Component::component_as<SE::FlatBuffers::Animator>() const {
+  return component_as_Animator();
 }
 
 struct ComponentBuilder {
@@ -1434,6 +1223,10 @@ inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj,
     }
     case ComponentU::AppComponent: {
       auto ptr = reinterpret_cast<const SE::FlatBuffers::AppComponent *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::Animator: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Animator *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

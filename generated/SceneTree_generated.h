@@ -15,6 +15,7 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
               FLATBUFFERS_VERSION_REVISION == 26,
              "Non-compatible flatbuffers version included");
 
+#include "AnimationClip_generated.h"
 #include "Component_generated.h"
 
 namespace SE {
@@ -173,15 +174,22 @@ inline ::flatbuffers::Offset<Node> CreateNodeDirect(
 struct SceneTree FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SceneTreeBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ROOT = 4
+    VT_ROOT = 4,
+    VT_ANIMATION_CLIPS = 6
   };
   const SE::FlatBuffers::Node *root() const {
     return GetPointer<const SE::FlatBuffers::Node *>(VT_ROOT);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder>> *animation_clips() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder>> *>(VT_ANIMATION_CLIPS);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_ROOT) &&
            verifier.VerifyTable(root()) &&
+           VerifyOffset(verifier, VT_ANIMATION_CLIPS) &&
+           verifier.VerifyVector(animation_clips()) &&
+           verifier.VerifyVectorOfTables(animation_clips()) &&
            verifier.EndTable();
   }
 };
@@ -192,6 +200,9 @@ struct SceneTreeBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_root(::flatbuffers::Offset<SE::FlatBuffers::Node> root) {
     fbb_.AddOffset(SceneTree::VT_ROOT, root);
+  }
+  void add_animation_clips(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder>>> animation_clips) {
+    fbb_.AddOffset(SceneTree::VT_ANIMATION_CLIPS, animation_clips);
   }
   explicit SceneTreeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -207,10 +218,23 @@ struct SceneTreeBuilder {
 
 inline ::flatbuffers::Offset<SceneTree> CreateSceneTree(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<SE::FlatBuffers::Node> root = 0) {
+    ::flatbuffers::Offset<SE::FlatBuffers::Node> root = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder>>> animation_clips = 0) {
   SceneTreeBuilder builder_(_fbb);
+  builder_.add_animation_clips(animation_clips);
   builder_.add_root(root);
   return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<SceneTree> CreateSceneTreeDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::Node> root = 0,
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder>> *animation_clips = nullptr) {
+  auto animation_clips__ = animation_clips ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder>>(*animation_clips) : 0;
+  return SE::FlatBuffers::CreateSceneTree(
+      _fbb,
+      root,
+      animation_clips__);
 }
 
 inline const SE::FlatBuffers::SceneTree *GetSceneTree(const void *buf) {
