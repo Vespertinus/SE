@@ -5,6 +5,6 @@
         { "name": "Roughness", "float_val": 0.5 },
         { "name": "Metallic",  "float_val": 0.0 },
         { "name": "AO",        "float_val": 1.0 },
-        { "name": "Emissive",  "vec3_val": [0.0, 0.2, 2.0] }
+        { "name": "Emissive",  "vec3_val": [2.0, 1.0, 0.5] }
     ]
 }
