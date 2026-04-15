@@ -8,7 +8,9 @@
 namespace SE {
 
 inline H<TMesh> CreateSphereMesh(int rings, int sectors) {
+
         MeshBuilder oBuilder(VertexLayout::PosNormTanUV());
+
         MeshGen::Sphere(oBuilder, 1.0f, rings, sectors);
         return oBuilder.Upload("pbr_sphere");
 }
