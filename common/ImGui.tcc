@@ -277,17 +277,15 @@ void ImGuiWrapper::Render(const Event & oEvent [[maybe_unused]]) {
 
 void ImGuiWrapper::NewFrame(const Event & oEvent [[maybe_unused]]) {
 
-        auto & oGraphicsState = GetSystem<GraphicsState>();
-
-        auto & oFrame = oGraphicsState.GetFrameState();
+        auto screen_size = GetSystem<GraphicsState>().GetScreenSize();
 
         ImGuiIO          & io           = ImGui::GetIO();
         IM_ASSERT(io.Fonts->IsBuilt());
 
-        io.DisplaySize                  = ImVec2((float)oFrame.screen_size.x, (float)oFrame.screen_size.y);
-        io.DisplayFramebufferScale      = ImVec2(oFrame.screen_size.x > 0 ? 1 : 0, oFrame.screen_size.y > 0 ? 1 : 0);
+        io.DisplaySize                  = ImVec2((float)screen_size.x, (float)screen_size.y);
+        io.DisplayFramebufferScale      = ImVec2(screen_size.x > 0 ? 1 : 0, screen_size.y > 0 ? 1 : 0);
 
-        io.DeltaTime = oFrame.last_frame_time;
+        io.DeltaTime = GetSystem<AppClock>().RawDelta();
 
         auto pos = GetSystem<InputManager>().GetMousePos();
         io.MousePos = ImVec2((float)pos.x, (float)pos.y);

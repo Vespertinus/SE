@@ -50,15 +50,15 @@ OrthoScene::~OrthoScene() throw() { ;; }
 
 void OrthoScene::Process() {
 
-        const auto & oState = SE::GetSystem<SE::GraphicsState>().GetFrameState();
+        const auto frame_num = SE::GetSystem<SE::AppClock>().Frame();
 
         float     t = oElapsed.Get() / 10000.0f;
         glm::vec2 CSeed;
         CSeed.x = (sin(cos(t / 10) * 10) + cos(t * 2.0) / 4.0 + sin(t * 3.0) / 6.0) * 0.8;
         CSeed.y = (cos(sin(t / 10) * 10) + sin(t * 2.0) / 4.0 + cos(t * 3.0) / 6.0) * 0.8;
 
-        if ((oState.frame_num % 60) == 0) {
-                log_d("seed: ({}, {}), t: {}, frame: {}", CSeed.x, CSeed.y, t, oState.frame_num);
+        if ((frame_num % 60) == 0) {
+                log_d("seed: ({}, {}), t: {}, frame: {}", CSeed.x, CSeed.y, t, frame_num);
         }
 
         static SE::StrID seed_id("CSeed");

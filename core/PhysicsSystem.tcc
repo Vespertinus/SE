@@ -234,9 +234,9 @@ struct PhysicsSystem::Impl {
         std::mutex                                 oCmdMtx;
         std::vector<DeferredCmd>                   vPendingCmds;
 
-        float  accumulator        = 0.0f;
-        float  interpolation_alpha = 0.0f;
-        bool   paused             = false;
+        FixedClock oFixedClock;
+        float      interpolation_alpha = 0.0f;
+        bool       paused             = false;
 
         // ---- shape creation -------------------------------------------------
         JPH::Ref<JPH::Shape> MakeShape(const ColliderDesc& c) {
@@ -395,6 +395,7 @@ PhysicsSystem::~PhysicsSystem() noexcept {
 void PhysicsSystem::Init(const PhysicsConfig& cfg) {
         assert(!pImpl->initialized);
         pImpl->oCfg = cfg;
+        pImpl->oFixedClock = FixedClock(cfg.fixed_dt);
 
         JPH::RegisterDefaultAllocator();
         JPH::Factory::sInstance = new JPH::Factory();
@@ -638,19 +639,16 @@ void PhysicsSystem::Update(float game_dt) {
                 return;
         }
 
-        pImpl->accumulator += game_dt;
-
-        while (pImpl->accumulator >= pImpl->oCfg.fixed_dt) {
+        while (pImpl->oFixedClock.Step(game_dt)) {
                 pImpl->RunFixedStep();
-                pImpl->accumulator -= pImpl->oCfg.fixed_dt;
         }
 
-        pImpl->interpolation_alpha = pImpl->accumulator / pImpl->oCfg.fixed_dt;
+        pImpl->interpolation_alpha = pImpl->oFixedClock.Alpha();
 }
 
 void PhysicsSystem::SetPaused(bool paused) {
         pImpl->paused = paused;
-        if (paused) pImpl->accumulator = 0.0f;
+        if (paused) pImpl->oFixedClock.Reset();
 }
 
 void PhysicsSystem::StepOnce() {

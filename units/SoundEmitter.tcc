@@ -54,7 +54,7 @@ void SoundEmitter::Disable() {
 }
 
 void SoundEmitter::TargetTransformChanged(TSceneTree::TSceneNodeExact* /*pNode*/) {
-        const float     dt   = GetSystem<GraphicsState>().GetLastFrameTime();
+        const float     dt   = GetSystem<AppClock>().Delta();
         const glm::vec3 vPos = pNode->GetTransform().GetWorldPos();
 
         if (!first_tick && dt > 0.0f)

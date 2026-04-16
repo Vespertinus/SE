@@ -1,6 +1,7 @@
 
 #include <CommonEvents.h>
 #include <EventManager.h>
+#include <PlatformClock.h>
 
 namespace SE {
 
@@ -100,7 +101,15 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         auto & oEventManager = TEngine::Instance().Get<EventManager>();
 
-        float last_frame_time = GetSystem<GraphicsState>().FrameStart();
+        static double prev_wall = PlatformClock::Now();
+        const double  cur_wall  = PlatformClock::Now();
+        auto & oClock = GetSystem<AppClock>();
+        oClock.Tick(cur_wall - prev_wall);
+        prev_wall = cur_wall;
+        const float last_frame_time = oClock.Delta();
+
+        GetSystem<GraphicsState>().FrameStart();
+        GetSystem<FpsTracker>().Update(oClock.RawDelta());
 
         oEventManager.TriggerEvent(EInputUpdate{last_frame_time});
 
@@ -131,7 +140,6 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         GetSystem<FrameAllocator>().reset();
 
-        TSimpleFPS::Instance().Update();
 }
 
 template <class TLoop> TLoop & Application<TLoop>::GetAppLogic() {

@@ -181,7 +181,11 @@ void Scene::ShowGUI() {
                         ImGuiWindowFlags_NoSavedSettings |
                         ImGuiWindowFlags_NoFocusOnAppearing |
                         ImGuiWindowFlags_NoNav);
-        ImGui::Text("Frame time: %f, FPS: %f", GetSystem<GraphicsState>().GetLastFrameTime(), TSimpleFPS::Instance().GetFPS());
+
+        auto & oFpsTracker = GetSystem<FpsTracker>();
+        ImGui::Text("Frame time: %.2f, FPS: %.2f", oFpsTracker.FrameMs(), oFpsTracker.Fps());
+        ImGui::Text("Frame min time: %.2f, max time: %.2f", oFpsTracker.MinFrameMs(), oFpsTracker.MaxFrameMs());
+
         ImGui::Separator();
         ImGui::Text("Texture cnt: %zu", TResourceManager::Instance().Size<TTexture>());
         ImGui::Text("Mesh cnt: %zu", TResourceManager::Instance().Size<TMesh>());

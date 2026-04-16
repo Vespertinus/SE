@@ -19,7 +19,6 @@
 ///*
 #include <CommonEvents.h>
 #include <Chrono.h>
-#include <SimpleFPS.h>
 #include <MPUtil.h>
 #include <BoundingBox.h>
 #include <CommonTypes.h>
@@ -80,6 +79,9 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 #include <ui/UISystem.h>
 #endif
 #include <GraphicsState.h>
+#include <AppClock.h>
+#include <FpsTracker.h>
+#include <FixedClock.h>
 #include <UniformBuffer.h>
 #include <ShaderProgramState.h>
 #include <VisualHelpers.h>
@@ -88,8 +90,6 @@ typedef Texture<TextureStoreStrategyList, TextureLoadStrategyList>      TTexture
 #include <Mesh.h>
 
 namespace SE {
-
-typedef Loki::SingletonHolder< SimpleFPS >                              TSimpleFPS;
 
 typedef Mesh                                                            TMesh;
 
@@ -135,7 +135,7 @@ using TRenderer = Renderer<TVisibilityManager>;
 #endif
 
 // Build TCoreSystems by concatenating conditional partial lists
-using TCoreSystemsBase = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, TRenderer, DebugRenderer, InputManager>;
+using TCoreSystemsBase = MP::TypelistWrapper<Config, GraphicsConfig, EventManager, FrameAllocator, GraphicsState, AppClock, FpsTracker, TRenderer, DebugRenderer, InputManager>;
 
 #ifdef SE_PHYSICS_ENABLED
 using TCoreSystemsPhysics = MP::TypelistWrapper<PhysicsSystem>;

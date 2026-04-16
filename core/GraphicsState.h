@@ -3,18 +3,10 @@
 #define __GRAPHICS_STATE_H__ 1
 
 #include <GLUtil.h>
-#include <Chrono.h>
 
 namespace SE {
 
 class UniformBuffer;
-
-struct FrameState {
-        uint32_t                frame_num{0};
-        float                   last_frame_time{1/60};
-        //time_point <micro>      frame_start_time;
-        glm::uvec2              screen_size{800, 600};
-};
 
 /*
  basic stub for render state managing
@@ -28,8 +20,7 @@ class GraphicsState {
         const glm::mat4       * pTransformMat;
         ShaderProgram         * pShader;
         uint32_t                cur_vao;
-        FrameState              oFrame;
-        time_point <micro>      frame_start_time;
+        glm::uvec2              screen_size{800, 600};
         uint32_t                active_tex_unit{};
         uint32_t                active_ubo{};
         glm::vec4               vClearColor{0.0f};
@@ -93,10 +84,8 @@ class GraphicsState {
                                                    const uint32_t mode,
                                                    const uint32_t start,
                                                    const uint32_t count);
-        float                           FrameStart();
+        void                            FrameStart();
         const glm::uvec2 &              GetScreenSize() const;
-        float                           GetLastFrameTime() const;
-        const FrameState &              GetFrameState() const;
         //TODO need to reset range in binded array
         void                            UploadUniformBufferData(const uint32_t buf_id,
                                                                 const uint32_t buf_size,

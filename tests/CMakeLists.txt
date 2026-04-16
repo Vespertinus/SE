@@ -51,4 +51,14 @@ target_link_libraries(  allocator_test
                         SE)
 gtest_discover_tests(   allocator_test)
 
+add_executable(         clock_test
+                        "Main.cpp"
+                        "ClockTest.cpp")
+target_link_libraries(  clock_test
+                        GTest::GTest
+                        ${GMOCK_LIBRARIES}
+                        SECommon
+                        SE)
+gtest_discover_tests(   clock_test)
+
 #TODO add custom_command for resource processing

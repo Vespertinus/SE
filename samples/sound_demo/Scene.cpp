@@ -143,7 +143,8 @@ Scene::~Scene() noexcept {
 // ---------------------------------------------------------------------------
 
 void Scene::Process() {
-        const float dt = GetSystem<GraphicsState>().GetLastFrameTime();
+
+        const float dt = GetSystem<AppClock>().RawDelta();;
         time += dt;
 
         // Tab: switch active entity (press detection)
