@@ -194,6 +194,10 @@ void Scene::ShowGUI() {
         ImGui::Text("Shader program cnt: %zu", TResourceManager::Instance().Size<ShaderProgram>());
         ImGui::Separator();
         ImGui::Text("Scene tree: '%s'", oSettings.sScenePath.c_str());
+        ImGui::Separator();
+        auto & oEntityMgr = GetSystem<EntityManager>();
+        ImGui::Text("Entity spawn queue:   %u", oEntityMgr.SpawnQueueDepth());
+        ImGui::Text("Entity destroy queue: %u", oEntityMgr.DestroyQueueDepth());
         ImGui::End();
 
         //scene tree
