@@ -11,6 +11,7 @@
 #include <StrID.h>
 #include <Engine.h>
 #include <ResourceHolder.h>
+#include <ResourceHandle.h>
 
 #include <DebugRendererMock.h>
 
@@ -28,6 +29,11 @@ using TEngine = typename Loki::SingletonHolder< EngineBase, Loki::CreateUsingNew
 template <class TSystem> TSystem & GetSystem() {
 
         return TEngine::Instance().Get<TSystem>();
+}
+
+template <class Resource, class ... TConcreateSettings> H<Resource> CreateResource (const std::string & sPath, const TConcreateSettings & ... oSettings) {
+
+        return H<Resource>::Null();
 }
 
 }
