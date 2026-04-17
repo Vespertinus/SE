@@ -61,6 +61,12 @@ public:
                 return oHead.value.load(std::memory_order_acquire) ==
                         oTail.value.load(std::memory_order_acquire);
         }
+
+        uint32_t Size() const {
+                const uint32_t h = oHead.value.load(std::memory_order_acquire);
+                const uint32_t t = oTail.value.load(std::memory_order_acquire);
+                return (t - h) & MASK;
+        }
 };
 
 } // namespace SE

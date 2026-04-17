@@ -61,4 +61,14 @@ target_link_libraries(  clock_test
                         SE)
 gtest_discover_tests(   clock_test)
 
+add_executable(         entity_manager_test
+                        "Main.cpp"
+                        "EntityManagerTest.cpp")
+target_link_libraries(  entity_manager_test
+                        GTest::GTest
+                        ${GMOCK_LIBRARIES}
+                        SECommon
+                        SE)
+gtest_discover_tests(   entity_manager_test)
+
 #TODO add custom_command for resource processing

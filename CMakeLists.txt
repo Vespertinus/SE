@@ -24,7 +24,7 @@ else()
 endif()
 
 
-set(LOCAL_INC_DIRS              core common units generated)
+set(LOCAL_INC_DIRS              core common units generated app_systems)
 set(THIRD_PARTY_INC_DIRS        )
 set(EXTERN_INC_DIRS)
 set(LIBRARIES_LIST              "")
