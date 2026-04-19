@@ -119,8 +119,8 @@ void RigidBody::Disable() {
 
 void RigidBody::TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetNode) {
         if (!hBody.IsValid()) return;
-        auto [oPos, oRot, oScale] = pTargetNode->GetTransform().GetWorldDecomposedQuat();
-        GetSystem<PhysicsSystem>().MoveKinematic(hBody, oPos, oRot);
+        auto [vPos, qRot, vScale] = pTargetNode->GetTransform().GetWorldDecomposedQuat();
+        GetSystem<PhysicsSystem>().MoveKinematic(hBody, vPos, qRot);
 }
 
 std::string RigidBody::Str() const {
@@ -135,7 +135,7 @@ void RigidBody::DrawDebug() const {
         //FIXME component always inside pNode
         if (!pNode) return;
         auto& dr = GetSystem<DebugRenderer>();
-        const glm::vec4 oColor{0.0f, 1.0f, 0.0f, 1.0f};
+        const glm::vec4 vColor{0.0f, 1.0f, 0.0f, 1.0f};
 
         switch (oCollider.type) {
                 case ColliderDesc::Box: {
@@ -146,7 +146,7 @@ void RigidBody::DrawDebug() const {
                 case ColliderDesc::Sphere:
                 case ColliderDesc::Capsule: {
                         // Approximate with three axis-aligned circles (32 segments each)
-                        const glm::vec3 oCenter = pNode->GetTransform().GetWorldPos();
+                        const glm::vec3 vCenter = pNode->GetTransform().GetWorldPos();
                         const float r = oCollider.radius;
                         constexpr int N = 32;
                         for (int i = 0; i < N; ++i) {
@@ -155,17 +155,46 @@ void RigidBody::DrawDebug() const {
                                 float c0 = glm::cos(a0), s0 = glm::sin(a0);
                                 float c1 = glm::cos(a1), s1 = glm::sin(a1);
                                 // XY plane
-                                dr.DrawLine(oCenter + glm::vec3(r*c0, r*s0, 0), oCenter + glm::vec3(r*c1, r*s1, 0), oColor);
+                                dr.DrawLine(vCenter + glm::vec3(r*c0, r*s0, 0), vCenter + glm::vec3(r*c1, r*s1, 0), vColor);
                                 // XZ plane
-                                dr.DrawLine(oCenter + glm::vec3(r*c0, 0, r*s0), oCenter + glm::vec3(r*c1, 0, r*s1), oColor);
+                                dr.DrawLine(vCenter + glm::vec3(r*c0, 0, r*s0), vCenter + glm::vec3(r*c1, 0, r*s1), vColor);
                                 // YZ plane
-                                dr.DrawLine(oCenter + glm::vec3(0, r*c0, r*s0), oCenter + glm::vec3(0, r*c1, r*s1), oColor);
+                                dr.DrawLine(vCenter + glm::vec3(0, r*c0, r*s0), vCenter + glm::vec3(0, r*c1, r*s1), vColor);
                         }
                         break;
                 }
                 case ColliderDesc::Mesh:
                         break; // no debug draw for mesh colliders
         }
+}
+
+// static
+void RigidBody::ApplyField(FlatBuffers::RigidBodyT& obj,
+                            std::string_view path,
+                            const FlatBuffers::FieldOverride& fo) {
+
+        auto get_float = [&]() -> float {
+                if (auto* p = fo.value_as_Float()) return p->value();
+                log_e("RigidBody::ApplyField: '{}' expects Float value", path);
+                return 0.f;
+        };
+        auto get_bool = [&]() -> bool {
+                if (auto* p = fo.value_as_Bool()) return p->value() != 0;
+                log_e("RigidBody::ApplyField: '{}' expects Bool value", path);
+                return false;
+        };
+
+        if (path == "mass")            { obj.mass            = get_float(); return; }
+        if (path == "friction")        { obj.friction        = get_float(); return; }
+        if (path == "restitution")     { obj.restitution     = get_float(); return; }
+        if (path == "linear_damping")  { obj.linear_damping  = get_float(); return; }
+        if (path == "angular_damping") { obj.angular_damping = get_float(); return; }
+        if (path == "gravity_scale")   { obj.gravity_scale   = get_float(); return; }
+        if (path == "is_static")       { obj.is_static       = get_bool();  return; }
+        if (path == "is_kinematic")    { obj.is_kinematic    = get_bool();  return; }
+        if (path == "is_trigger")      { obj.is_trigger      = get_bool();  return; }
+
+        log_e("RigidBody::ApplyField: unknown field '{}'", path);
 }
 
 } // namespace SE

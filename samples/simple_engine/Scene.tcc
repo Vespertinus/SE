@@ -11,6 +11,16 @@ Scene::Scene(const Settings & oSettings) :
         auto * pSceneTree = GetResource(hSceneTree);
         se_assert(pSceneTree);
 
+        auto & oETS = GetSystem<TEntityTemplateSystem>();
+        oETS.SetSceneTree(pSceneTree);
+        GetSystem<EntityManager>().SetSceneTree(pSceneTree);
+        GetSystem<EntityManager>().SetTemplateInstantiator(
+                [&oETS](const SpawnIntent & oIntent) -> TSceneTree::TSceneNodeWeak {
+                        return oETS.Instantiate(oIntent.prefab_id, {},
+                                oIntent.vTranslation, oIntent.vRotation,
+                                oIntent.vScale, oIntent.enabled);
+                });
+
         auto pCameraNode = pSceneTree->Create("MainCamera");
         auto res = pCameraNode->CreateComponent<SE::Camera>(oSettings.oCamSettings);
         if (res != SE::uSUCCESS) {
@@ -38,6 +48,9 @@ Scene::Scene(const Settings & oSettings) :
         pTargetNode->Translate(glm::vec3(8, 1, 0));
 
         GetSystem<WorldProcessManager>().CreateAndLink<BlinkProcess>(pTargetNode, 1);
+
+        //auto oDesc = SE::AudioEmitterDesc{"resource/audio/dungeon_ambient_1.ogg", {}, true /*auto_play*/};
+        //pCameraNode->CreateComponent<SE::AudioEmitter>(oDesc);
 
         pSceneTree->Print();
 

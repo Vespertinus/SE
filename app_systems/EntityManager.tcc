@@ -15,6 +15,11 @@ void EntityManager::SetSceneTree(TSceneTree * pTree) {
         pSceneTree = pTree;
 }
 
+void EntityManager::SetTemplateInstantiator(
+        std::function<TSceneTree::TSceneNodeWeak(const SpawnIntent &)> fn) {
+        fnTemplateInstantiator = std::move(fn);
+}
+
 TSceneTree::TSceneNodeWeak EntityManager::Spawn(const SpawnRequest & req) {
 
         if (!pSceneTree) {
@@ -73,15 +78,15 @@ void EntityManager::FlushQueues() {
         }
 
         // Destroy first to free slots before spawning new ones
-        TSceneTree::TSceneNodeWeak oDestroyEntry;
-        while (oDestroyQueue.TryPop(oDestroyEntry)) {
+        TSceneTree::TSceneNodeWeak pDestroyEntry;
+        while (oDestroyQueue.TryPop(pDestroyEntry)) {
 
-                auto pNode = oDestroyEntry.lock();
+                auto pNode = pDestroyEntry.lock();
                 if (!pNode) {
                         continue;  // already gone
                 }
 
-                GetSystem<EventManager>().TriggerEvent(EEntityDestroyed{ oDestroyEntry });
+                GetSystem<EventManager>().TriggerEvent(EEntityDestroyed{ pDestroyEntry });
                 pNode->Unlink();
         }
 
@@ -90,8 +95,18 @@ void EntityManager::FlushQueues() {
         while (oSpawnQueue.TryPop(oIntent)) {
 
                 if (!oIntent.prefab_id.empty()) {
-                        log_w("EntityManager: prefab '{}' not yet supported, intent dropped",
-                              oIntent.prefab_id);
+                        if (fnTemplateInstantiator) {
+                                auto pNode = fnTemplateInstantiator(oIntent);
+                                if (pNode.expired()) {
+                                        log_e("EntityManager: template instantiation failed "
+                                              "for id='{}' name='{}'",
+                                              oIntent.prefab_id, oIntent.name);
+                                }
+                        } else {
+                                log_w("EntityManager: no template instantiator set, "
+                                      "dropping id='{}' name='{}'",
+                                      oIntent.prefab_id, oIntent.name);
+                        }
                         continue;
                 }
 

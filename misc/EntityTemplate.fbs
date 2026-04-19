@@ -1,0 +1,72 @@
+
+include "Component.fbs";
+
+namespace SE.FlatBuffers;
+
+/// Mirrors SceneTree.fbs Node exactly — same field set, semantically a template.
+table NodeTemplate {
+    name        : string (required);
+    translation : Vec3;
+    rotation    : Vec3;
+    scale       : Vec3;
+    enabled     : bool = true;
+    components  : [Component];
+    children    : [NodeTemplate];
+    info        : string;
+}
+
+/// Typed value union for field overrides.
+/// Float/Bool/Int are scalar wrappers (struct-in-union).
+/// Vec2/Vec3/Vec4/ColorARGB cover all GLM-mapped types.
+/// ResourcePath carries a string (file path or asset name).
+union FieldValueU {
+    Float,
+    Bool,
+    Int,
+    Vec2,
+    Vec3,
+    Vec4,
+    ColorARGB,
+    ResourcePath,
+}
+
+/// A single field-level patch applied during variant merge.
+/// path: dot-separated field names, e.g.
+///   "StaticModel.materials[2].material.variables[Color].vec3_val"
+///   "RigidBody.mass"
+///   "StaticModel.materials[0].path"
+/// Array syntax: [N] for numeric index, [key] for lookup by .name field.
+table FieldOverride {
+    path  : string (required);
+    value : FieldValueU (required);
+}
+
+/// Override applied on top of a base template's matching node.
+/// node_name: matched against NodeTemplate.name by BFS (first match wins).
+/// Transform fields: applied only when the has_* sentinel is true.
+///   Vec3 is a struct and cannot be null — sentinels are required.
+/// field_overrides: applied via the path evaluator on the unpacked T-object tree.
+table NodeOverride {
+    node_name           : string (required);
+    has_translation     : bool = false;
+    translation         : Vec3;
+    has_rotation        : bool = false;
+    rotation            : Vec3;
+    has_scale           : bool = false;
+    scale               : Vec3;
+    has_enabled         : bool = false;
+    enabled             : bool = true;
+    field_overrides     : [FieldOverride];
+}
+
+table EntityTemplate {
+    id        : string (required);
+    root      : NodeTemplate (required);
+    base_id   : string;                    // optional base template id (one level only)
+    overrides : [NodeOverride];
+    tags      : [string];
+}
+
+root_type EntityTemplate;
+file_identifier "SETM";
+file_extension  "setm";

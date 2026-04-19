@@ -41,7 +41,7 @@ struct SpawnRequest {
 // ---------------------------------------------------------------------------
 
 struct SpawnIntent {
-        std::string prefab_id;                          ///< placeholder — no prefab system yet
+        std::string prefab_id;                          ///< entity template id; routed to fnTemplateInstantiator in FlushQueues
         glm::vec3   vTranslation    {0.f, 0.f, 0.f};
         glm::vec3   vRotation       {0.f, 0.f, 0.f};
         glm::vec3   vScale          {1.f, 1.f, 1.f};
@@ -72,6 +72,11 @@ public:
         /// Any thread: enqueues a destroy request for processing at the next EPostUpdate.
         void Destroy(TSceneTree::TSceneNodeWeak pNode);
 
+        /// Set the functor called by FlushQueues() for SpawnIntents with a non-empty prefab_id.
+        /// Pass {} to clear (reverts to a log-warning-and-drop).
+        void SetTemplateInstantiator(
+                std::function<TSceneTree::TSceneNodeWeak(const SpawnIntent &)> fn);
+
         uint32_t SpawnQueueDepth()   const { return oSpawnQueue.Size();   }
         uint32_t DestroyQueueDepth() const { return oDestroyQueue.Size(); }
 
@@ -82,6 +87,7 @@ private:
         TSceneTree *                                              pSceneTree   { nullptr };
         SPSCQueue<SpawnIntent,               kQueueCapacity>      oSpawnQueue;
         SPSCQueue<TSceneTree::TSceneNodeWeak,kQueueCapacity>      oDestroyQueue;
+        std::function<TSceneTree::TSceneNodeWeak(const SpawnIntent &)> fnTemplateInstantiator;
 };
 
 } // namespace SE

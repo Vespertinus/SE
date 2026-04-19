@@ -185,6 +185,7 @@ add_subdirectory("samples")
 add_subdirectory("tools")
 
 if (TESTS)
+        enable_testing()
         add_subdirectory("tests")
 endif()
 

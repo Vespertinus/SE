@@ -17,6 +17,18 @@ endif()
 
 include_directories (${GTEST_INCLUDE_DIRS} "." ${GMOCK_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
 
+add_custom_target(all_tests)
+add_dependencies(all_tests 
+
+                        scene_tree_test
+                        world_process_manager_test
+                        allocator_test
+                        clock_test
+                        entity_manager_test 
+                        entity_template_test
+                        entity_template_utility_test
+                )
+
 set (SOURCES            "Main.cpp"
                         "SceneTreeTest.cpp")
 
@@ -70,5 +82,25 @@ target_link_libraries(  entity_manager_test
                         SECommon
                         SE)
 gtest_discover_tests(   entity_manager_test)
+
+add_executable(         entity_template_utility_test
+                        "Main.cpp"
+                        "EntityTemplateUtilityTest.cpp")
+target_link_libraries(  entity_template_utility_test
+                        GTest::GTest
+                        ${GMOCK_LIBRARIES}
+                        SECommon
+                        SE)
+gtest_discover_tests(   entity_template_utility_test)
+
+add_executable(         entity_template_test
+                        "Main.cpp"
+                        "EntityTemplateTest.cpp")
+target_link_libraries(  entity_template_test
+                        GTest::GTest
+                        ${GMOCK_LIBRARIES}
+                        SECommon
+                        SE)
+gtest_discover_tests(   entity_template_test)
 
 #TODO add custom_command for resource processing

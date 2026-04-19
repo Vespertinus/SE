@@ -39,8 +39,15 @@ using TCustomComponents = MP::TypelistWrapper<BasicController>;
 namespace SE {
 
 class WorldProcessManager;
+class EntityManager;
+template <class...> class EntityTemplateSystem;
 
-using TCustomSystems = MP::TypelistWrapper<WorldProcessManager>;
+using TEntityTemplateSystem = typename MP::Typelist2TmplPack<
+        EntityTemplateSystem,
+        decltype(MP::TypelistConcatenate(TCoreComponents{}, TCustomComponents{}))
+>::Type;
+
+using TCustomSystems = MP::TypelistWrapper<WorldProcessManager, EntityManager, TEntityTemplateSystem>;
 
 }
 
@@ -53,6 +60,8 @@ using TCustomSystems = MP::TypelistWrapper<WorldProcessManager>;
 
 #include <WorldProcess.h>
 #include <WorldProcessManager.h>
+#include <EntityManager.h>
+#include <EntityTemplateSystem.h>
 
 #endif
 #endif
@@ -63,6 +72,8 @@ using TCustomSystems = MP::TypelistWrapper<WorldProcessManager>;
 
 #include <WorldProcess.tcc>
 #include <WorldProcessManager.tcc>
+#include <EntityManager.tcc>
+#include <EntityTemplateSystem.tcc>
 
 #endif
 #endif

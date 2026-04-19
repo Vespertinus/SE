@@ -5,6 +5,16 @@ struct Float {
         value:float;
 }
 
+//Hack for usage inside union
+struct Bool {
+        value:bool;
+}
+
+//Hack for usage inside union
+struct Int {
+        value:int32;
+}
+
 struct Vec4 {
         x:float;
         y:float;

@@ -1,7 +1,9 @@
 #ifndef __STATIC_MODEL_H__
 #define __STATIC_MODEL_H__ 1
 
+#include <string_view>
 #include <Component_generated.h>
+#include <EntityTemplate_generated.h>
 
 namespace SE {
 
@@ -24,6 +26,10 @@ class StaticModel {
 
         public:
         using TSerialized = FlatBuffers::StaticModel;
+
+        static void ApplyField(FlatBuffers::StaticModelT& obj,
+                               std::string_view path,
+                               const FlatBuffers::FieldOverride& fo);
 
         StaticModel(TSceneTree::TSceneNodeExact * pNewNode);
         StaticModel(TSceneTree::TSceneNodeExact * pNewNode,
