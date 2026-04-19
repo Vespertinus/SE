@@ -20,38 +20,49 @@ namespace FlatBuffers {
 
 struct AnimParam;
 struct AnimParamBuilder;
+struct AnimParamT;
 
 struct AnimCondition;
 struct AnimConditionBuilder;
+struct AnimConditionT;
 
 struct AnimTransition;
 struct AnimTransitionBuilder;
+struct AnimTransitionT;
 
 struct ClipNodeData;
 struct ClipNodeDataBuilder;
+struct ClipNodeDataT;
 
 struct Blend1DNodeData;
 struct Blend1DNodeDataBuilder;
+struct Blend1DNodeDataT;
 
 struct BlendPoint2D;
 
 struct Blend2DNodeData;
 struct Blend2DNodeDataBuilder;
+struct Blend2DNodeDataT;
 
 struct AdditiveNodeData;
 struct AdditiveNodeDataBuilder;
+struct AdditiveNodeDataT;
 
 struct LayerNodeData;
 struct LayerNodeDataBuilder;
+struct LayerNodeDataT;
 
 struct BlendTreeNode;
 struct BlendTreeNodeBuilder;
+struct BlendTreeNodeT;
 
 struct AnimState;
 struct AnimStateBuilder;
+struct AnimStateT;
 
 struct AnimationGraph;
 struct AnimationGraphBuilder;
+struct AnimationGraphT;
 
 enum class AnimParamType : uint8_t {
   Float = 0,
@@ -332,6 +343,102 @@ template<> struct BlendNodeDataUTraits<SE::FlatBuffers::LayerNodeData> {
   static const BlendNodeDataU enum_value = BlendNodeDataU::LayerNodeData;
 };
 
+template<typename T> struct BlendNodeDataUUnionTraits {
+  static const BlendNodeDataU enum_value = BlendNodeDataU::NONE;
+};
+
+template<> struct BlendNodeDataUUnionTraits<SE::FlatBuffers::ClipNodeDataT> {
+  static const BlendNodeDataU enum_value = BlendNodeDataU::ClipNodeData;
+};
+
+template<> struct BlendNodeDataUUnionTraits<SE::FlatBuffers::Blend1DNodeDataT> {
+  static const BlendNodeDataU enum_value = BlendNodeDataU::Blend1DNodeData;
+};
+
+template<> struct BlendNodeDataUUnionTraits<SE::FlatBuffers::Blend2DNodeDataT> {
+  static const BlendNodeDataU enum_value = BlendNodeDataU::Blend2DNodeData;
+};
+
+template<> struct BlendNodeDataUUnionTraits<SE::FlatBuffers::AdditiveNodeDataT> {
+  static const BlendNodeDataU enum_value = BlendNodeDataU::AdditiveNodeData;
+};
+
+template<> struct BlendNodeDataUUnionTraits<SE::FlatBuffers::LayerNodeDataT> {
+  static const BlendNodeDataU enum_value = BlendNodeDataU::LayerNodeData;
+};
+
+struct BlendNodeDataUUnion {
+  BlendNodeDataU type;
+  void *value;
+
+  BlendNodeDataUUnion() : type(BlendNodeDataU::NONE), value(nullptr) {}
+  BlendNodeDataUUnion(BlendNodeDataUUnion&& u) FLATBUFFERS_NOEXCEPT :
+    type(BlendNodeDataU::NONE), value(nullptr)
+    { std::swap(type, u.type); std::swap(value, u.value); }
+  BlendNodeDataUUnion(const BlendNodeDataUUnion &);
+  BlendNodeDataUUnion &operator=(const BlendNodeDataUUnion &u)
+    { BlendNodeDataUUnion t(u); std::swap(type, t.type); std::swap(value, t.value); return *this; }
+  BlendNodeDataUUnion &operator=(BlendNodeDataUUnion &&u) FLATBUFFERS_NOEXCEPT
+    { std::swap(type, u.type); std::swap(value, u.value); return *this; }
+  ~BlendNodeDataUUnion() { Reset(); }
+
+  void Reset();
+
+  template <typename T>
+  void Set(T&& val) {
+    typedef typename std::remove_reference<T>::type RT;
+    Reset();
+    type = BlendNodeDataUUnionTraits<RT>::enum_value;
+    if (type != BlendNodeDataU::NONE) {
+      value = new RT(std::forward<T>(val));
+    }
+  }
+
+  static void *UnPack(const void *obj, BlendNodeDataU type, const ::flatbuffers::resolver_function_t *resolver);
+  ::flatbuffers::Offset<void> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
+
+  SE::FlatBuffers::ClipNodeDataT *AsClipNodeData() {
+    return type == BlendNodeDataU::ClipNodeData ?
+      reinterpret_cast<SE::FlatBuffers::ClipNodeDataT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::ClipNodeDataT *AsClipNodeData() const {
+    return type == BlendNodeDataU::ClipNodeData ?
+      reinterpret_cast<const SE::FlatBuffers::ClipNodeDataT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::Blend1DNodeDataT *AsBlend1DNodeData() {
+    return type == BlendNodeDataU::Blend1DNodeData ?
+      reinterpret_cast<SE::FlatBuffers::Blend1DNodeDataT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::Blend1DNodeDataT *AsBlend1DNodeData() const {
+    return type == BlendNodeDataU::Blend1DNodeData ?
+      reinterpret_cast<const SE::FlatBuffers::Blend1DNodeDataT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::Blend2DNodeDataT *AsBlend2DNodeData() {
+    return type == BlendNodeDataU::Blend2DNodeData ?
+      reinterpret_cast<SE::FlatBuffers::Blend2DNodeDataT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::Blend2DNodeDataT *AsBlend2DNodeData() const {
+    return type == BlendNodeDataU::Blend2DNodeData ?
+      reinterpret_cast<const SE::FlatBuffers::Blend2DNodeDataT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::AdditiveNodeDataT *AsAdditiveNodeData() {
+    return type == BlendNodeDataU::AdditiveNodeData ?
+      reinterpret_cast<SE::FlatBuffers::AdditiveNodeDataT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::AdditiveNodeDataT *AsAdditiveNodeData() const {
+    return type == BlendNodeDataU::AdditiveNodeData ?
+      reinterpret_cast<const SE::FlatBuffers::AdditiveNodeDataT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::LayerNodeDataT *AsLayerNodeData() {
+    return type == BlendNodeDataU::LayerNodeData ?
+      reinterpret_cast<SE::FlatBuffers::LayerNodeDataT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::LayerNodeDataT *AsLayerNodeData() const {
+    return type == BlendNodeDataU::LayerNodeData ?
+      reinterpret_cast<const SE::FlatBuffers::LayerNodeDataT *>(value) : nullptr;
+  }
+};
+
 bool VerifyBlendNodeDataU(::flatbuffers::Verifier &verifier, const void *obj, BlendNodeDataU type);
 bool VerifyBlendNodeDataUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<BlendNodeDataU> *types);
 
@@ -358,7 +465,17 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) BlendPoint2D FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(BlendPoint2D, 8);
 
+struct AnimParamT : public ::flatbuffers::NativeTable {
+  typedef AnimParam TableType;
+  std::string name{};
+  SE::FlatBuffers::AnimParamType type = SE::FlatBuffers::AnimParamType::Float;
+  float float_val = 0.0f;
+  bool bool_val = false;
+  int32_t int_val = 0;
+};
+
 struct AnimParam FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimParamT NativeTableType;
   typedef AnimParamBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
@@ -392,6 +509,9 @@ struct AnimParam FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_INT_VAL, 4) &&
            verifier.EndTable();
   }
+  AnimParamT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimParamT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimParam> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimParamT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimParamBuilder {
@@ -458,7 +578,17 @@ inline ::flatbuffers::Offset<AnimParam> CreateAnimParamDirect(
       int_val);
 }
 
+::flatbuffers::Offset<AnimParam> CreateAnimParam(::flatbuffers::FlatBufferBuilder &_fbb, const AnimParamT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimConditionT : public ::flatbuffers::NativeTable {
+  typedef AnimCondition TableType;
+  std::string parameter{};
+  SE::FlatBuffers::ConditionOp op = SE::FlatBuffers::ConditionOp::IsTrue;
+  float threshold = 0.0f;
+};
+
 struct AnimCondition FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimConditionT NativeTableType;
   typedef AnimConditionBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PARAMETER = 4,
@@ -482,6 +612,9 @@ struct AnimCondition FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_THRESHOLD, 4) &&
            verifier.EndTable();
   }
+  AnimConditionT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimConditionT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimCondition> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimConditionT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimConditionBuilder {
@@ -534,7 +667,26 @@ inline ::flatbuffers::Offset<AnimCondition> CreateAnimConditionDirect(
       threshold);
 }
 
+::flatbuffers::Offset<AnimCondition> CreateAnimCondition(::flatbuffers::FlatBufferBuilder &_fbb, const AnimConditionT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimTransitionT : public ::flatbuffers::NativeTable {
+  typedef AnimTransition TableType;
+  std::string from{};
+  std::string to{};
+  float duration = 0.2f;
+  float exit_time = 1.0f;
+  bool has_exit_time = false;
+  bool can_interrupt = false;
+  SE::FlatBuffers::TransitionMode mode = SE::FlatBuffers::TransitionMode::CrossFade;
+  std::vector<std::unique_ptr<SE::FlatBuffers::AnimConditionT>> conditions{};
+  AnimTransitionT() = default;
+  AnimTransitionT(const AnimTransitionT &o);
+  AnimTransitionT(AnimTransitionT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimTransitionT &operator=(AnimTransitionT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct AnimTransition FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimTransitionT NativeTableType;
   typedef AnimTransitionBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_FROM = 4,
@@ -586,6 +738,9 @@ struct AnimTransition FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(conditions()) &&
            verifier.EndTable();
   }
+  AnimTransitionT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimTransitionT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimTransition> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimTransitionT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimTransitionBuilder {
@@ -676,7 +831,17 @@ inline ::flatbuffers::Offset<AnimTransition> CreateAnimTransitionDirect(
       conditions__);
 }
 
+::flatbuffers::Offset<AnimTransition> CreateAnimTransition(::flatbuffers::FlatBufferBuilder &_fbb, const AnimTransitionT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct ClipNodeDataT : public ::flatbuffers::NativeTable {
+  typedef ClipNodeData TableType;
+  std::string clip_path{};
+  float playback_rate = 1.0f;
+  bool mirror = false;
+};
+
 struct ClipNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ClipNodeDataT NativeTableType;
   typedef ClipNodeDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_CLIP_PATH = 4,
@@ -700,6 +865,9 @@ struct ClipNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_MIRROR, 1) &&
            verifier.EndTable();
   }
+  ClipNodeDataT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ClipNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<ClipNodeData> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ClipNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ClipNodeDataBuilder {
@@ -752,7 +920,17 @@ inline ::flatbuffers::Offset<ClipNodeData> CreateClipNodeDataDirect(
       mirror);
 }
 
+::flatbuffers::Offset<ClipNodeData> CreateClipNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const ClipNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct Blend1DNodeDataT : public ::flatbuffers::NativeTable {
+  typedef Blend1DNodeData TableType;
+  std::string parameter{};
+  std::vector<float> thresholds{};
+  std::vector<uint16_t> child_indices{};
+};
+
 struct Blend1DNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef Blend1DNodeDataT NativeTableType;
   typedef Blend1DNodeDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PARAMETER = 4,
@@ -778,6 +956,9 @@ struct Blend1DNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(child_indices()) &&
            verifier.EndTable();
   }
+  Blend1DNodeDataT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(Blend1DNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Blend1DNodeData> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Blend1DNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct Blend1DNodeDataBuilder {
@@ -832,7 +1013,19 @@ inline ::flatbuffers::Offset<Blend1DNodeData> CreateBlend1DNodeDataDirect(
       child_indices__);
 }
 
+::flatbuffers::Offset<Blend1DNodeData> CreateBlend1DNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const Blend1DNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct Blend2DNodeDataT : public ::flatbuffers::NativeTable {
+  typedef Blend2DNodeData TableType;
+  std::string param_x{};
+  std::string param_y{};
+  std::vector<SE::FlatBuffers::BlendPoint2D> positions{};
+  std::vector<uint16_t> child_indices{};
+  SE::FlatBuffers::Blend2DAlgorithm algorithm = SE::FlatBuffers::Blend2DAlgorithm::FreeformCartesian;
+};
+
 struct Blend2DNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef Blend2DNodeDataT NativeTableType;
   typedef Blend2DNodeDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PARAM_X = 4,
@@ -869,6 +1062,9 @@ struct Blend2DNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_ALGORITHM, 1) &&
            verifier.EndTable();
   }
+  Blend2DNodeDataT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(Blend2DNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Blend2DNodeData> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Blend2DNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct Blend2DNodeDataBuilder {
@@ -939,7 +1135,18 @@ inline ::flatbuffers::Offset<Blend2DNodeData> CreateBlend2DNodeDataDirect(
       algorithm);
 }
 
+::flatbuffers::Offset<Blend2DNodeData> CreateBlend2DNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const Blend2DNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AdditiveNodeDataT : public ::flatbuffers::NativeTable {
+  typedef AdditiveNodeData TableType;
+  uint16_t base_index = 0;
+  uint16_t additive_index = 0;
+  float weight = 1.0f;
+  std::string weight_param{};
+};
+
 struct AdditiveNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AdditiveNodeDataT NativeTableType;
   typedef AdditiveNodeDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BASE_INDEX = 4,
@@ -968,6 +1175,9 @@ struct AdditiveNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(weight_param()) &&
            verifier.EndTable();
   }
+  AdditiveNodeDataT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AdditiveNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AdditiveNodeData> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AdditiveNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AdditiveNodeDataBuilder {
@@ -1026,7 +1236,20 @@ inline ::flatbuffers::Offset<AdditiveNodeData> CreateAdditiveNodeDataDirect(
       weight_param__);
 }
 
+::flatbuffers::Offset<AdditiveNodeData> CreateAdditiveNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const AdditiveNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct LayerNodeDataT : public ::flatbuffers::NativeTable {
+  typedef LayerNodeData TableType;
+  uint16_t base_index = 0;
+  uint16_t layer_index = 0;
+  std::string mask_name{};
+  float weight = 1.0f;
+  std::string weight_param{};
+  SE::FlatBuffers::LayerBlendMode blend_mode = SE::FlatBuffers::LayerBlendMode::Override;
+};
+
 struct LayerNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef LayerNodeDataT NativeTableType;
   typedef LayerNodeDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BASE_INDEX = 4,
@@ -1066,6 +1289,9 @@ struct LayerNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_BLEND_MODE, 1) &&
            verifier.EndTable();
   }
+  LayerNodeDataT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(LayerNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<LayerNodeData> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const LayerNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct LayerNodeDataBuilder {
@@ -1140,7 +1366,15 @@ inline ::flatbuffers::Offset<LayerNodeData> CreateLayerNodeDataDirect(
       blend_mode);
 }
 
+::flatbuffers::Offset<LayerNodeData> CreateLayerNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const LayerNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct BlendTreeNodeT : public ::flatbuffers::NativeTable {
+  typedef BlendTreeNode TableType;
+  SE::FlatBuffers::BlendNodeDataUUnion data{};
+};
+
 struct BlendTreeNode FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BlendTreeNodeT NativeTableType;
   typedef BlendTreeNodeBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DATA_TYPE = 4,
@@ -1175,6 +1409,9 @@ struct BlendTreeNode FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyBlendNodeDataU(verifier, data(), data_type()) &&
            verifier.EndTable();
   }
+  BlendTreeNodeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(BlendTreeNodeT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<BlendTreeNode> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BlendTreeNodeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 template<> inline const SE::FlatBuffers::ClipNodeData *BlendTreeNode::data_as<SE::FlatBuffers::ClipNodeData>() const {
@@ -1229,7 +1466,22 @@ inline ::flatbuffers::Offset<BlendTreeNode> CreateBlendTreeNode(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<BlendTreeNode> CreateBlendTreeNode(::flatbuffers::FlatBufferBuilder &_fbb, const BlendTreeNodeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimStateT : public ::flatbuffers::NativeTable {
+  typedef AnimState TableType;
+  std::string id{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::BlendTreeNodeT>> nodes{};
+  float speed = 1.0f;
+  bool mirror = false;
+  AnimStateT() = default;
+  AnimStateT(const AnimStateT &o);
+  AnimStateT(AnimStateT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimStateT &operator=(AnimStateT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct AnimState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimStateT NativeTableType;
   typedef AnimStateBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_ID = 4,
@@ -1260,6 +1512,9 @@ struct AnimState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_MIRROR, 1) &&
            verifier.EndTable();
   }
+  AnimStateT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimStateT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimState> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimStateT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimStateBuilder {
@@ -1321,7 +1576,23 @@ inline ::flatbuffers::Offset<AnimState> CreateAnimStateDirect(
       mirror);
 }
 
+::flatbuffers::Offset<AnimState> CreateAnimState(::flatbuffers::FlatBufferBuilder &_fbb, const AnimStateT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimationGraphT : public ::flatbuffers::NativeTable {
+  typedef AnimationGraph TableType;
+  uint32_t schema_version = 1;
+  std::vector<std::unique_ptr<SE::FlatBuffers::AnimParamT>> params{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::AnimStateT>> states{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::AnimTransitionT>> transitions{};
+  std::string entry_state{};
+  AnimationGraphT() = default;
+  AnimationGraphT(const AnimationGraphT &o);
+  AnimationGraphT(AnimationGraphT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimationGraphT &operator=(AnimationGraphT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct AnimationGraph FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimationGraphT NativeTableType;
   typedef AnimationGraphBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SCHEMA_VERSION = 4,
@@ -1361,6 +1632,9 @@ struct AnimationGraph FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(entry_state()) &&
            verifier.EndTable();
   }
+  AnimationGraphT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimationGraphT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimationGraph> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimationGraphBuilder {
@@ -1431,6 +1705,465 @@ inline ::flatbuffers::Offset<AnimationGraph> CreateAnimationGraphDirect(
       entry_state__);
 }
 
+::flatbuffers::Offset<AnimationGraph> CreateAnimationGraph(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline AnimParamT *AnimParam::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimParamT>(new AnimParamT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimParam::UnPackTo(AnimParamT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = type(); _o->type = _e; }
+  { auto _e = float_val(); _o->float_val = _e; }
+  { auto _e = bool_val(); _o->bool_val = _e; }
+  { auto _e = int_val(); _o->int_val = _e; }
+}
+
+inline ::flatbuffers::Offset<AnimParam> AnimParam::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimParamT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimParam(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimParam> CreateAnimParam(::flatbuffers::FlatBufferBuilder &_fbb, const AnimParamT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimParamT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _name = _fbb.CreateString(_o->name);
+  auto _type = _o->type;
+  auto _float_val = _o->float_val;
+  auto _bool_val = _o->bool_val;
+  auto _int_val = _o->int_val;
+  return SE::FlatBuffers::CreateAnimParam(
+      _fbb,
+      _name,
+      _type,
+      _float_val,
+      _bool_val,
+      _int_val);
+}
+
+inline AnimConditionT *AnimCondition::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimConditionT>(new AnimConditionT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimCondition::UnPackTo(AnimConditionT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = parameter(); if (_e) _o->parameter = _e->str(); }
+  { auto _e = op(); _o->op = _e; }
+  { auto _e = threshold(); _o->threshold = _e; }
+}
+
+inline ::flatbuffers::Offset<AnimCondition> AnimCondition::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimConditionT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimCondition(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimCondition> CreateAnimCondition(::flatbuffers::FlatBufferBuilder &_fbb, const AnimConditionT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimConditionT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _parameter = _fbb.CreateString(_o->parameter);
+  auto _op = _o->op;
+  auto _threshold = _o->threshold;
+  return SE::FlatBuffers::CreateAnimCondition(
+      _fbb,
+      _parameter,
+      _op,
+      _threshold);
+}
+
+inline AnimTransitionT::AnimTransitionT(const AnimTransitionT &o)
+      : from(o.from),
+        to(o.to),
+        duration(o.duration),
+        exit_time(o.exit_time),
+        has_exit_time(o.has_exit_time),
+        can_interrupt(o.can_interrupt),
+        mode(o.mode) {
+  conditions.reserve(o.conditions.size());
+  for (const auto &conditions_ : o.conditions) { conditions.emplace_back((conditions_) ? new SE::FlatBuffers::AnimConditionT(*conditions_) : nullptr); }
+}
+
+inline AnimTransitionT &AnimTransitionT::operator=(AnimTransitionT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(from, o.from);
+  std::swap(to, o.to);
+  std::swap(duration, o.duration);
+  std::swap(exit_time, o.exit_time);
+  std::swap(has_exit_time, o.has_exit_time);
+  std::swap(can_interrupt, o.can_interrupt);
+  std::swap(mode, o.mode);
+  std::swap(conditions, o.conditions);
+  return *this;
+}
+
+inline AnimTransitionT *AnimTransition::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimTransitionT>(new AnimTransitionT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimTransition::UnPackTo(AnimTransitionT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = from(); if (_e) _o->from = _e->str(); }
+  { auto _e = to(); if (_e) _o->to = _e->str(); }
+  { auto _e = duration(); _o->duration = _e; }
+  { auto _e = exit_time(); _o->exit_time = _e; }
+  { auto _e = has_exit_time(); _o->has_exit_time = _e; }
+  { auto _e = can_interrupt(); _o->can_interrupt = _e; }
+  { auto _e = mode(); _o->mode = _e; }
+  { auto _e = conditions(); if (_e) { _o->conditions.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->conditions[_i]) { _e->Get(_i)->UnPackTo(_o->conditions[_i].get(), _resolver); } else { _o->conditions[_i] = std::unique_ptr<SE::FlatBuffers::AnimConditionT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->conditions.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<AnimTransition> AnimTransition::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimTransitionT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimTransition(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimTransition> CreateAnimTransition(::flatbuffers::FlatBufferBuilder &_fbb, const AnimTransitionT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimTransitionT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _from = _fbb.CreateString(_o->from);
+  auto _to = _fbb.CreateString(_o->to);
+  auto _duration = _o->duration;
+  auto _exit_time = _o->exit_time;
+  auto _has_exit_time = _o->has_exit_time;
+  auto _can_interrupt = _o->can_interrupt;
+  auto _mode = _o->mode;
+  auto _conditions = _o->conditions.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimCondition>> (_o->conditions.size(), [](size_t i, _VectorArgs *__va) { return CreateAnimCondition(*__va->__fbb, __va->__o->conditions[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return SE::FlatBuffers::CreateAnimTransition(
+      _fbb,
+      _from,
+      _to,
+      _duration,
+      _exit_time,
+      _has_exit_time,
+      _can_interrupt,
+      _mode,
+      _conditions);
+}
+
+inline ClipNodeDataT *ClipNodeData::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ClipNodeDataT>(new ClipNodeDataT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void ClipNodeData::UnPackTo(ClipNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = clip_path(); if (_e) _o->clip_path = _e->str(); }
+  { auto _e = playback_rate(); _o->playback_rate = _e; }
+  { auto _e = mirror(); _o->mirror = _e; }
+}
+
+inline ::flatbuffers::Offset<ClipNodeData> ClipNodeData::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ClipNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateClipNodeData(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<ClipNodeData> CreateClipNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const ClipNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ClipNodeDataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _clip_path = _fbb.CreateString(_o->clip_path);
+  auto _playback_rate = _o->playback_rate;
+  auto _mirror = _o->mirror;
+  return SE::FlatBuffers::CreateClipNodeData(
+      _fbb,
+      _clip_path,
+      _playback_rate,
+      _mirror);
+}
+
+inline Blend1DNodeDataT *Blend1DNodeData::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<Blend1DNodeDataT>(new Blend1DNodeDataT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Blend1DNodeData::UnPackTo(Blend1DNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = parameter(); if (_e) _o->parameter = _e->str(); }
+  { auto _e = thresholds(); if (_e) { _o->thresholds.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->thresholds[_i] = _e->Get(_i); } } else { _o->thresholds.resize(0); } }
+  { auto _e = child_indices(); if (_e) { _o->child_indices.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->child_indices[_i] = _e->Get(_i); } } else { _o->child_indices.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<Blend1DNodeData> Blend1DNodeData::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Blend1DNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBlend1DNodeData(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Blend1DNodeData> CreateBlend1DNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const Blend1DNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const Blend1DNodeDataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _parameter = _fbb.CreateString(_o->parameter);
+  auto _thresholds = _o->thresholds.size() ? _fbb.CreateVector(_o->thresholds) : 0;
+  auto _child_indices = _o->child_indices.size() ? _fbb.CreateVector(_o->child_indices) : 0;
+  return SE::FlatBuffers::CreateBlend1DNodeData(
+      _fbb,
+      _parameter,
+      _thresholds,
+      _child_indices);
+}
+
+inline Blend2DNodeDataT *Blend2DNodeData::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<Blend2DNodeDataT>(new Blend2DNodeDataT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Blend2DNodeData::UnPackTo(Blend2DNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = param_x(); if (_e) _o->param_x = _e->str(); }
+  { auto _e = param_y(); if (_e) _o->param_y = _e->str(); }
+  { auto _e = positions(); if (_e) { _o->positions.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->positions[_i] = *_e->Get(_i); } } else { _o->positions.resize(0); } }
+  { auto _e = child_indices(); if (_e) { _o->child_indices.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->child_indices[_i] = _e->Get(_i); } } else { _o->child_indices.resize(0); } }
+  { auto _e = algorithm(); _o->algorithm = _e; }
+}
+
+inline ::flatbuffers::Offset<Blend2DNodeData> Blend2DNodeData::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Blend2DNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBlend2DNodeData(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Blend2DNodeData> CreateBlend2DNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const Blend2DNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const Blend2DNodeDataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _param_x = _fbb.CreateString(_o->param_x);
+  auto _param_y = _fbb.CreateString(_o->param_y);
+  auto _positions = _o->positions.size() ? _fbb.CreateVectorOfStructs(_o->positions) : 0;
+  auto _child_indices = _o->child_indices.size() ? _fbb.CreateVector(_o->child_indices) : 0;
+  auto _algorithm = _o->algorithm;
+  return SE::FlatBuffers::CreateBlend2DNodeData(
+      _fbb,
+      _param_x,
+      _param_y,
+      _positions,
+      _child_indices,
+      _algorithm);
+}
+
+inline AdditiveNodeDataT *AdditiveNodeData::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AdditiveNodeDataT>(new AdditiveNodeDataT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AdditiveNodeData::UnPackTo(AdditiveNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = base_index(); _o->base_index = _e; }
+  { auto _e = additive_index(); _o->additive_index = _e; }
+  { auto _e = weight(); _o->weight = _e; }
+  { auto _e = weight_param(); if (_e) _o->weight_param = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<AdditiveNodeData> AdditiveNodeData::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AdditiveNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAdditiveNodeData(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AdditiveNodeData> CreateAdditiveNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const AdditiveNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AdditiveNodeDataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _base_index = _o->base_index;
+  auto _additive_index = _o->additive_index;
+  auto _weight = _o->weight;
+  auto _weight_param = _o->weight_param.empty() ? 0 : _fbb.CreateString(_o->weight_param);
+  return SE::FlatBuffers::CreateAdditiveNodeData(
+      _fbb,
+      _base_index,
+      _additive_index,
+      _weight,
+      _weight_param);
+}
+
+inline LayerNodeDataT *LayerNodeData::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<LayerNodeDataT>(new LayerNodeDataT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void LayerNodeData::UnPackTo(LayerNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = base_index(); _o->base_index = _e; }
+  { auto _e = layer_index(); _o->layer_index = _e; }
+  { auto _e = mask_name(); if (_e) _o->mask_name = _e->str(); }
+  { auto _e = weight(); _o->weight = _e; }
+  { auto _e = weight_param(); if (_e) _o->weight_param = _e->str(); }
+  { auto _e = blend_mode(); _o->blend_mode = _e; }
+}
+
+inline ::flatbuffers::Offset<LayerNodeData> LayerNodeData::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const LayerNodeDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateLayerNodeData(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<LayerNodeData> CreateLayerNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const LayerNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const LayerNodeDataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _base_index = _o->base_index;
+  auto _layer_index = _o->layer_index;
+  auto _mask_name = _fbb.CreateString(_o->mask_name);
+  auto _weight = _o->weight;
+  auto _weight_param = _o->weight_param.empty() ? 0 : _fbb.CreateString(_o->weight_param);
+  auto _blend_mode = _o->blend_mode;
+  return SE::FlatBuffers::CreateLayerNodeData(
+      _fbb,
+      _base_index,
+      _layer_index,
+      _mask_name,
+      _weight,
+      _weight_param,
+      _blend_mode);
+}
+
+inline BlendTreeNodeT *BlendTreeNode::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<BlendTreeNodeT>(new BlendTreeNodeT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void BlendTreeNode::UnPackTo(BlendTreeNodeT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = data_type(); _o->data.type = _e; }
+  { auto _e = data(); if (_e) _o->data.value = SE::FlatBuffers::BlendNodeDataUUnion::UnPack(_e, data_type(), _resolver); }
+}
+
+inline ::flatbuffers::Offset<BlendTreeNode> BlendTreeNode::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BlendTreeNodeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBlendTreeNode(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<BlendTreeNode> CreateBlendTreeNode(::flatbuffers::FlatBufferBuilder &_fbb, const BlendTreeNodeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BlendTreeNodeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _data_type = _o->data.type;
+  auto _data = _o->data.Pack(_fbb);
+  return SE::FlatBuffers::CreateBlendTreeNode(
+      _fbb,
+      _data_type,
+      _data);
+}
+
+inline AnimStateT::AnimStateT(const AnimStateT &o)
+      : id(o.id),
+        speed(o.speed),
+        mirror(o.mirror) {
+  nodes.reserve(o.nodes.size());
+  for (const auto &nodes_ : o.nodes) { nodes.emplace_back((nodes_) ? new SE::FlatBuffers::BlendTreeNodeT(*nodes_) : nullptr); }
+}
+
+inline AnimStateT &AnimStateT::operator=(AnimStateT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(id, o.id);
+  std::swap(nodes, o.nodes);
+  std::swap(speed, o.speed);
+  std::swap(mirror, o.mirror);
+  return *this;
+}
+
+inline AnimStateT *AnimState::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimStateT>(new AnimStateT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimState::UnPackTo(AnimStateT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = id(); if (_e) _o->id = _e->str(); }
+  { auto _e = nodes(); if (_e) { _o->nodes.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->nodes[_i]) { _e->Get(_i)->UnPackTo(_o->nodes[_i].get(), _resolver); } else { _o->nodes[_i] = std::unique_ptr<SE::FlatBuffers::BlendTreeNodeT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->nodes.resize(0); } }
+  { auto _e = speed(); _o->speed = _e; }
+  { auto _e = mirror(); _o->mirror = _e; }
+}
+
+inline ::flatbuffers::Offset<AnimState> AnimState::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimStateT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimState(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimState> CreateAnimState(::flatbuffers::FlatBufferBuilder &_fbb, const AnimStateT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimStateT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _id = _fbb.CreateString(_o->id);
+  auto _nodes = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BlendTreeNode>> (_o->nodes.size(), [](size_t i, _VectorArgs *__va) { return CreateBlendTreeNode(*__va->__fbb, __va->__o->nodes[i].get(), __va->__rehasher); }, &_va );
+  auto _speed = _o->speed;
+  auto _mirror = _o->mirror;
+  return SE::FlatBuffers::CreateAnimState(
+      _fbb,
+      _id,
+      _nodes,
+      _speed,
+      _mirror);
+}
+
+inline AnimationGraphT::AnimationGraphT(const AnimationGraphT &o)
+      : schema_version(o.schema_version),
+        entry_state(o.entry_state) {
+  params.reserve(o.params.size());
+  for (const auto &params_ : o.params) { params.emplace_back((params_) ? new SE::FlatBuffers::AnimParamT(*params_) : nullptr); }
+  states.reserve(o.states.size());
+  for (const auto &states_ : o.states) { states.emplace_back((states_) ? new SE::FlatBuffers::AnimStateT(*states_) : nullptr); }
+  transitions.reserve(o.transitions.size());
+  for (const auto &transitions_ : o.transitions) { transitions.emplace_back((transitions_) ? new SE::FlatBuffers::AnimTransitionT(*transitions_) : nullptr); }
+}
+
+inline AnimationGraphT &AnimationGraphT::operator=(AnimationGraphT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(schema_version, o.schema_version);
+  std::swap(params, o.params);
+  std::swap(states, o.states);
+  std::swap(transitions, o.transitions);
+  std::swap(entry_state, o.entry_state);
+  return *this;
+}
+
+inline AnimationGraphT *AnimationGraph::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimationGraphT>(new AnimationGraphT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimationGraph::UnPackTo(AnimationGraphT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = schema_version(); _o->schema_version = _e; }
+  { auto _e = params(); if (_e) { _o->params.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->params[_i]) { _e->Get(_i)->UnPackTo(_o->params[_i].get(), _resolver); } else { _o->params[_i] = std::unique_ptr<SE::FlatBuffers::AnimParamT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->params.resize(0); } }
+  { auto _e = states(); if (_e) { _o->states.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->states[_i]) { _e->Get(_i)->UnPackTo(_o->states[_i].get(), _resolver); } else { _o->states[_i] = std::unique_ptr<SE::FlatBuffers::AnimStateT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->states.resize(0); } }
+  { auto _e = transitions(); if (_e) { _o->transitions.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->transitions[_i]) { _e->Get(_i)->UnPackTo(_o->transitions[_i].get(), _resolver); } else { _o->transitions[_i] = std::unique_ptr<SE::FlatBuffers::AnimTransitionT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->transitions.resize(0); } }
+  { auto _e = entry_state(); if (_e) _o->entry_state = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<AnimationGraph> AnimationGraph::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimationGraph(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimationGraph> CreateAnimationGraph(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimationGraphT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _schema_version = _o->schema_version;
+  auto _params = _o->params.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimParam>> (_o->params.size(), [](size_t i, _VectorArgs *__va) { return CreateAnimParam(*__va->__fbb, __va->__o->params[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _states = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimState>> (_o->states.size(), [](size_t i, _VectorArgs *__va) { return CreateAnimState(*__va->__fbb, __va->__o->states[i].get(), __va->__rehasher); }, &_va );
+  auto _transitions = _o->transitions.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimTransition>> (_o->transitions.size(), [](size_t i, _VectorArgs *__va) { return CreateAnimTransition(*__va->__fbb, __va->__o->transitions[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _entry_state = _fbb.CreateString(_o->entry_state);
+  return SE::FlatBuffers::CreateAnimationGraph(
+      _fbb,
+      _schema_version,
+      _params,
+      _states,
+      _transitions,
+      _entry_state);
+}
+
 inline bool VerifyBlendNodeDataU(::flatbuffers::Verifier &verifier, const void *obj, BlendNodeDataU type) {
   switch (type) {
     case BlendNodeDataU::NONE: {
@@ -1470,6 +2203,120 @@ inline bool VerifyBlendNodeDataUVector(::flatbuffers::Verifier &verifier, const 
     }
   }
   return true;
+}
+
+inline void *BlendNodeDataUUnion::UnPack(const void *obj, BlendNodeDataU type, const ::flatbuffers::resolver_function_t *resolver) {
+  (void)resolver;
+  switch (type) {
+    case BlendNodeDataU::ClipNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::ClipNodeData *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case BlendNodeDataU::Blend1DNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Blend1DNodeData *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case BlendNodeDataU::Blend2DNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Blend2DNodeData *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case BlendNodeDataU::AdditiveNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AdditiveNodeData *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case BlendNodeDataU::LayerNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::LayerNodeData *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    default: return nullptr;
+  }
+}
+
+inline ::flatbuffers::Offset<void> BlendNodeDataUUnion::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher) const {
+  (void)_rehasher;
+  switch (type) {
+    case BlendNodeDataU::ClipNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::ClipNodeDataT *>(value);
+      return CreateClipNodeData(_fbb, ptr, _rehasher).Union();
+    }
+    case BlendNodeDataU::Blend1DNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Blend1DNodeDataT *>(value);
+      return CreateBlend1DNodeData(_fbb, ptr, _rehasher).Union();
+    }
+    case BlendNodeDataU::Blend2DNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Blend2DNodeDataT *>(value);
+      return CreateBlend2DNodeData(_fbb, ptr, _rehasher).Union();
+    }
+    case BlendNodeDataU::AdditiveNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AdditiveNodeDataT *>(value);
+      return CreateAdditiveNodeData(_fbb, ptr, _rehasher).Union();
+    }
+    case BlendNodeDataU::LayerNodeData: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::LayerNodeDataT *>(value);
+      return CreateLayerNodeData(_fbb, ptr, _rehasher).Union();
+    }
+    default: return 0;
+  }
+}
+
+inline BlendNodeDataUUnion::BlendNodeDataUUnion(const BlendNodeDataUUnion &u) : type(u.type), value(nullptr) {
+  switch (type) {
+    case BlendNodeDataU::ClipNodeData: {
+      value = new SE::FlatBuffers::ClipNodeDataT(*reinterpret_cast<SE::FlatBuffers::ClipNodeDataT *>(u.value));
+      break;
+    }
+    case BlendNodeDataU::Blend1DNodeData: {
+      value = new SE::FlatBuffers::Blend1DNodeDataT(*reinterpret_cast<SE::FlatBuffers::Blend1DNodeDataT *>(u.value));
+      break;
+    }
+    case BlendNodeDataU::Blend2DNodeData: {
+      value = new SE::FlatBuffers::Blend2DNodeDataT(*reinterpret_cast<SE::FlatBuffers::Blend2DNodeDataT *>(u.value));
+      break;
+    }
+    case BlendNodeDataU::AdditiveNodeData: {
+      value = new SE::FlatBuffers::AdditiveNodeDataT(*reinterpret_cast<SE::FlatBuffers::AdditiveNodeDataT *>(u.value));
+      break;
+    }
+    case BlendNodeDataU::LayerNodeData: {
+      value = new SE::FlatBuffers::LayerNodeDataT(*reinterpret_cast<SE::FlatBuffers::LayerNodeDataT *>(u.value));
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+inline void BlendNodeDataUUnion::Reset() {
+  switch (type) {
+    case BlendNodeDataU::ClipNodeData: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::ClipNodeDataT *>(value);
+      delete ptr;
+      break;
+    }
+    case BlendNodeDataU::Blend1DNodeData: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::Blend1DNodeDataT *>(value);
+      delete ptr;
+      break;
+    }
+    case BlendNodeDataU::Blend2DNodeData: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::Blend2DNodeDataT *>(value);
+      delete ptr;
+      break;
+    }
+    case BlendNodeDataU::AdditiveNodeData: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::AdditiveNodeDataT *>(value);
+      delete ptr;
+      break;
+    }
+    case BlendNodeDataU::LayerNodeData: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::LayerNodeDataT *>(value);
+      delete ptr;
+      break;
+    }
+    default: break;
+  }
+  value = nullptr;
+  type = BlendNodeDataU::NONE;
 }
 
 inline const SE::FlatBuffers::AnimationGraph *GetAnimationGraph(const void *buf) {
@@ -1518,6 +2365,18 @@ inline void FinishSizePrefixedAnimationGraphBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> root) {
   fbb.FinishSizePrefixed(root, AnimationGraphIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::AnimationGraphT> UnPackAnimationGraph(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::AnimationGraphT>(GetAnimationGraph(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::AnimationGraphT> UnPackSizePrefixedAnimationGraph(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::AnimationGraphT>(GetSizePrefixedAnimationGraph(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

@@ -22,18 +22,23 @@ struct ColMat4;
 
 struct SkeletonBone;
 struct SkeletonBoneBuilder;
+struct SkeletonBoneT;
 
 struct BoneMaskEntry;
 struct BoneMaskEntryBuilder;
+struct BoneMaskEntryT;
 
 struct BoneMask;
 struct BoneMaskBuilder;
+struct BoneMaskT;
 
 struct Skeleton;
 struct SkeletonBuilder;
+struct SkeletonT;
 
 struct SkeletonHolder;
 struct SkeletonHolderBuilder;
+struct SkeletonHolderT;
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) ColMat4 FLATBUFFERS_FINAL_CLASS {
  private:
@@ -70,7 +75,22 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) ColMat4 FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(ColMat4, 64);
 
+struct SkeletonBoneT : public ::flatbuffers::NativeTable {
+  typedef SkeletonBone TableType;
+  std::string name{};
+  uint16_t parent_index = 65535;
+  std::unique_ptr<SE::FlatBuffers::Vec3> bind_pos{};
+  std::unique_ptr<SE::FlatBuffers::Vec4> bind_rot{};
+  std::unique_ptr<SE::FlatBuffers::Vec3> bind_scale{};
+  std::unique_ptr<SE::FlatBuffers::ColMat4> inv_bind_matrix{};
+  SkeletonBoneT() = default;
+  SkeletonBoneT(const SkeletonBoneT &o);
+  SkeletonBoneT(SkeletonBoneT&&) FLATBUFFERS_NOEXCEPT = default;
+  SkeletonBoneT &operator=(SkeletonBoneT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct SkeletonBone FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SkeletonBoneT NativeTableType;
   typedef SkeletonBoneBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
@@ -109,6 +129,9 @@ struct SkeletonBone FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<SE::FlatBuffers::ColMat4>(verifier, VT_INV_BIND_MATRIX, 4) &&
            verifier.EndTable();
   }
+  SkeletonBoneT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(SkeletonBoneT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<SkeletonBone> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonBoneT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct SkeletonBoneBuilder {
@@ -182,7 +205,16 @@ inline ::flatbuffers::Offset<SkeletonBone> CreateSkeletonBoneDirect(
       inv_bind_matrix);
 }
 
+::flatbuffers::Offset<SkeletonBone> CreateSkeletonBone(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonBoneT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct BoneMaskEntryT : public ::flatbuffers::NativeTable {
+  typedef BoneMaskEntry TableType;
+  uint16_t bone_index = 0;
+  float weight = 0.0f;
+};
+
 struct BoneMaskEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BoneMaskEntryT NativeTableType;
   typedef BoneMaskEntryBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BONE_INDEX = 4,
@@ -200,6 +232,9 @@ struct BoneMaskEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_WEIGHT, 4) &&
            verifier.EndTable();
   }
+  BoneMaskEntryT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(BoneMaskEntryT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<BoneMaskEntry> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskEntryT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct BoneMaskEntryBuilder {
@@ -233,7 +268,20 @@ inline ::flatbuffers::Offset<BoneMaskEntry> CreateBoneMaskEntry(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<BoneMaskEntry> CreateBoneMaskEntry(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskEntryT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct BoneMaskT : public ::flatbuffers::NativeTable {
+  typedef BoneMask TableType;
+  std::string name{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::BoneMaskEntryT>> entries{};
+  BoneMaskT() = default;
+  BoneMaskT(const BoneMaskT &o);
+  BoneMaskT(BoneMaskT&&) FLATBUFFERS_NOEXCEPT = default;
+  BoneMaskT &operator=(BoneMaskT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct BoneMask FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BoneMaskT NativeTableType;
   typedef BoneMaskBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
@@ -254,6 +302,9 @@ struct BoneMask FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(entries()) &&
            verifier.EndTable();
   }
+  BoneMaskT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(BoneMaskT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<BoneMask> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct BoneMaskBuilder {
@@ -300,7 +351,21 @@ inline ::flatbuffers::Offset<BoneMask> CreateBoneMaskDirect(
       entries__);
 }
 
+::flatbuffers::Offset<BoneMask> CreateBoneMask(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct SkeletonT : public ::flatbuffers::NativeTable {
+  typedef Skeleton TableType;
+  uint32_t schema_version = 1;
+  std::vector<std::unique_ptr<SE::FlatBuffers::SkeletonBoneT>> bones{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::BoneMaskT>> masks{};
+  SkeletonT() = default;
+  SkeletonT(const SkeletonT &o);
+  SkeletonT(SkeletonT&&) FLATBUFFERS_NOEXCEPT = default;
+  SkeletonT &operator=(SkeletonT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct Skeleton FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SkeletonT NativeTableType;
   typedef SkeletonBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SCHEMA_VERSION = 4,
@@ -327,6 +392,9 @@ struct Skeleton FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(masks()) &&
            verifier.EndTable();
   }
+  SkeletonT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(SkeletonT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Skeleton> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct SkeletonBuilder {
@@ -380,7 +448,21 @@ inline ::flatbuffers::Offset<Skeleton> CreateSkeletonDirect(
       masks__);
 }
 
+::flatbuffers::Offset<Skeleton> CreateSkeleton(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct SkeletonHolderT : public ::flatbuffers::NativeTable {
+  typedef SkeletonHolder TableType;
+  std::unique_ptr<SE::FlatBuffers::SkeletonT> skeleton{};
+  std::string path{};
+  std::string name{};
+  SkeletonHolderT() = default;
+  SkeletonHolderT(const SkeletonHolderT &o);
+  SkeletonHolderT(SkeletonHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  SkeletonHolderT &operator=(SkeletonHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SkeletonHolderT NativeTableType;
   typedef SkeletonHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SKELETON = 4,
@@ -406,6 +488,9 @@ struct SkeletonHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
+  SkeletonHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(SkeletonHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<SkeletonHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct SkeletonHolderBuilder {
@@ -458,6 +543,230 @@ inline ::flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolderDirect(
       name__);
 }
 
+::flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolder(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline SkeletonBoneT::SkeletonBoneT(const SkeletonBoneT &o)
+      : name(o.name),
+        parent_index(o.parent_index),
+        bind_pos((o.bind_pos) ? new SE::FlatBuffers::Vec3(*o.bind_pos) : nullptr),
+        bind_rot((o.bind_rot) ? new SE::FlatBuffers::Vec4(*o.bind_rot) : nullptr),
+        bind_scale((o.bind_scale) ? new SE::FlatBuffers::Vec3(*o.bind_scale) : nullptr),
+        inv_bind_matrix((o.inv_bind_matrix) ? new SE::FlatBuffers::ColMat4(*o.inv_bind_matrix) : nullptr) {
+}
+
+inline SkeletonBoneT &SkeletonBoneT::operator=(SkeletonBoneT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(name, o.name);
+  std::swap(parent_index, o.parent_index);
+  std::swap(bind_pos, o.bind_pos);
+  std::swap(bind_rot, o.bind_rot);
+  std::swap(bind_scale, o.bind_scale);
+  std::swap(inv_bind_matrix, o.inv_bind_matrix);
+  return *this;
+}
+
+inline SkeletonBoneT *SkeletonBone::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<SkeletonBoneT>(new SkeletonBoneT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void SkeletonBone::UnPackTo(SkeletonBoneT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = parent_index(); _o->parent_index = _e; }
+  { auto _e = bind_pos(); if (_e) _o->bind_pos = std::unique_ptr<SE::FlatBuffers::Vec3>(new SE::FlatBuffers::Vec3(*_e)); }
+  { auto _e = bind_rot(); if (_e) _o->bind_rot = std::unique_ptr<SE::FlatBuffers::Vec4>(new SE::FlatBuffers::Vec4(*_e)); }
+  { auto _e = bind_scale(); if (_e) _o->bind_scale = std::unique_ptr<SE::FlatBuffers::Vec3>(new SE::FlatBuffers::Vec3(*_e)); }
+  { auto _e = inv_bind_matrix(); if (_e) _o->inv_bind_matrix = std::unique_ptr<SE::FlatBuffers::ColMat4>(new SE::FlatBuffers::ColMat4(*_e)); }
+}
+
+inline ::flatbuffers::Offset<SkeletonBone> SkeletonBone::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonBoneT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateSkeletonBone(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<SkeletonBone> CreateSkeletonBone(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonBoneT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SkeletonBoneT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _name = _fbb.CreateString(_o->name);
+  auto _parent_index = _o->parent_index;
+  auto _bind_pos = _o->bind_pos ? _o->bind_pos.get() : nullptr;
+  auto _bind_rot = _o->bind_rot ? _o->bind_rot.get() : nullptr;
+  auto _bind_scale = _o->bind_scale ? _o->bind_scale.get() : nullptr;
+  auto _inv_bind_matrix = _o->inv_bind_matrix ? _o->inv_bind_matrix.get() : nullptr;
+  return SE::FlatBuffers::CreateSkeletonBone(
+      _fbb,
+      _name,
+      _parent_index,
+      _bind_pos,
+      _bind_rot,
+      _bind_scale,
+      _inv_bind_matrix);
+}
+
+inline BoneMaskEntryT *BoneMaskEntry::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<BoneMaskEntryT>(new BoneMaskEntryT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void BoneMaskEntry::UnPackTo(BoneMaskEntryT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = bone_index(); _o->bone_index = _e; }
+  { auto _e = weight(); _o->weight = _e; }
+}
+
+inline ::flatbuffers::Offset<BoneMaskEntry> BoneMaskEntry::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskEntryT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBoneMaskEntry(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<BoneMaskEntry> CreateBoneMaskEntry(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskEntryT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BoneMaskEntryT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _bone_index = _o->bone_index;
+  auto _weight = _o->weight;
+  return SE::FlatBuffers::CreateBoneMaskEntry(
+      _fbb,
+      _bone_index,
+      _weight);
+}
+
+inline BoneMaskT::BoneMaskT(const BoneMaskT &o)
+      : name(o.name) {
+  entries.reserve(o.entries.size());
+  for (const auto &entries_ : o.entries) { entries.emplace_back((entries_) ? new SE::FlatBuffers::BoneMaskEntryT(*entries_) : nullptr); }
+}
+
+inline BoneMaskT &BoneMaskT::operator=(BoneMaskT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(name, o.name);
+  std::swap(entries, o.entries);
+  return *this;
+}
+
+inline BoneMaskT *BoneMask::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<BoneMaskT>(new BoneMaskT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void BoneMask::UnPackTo(BoneMaskT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = entries(); if (_e) { _o->entries.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->entries[_i]) { _e->Get(_i)->UnPackTo(_o->entries[_i].get(), _resolver); } else { _o->entries[_i] = std::unique_ptr<SE::FlatBuffers::BoneMaskEntryT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->entries.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<BoneMask> BoneMask::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBoneMask(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<BoneMask> CreateBoneMask(::flatbuffers::FlatBufferBuilder &_fbb, const BoneMaskT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BoneMaskT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _name = _fbb.CreateString(_o->name);
+  auto _entries = _o->entries.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BoneMaskEntry>> (_o->entries.size(), [](size_t i, _VectorArgs *__va) { return CreateBoneMaskEntry(*__va->__fbb, __va->__o->entries[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return SE::FlatBuffers::CreateBoneMask(
+      _fbb,
+      _name,
+      _entries);
+}
+
+inline SkeletonT::SkeletonT(const SkeletonT &o)
+      : schema_version(o.schema_version) {
+  bones.reserve(o.bones.size());
+  for (const auto &bones_ : o.bones) { bones.emplace_back((bones_) ? new SE::FlatBuffers::SkeletonBoneT(*bones_) : nullptr); }
+  masks.reserve(o.masks.size());
+  for (const auto &masks_ : o.masks) { masks.emplace_back((masks_) ? new SE::FlatBuffers::BoneMaskT(*masks_) : nullptr); }
+}
+
+inline SkeletonT &SkeletonT::operator=(SkeletonT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(schema_version, o.schema_version);
+  std::swap(bones, o.bones);
+  std::swap(masks, o.masks);
+  return *this;
+}
+
+inline SkeletonT *Skeleton::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<SkeletonT>(new SkeletonT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Skeleton::UnPackTo(SkeletonT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = schema_version(); _o->schema_version = _e; }
+  { auto _e = bones(); if (_e) { _o->bones.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->bones[_i]) { _e->Get(_i)->UnPackTo(_o->bones[_i].get(), _resolver); } else { _o->bones[_i] = std::unique_ptr<SE::FlatBuffers::SkeletonBoneT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->bones.resize(0); } }
+  { auto _e = masks(); if (_e) { _o->masks.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->masks[_i]) { _e->Get(_i)->UnPackTo(_o->masks[_i].get(), _resolver); } else { _o->masks[_i] = std::unique_ptr<SE::FlatBuffers::BoneMaskT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->masks.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<Skeleton> Skeleton::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateSkeleton(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Skeleton> CreateSkeleton(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SkeletonT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _schema_version = _o->schema_version;
+  auto _bones = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::SkeletonBone>> (_o->bones.size(), [](size_t i, _VectorArgs *__va) { return CreateSkeletonBone(*__va->__fbb, __va->__o->bones[i].get(), __va->__rehasher); }, &_va );
+  auto _masks = _o->masks.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BoneMask>> (_o->masks.size(), [](size_t i, _VectorArgs *__va) { return CreateBoneMask(*__va->__fbb, __va->__o->masks[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return SE::FlatBuffers::CreateSkeleton(
+      _fbb,
+      _schema_version,
+      _bones,
+      _masks);
+}
+
+inline SkeletonHolderT::SkeletonHolderT(const SkeletonHolderT &o)
+      : skeleton((o.skeleton) ? new SE::FlatBuffers::SkeletonT(*o.skeleton) : nullptr),
+        path(o.path),
+        name(o.name) {
+}
+
+inline SkeletonHolderT &SkeletonHolderT::operator=(SkeletonHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(skeleton, o.skeleton);
+  std::swap(path, o.path);
+  std::swap(name, o.name);
+  return *this;
+}
+
+inline SkeletonHolderT *SkeletonHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<SkeletonHolderT>(new SkeletonHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void SkeletonHolder::UnPackTo(SkeletonHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = skeleton(); if (_e) { if(_o->skeleton) { _e->UnPackTo(_o->skeleton.get(), _resolver); } else { _o->skeleton = std::unique_ptr<SE::FlatBuffers::SkeletonT>(_e->UnPack(_resolver)); } } else if (_o->skeleton) { _o->skeleton.reset(); } }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<SkeletonHolder> SkeletonHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateSkeletonHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<SkeletonHolder> CreateSkeletonHolder(::flatbuffers::FlatBufferBuilder &_fbb, const SkeletonHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SkeletonHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _skeleton = _o->skeleton ? CreateSkeleton(_fbb, _o->skeleton.get(), _rehasher) : 0;
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  return SE::FlatBuffers::CreateSkeletonHolder(
+      _fbb,
+      _skeleton,
+      _path,
+      _name);
+}
+
 inline const SE::FlatBuffers::Skeleton *GetSkeleton(const void *buf) {
   return ::flatbuffers::GetRoot<SE::FlatBuffers::Skeleton>(buf);
 }
@@ -504,6 +813,18 @@ inline void FinishSizePrefixedSkeletonBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::Skeleton> root) {
   fbb.FinishSizePrefixed(root, SkeletonIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::SkeletonT> UnPackSkeleton(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::SkeletonT>(GetSkeleton(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::SkeletonT> UnPackSizePrefixedSkeleton(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::SkeletonT>(GetSizePrefixedSkeleton(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

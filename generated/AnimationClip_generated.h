@@ -20,15 +20,19 @@ namespace FlatBuffers {
 
 struct CurveChannel;
 struct CurveChannelBuilder;
+struct CurveChannelT;
 
 struct AnimEvent;
 struct AnimEventBuilder;
+struct AnimEventT;
 
 struct AnimationClip;
 struct AnimationClipBuilder;
+struct AnimationClipT;
 
 struct AnimClipHolder;
 struct AnimClipHolderBuilder;
+struct AnimClipHolderT;
 
 enum class CurveFormat : uint8_t {
   ConstantF32 = 0,
@@ -69,7 +73,20 @@ inline const char *EnumNameCurveFormat(CurveFormat e) {
   return EnumNamesCurveFormat()[index];
 }
 
+struct CurveChannelT : public ::flatbuffers::NativeTable {
+  typedef CurveChannel TableType;
+  uint16_t bone_index = 0;
+  uint8_t target = 0;
+  SE::FlatBuffers::CurveFormat format = SE::FlatBuffers::CurveFormat::HermiteF32;
+  std::vector<float> times{};
+  std::vector<float> values{};
+  std::vector<float> tangents{};
+  float quant_min = 0.0f;
+  float quant_max = 1.0f;
+};
+
 struct CurveChannel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef CurveChannelT NativeTableType;
   typedef CurveChannelBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BONE_INDEX = 4,
@@ -120,6 +137,9 @@ struct CurveChannel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_QUANT_MAX, 4) &&
            verifier.EndTable();
   }
+  CurveChannelT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(CurveChannelT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<CurveChannel> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const CurveChannelT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct CurveChannelBuilder {
@@ -208,7 +228,17 @@ inline ::flatbuffers::Offset<CurveChannel> CreateCurveChannelDirect(
       quant_max);
 }
 
+::flatbuffers::Offset<CurveChannel> CreateCurveChannel(::flatbuffers::FlatBufferBuilder &_fbb, const CurveChannelT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimEventT : public ::flatbuffers::NativeTable {
+  typedef AnimEvent TableType;
+  float time = 0.0f;
+  std::string name{};
+  float value = 0.0f;
+};
+
 struct AnimEvent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimEventT NativeTableType;
   typedef AnimEventBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_TIME = 4,
@@ -232,6 +262,9 @@ struct AnimEvent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_VALUE, 4) &&
            verifier.EndTable();
   }
+  AnimEventT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimEventT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimEvent> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimEventT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimEventBuilder {
@@ -284,7 +317,23 @@ inline ::flatbuffers::Offset<AnimEvent> CreateAnimEventDirect(
       value);
 }
 
+::flatbuffers::Offset<AnimEvent> CreateAnimEvent(::flatbuffers::FlatBufferBuilder &_fbb, const AnimEventT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimationClipT : public ::flatbuffers::NativeTable {
+  typedef AnimationClip TableType;
+  uint32_t schema_version = 1;
+  float duration = 0.0f;
+  bool looping = false;
+  std::vector<std::unique_ptr<SE::FlatBuffers::CurveChannelT>> channels{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::AnimEventT>> events{};
+  AnimationClipT() = default;
+  AnimationClipT(const AnimationClipT &o);
+  AnimationClipT(AnimationClipT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimationClipT &operator=(AnimationClipT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct AnimationClip FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimationClipT NativeTableType;
   typedef AnimationClipBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SCHEMA_VERSION = 4,
@@ -321,6 +370,9 @@ struct AnimationClip FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(events()) &&
            verifier.EndTable();
   }
+  AnimationClipT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimationClipT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimationClip> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationClipT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimationClipBuilder {
@@ -387,7 +439,21 @@ inline ::flatbuffers::Offset<AnimationClip> CreateAnimationClipDirect(
       events__);
 }
 
+::flatbuffers::Offset<AnimationClip> CreateAnimationClip(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationClipT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimClipHolderT : public ::flatbuffers::NativeTable {
+  typedef AnimClipHolder TableType;
+  std::string name{};
+  std::string path{};
+  std::unique_ptr<SE::FlatBuffers::AnimationClipT> clip{};
+  AnimClipHolderT() = default;
+  AnimClipHolderT(const AnimClipHolderT &o);
+  AnimClipHolderT(AnimClipHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimClipHolderT &operator=(AnimClipHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct AnimClipHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimClipHolderT NativeTableType;
   typedef AnimClipHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
@@ -413,6 +479,9 @@ struct AnimClipHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(clip()) &&
            verifier.EndTable();
   }
+  AnimClipHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimClipHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimClipHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimClipHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimClipHolderBuilder {
@@ -465,6 +534,189 @@ inline ::flatbuffers::Offset<AnimClipHolder> CreateAnimClipHolderDirect(
       clip);
 }
 
+::flatbuffers::Offset<AnimClipHolder> CreateAnimClipHolder(::flatbuffers::FlatBufferBuilder &_fbb, const AnimClipHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline CurveChannelT *CurveChannel::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<CurveChannelT>(new CurveChannelT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void CurveChannel::UnPackTo(CurveChannelT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = bone_index(); _o->bone_index = _e; }
+  { auto _e = target(); _o->target = _e; }
+  { auto _e = format(); _o->format = _e; }
+  { auto _e = times(); if (_e) { _o->times.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->times[_i] = _e->Get(_i); } } else { _o->times.resize(0); } }
+  { auto _e = values(); if (_e) { _o->values.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->values[_i] = _e->Get(_i); } } else { _o->values.resize(0); } }
+  { auto _e = tangents(); if (_e) { _o->tangents.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->tangents[_i] = _e->Get(_i); } } else { _o->tangents.resize(0); } }
+  { auto _e = quant_min(); _o->quant_min = _e; }
+  { auto _e = quant_max(); _o->quant_max = _e; }
+}
+
+inline ::flatbuffers::Offset<CurveChannel> CurveChannel::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const CurveChannelT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateCurveChannel(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<CurveChannel> CreateCurveChannel(::flatbuffers::FlatBufferBuilder &_fbb, const CurveChannelT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const CurveChannelT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _bone_index = _o->bone_index;
+  auto _target = _o->target;
+  auto _format = _o->format;
+  auto _times = _o->times.size() ? _fbb.CreateVector(_o->times) : 0;
+  auto _values = _o->values.size() ? _fbb.CreateVector(_o->values) : 0;
+  auto _tangents = _o->tangents.size() ? _fbb.CreateVector(_o->tangents) : 0;
+  auto _quant_min = _o->quant_min;
+  auto _quant_max = _o->quant_max;
+  return SE::FlatBuffers::CreateCurveChannel(
+      _fbb,
+      _bone_index,
+      _target,
+      _format,
+      _times,
+      _values,
+      _tangents,
+      _quant_min,
+      _quant_max);
+}
+
+inline AnimEventT *AnimEvent::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimEventT>(new AnimEventT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimEvent::UnPackTo(AnimEventT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = time(); _o->time = _e; }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = value(); _o->value = _e; }
+}
+
+inline ::flatbuffers::Offset<AnimEvent> AnimEvent::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimEventT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimEvent(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimEvent> CreateAnimEvent(::flatbuffers::FlatBufferBuilder &_fbb, const AnimEventT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimEventT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _time = _o->time;
+  auto _name = _fbb.CreateString(_o->name);
+  auto _value = _o->value;
+  return SE::FlatBuffers::CreateAnimEvent(
+      _fbb,
+      _time,
+      _name,
+      _value);
+}
+
+inline AnimationClipT::AnimationClipT(const AnimationClipT &o)
+      : schema_version(o.schema_version),
+        duration(o.duration),
+        looping(o.looping) {
+  channels.reserve(o.channels.size());
+  for (const auto &channels_ : o.channels) { channels.emplace_back((channels_) ? new SE::FlatBuffers::CurveChannelT(*channels_) : nullptr); }
+  events.reserve(o.events.size());
+  for (const auto &events_ : o.events) { events.emplace_back((events_) ? new SE::FlatBuffers::AnimEventT(*events_) : nullptr); }
+}
+
+inline AnimationClipT &AnimationClipT::operator=(AnimationClipT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(schema_version, o.schema_version);
+  std::swap(duration, o.duration);
+  std::swap(looping, o.looping);
+  std::swap(channels, o.channels);
+  std::swap(events, o.events);
+  return *this;
+}
+
+inline AnimationClipT *AnimationClip::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimationClipT>(new AnimationClipT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimationClip::UnPackTo(AnimationClipT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = schema_version(); _o->schema_version = _e; }
+  { auto _e = duration(); _o->duration = _e; }
+  { auto _e = looping(); _o->looping = _e; }
+  { auto _e = channels(); if (_e) { _o->channels.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->channels[_i]) { _e->Get(_i)->UnPackTo(_o->channels[_i].get(), _resolver); } else { _o->channels[_i] = std::unique_ptr<SE::FlatBuffers::CurveChannelT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->channels.resize(0); } }
+  { auto _e = events(); if (_e) { _o->events.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->events[_i]) { _e->Get(_i)->UnPackTo(_o->events[_i].get(), _resolver); } else { _o->events[_i] = std::unique_ptr<SE::FlatBuffers::AnimEventT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->events.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<AnimationClip> AnimationClip::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationClipT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimationClip(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimationClip> CreateAnimationClip(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationClipT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimationClipT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _schema_version = _o->schema_version;
+  auto _duration = _o->duration;
+  auto _looping = _o->looping;
+  auto _channels = _o->channels.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::CurveChannel>> (_o->channels.size(), [](size_t i, _VectorArgs *__va) { return CreateCurveChannel(*__va->__fbb, __va->__o->channels[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _events = _o->events.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>> (_o->events.size(), [](size_t i, _VectorArgs *__va) { return CreateAnimEvent(*__va->__fbb, __va->__o->events[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return SE::FlatBuffers::CreateAnimationClip(
+      _fbb,
+      _schema_version,
+      _duration,
+      _looping,
+      _channels,
+      _events);
+}
+
+inline AnimClipHolderT::AnimClipHolderT(const AnimClipHolderT &o)
+      : name(o.name),
+        path(o.path),
+        clip((o.clip) ? new SE::FlatBuffers::AnimationClipT(*o.clip) : nullptr) {
+}
+
+inline AnimClipHolderT &AnimClipHolderT::operator=(AnimClipHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(name, o.name);
+  std::swap(path, o.path);
+  std::swap(clip, o.clip);
+  return *this;
+}
+
+inline AnimClipHolderT *AnimClipHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimClipHolderT>(new AnimClipHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimClipHolder::UnPackTo(AnimClipHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = clip(); if (_e) { if(_o->clip) { _e->UnPackTo(_o->clip.get(), _resolver); } else { _o->clip = std::unique_ptr<SE::FlatBuffers::AnimationClipT>(_e->UnPack(_resolver)); } } else if (_o->clip) { _o->clip.reset(); } }
+}
+
+inline ::flatbuffers::Offset<AnimClipHolder> AnimClipHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimClipHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimClipHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimClipHolder> CreateAnimClipHolder(::flatbuffers::FlatBufferBuilder &_fbb, const AnimClipHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimClipHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _clip = _o->clip ? CreateAnimationClip(_fbb, _o->clip.get(), _rehasher) : 0;
+  return SE::FlatBuffers::CreateAnimClipHolder(
+      _fbb,
+      _name,
+      _path,
+      _clip);
+}
+
 inline const SE::FlatBuffers::AnimationClip *GetAnimationClip(const void *buf) {
   return ::flatbuffers::GetRoot<SE::FlatBuffers::AnimationClip>(buf);
 }
@@ -511,6 +763,18 @@ inline void FinishSizePrefixedAnimationClipBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::AnimationClip> root) {
   fbb.FinishSizePrefixed(root, AnimationClipIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::AnimationClipT> UnPackAnimationClip(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::AnimationClipT>(GetAnimationClip(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::AnimationClipT> UnPackSizePrefixedAnimationClip(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::AnimationClipT>(GetSizePrefixedAnimationClip(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

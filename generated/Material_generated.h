@@ -20,24 +20,31 @@ namespace FlatBuffers {
 
 struct TextureStock;
 struct TextureStockBuilder;
+struct TextureStockT;
 
 struct StoreTexture2D;
 struct StoreTexture2DBuilder;
+struct StoreTexture2DT;
 
 struct StoreTextureBuffer;
 struct StoreTextureBufferBuilder;
+struct StoreTextureBufferT;
 
 struct TextureHolder;
 struct TextureHolderBuilder;
+struct TextureHolderT;
 
 struct ShaderVariable;
 struct ShaderVariableBuilder;
+struct ShaderVariableT;
 
 struct Material;
 struct MaterialBuilder;
+struct MaterialT;
 
 struct MaterialHolder;
 struct MaterialHolderBuilder;
+struct MaterialHolderT;
 
 enum class TextureEncoding : uint8_t {
   RGBA8 = 0,
@@ -124,6 +131,66 @@ template<> struct StoreSettingsTraits<SE::FlatBuffers::StoreTexture2D> {
 
 template<> struct StoreSettingsTraits<SE::FlatBuffers::StoreTextureBuffer> {
   static const StoreSettings enum_value = StoreSettings::StoreTextureBuffer;
+};
+
+template<typename T> struct StoreSettingsUnionTraits {
+  static const StoreSettings enum_value = StoreSettings::NONE;
+};
+
+template<> struct StoreSettingsUnionTraits<SE::FlatBuffers::StoreTexture2DT> {
+  static const StoreSettings enum_value = StoreSettings::StoreTexture2D;
+};
+
+template<> struct StoreSettingsUnionTraits<SE::FlatBuffers::StoreTextureBufferT> {
+  static const StoreSettings enum_value = StoreSettings::StoreTextureBuffer;
+};
+
+struct StoreSettingsUnion {
+  StoreSettings type;
+  void *value;
+
+  StoreSettingsUnion() : type(StoreSettings::NONE), value(nullptr) {}
+  StoreSettingsUnion(StoreSettingsUnion&& u) FLATBUFFERS_NOEXCEPT :
+    type(StoreSettings::NONE), value(nullptr)
+    { std::swap(type, u.type); std::swap(value, u.value); }
+  StoreSettingsUnion(const StoreSettingsUnion &);
+  StoreSettingsUnion &operator=(const StoreSettingsUnion &u)
+    { StoreSettingsUnion t(u); std::swap(type, t.type); std::swap(value, t.value); return *this; }
+  StoreSettingsUnion &operator=(StoreSettingsUnion &&u) FLATBUFFERS_NOEXCEPT
+    { std::swap(type, u.type); std::swap(value, u.value); return *this; }
+  ~StoreSettingsUnion() { Reset(); }
+
+  void Reset();
+
+  template <typename T>
+  void Set(T&& val) {
+    typedef typename std::remove_reference<T>::type RT;
+    Reset();
+    type = StoreSettingsUnionTraits<RT>::enum_value;
+    if (type != StoreSettings::NONE) {
+      value = new RT(std::forward<T>(val));
+    }
+  }
+
+  static void *UnPack(const void *obj, StoreSettings type, const ::flatbuffers::resolver_function_t *resolver);
+  ::flatbuffers::Offset<void> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
+
+  SE::FlatBuffers::StoreTexture2DT *AsStoreTexture2D() {
+    return type == StoreSettings::StoreTexture2D ?
+      reinterpret_cast<SE::FlatBuffers::StoreTexture2DT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::StoreTexture2DT *AsStoreTexture2D() const {
+    return type == StoreSettings::StoreTexture2D ?
+      reinterpret_cast<const SE::FlatBuffers::StoreTexture2DT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::StoreTextureBufferT *AsStoreTextureBuffer() {
+    return type == StoreSettings::StoreTextureBuffer ?
+      reinterpret_cast<SE::FlatBuffers::StoreTextureBufferT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::StoreTextureBufferT *AsStoreTextureBuffer() const {
+    return type == StoreSettings::StoreTextureBuffer ?
+      reinterpret_cast<const SE::FlatBuffers::StoreTextureBufferT *>(value) : nullptr;
+  }
 };
 
 bool VerifyStoreSettings(::flatbuffers::Verifier &verifier, const void *obj, StoreSettings type);
@@ -222,7 +289,19 @@ inline const char *EnumNameBlendMode(BlendMode e) {
   return EnumNamesBlendMode()[index];
 }
 
+struct TextureStockT : public ::flatbuffers::NativeTable {
+  typedef TextureStock TableType;
+  std::vector<uint8_t> image{};
+  int32_t format = 0;
+  int32_t internal_format = 0;
+  uint32_t width = 0;
+  uint32_t height = 0;
+  std::vector<uint8_t> encoded_data{};
+  SE::FlatBuffers::TextureEncoding encoding = SE::FlatBuffers::TextureEncoding::RGBA8;
+};
+
 struct TextureStock FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TextureStockT NativeTableType;
   typedef TextureStockBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_IMAGE = 4,
@@ -267,6 +346,9 @@ struct TextureStock FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_ENCODING, 1) &&
            verifier.EndTable();
   }
+  TextureStockT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(TextureStockT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<TextureStock> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TextureStockT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct TextureStockBuilder {
@@ -347,7 +429,18 @@ inline ::flatbuffers::Offset<TextureStock> CreateTextureStockDirect(
       encoding);
 }
 
+::flatbuffers::Offset<TextureStock> CreateTextureStock(::flatbuffers::FlatBufferBuilder &_fbb, const TextureStockT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct StoreTexture2DT : public ::flatbuffers::NativeTable {
+  typedef StoreTexture2D TableType;
+  int32_t wrap = 0;
+  int32_t min_filter = 0;
+  int32_t mag_filter = 0;
+  bool mipmap = false;
+};
+
 struct StoreTexture2D FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef StoreTexture2DT NativeTableType;
   typedef StoreTexture2DBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_WRAP = 4,
@@ -375,6 +468,9 @@ struct StoreTexture2D FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_MIPMAP, 1) &&
            verifier.EndTable();
   }
+  StoreTexture2DT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(StoreTexture2DT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<StoreTexture2D> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTexture2DT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct StoreTexture2DBuilder {
@@ -418,12 +514,22 @@ inline ::flatbuffers::Offset<StoreTexture2D> CreateStoreTexture2D(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<StoreTexture2D> CreateStoreTexture2D(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTexture2DT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct StoreTextureBufferT : public ::flatbuffers::NativeTable {
+  typedef StoreTextureBuffer TableType;
+};
+
 struct StoreTextureBuffer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef StoreTextureBufferT NativeTableType;
   typedef StoreTextureBufferBuilder Builder;
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
   }
+  StoreTextureBufferT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(StoreTextureBufferT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<StoreTextureBuffer> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTextureBufferT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct StoreTextureBufferBuilder {
@@ -447,7 +553,23 @@ inline ::flatbuffers::Offset<StoreTextureBuffer> CreateStoreTextureBuffer(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<StoreTextureBuffer> CreateStoreTextureBuffer(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTextureBufferT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct TextureHolderT : public ::flatbuffers::NativeTable {
+  typedef TextureHolder TableType;
+  std::unique_ptr<SE::FlatBuffers::TextureStockT> stock{};
+  std::string path{};
+  std::string name{};
+  SE::FlatBuffers::StoreSettingsUnion store{};
+  SE::FlatBuffers::TextureUnit unit = SE::FlatBuffers::TextureUnit::UNIT_DIFFUSE;
+  TextureHolderT() = default;
+  TextureHolderT(const TextureHolderT &o);
+  TextureHolderT(TextureHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  TextureHolderT &operator=(TextureHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct TextureHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TextureHolderT NativeTableType;
   typedef TextureHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_STOCK = 4,
@@ -496,6 +618,9 @@ struct TextureHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_UNIT, 1) &&
            verifier.EndTable();
   }
+  TextureHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(TextureHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<TextureHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TextureHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 template<> inline const SE::FlatBuffers::StoreTexture2D *TextureHolder::store_as<SE::FlatBuffers::StoreTexture2D>() const {
@@ -577,7 +702,27 @@ inline ::flatbuffers::Offset<TextureHolder> CreateTextureHolderDirect(
       unit);
 }
 
+::flatbuffers::Offset<TextureHolder> CreateTextureHolder(::flatbuffers::FlatBufferBuilder &_fbb, const TextureHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct ShaderVariableT : public ::flatbuffers::NativeTable {
+  typedef ShaderVariable TableType;
+  std::string name{};
+  float float_val = 0.0f;
+  int32_t int_val = 0;
+  std::unique_ptr<SE::FlatBuffers::Vec2> vec2_val{};
+  std::unique_ptr<SE::FlatBuffers::Vec3> vec3_val{};
+  std::unique_ptr<SE::FlatBuffers::Vec4> vec4_val{};
+  std::unique_ptr<SE::FlatBuffers::UVec2> uvec2_val{};
+  std::unique_ptr<SE::FlatBuffers::UVec3> uvec3_val{};
+  std::unique_ptr<SE::FlatBuffers::UVec4> uvec4_val{};
+  ShaderVariableT() = default;
+  ShaderVariableT(const ShaderVariableT &o);
+  ShaderVariableT(ShaderVariableT&&) FLATBUFFERS_NOEXCEPT = default;
+  ShaderVariableT &operator=(ShaderVariableT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ShaderVariableT NativeTableType;
   typedef ShaderVariableBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
@@ -631,6 +776,9 @@ struct ShaderVariable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<SE::FlatBuffers::UVec4>(verifier, VT_UVEC4_VAL, 4) &&
            verifier.EndTable();
   }
+  ShaderVariableT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ShaderVariableT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<ShaderVariable> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderVariableT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ShaderVariableBuilder {
@@ -725,7 +873,22 @@ inline ::flatbuffers::Offset<ShaderVariable> CreateShaderVariableDirect(
       uvec4_val);
 }
 
+::flatbuffers::Offset<ShaderVariable> CreateShaderVariable(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderVariableT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct MaterialT : public ::flatbuffers::NativeTable {
+  typedef Material TableType;
+  std::unique_ptr<SE::FlatBuffers::ShaderProgramHolderT> shader{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::TextureHolderT>> textures{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::ShaderVariableT>> variables{};
+  SE::FlatBuffers::BlendMode blend_mode = SE::FlatBuffers::BlendMode::Opaque;
+  MaterialT() = default;
+  MaterialT(const MaterialT &o);
+  MaterialT(MaterialT&&) FLATBUFFERS_NOEXCEPT = default;
+  MaterialT &operator=(MaterialT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct Material FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MaterialT NativeTableType;
   typedef MaterialBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SHADER = 4,
@@ -758,6 +921,9 @@ struct Material FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_BLEND_MODE, 1) &&
            verifier.EndTable();
   }
+  MaterialT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(MaterialT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Material> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct MaterialBuilder {
@@ -818,7 +984,21 @@ inline ::flatbuffers::Offset<Material> CreateMaterialDirect(
       blend_mode);
 }
 
+::flatbuffers::Offset<Material> CreateMaterial(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct MaterialHolderT : public ::flatbuffers::NativeTable {
+  typedef MaterialHolder TableType;
+  std::unique_ptr<SE::FlatBuffers::MaterialT> material{};
+  std::string path{};
+  std::string name{};
+  MaterialHolderT() = default;
+  MaterialHolderT(const MaterialHolderT &o);
+  MaterialHolderT(MaterialHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  MaterialHolderT &operator=(MaterialHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct MaterialHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MaterialHolderT NativeTableType;
   typedef MaterialHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MATERIAL = 4,
@@ -844,6 +1024,9 @@ struct MaterialHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
+  MaterialHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(MaterialHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<MaterialHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct MaterialHolderBuilder {
@@ -896,6 +1079,340 @@ inline ::flatbuffers::Offset<MaterialHolder> CreateMaterialHolderDirect(
       name__);
 }
 
+::flatbuffers::Offset<MaterialHolder> CreateMaterialHolder(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline TextureStockT *TextureStock::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<TextureStockT>(new TextureStockT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void TextureStock::UnPackTo(TextureStockT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = image(); if (_e) { _o->image.resize(_e->size()); std::copy(_e->begin(), _e->end(), _o->image.begin()); } }
+  { auto _e = format(); _o->format = _e; }
+  { auto _e = internal_format(); _o->internal_format = _e; }
+  { auto _e = width(); _o->width = _e; }
+  { auto _e = height(); _o->height = _e; }
+  { auto _e = encoded_data(); if (_e) { _o->encoded_data.resize(_e->size()); std::copy(_e->begin(), _e->end(), _o->encoded_data.begin()); } }
+  { auto _e = encoding(); _o->encoding = _e; }
+}
+
+inline ::flatbuffers::Offset<TextureStock> TextureStock::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TextureStockT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateTextureStock(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<TextureStock> CreateTextureStock(::flatbuffers::FlatBufferBuilder &_fbb, const TextureStockT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const TextureStockT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _image = _o->image.size() ? _fbb.CreateVector(_o->image) : 0;
+  auto _format = _o->format;
+  auto _internal_format = _o->internal_format;
+  auto _width = _o->width;
+  auto _height = _o->height;
+  auto _encoded_data = _o->encoded_data.size() ? _fbb.CreateVector(_o->encoded_data) : 0;
+  auto _encoding = _o->encoding;
+  return SE::FlatBuffers::CreateTextureStock(
+      _fbb,
+      _image,
+      _format,
+      _internal_format,
+      _width,
+      _height,
+      _encoded_data,
+      _encoding);
+}
+
+inline StoreTexture2DT *StoreTexture2D::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<StoreTexture2DT>(new StoreTexture2DT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void StoreTexture2D::UnPackTo(StoreTexture2DT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = wrap(); _o->wrap = _e; }
+  { auto _e = min_filter(); _o->min_filter = _e; }
+  { auto _e = mag_filter(); _o->mag_filter = _e; }
+  { auto _e = mipmap(); _o->mipmap = _e; }
+}
+
+inline ::flatbuffers::Offset<StoreTexture2D> StoreTexture2D::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTexture2DT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateStoreTexture2D(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<StoreTexture2D> CreateStoreTexture2D(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTexture2DT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const StoreTexture2DT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _wrap = _o->wrap;
+  auto _min_filter = _o->min_filter;
+  auto _mag_filter = _o->mag_filter;
+  auto _mipmap = _o->mipmap;
+  return SE::FlatBuffers::CreateStoreTexture2D(
+      _fbb,
+      _wrap,
+      _min_filter,
+      _mag_filter,
+      _mipmap);
+}
+
+inline StoreTextureBufferT *StoreTextureBuffer::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<StoreTextureBufferT>(new StoreTextureBufferT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void StoreTextureBuffer::UnPackTo(StoreTextureBufferT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+}
+
+inline ::flatbuffers::Offset<StoreTextureBuffer> StoreTextureBuffer::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTextureBufferT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateStoreTextureBuffer(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<StoreTextureBuffer> CreateStoreTextureBuffer(::flatbuffers::FlatBufferBuilder &_fbb, const StoreTextureBufferT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const StoreTextureBufferT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  return SE::FlatBuffers::CreateStoreTextureBuffer(
+      _fbb);
+}
+
+inline TextureHolderT::TextureHolderT(const TextureHolderT &o)
+      : stock((o.stock) ? new SE::FlatBuffers::TextureStockT(*o.stock) : nullptr),
+        path(o.path),
+        name(o.name),
+        store(o.store),
+        unit(o.unit) {
+}
+
+inline TextureHolderT &TextureHolderT::operator=(TextureHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(stock, o.stock);
+  std::swap(path, o.path);
+  std::swap(name, o.name);
+  std::swap(store, o.store);
+  std::swap(unit, o.unit);
+  return *this;
+}
+
+inline TextureHolderT *TextureHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<TextureHolderT>(new TextureHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void TextureHolder::UnPackTo(TextureHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = stock(); if (_e) { if(_o->stock) { _e->UnPackTo(_o->stock.get(), _resolver); } else { _o->stock = std::unique_ptr<SE::FlatBuffers::TextureStockT>(_e->UnPack(_resolver)); } } else if (_o->stock) { _o->stock.reset(); } }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = store_type(); _o->store.type = _e; }
+  { auto _e = store(); if (_e) _o->store.value = SE::FlatBuffers::StoreSettingsUnion::UnPack(_e, store_type(), _resolver); }
+  { auto _e = unit(); _o->unit = _e; }
+}
+
+inline ::flatbuffers::Offset<TextureHolder> TextureHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TextureHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateTextureHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<TextureHolder> CreateTextureHolder(::flatbuffers::FlatBufferBuilder &_fbb, const TextureHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const TextureHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _stock = _o->stock ? CreateTextureStock(_fbb, _o->stock.get(), _rehasher) : 0;
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  auto _store_type = _o->store.type;
+  auto _store = _o->store.Pack(_fbb);
+  auto _unit = _o->unit;
+  return SE::FlatBuffers::CreateTextureHolder(
+      _fbb,
+      _stock,
+      _path,
+      _name,
+      _store_type,
+      _store,
+      _unit);
+}
+
+inline ShaderVariableT::ShaderVariableT(const ShaderVariableT &o)
+      : name(o.name),
+        float_val(o.float_val),
+        int_val(o.int_val),
+        vec2_val((o.vec2_val) ? new SE::FlatBuffers::Vec2(*o.vec2_val) : nullptr),
+        vec3_val((o.vec3_val) ? new SE::FlatBuffers::Vec3(*o.vec3_val) : nullptr),
+        vec4_val((o.vec4_val) ? new SE::FlatBuffers::Vec4(*o.vec4_val) : nullptr),
+        uvec2_val((o.uvec2_val) ? new SE::FlatBuffers::UVec2(*o.uvec2_val) : nullptr),
+        uvec3_val((o.uvec3_val) ? new SE::FlatBuffers::UVec3(*o.uvec3_val) : nullptr),
+        uvec4_val((o.uvec4_val) ? new SE::FlatBuffers::UVec4(*o.uvec4_val) : nullptr) {
+}
+
+inline ShaderVariableT &ShaderVariableT::operator=(ShaderVariableT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(name, o.name);
+  std::swap(float_val, o.float_val);
+  std::swap(int_val, o.int_val);
+  std::swap(vec2_val, o.vec2_val);
+  std::swap(vec3_val, o.vec3_val);
+  std::swap(vec4_val, o.vec4_val);
+  std::swap(uvec2_val, o.uvec2_val);
+  std::swap(uvec3_val, o.uvec3_val);
+  std::swap(uvec4_val, o.uvec4_val);
+  return *this;
+}
+
+inline ShaderVariableT *ShaderVariable::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ShaderVariableT>(new ShaderVariableT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void ShaderVariable::UnPackTo(ShaderVariableT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = float_val(); _o->float_val = _e; }
+  { auto _e = int_val(); _o->int_val = _e; }
+  { auto _e = vec2_val(); if (_e) _o->vec2_val = std::unique_ptr<SE::FlatBuffers::Vec2>(new SE::FlatBuffers::Vec2(*_e)); }
+  { auto _e = vec3_val(); if (_e) _o->vec3_val = std::unique_ptr<SE::FlatBuffers::Vec3>(new SE::FlatBuffers::Vec3(*_e)); }
+  { auto _e = vec4_val(); if (_e) _o->vec4_val = std::unique_ptr<SE::FlatBuffers::Vec4>(new SE::FlatBuffers::Vec4(*_e)); }
+  { auto _e = uvec2_val(); if (_e) _o->uvec2_val = std::unique_ptr<SE::FlatBuffers::UVec2>(new SE::FlatBuffers::UVec2(*_e)); }
+  { auto _e = uvec3_val(); if (_e) _o->uvec3_val = std::unique_ptr<SE::FlatBuffers::UVec3>(new SE::FlatBuffers::UVec3(*_e)); }
+  { auto _e = uvec4_val(); if (_e) _o->uvec4_val = std::unique_ptr<SE::FlatBuffers::UVec4>(new SE::FlatBuffers::UVec4(*_e)); }
+}
+
+inline ::flatbuffers::Offset<ShaderVariable> ShaderVariable::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderVariableT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateShaderVariable(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<ShaderVariable> CreateShaderVariable(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderVariableT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ShaderVariableT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _name = _fbb.CreateString(_o->name);
+  auto _float_val = _o->float_val;
+  auto _int_val = _o->int_val;
+  auto _vec2_val = _o->vec2_val ? _o->vec2_val.get() : nullptr;
+  auto _vec3_val = _o->vec3_val ? _o->vec3_val.get() : nullptr;
+  auto _vec4_val = _o->vec4_val ? _o->vec4_val.get() : nullptr;
+  auto _uvec2_val = _o->uvec2_val ? _o->uvec2_val.get() : nullptr;
+  auto _uvec3_val = _o->uvec3_val ? _o->uvec3_val.get() : nullptr;
+  auto _uvec4_val = _o->uvec4_val ? _o->uvec4_val.get() : nullptr;
+  return SE::FlatBuffers::CreateShaderVariable(
+      _fbb,
+      _name,
+      _float_val,
+      _int_val,
+      _vec2_val,
+      _vec3_val,
+      _vec4_val,
+      _uvec2_val,
+      _uvec3_val,
+      _uvec4_val);
+}
+
+inline MaterialT::MaterialT(const MaterialT &o)
+      : shader((o.shader) ? new SE::FlatBuffers::ShaderProgramHolderT(*o.shader) : nullptr),
+        blend_mode(o.blend_mode) {
+  textures.reserve(o.textures.size());
+  for (const auto &textures_ : o.textures) { textures.emplace_back((textures_) ? new SE::FlatBuffers::TextureHolderT(*textures_) : nullptr); }
+  variables.reserve(o.variables.size());
+  for (const auto &variables_ : o.variables) { variables.emplace_back((variables_) ? new SE::FlatBuffers::ShaderVariableT(*variables_) : nullptr); }
+}
+
+inline MaterialT &MaterialT::operator=(MaterialT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(shader, o.shader);
+  std::swap(textures, o.textures);
+  std::swap(variables, o.variables);
+  std::swap(blend_mode, o.blend_mode);
+  return *this;
+}
+
+inline MaterialT *Material::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<MaterialT>(new MaterialT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Material::UnPackTo(MaterialT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = shader(); if (_e) { if(_o->shader) { _e->UnPackTo(_o->shader.get(), _resolver); } else { _o->shader = std::unique_ptr<SE::FlatBuffers::ShaderProgramHolderT>(_e->UnPack(_resolver)); } } else if (_o->shader) { _o->shader.reset(); } }
+  { auto _e = textures(); if (_e) { _o->textures.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->textures[_i]) { _e->Get(_i)->UnPackTo(_o->textures[_i].get(), _resolver); } else { _o->textures[_i] = std::unique_ptr<SE::FlatBuffers::TextureHolderT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->textures.resize(0); } }
+  { auto _e = variables(); if (_e) { _o->variables.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->variables[_i]) { _e->Get(_i)->UnPackTo(_o->variables[_i].get(), _resolver); } else { _o->variables[_i] = std::unique_ptr<SE::FlatBuffers::ShaderVariableT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->variables.resize(0); } }
+  { auto _e = blend_mode(); _o->blend_mode = _e; }
+}
+
+inline ::flatbuffers::Offset<Material> Material::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateMaterial(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Material> CreateMaterial(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const MaterialT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _shader = _o->shader ? CreateShaderProgramHolder(_fbb, _o->shader.get(), _rehasher) : 0;
+  auto _textures = _o->textures.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::TextureHolder>> (_o->textures.size(), [](size_t i, _VectorArgs *__va) { return CreateTextureHolder(*__va->__fbb, __va->__o->textures[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _variables = _o->variables.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::ShaderVariable>> (_o->variables.size(), [](size_t i, _VectorArgs *__va) { return CreateShaderVariable(*__va->__fbb, __va->__o->variables[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _blend_mode = _o->blend_mode;
+  return SE::FlatBuffers::CreateMaterial(
+      _fbb,
+      _shader,
+      _textures,
+      _variables,
+      _blend_mode);
+}
+
+inline MaterialHolderT::MaterialHolderT(const MaterialHolderT &o)
+      : material((o.material) ? new SE::FlatBuffers::MaterialT(*o.material) : nullptr),
+        path(o.path),
+        name(o.name) {
+}
+
+inline MaterialHolderT &MaterialHolderT::operator=(MaterialHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(material, o.material);
+  std::swap(path, o.path);
+  std::swap(name, o.name);
+  return *this;
+}
+
+inline MaterialHolderT *MaterialHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<MaterialHolderT>(new MaterialHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void MaterialHolder::UnPackTo(MaterialHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = material(); if (_e) { if(_o->material) { _e->UnPackTo(_o->material.get(), _resolver); } else { _o->material = std::unique_ptr<SE::FlatBuffers::MaterialT>(_e->UnPack(_resolver)); } } else if (_o->material) { _o->material.reset(); } }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<MaterialHolder> MaterialHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateMaterialHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<MaterialHolder> CreateMaterialHolder(::flatbuffers::FlatBufferBuilder &_fbb, const MaterialHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const MaterialHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _material = _o->material ? CreateMaterial(_fbb, _o->material.get(), _rehasher) : 0;
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  return SE::FlatBuffers::CreateMaterialHolder(
+      _fbb,
+      _material,
+      _path,
+      _name);
+}
+
 inline bool VerifyStoreSettings(::flatbuffers::Verifier &verifier, const void *obj, StoreSettings type) {
   switch (type) {
     case StoreSettings::NONE: {
@@ -923,6 +1440,69 @@ inline bool VerifyStoreSettingsVector(::flatbuffers::Verifier &verifier, const :
     }
   }
   return true;
+}
+
+inline void *StoreSettingsUnion::UnPack(const void *obj, StoreSettings type, const ::flatbuffers::resolver_function_t *resolver) {
+  (void)resolver;
+  switch (type) {
+    case StoreSettings::StoreTexture2D: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StoreTexture2D *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case StoreSettings::StoreTextureBuffer: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StoreTextureBuffer *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    default: return nullptr;
+  }
+}
+
+inline ::flatbuffers::Offset<void> StoreSettingsUnion::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher) const {
+  (void)_rehasher;
+  switch (type) {
+    case StoreSettings::StoreTexture2D: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StoreTexture2DT *>(value);
+      return CreateStoreTexture2D(_fbb, ptr, _rehasher).Union();
+    }
+    case StoreSettings::StoreTextureBuffer: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StoreTextureBufferT *>(value);
+      return CreateStoreTextureBuffer(_fbb, ptr, _rehasher).Union();
+    }
+    default: return 0;
+  }
+}
+
+inline StoreSettingsUnion::StoreSettingsUnion(const StoreSettingsUnion &u) : type(u.type), value(nullptr) {
+  switch (type) {
+    case StoreSettings::StoreTexture2D: {
+      value = new SE::FlatBuffers::StoreTexture2DT(*reinterpret_cast<SE::FlatBuffers::StoreTexture2DT *>(u.value));
+      break;
+    }
+    case StoreSettings::StoreTextureBuffer: {
+      value = new SE::FlatBuffers::StoreTextureBufferT(*reinterpret_cast<SE::FlatBuffers::StoreTextureBufferT *>(u.value));
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+inline void StoreSettingsUnion::Reset() {
+  switch (type) {
+    case StoreSettings::StoreTexture2D: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::StoreTexture2DT *>(value);
+      delete ptr;
+      break;
+    }
+    case StoreSettings::StoreTextureBuffer: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::StoreTextureBufferT *>(value);
+      delete ptr;
+      break;
+    }
+    default: break;
+  }
+  value = nullptr;
+  type = StoreSettings::NONE;
 }
 
 inline const SE::FlatBuffers::Material *GetMaterial(const void *buf) {
@@ -971,6 +1551,18 @@ inline void FinishSizePrefixedMaterialBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::Material> root) {
   fbb.FinishSizePrefixed(root, MaterialIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::MaterialT> UnPackMaterial(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::MaterialT>(GetMaterial(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::MaterialT> UnPackSizePrefixedMaterial(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::MaterialT>(GetSizePrefixedMaterial(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

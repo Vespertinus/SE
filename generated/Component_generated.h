@@ -27,39 +27,51 @@ namespace FlatBuffers {
 
 struct StaticModel;
 struct StaticModelBuilder;
+struct StaticModelT;
 
 struct BindSQT;
 struct BindSQTBuilder;
+struct BindSQTT;
 
 struct CharacterShell;
 struct CharacterShellBuilder;
+struct CharacterShellT;
 
 struct AnimatedModel;
 struct AnimatedModelBuilder;
+struct AnimatedModelT;
 
 struct AppComponent;
 struct AppComponentBuilder;
+struct AppComponentT;
 
 struct BoxCollider;
 struct BoxColliderBuilder;
+struct BoxColliderT;
 
 struct SphereCollider;
 struct SphereColliderBuilder;
+struct SphereColliderT;
 
 struct CapsuleCollider;
 struct CapsuleColliderBuilder;
+struct CapsuleColliderT;
 
 struct MeshCollider;
 struct MeshColliderBuilder;
+struct MeshColliderT;
 
 struct RigidBody;
 struct RigidBodyBuilder;
+struct RigidBodyT;
 
 struct Animator;
 struct AnimatorBuilder;
+struct AnimatorT;
 
 struct Component;
 struct ComponentBuilder;
+struct ComponentT;
 
 enum class ColliderU : uint8_t {
   NONE = 0,
@@ -118,6 +130,90 @@ template<> struct ColliderUTraits<SE::FlatBuffers::CapsuleCollider> {
 
 template<> struct ColliderUTraits<SE::FlatBuffers::MeshCollider> {
   static const ColliderU enum_value = ColliderU::MeshCollider;
+};
+
+template<typename T> struct ColliderUUnionTraits {
+  static const ColliderU enum_value = ColliderU::NONE;
+};
+
+template<> struct ColliderUUnionTraits<SE::FlatBuffers::BoxColliderT> {
+  static const ColliderU enum_value = ColliderU::BoxCollider;
+};
+
+template<> struct ColliderUUnionTraits<SE::FlatBuffers::SphereColliderT> {
+  static const ColliderU enum_value = ColliderU::SphereCollider;
+};
+
+template<> struct ColliderUUnionTraits<SE::FlatBuffers::CapsuleColliderT> {
+  static const ColliderU enum_value = ColliderU::CapsuleCollider;
+};
+
+template<> struct ColliderUUnionTraits<SE::FlatBuffers::MeshColliderT> {
+  static const ColliderU enum_value = ColliderU::MeshCollider;
+};
+
+struct ColliderUUnion {
+  ColliderU type;
+  void *value;
+
+  ColliderUUnion() : type(ColliderU::NONE), value(nullptr) {}
+  ColliderUUnion(ColliderUUnion&& u) FLATBUFFERS_NOEXCEPT :
+    type(ColliderU::NONE), value(nullptr)
+    { std::swap(type, u.type); std::swap(value, u.value); }
+  ColliderUUnion(const ColliderUUnion &);
+  ColliderUUnion &operator=(const ColliderUUnion &u)
+    { ColliderUUnion t(u); std::swap(type, t.type); std::swap(value, t.value); return *this; }
+  ColliderUUnion &operator=(ColliderUUnion &&u) FLATBUFFERS_NOEXCEPT
+    { std::swap(type, u.type); std::swap(value, u.value); return *this; }
+  ~ColliderUUnion() { Reset(); }
+
+  void Reset();
+
+  template <typename T>
+  void Set(T&& val) {
+    typedef typename std::remove_reference<T>::type RT;
+    Reset();
+    type = ColliderUUnionTraits<RT>::enum_value;
+    if (type != ColliderU::NONE) {
+      value = new RT(std::forward<T>(val));
+    }
+  }
+
+  static void *UnPack(const void *obj, ColliderU type, const ::flatbuffers::resolver_function_t *resolver);
+  ::flatbuffers::Offset<void> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
+
+  SE::FlatBuffers::BoxColliderT *AsBoxCollider() {
+    return type == ColliderU::BoxCollider ?
+      reinterpret_cast<SE::FlatBuffers::BoxColliderT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::BoxColliderT *AsBoxCollider() const {
+    return type == ColliderU::BoxCollider ?
+      reinterpret_cast<const SE::FlatBuffers::BoxColliderT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::SphereColliderT *AsSphereCollider() {
+    return type == ColliderU::SphereCollider ?
+      reinterpret_cast<SE::FlatBuffers::SphereColliderT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::SphereColliderT *AsSphereCollider() const {
+    return type == ColliderU::SphereCollider ?
+      reinterpret_cast<const SE::FlatBuffers::SphereColliderT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::CapsuleColliderT *AsCapsuleCollider() {
+    return type == ColliderU::CapsuleCollider ?
+      reinterpret_cast<SE::FlatBuffers::CapsuleColliderT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::CapsuleColliderT *AsCapsuleCollider() const {
+    return type == ColliderU::CapsuleCollider ?
+      reinterpret_cast<const SE::FlatBuffers::CapsuleColliderT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::MeshColliderT *AsMeshCollider() {
+    return type == ColliderU::MeshCollider ?
+      reinterpret_cast<SE::FlatBuffers::MeshColliderT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::MeshColliderT *AsMeshCollider() const {
+    return type == ColliderU::MeshCollider ?
+      reinterpret_cast<const SE::FlatBuffers::MeshColliderT *>(value) : nullptr;
+  }
 };
 
 bool VerifyColliderU(::flatbuffers::Verifier &verifier, const void *obj, ColliderU type);
@@ -210,10 +306,153 @@ template<> struct ComponentUTraits<SE::FlatBuffers::Animator> {
   static const ComponentU enum_value = ComponentU::Animator;
 };
 
+template<typename T> struct ComponentUUnionTraits {
+  static const ComponentU enum_value = ComponentU::NONE;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::StaticModelT> {
+  static const ComponentU enum_value = ComponentU::StaticModel;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::AnimatedModelT> {
+  static const ComponentU enum_value = ComponentU::AnimatedModel;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::RigidBodyT> {
+  static const ComponentU enum_value = ComponentU::RigidBody;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::AudioEmitterT> {
+  static const ComponentU enum_value = ComponentU::AudioEmitter;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::AudioListenerT> {
+  static const ComponentU enum_value = ComponentU::AudioListener;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::SoundEmitterT> {
+  static const ComponentU enum_value = ComponentU::SoundEmitter;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::AppComponentT> {
+  static const ComponentU enum_value = ComponentU::AppComponent;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::AnimatorT> {
+  static const ComponentU enum_value = ComponentU::Animator;
+};
+
+struct ComponentUUnion {
+  ComponentU type;
+  void *value;
+
+  ComponentUUnion() : type(ComponentU::NONE), value(nullptr) {}
+  ComponentUUnion(ComponentUUnion&& u) FLATBUFFERS_NOEXCEPT :
+    type(ComponentU::NONE), value(nullptr)
+    { std::swap(type, u.type); std::swap(value, u.value); }
+  ComponentUUnion(const ComponentUUnion &);
+  ComponentUUnion &operator=(const ComponentUUnion &u)
+    { ComponentUUnion t(u); std::swap(type, t.type); std::swap(value, t.value); return *this; }
+  ComponentUUnion &operator=(ComponentUUnion &&u) FLATBUFFERS_NOEXCEPT
+    { std::swap(type, u.type); std::swap(value, u.value); return *this; }
+  ~ComponentUUnion() { Reset(); }
+
+  void Reset();
+
+  template <typename T>
+  void Set(T&& val) {
+    typedef typename std::remove_reference<T>::type RT;
+    Reset();
+    type = ComponentUUnionTraits<RT>::enum_value;
+    if (type != ComponentU::NONE) {
+      value = new RT(std::forward<T>(val));
+    }
+  }
+
+  static void *UnPack(const void *obj, ComponentU type, const ::flatbuffers::resolver_function_t *resolver);
+  ::flatbuffers::Offset<void> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
+
+  SE::FlatBuffers::StaticModelT *AsStaticModel() {
+    return type == ComponentU::StaticModel ?
+      reinterpret_cast<SE::FlatBuffers::StaticModelT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::StaticModelT *AsStaticModel() const {
+    return type == ComponentU::StaticModel ?
+      reinterpret_cast<const SE::FlatBuffers::StaticModelT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::AnimatedModelT *AsAnimatedModel() {
+    return type == ComponentU::AnimatedModel ?
+      reinterpret_cast<SE::FlatBuffers::AnimatedModelT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::AnimatedModelT *AsAnimatedModel() const {
+    return type == ComponentU::AnimatedModel ?
+      reinterpret_cast<const SE::FlatBuffers::AnimatedModelT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::RigidBodyT *AsRigidBody() {
+    return type == ComponentU::RigidBody ?
+      reinterpret_cast<SE::FlatBuffers::RigidBodyT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::RigidBodyT *AsRigidBody() const {
+    return type == ComponentU::RigidBody ?
+      reinterpret_cast<const SE::FlatBuffers::RigidBodyT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::AudioEmitterT *AsAudioEmitter() {
+    return type == ComponentU::AudioEmitter ?
+      reinterpret_cast<SE::FlatBuffers::AudioEmitterT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::AudioEmitterT *AsAudioEmitter() const {
+    return type == ComponentU::AudioEmitter ?
+      reinterpret_cast<const SE::FlatBuffers::AudioEmitterT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::AudioListenerT *AsAudioListener() {
+    return type == ComponentU::AudioListener ?
+      reinterpret_cast<SE::FlatBuffers::AudioListenerT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::AudioListenerT *AsAudioListener() const {
+    return type == ComponentU::AudioListener ?
+      reinterpret_cast<const SE::FlatBuffers::AudioListenerT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::SoundEmitterT *AsSoundEmitter() {
+    return type == ComponentU::SoundEmitter ?
+      reinterpret_cast<SE::FlatBuffers::SoundEmitterT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::SoundEmitterT *AsSoundEmitter() const {
+    return type == ComponentU::SoundEmitter ?
+      reinterpret_cast<const SE::FlatBuffers::SoundEmitterT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::AppComponentT *AsAppComponent() {
+    return type == ComponentU::AppComponent ?
+      reinterpret_cast<SE::FlatBuffers::AppComponentT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::AppComponentT *AsAppComponent() const {
+    return type == ComponentU::AppComponent ?
+      reinterpret_cast<const SE::FlatBuffers::AppComponentT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::AnimatorT *AsAnimator() {
+    return type == ComponentU::Animator ?
+      reinterpret_cast<SE::FlatBuffers::AnimatorT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::AnimatorT *AsAnimator() const {
+    return type == ComponentU::Animator ?
+      reinterpret_cast<const SE::FlatBuffers::AnimatorT *>(value) : nullptr;
+  }
+};
+
 bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj, ComponentU type);
 bool VerifyComponentUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<ComponentU> *types);
 
+struct StaticModelT : public ::flatbuffers::NativeTable {
+  typedef StaticModel TableType;
+  std::unique_ptr<SE::FlatBuffers::MeshHolderT> mesh{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::MaterialHolderT>> materials{};
+  StaticModelT() = default;
+  StaticModelT(const StaticModelT &o);
+  StaticModelT(StaticModelT&&) FLATBUFFERS_NOEXCEPT = default;
+  StaticModelT &operator=(StaticModelT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct StaticModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef StaticModelT NativeTableType;
   typedef StaticModelBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MESH = 4,
@@ -234,6 +473,9 @@ struct StaticModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(materials()) &&
            verifier.EndTable();
   }
+  StaticModelT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(StaticModelT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<StaticModel> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StaticModelT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct StaticModelBuilder {
@@ -279,7 +521,21 @@ inline ::flatbuffers::Offset<StaticModel> CreateStaticModelDirect(
       materials__);
 }
 
+::flatbuffers::Offset<StaticModel> CreateStaticModel(::flatbuffers::FlatBufferBuilder &_fbb, const StaticModelT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct BindSQTT : public ::flatbuffers::NativeTable {
+  typedef BindSQT TableType;
+  std::unique_ptr<SE::FlatBuffers::Vec4> bind_rot{};
+  std::unique_ptr<SE::FlatBuffers::Vec3> bind_pos{};
+  std::unique_ptr<SE::FlatBuffers::Vec3> bind_scale{};
+  BindSQTT() = default;
+  BindSQTT(const BindSQTT &o);
+  BindSQTT(BindSQTT&&) FLATBUFFERS_NOEXCEPT = default;
+  BindSQTT &operator=(BindSQTT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct BindSQT FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BindSQTT NativeTableType;
   typedef BindSQTBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BIND_ROT = 4,
@@ -302,6 +558,9 @@ struct BindSQT FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<SE::FlatBuffers::Vec3>(verifier, VT_BIND_SCALE, 4) &&
            verifier.EndTable();
   }
+  BindSQTT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(BindSQTT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<BindSQT> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BindSQTT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct BindSQTBuilder {
@@ -340,7 +599,15 @@ inline ::flatbuffers::Offset<BindSQT> CreateBindSQT(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<BindSQT> CreateBindSQT(::flatbuffers::FlatBufferBuilder &_fbb, const BindSQTT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct CharacterShellT : public ::flatbuffers::NativeTable {
+  typedef CharacterShell TableType;
+  std::string skeleton_root_node{};
+};
+
 struct CharacterShell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef CharacterShellT NativeTableType;
   typedef CharacterShellBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SKELETON_ROOT_NODE = 4
@@ -354,6 +621,9 @@ struct CharacterShell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(skeleton_root_node()) &&
            verifier.EndTable();
   }
+  CharacterShellT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(CharacterShellT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<CharacterShell> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const CharacterShellT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct CharacterShellBuilder {
@@ -392,7 +662,27 @@ inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShellDirect(
       skeleton_root_node__);
 }
 
+::flatbuffers::Offset<CharacterShell> CreateCharacterShell(::flatbuffers::FlatBufferBuilder &_fbb, const CharacterShellT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimatedModelT : public ::flatbuffers::NativeTable {
+  typedef AnimatedModel TableType;
+  std::unique_ptr<SE::FlatBuffers::MeshHolderT> mesh{};
+  std::unique_ptr<SE::FlatBuffers::MaterialHolderT> material{};
+  std::unique_ptr<SE::FlatBuffers::TextureHolderT> blendshapes{};
+  std::vector<float> blendshapes_weights{};
+  std::unique_ptr<SE::FlatBuffers::SkeletonHolderT> skeleton{};
+  std::string skeleton_root_node{};
+  std::vector<uint16_t> joints_indexes{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::BindSQTT>> joints_inv_bind_pose{};
+  std::unique_ptr<SE::FlatBuffers::BindSQTT> mesh_bind_pos{};
+  AnimatedModelT() = default;
+  AnimatedModelT(const AnimatedModelT &o);
+  AnimatedModelT(AnimatedModelT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimatedModelT &operator=(AnimatedModelT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimatedModelT NativeTableType;
   typedef AnimatedModelBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MESH = 4,
@@ -455,6 +745,9 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(mesh_bind_pos()) &&
            verifier.EndTable();
   }
+  AnimatedModelT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimatedModelT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimatedModel> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatedModelT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimatedModelBuilder {
@@ -552,7 +845,16 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
       mesh_bind_pos);
 }
 
+::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatedModelT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AppComponentT : public ::flatbuffers::NativeTable {
+  typedef AppComponent TableType;
+  uint16_t sub_type = 0;
+  std::vector<uint8_t> data{};
+};
+
 struct AppComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AppComponentT NativeTableType;
   typedef AppComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SUB_TYPE = 4,
@@ -577,6 +879,9 @@ struct AppComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            flexbuffers::VerifyNestedFlexBuffer(data(), verifier) &&
            verifier.EndTable();
   }
+  AppComponentT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AppComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AppComponent> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AppComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AppComponentBuilder {
@@ -621,7 +926,19 @@ inline ::flatbuffers::Offset<AppComponent> CreateAppComponentDirect(
       data__);
 }
 
+::flatbuffers::Offset<AppComponent> CreateAppComponent(::flatbuffers::FlatBufferBuilder &_fbb, const AppComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct BoxColliderT : public ::flatbuffers::NativeTable {
+  typedef BoxCollider TableType;
+  std::unique_ptr<SE::FlatBuffers::Vec3> half_extents{};
+  BoxColliderT() = default;
+  BoxColliderT(const BoxColliderT &o);
+  BoxColliderT(BoxColliderT&&) FLATBUFFERS_NOEXCEPT = default;
+  BoxColliderT &operator=(BoxColliderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct BoxCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BoxColliderT NativeTableType;
   typedef BoxColliderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_HALF_EXTENTS = 4
@@ -634,6 +951,9 @@ struct BoxCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyFieldRequired<SE::FlatBuffers::Vec3>(verifier, VT_HALF_EXTENTS, 4) &&
            verifier.EndTable();
   }
+  BoxColliderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(BoxColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<BoxCollider> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BoxColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct BoxColliderBuilder {
@@ -663,7 +983,15 @@ inline ::flatbuffers::Offset<BoxCollider> CreateBoxCollider(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<BoxCollider> CreateBoxCollider(::flatbuffers::FlatBufferBuilder &_fbb, const BoxColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct SphereColliderT : public ::flatbuffers::NativeTable {
+  typedef SphereCollider TableType;
+  float radius = 0.5f;
+};
+
 struct SphereCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SphereColliderT NativeTableType;
   typedef SphereColliderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_RADIUS = 4
@@ -676,6 +1004,9 @@ struct SphereCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_RADIUS, 4) &&
            verifier.EndTable();
   }
+  SphereColliderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(SphereColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<SphereCollider> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SphereColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct SphereColliderBuilder {
@@ -704,7 +1035,16 @@ inline ::flatbuffers::Offset<SphereCollider> CreateSphereCollider(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<SphereCollider> CreateSphereCollider(::flatbuffers::FlatBufferBuilder &_fbb, const SphereColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct CapsuleColliderT : public ::flatbuffers::NativeTable {
+  typedef CapsuleCollider TableType;
+  float radius = 0.5f;
+  float half_height = 0.5f;
+};
+
 struct CapsuleCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef CapsuleColliderT NativeTableType;
   typedef CapsuleColliderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_RADIUS = 4,
@@ -722,6 +1062,9 @@ struct CapsuleCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_HALF_HEIGHT, 4) &&
            verifier.EndTable();
   }
+  CapsuleColliderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(CapsuleColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<CapsuleCollider> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const CapsuleColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct CapsuleColliderBuilder {
@@ -755,7 +1098,16 @@ inline ::flatbuffers::Offset<CapsuleCollider> CreateCapsuleCollider(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<CapsuleCollider> CreateCapsuleCollider(::flatbuffers::FlatBufferBuilder &_fbb, const CapsuleColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct MeshColliderT : public ::flatbuffers::NativeTable {
+  typedef MeshCollider TableType;
+  std::vector<float> vertices{};
+  std::vector<uint32_t> indices{};
+};
+
 struct MeshCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MeshColliderT NativeTableType;
   typedef MeshColliderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_VERTICES = 4,
@@ -775,6 +1127,9 @@ struct MeshCollider FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(indices()) &&
            verifier.EndTable();
   }
+  MeshColliderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(MeshColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<MeshCollider> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MeshColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct MeshColliderBuilder {
@@ -820,7 +1175,29 @@ inline ::flatbuffers::Offset<MeshCollider> CreateMeshColliderDirect(
       indices__);
 }
 
+::flatbuffers::Offset<MeshCollider> CreateMeshCollider(::flatbuffers::FlatBufferBuilder &_fbb, const MeshColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct RigidBodyT : public ::flatbuffers::NativeTable {
+  typedef RigidBody TableType;
+  SE::FlatBuffers::ColliderUUnion collider{};
+  std::unique_ptr<SE::FlatBuffers::Vec4> initial_rotation{};
+  bool is_static = false;
+  bool is_kinematic = false;
+  bool is_trigger = false;
+  float friction = 0.5f;
+  float restitution = 0.0f;
+  float linear_damping = 0.05f;
+  float angular_damping = 0.05f;
+  float gravity_scale = 1.0f;
+  float mass = 1.0f;
+  RigidBodyT() = default;
+  RigidBodyT(const RigidBodyT &o);
+  RigidBodyT(RigidBodyT&&) FLATBUFFERS_NOEXCEPT = default;
+  RigidBodyT &operator=(RigidBodyT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct RigidBody FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef RigidBodyT NativeTableType;
   typedef RigidBodyBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_COLLIDER_TYPE = 4,
@@ -902,6 +1279,9 @@ struct RigidBody FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_MASS, 4) &&
            verifier.EndTable();
   }
+  RigidBodyT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(RigidBodyT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<RigidBody> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const RigidBodyT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 template<> inline const SE::FlatBuffers::BoxCollider *RigidBody::collider_as<SE::FlatBuffers::BoxCollider>() const {
@@ -1002,7 +1382,19 @@ inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<RigidBody> CreateRigidBody(::flatbuffers::FlatBufferBuilder &_fbb, const RigidBodyT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AnimatorT : public ::flatbuffers::NativeTable {
+  typedef Animator TableType;
+  std::unique_ptr<SE::FlatBuffers::AnimationGraphT> animation_graph{};
+  AnimatorT() = default;
+  AnimatorT(const AnimatorT &o);
+  AnimatorT(AnimatorT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimatorT &operator=(AnimatorT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct Animator FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimatorT NativeTableType;
   typedef AnimatorBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_ANIMATION_GRAPH = 4
@@ -1016,6 +1408,9 @@ struct Animator FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(animation_graph()) &&
            verifier.EndTable();
   }
+  AnimatorT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimatorT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Animator> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AnimatorBuilder {
@@ -1045,7 +1440,15 @@ inline ::flatbuffers::Offset<Animator> CreateAnimator(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<Animator> CreateAnimator(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct ComponentT : public ::flatbuffers::NativeTable {
+  typedef Component TableType;
+  SE::FlatBuffers::ComponentUUnion component{};
+};
+
 struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ComponentT NativeTableType;
   typedef ComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_COMPONENT_TYPE = 4,
@@ -1089,6 +1492,9 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyComponentU(verifier, component(), component_type()) &&
            verifier.EndTable();
   }
+  ComponentT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Component> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 template<> inline const SE::FlatBuffers::StaticModel *Component::component_as<SE::FlatBuffers::StaticModel>() const {
@@ -1155,6 +1561,496 @@ inline ::flatbuffers::Offset<Component> CreateComponent(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<Component> CreateComponent(::flatbuffers::FlatBufferBuilder &_fbb, const ComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline StaticModelT::StaticModelT(const StaticModelT &o)
+      : mesh((o.mesh) ? new SE::FlatBuffers::MeshHolderT(*o.mesh) : nullptr) {
+  materials.reserve(o.materials.size());
+  for (const auto &materials_ : o.materials) { materials.emplace_back((materials_) ? new SE::FlatBuffers::MaterialHolderT(*materials_) : nullptr); }
+}
+
+inline StaticModelT &StaticModelT::operator=(StaticModelT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(mesh, o.mesh);
+  std::swap(materials, o.materials);
+  return *this;
+}
+
+inline StaticModelT *StaticModel::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<StaticModelT>(new StaticModelT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void StaticModel::UnPackTo(StaticModelT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = mesh(); if (_e) { if(_o->mesh) { _e->UnPackTo(_o->mesh.get(), _resolver); } else { _o->mesh = std::unique_ptr<SE::FlatBuffers::MeshHolderT>(_e->UnPack(_resolver)); } } else if (_o->mesh) { _o->mesh.reset(); } }
+  { auto _e = materials(); if (_e) { _o->materials.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->materials[_i]) { _e->Get(_i)->UnPackTo(_o->materials[_i].get(), _resolver); } else { _o->materials[_i] = std::unique_ptr<SE::FlatBuffers::MaterialHolderT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->materials.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<StaticModel> StaticModel::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StaticModelT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateStaticModel(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<StaticModel> CreateStaticModel(::flatbuffers::FlatBufferBuilder &_fbb, const StaticModelT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const StaticModelT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _mesh = _o->mesh ? CreateMeshHolder(_fbb, _o->mesh.get(), _rehasher) : 0;
+  auto _materials = _o->materials.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> (_o->materials.size(), [](size_t i, _VectorArgs *__va) { return CreateMaterialHolder(*__va->__fbb, __va->__o->materials[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return SE::FlatBuffers::CreateStaticModel(
+      _fbb,
+      _mesh,
+      _materials);
+}
+
+inline BindSQTT::BindSQTT(const BindSQTT &o)
+      : bind_rot((o.bind_rot) ? new SE::FlatBuffers::Vec4(*o.bind_rot) : nullptr),
+        bind_pos((o.bind_pos) ? new SE::FlatBuffers::Vec3(*o.bind_pos) : nullptr),
+        bind_scale((o.bind_scale) ? new SE::FlatBuffers::Vec3(*o.bind_scale) : nullptr) {
+}
+
+inline BindSQTT &BindSQTT::operator=(BindSQTT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(bind_rot, o.bind_rot);
+  std::swap(bind_pos, o.bind_pos);
+  std::swap(bind_scale, o.bind_scale);
+  return *this;
+}
+
+inline BindSQTT *BindSQT::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<BindSQTT>(new BindSQTT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void BindSQT::UnPackTo(BindSQTT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = bind_rot(); if (_e) _o->bind_rot = std::unique_ptr<SE::FlatBuffers::Vec4>(new SE::FlatBuffers::Vec4(*_e)); }
+  { auto _e = bind_pos(); if (_e) _o->bind_pos = std::unique_ptr<SE::FlatBuffers::Vec3>(new SE::FlatBuffers::Vec3(*_e)); }
+  { auto _e = bind_scale(); if (_e) _o->bind_scale = std::unique_ptr<SE::FlatBuffers::Vec3>(new SE::FlatBuffers::Vec3(*_e)); }
+}
+
+inline ::flatbuffers::Offset<BindSQT> BindSQT::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BindSQTT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBindSQT(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<BindSQT> CreateBindSQT(::flatbuffers::FlatBufferBuilder &_fbb, const BindSQTT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BindSQTT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _bind_rot = _o->bind_rot ? _o->bind_rot.get() : nullptr;
+  auto _bind_pos = _o->bind_pos ? _o->bind_pos.get() : nullptr;
+  auto _bind_scale = _o->bind_scale ? _o->bind_scale.get() : nullptr;
+  return SE::FlatBuffers::CreateBindSQT(
+      _fbb,
+      _bind_rot,
+      _bind_pos,
+      _bind_scale);
+}
+
+inline CharacterShellT *CharacterShell::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<CharacterShellT>(new CharacterShellT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void CharacterShell::UnPackTo(CharacterShellT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = skeleton_root_node(); if (_e) _o->skeleton_root_node = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<CharacterShell> CharacterShell::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const CharacterShellT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateCharacterShell(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShell(::flatbuffers::FlatBufferBuilder &_fbb, const CharacterShellT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const CharacterShellT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _skeleton_root_node = _fbb.CreateString(_o->skeleton_root_node);
+  return SE::FlatBuffers::CreateCharacterShell(
+      _fbb,
+      _skeleton_root_node);
+}
+
+inline AnimatedModelT::AnimatedModelT(const AnimatedModelT &o)
+      : mesh((o.mesh) ? new SE::FlatBuffers::MeshHolderT(*o.mesh) : nullptr),
+        material((o.material) ? new SE::FlatBuffers::MaterialHolderT(*o.material) : nullptr),
+        blendshapes((o.blendshapes) ? new SE::FlatBuffers::TextureHolderT(*o.blendshapes) : nullptr),
+        blendshapes_weights(o.blendshapes_weights),
+        skeleton((o.skeleton) ? new SE::FlatBuffers::SkeletonHolderT(*o.skeleton) : nullptr),
+        skeleton_root_node(o.skeleton_root_node),
+        joints_indexes(o.joints_indexes),
+        mesh_bind_pos((o.mesh_bind_pos) ? new SE::FlatBuffers::BindSQTT(*o.mesh_bind_pos) : nullptr) {
+  joints_inv_bind_pose.reserve(o.joints_inv_bind_pose.size());
+  for (const auto &joints_inv_bind_pose_ : o.joints_inv_bind_pose) { joints_inv_bind_pose.emplace_back((joints_inv_bind_pose_) ? new SE::FlatBuffers::BindSQTT(*joints_inv_bind_pose_) : nullptr); }
+}
+
+inline AnimatedModelT &AnimatedModelT::operator=(AnimatedModelT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(mesh, o.mesh);
+  std::swap(material, o.material);
+  std::swap(blendshapes, o.blendshapes);
+  std::swap(blendshapes_weights, o.blendshapes_weights);
+  std::swap(skeleton, o.skeleton);
+  std::swap(skeleton_root_node, o.skeleton_root_node);
+  std::swap(joints_indexes, o.joints_indexes);
+  std::swap(joints_inv_bind_pose, o.joints_inv_bind_pose);
+  std::swap(mesh_bind_pos, o.mesh_bind_pos);
+  return *this;
+}
+
+inline AnimatedModelT *AnimatedModel::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimatedModelT>(new AnimatedModelT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimatedModel::UnPackTo(AnimatedModelT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = mesh(); if (_e) { if(_o->mesh) { _e->UnPackTo(_o->mesh.get(), _resolver); } else { _o->mesh = std::unique_ptr<SE::FlatBuffers::MeshHolderT>(_e->UnPack(_resolver)); } } else if (_o->mesh) { _o->mesh.reset(); } }
+  { auto _e = material(); if (_e) { if(_o->material) { _e->UnPackTo(_o->material.get(), _resolver); } else { _o->material = std::unique_ptr<SE::FlatBuffers::MaterialHolderT>(_e->UnPack(_resolver)); } } else if (_o->material) { _o->material.reset(); } }
+  { auto _e = blendshapes(); if (_e) { if(_o->blendshapes) { _e->UnPackTo(_o->blendshapes.get(), _resolver); } else { _o->blendshapes = std::unique_ptr<SE::FlatBuffers::TextureHolderT>(_e->UnPack(_resolver)); } } else if (_o->blendshapes) { _o->blendshapes.reset(); } }
+  { auto _e = blendshapes_weights(); if (_e) { _o->blendshapes_weights.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->blendshapes_weights[_i] = _e->Get(_i); } } else { _o->blendshapes_weights.resize(0); } }
+  { auto _e = skeleton(); if (_e) { if(_o->skeleton) { _e->UnPackTo(_o->skeleton.get(), _resolver); } else { _o->skeleton = std::unique_ptr<SE::FlatBuffers::SkeletonHolderT>(_e->UnPack(_resolver)); } } else if (_o->skeleton) { _o->skeleton.reset(); } }
+  { auto _e = skeleton_root_node(); if (_e) _o->skeleton_root_node = _e->str(); }
+  { auto _e = joints_indexes(); if (_e) { _o->joints_indexes.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->joints_indexes[_i] = _e->Get(_i); } } else { _o->joints_indexes.resize(0); } }
+  { auto _e = joints_inv_bind_pose(); if (_e) { _o->joints_inv_bind_pose.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->joints_inv_bind_pose[_i]) { _e->Get(_i)->UnPackTo(_o->joints_inv_bind_pose[_i].get(), _resolver); } else { _o->joints_inv_bind_pose[_i] = std::unique_ptr<SE::FlatBuffers::BindSQTT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->joints_inv_bind_pose.resize(0); } }
+  { auto _e = mesh_bind_pos(); if (_e) { if(_o->mesh_bind_pos) { _e->UnPackTo(_o->mesh_bind_pos.get(), _resolver); } else { _o->mesh_bind_pos = std::unique_ptr<SE::FlatBuffers::BindSQTT>(_e->UnPack(_resolver)); } } else if (_o->mesh_bind_pos) { _o->mesh_bind_pos.reset(); } }
+}
+
+inline ::flatbuffers::Offset<AnimatedModel> AnimatedModel::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatedModelT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimatedModel(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatedModelT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimatedModelT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _mesh = _o->mesh ? CreateMeshHolder(_fbb, _o->mesh.get(), _rehasher) : 0;
+  auto _material = _o->material ? CreateMaterialHolder(_fbb, _o->material.get(), _rehasher) : 0;
+  auto _blendshapes = _o->blendshapes ? CreateTextureHolder(_fbb, _o->blendshapes.get(), _rehasher) : 0;
+  auto _blendshapes_weights = _o->blendshapes_weights.size() ? _fbb.CreateVector(_o->blendshapes_weights) : 0;
+  auto _skeleton = _o->skeleton ? CreateSkeletonHolder(_fbb, _o->skeleton.get(), _rehasher) : 0;
+  auto _skeleton_root_node = _o->skeleton_root_node.empty() ? 0 : _fbb.CreateString(_o->skeleton_root_node);
+  auto _joints_indexes = _o->joints_indexes.size() ? _fbb.CreateVector(_o->joints_indexes) : 0;
+  auto _joints_inv_bind_pose = _o->joints_inv_bind_pose.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> (_o->joints_inv_bind_pose.size(), [](size_t i, _VectorArgs *__va) { return CreateBindSQT(*__va->__fbb, __va->__o->joints_inv_bind_pose[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _mesh_bind_pos = _o->mesh_bind_pos ? CreateBindSQT(_fbb, _o->mesh_bind_pos.get(), _rehasher) : 0;
+  return SE::FlatBuffers::CreateAnimatedModel(
+      _fbb,
+      _mesh,
+      _material,
+      _blendshapes,
+      _blendshapes_weights,
+      _skeleton,
+      _skeleton_root_node,
+      _joints_indexes,
+      _joints_inv_bind_pose,
+      _mesh_bind_pos);
+}
+
+inline AppComponentT *AppComponent::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AppComponentT>(new AppComponentT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AppComponent::UnPackTo(AppComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = sub_type(); _o->sub_type = _e; }
+  { auto _e = data(); if (_e) { _o->data.resize(_e->size()); std::copy(_e->begin(), _e->end(), _o->data.begin()); } }
+}
+
+inline ::flatbuffers::Offset<AppComponent> AppComponent::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AppComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAppComponent(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AppComponent> CreateAppComponent(::flatbuffers::FlatBufferBuilder &_fbb, const AppComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AppComponentT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _sub_type = _o->sub_type;
+  auto _data = _o->data.size() ? _fbb.CreateVector(_o->data) : 0;
+  return SE::FlatBuffers::CreateAppComponent(
+      _fbb,
+      _sub_type,
+      _data);
+}
+
+inline BoxColliderT::BoxColliderT(const BoxColliderT &o)
+      : half_extents((o.half_extents) ? new SE::FlatBuffers::Vec3(*o.half_extents) : nullptr) {
+}
+
+inline BoxColliderT &BoxColliderT::operator=(BoxColliderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(half_extents, o.half_extents);
+  return *this;
+}
+
+inline BoxColliderT *BoxCollider::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<BoxColliderT>(new BoxColliderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void BoxCollider::UnPackTo(BoxColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = half_extents(); if (_e) _o->half_extents = std::unique_ptr<SE::FlatBuffers::Vec3>(new SE::FlatBuffers::Vec3(*_e)); }
+}
+
+inline ::flatbuffers::Offset<BoxCollider> BoxCollider::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BoxColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBoxCollider(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<BoxCollider> CreateBoxCollider(::flatbuffers::FlatBufferBuilder &_fbb, const BoxColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BoxColliderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _half_extents = _o->half_extents ? _o->half_extents.get() : nullptr;
+  return SE::FlatBuffers::CreateBoxCollider(
+      _fbb,
+      _half_extents);
+}
+
+inline SphereColliderT *SphereCollider::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<SphereColliderT>(new SphereColliderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void SphereCollider::UnPackTo(SphereColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = radius(); _o->radius = _e; }
+}
+
+inline ::flatbuffers::Offset<SphereCollider> SphereCollider::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SphereColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateSphereCollider(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<SphereCollider> CreateSphereCollider(::flatbuffers::FlatBufferBuilder &_fbb, const SphereColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SphereColliderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _radius = _o->radius;
+  return SE::FlatBuffers::CreateSphereCollider(
+      _fbb,
+      _radius);
+}
+
+inline CapsuleColliderT *CapsuleCollider::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<CapsuleColliderT>(new CapsuleColliderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void CapsuleCollider::UnPackTo(CapsuleColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = radius(); _o->radius = _e; }
+  { auto _e = half_height(); _o->half_height = _e; }
+}
+
+inline ::flatbuffers::Offset<CapsuleCollider> CapsuleCollider::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const CapsuleColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateCapsuleCollider(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<CapsuleCollider> CreateCapsuleCollider(::flatbuffers::FlatBufferBuilder &_fbb, const CapsuleColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const CapsuleColliderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _radius = _o->radius;
+  auto _half_height = _o->half_height;
+  return SE::FlatBuffers::CreateCapsuleCollider(
+      _fbb,
+      _radius,
+      _half_height);
+}
+
+inline MeshColliderT *MeshCollider::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<MeshColliderT>(new MeshColliderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void MeshCollider::UnPackTo(MeshColliderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = vertices(); if (_e) { _o->vertices.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->vertices[_i] = _e->Get(_i); } } else { _o->vertices.resize(0); } }
+  { auto _e = indices(); if (_e) { _o->indices.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->indices[_i] = _e->Get(_i); } } else { _o->indices.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<MeshCollider> MeshCollider::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MeshColliderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateMeshCollider(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<MeshCollider> CreateMeshCollider(::flatbuffers::FlatBufferBuilder &_fbb, const MeshColliderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const MeshColliderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _vertices = _o->vertices.size() ? _fbb.CreateVector(_o->vertices) : 0;
+  auto _indices = _o->indices.size() ? _fbb.CreateVector(_o->indices) : 0;
+  return SE::FlatBuffers::CreateMeshCollider(
+      _fbb,
+      _vertices,
+      _indices);
+}
+
+inline RigidBodyT::RigidBodyT(const RigidBodyT &o)
+      : collider(o.collider),
+        initial_rotation((o.initial_rotation) ? new SE::FlatBuffers::Vec4(*o.initial_rotation) : nullptr),
+        is_static(o.is_static),
+        is_kinematic(o.is_kinematic),
+        is_trigger(o.is_trigger),
+        friction(o.friction),
+        restitution(o.restitution),
+        linear_damping(o.linear_damping),
+        angular_damping(o.angular_damping),
+        gravity_scale(o.gravity_scale),
+        mass(o.mass) {
+}
+
+inline RigidBodyT &RigidBodyT::operator=(RigidBodyT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(collider, o.collider);
+  std::swap(initial_rotation, o.initial_rotation);
+  std::swap(is_static, o.is_static);
+  std::swap(is_kinematic, o.is_kinematic);
+  std::swap(is_trigger, o.is_trigger);
+  std::swap(friction, o.friction);
+  std::swap(restitution, o.restitution);
+  std::swap(linear_damping, o.linear_damping);
+  std::swap(angular_damping, o.angular_damping);
+  std::swap(gravity_scale, o.gravity_scale);
+  std::swap(mass, o.mass);
+  return *this;
+}
+
+inline RigidBodyT *RigidBody::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<RigidBodyT>(new RigidBodyT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void RigidBody::UnPackTo(RigidBodyT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = collider_type(); _o->collider.type = _e; }
+  { auto _e = collider(); if (_e) _o->collider.value = SE::FlatBuffers::ColliderUUnion::UnPack(_e, collider_type(), _resolver); }
+  { auto _e = initial_rotation(); if (_e) _o->initial_rotation = std::unique_ptr<SE::FlatBuffers::Vec4>(new SE::FlatBuffers::Vec4(*_e)); }
+  { auto _e = is_static(); _o->is_static = _e; }
+  { auto _e = is_kinematic(); _o->is_kinematic = _e; }
+  { auto _e = is_trigger(); _o->is_trigger = _e; }
+  { auto _e = friction(); _o->friction = _e; }
+  { auto _e = restitution(); _o->restitution = _e; }
+  { auto _e = linear_damping(); _o->linear_damping = _e; }
+  { auto _e = angular_damping(); _o->angular_damping = _e; }
+  { auto _e = gravity_scale(); _o->gravity_scale = _e; }
+  { auto _e = mass(); _o->mass = _e; }
+}
+
+inline ::flatbuffers::Offset<RigidBody> RigidBody::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const RigidBodyT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateRigidBody(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(::flatbuffers::FlatBufferBuilder &_fbb, const RigidBodyT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const RigidBodyT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _collider_type = _o->collider.type;
+  auto _collider = _o->collider.Pack(_fbb);
+  auto _initial_rotation = _o->initial_rotation ? _o->initial_rotation.get() : nullptr;
+  auto _is_static = _o->is_static;
+  auto _is_kinematic = _o->is_kinematic;
+  auto _is_trigger = _o->is_trigger;
+  auto _friction = _o->friction;
+  auto _restitution = _o->restitution;
+  auto _linear_damping = _o->linear_damping;
+  auto _angular_damping = _o->angular_damping;
+  auto _gravity_scale = _o->gravity_scale;
+  auto _mass = _o->mass;
+  return SE::FlatBuffers::CreateRigidBody(
+      _fbb,
+      _collider_type,
+      _collider,
+      _initial_rotation,
+      _is_static,
+      _is_kinematic,
+      _is_trigger,
+      _friction,
+      _restitution,
+      _linear_damping,
+      _angular_damping,
+      _gravity_scale,
+      _mass);
+}
+
+inline AnimatorT::AnimatorT(const AnimatorT &o)
+      : animation_graph((o.animation_graph) ? new SE::FlatBuffers::AnimationGraphT(*o.animation_graph) : nullptr) {
+}
+
+inline AnimatorT &AnimatorT::operator=(AnimatorT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(animation_graph, o.animation_graph);
+  return *this;
+}
+
+inline AnimatorT *Animator::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimatorT>(new AnimatorT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Animator::UnPackTo(AnimatorT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = animation_graph(); if (_e) { if(_o->animation_graph) { _e->UnPackTo(_o->animation_graph.get(), _resolver); } else { _o->animation_graph = std::unique_ptr<SE::FlatBuffers::AnimationGraphT>(_e->UnPack(_resolver)); } } else if (_o->animation_graph) { _o->animation_graph.reset(); } }
+}
+
+inline ::flatbuffers::Offset<Animator> Animator::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimator(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Animator> CreateAnimator(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimatorT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _animation_graph = _o->animation_graph ? CreateAnimationGraph(_fbb, _o->animation_graph.get(), _rehasher) : 0;
+  return SE::FlatBuffers::CreateAnimator(
+      _fbb,
+      _animation_graph);
+}
+
+inline ComponentT *Component::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ComponentT>(new ComponentT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Component::UnPackTo(ComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = component_type(); _o->component.type = _e; }
+  { auto _e = component(); if (_e) _o->component.value = SE::FlatBuffers::ComponentUUnion::UnPack(_e, component_type(), _resolver); }
+}
+
+inline ::flatbuffers::Offset<Component> Component::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateComponent(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Component> CreateComponent(::flatbuffers::FlatBufferBuilder &_fbb, const ComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ComponentT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _component_type = _o->component.type;
+  auto _component = _o->component.Pack(_fbb);
+  return SE::FlatBuffers::CreateComponent(
+      _fbb,
+      _component_type,
+      _component);
+}
+
 inline bool VerifyColliderU(::flatbuffers::Verifier &verifier, const void *obj, ColliderU type) {
   switch (type) {
     case ColliderU::NONE: {
@@ -1190,6 +2086,103 @@ inline bool VerifyColliderUVector(::flatbuffers::Verifier &verifier, const ::fla
     }
   }
   return true;
+}
+
+inline void *ColliderUUnion::UnPack(const void *obj, ColliderU type, const ::flatbuffers::resolver_function_t *resolver) {
+  (void)resolver;
+  switch (type) {
+    case ColliderU::BoxCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::BoxCollider *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ColliderU::SphereCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SphereCollider *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ColliderU::CapsuleCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::CapsuleCollider *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ColliderU::MeshCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::MeshCollider *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    default: return nullptr;
+  }
+}
+
+inline ::flatbuffers::Offset<void> ColliderUUnion::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher) const {
+  (void)_rehasher;
+  switch (type) {
+    case ColliderU::BoxCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::BoxColliderT *>(value);
+      return CreateBoxCollider(_fbb, ptr, _rehasher).Union();
+    }
+    case ColliderU::SphereCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SphereColliderT *>(value);
+      return CreateSphereCollider(_fbb, ptr, _rehasher).Union();
+    }
+    case ColliderU::CapsuleCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::CapsuleColliderT *>(value);
+      return CreateCapsuleCollider(_fbb, ptr, _rehasher).Union();
+    }
+    case ColliderU::MeshCollider: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::MeshColliderT *>(value);
+      return CreateMeshCollider(_fbb, ptr, _rehasher).Union();
+    }
+    default: return 0;
+  }
+}
+
+inline ColliderUUnion::ColliderUUnion(const ColliderUUnion &u) : type(u.type), value(nullptr) {
+  switch (type) {
+    case ColliderU::BoxCollider: {
+      value = new SE::FlatBuffers::BoxColliderT(*reinterpret_cast<SE::FlatBuffers::BoxColliderT *>(u.value));
+      break;
+    }
+    case ColliderU::SphereCollider: {
+      value = new SE::FlatBuffers::SphereColliderT(*reinterpret_cast<SE::FlatBuffers::SphereColliderT *>(u.value));
+      break;
+    }
+    case ColliderU::CapsuleCollider: {
+      value = new SE::FlatBuffers::CapsuleColliderT(*reinterpret_cast<SE::FlatBuffers::CapsuleColliderT *>(u.value));
+      break;
+    }
+    case ColliderU::MeshCollider: {
+      value = new SE::FlatBuffers::MeshColliderT(*reinterpret_cast<SE::FlatBuffers::MeshColliderT *>(u.value));
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+inline void ColliderUUnion::Reset() {
+  switch (type) {
+    case ColliderU::BoxCollider: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::BoxColliderT *>(value);
+      delete ptr;
+      break;
+    }
+    case ColliderU::SphereCollider: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::SphereColliderT *>(value);
+      delete ptr;
+      break;
+    }
+    case ColliderU::CapsuleCollider: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::CapsuleColliderT *>(value);
+      delete ptr;
+      break;
+    }
+    case ColliderU::MeshCollider: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::MeshColliderT *>(value);
+      delete ptr;
+      break;
+    }
+    default: break;
+  }
+  value = nullptr;
+  type = ColliderU::NONE;
 }
 
 inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj, ComponentU type) {
@@ -1245,6 +2238,171 @@ inline bool VerifyComponentUVector(::flatbuffers::Verifier &verifier, const ::fl
   return true;
 }
 
+inline void *ComponentUUnion::UnPack(const void *obj, ComponentU type, const ::flatbuffers::resolver_function_t *resolver) {
+  (void)resolver;
+  switch (type) {
+    case ComponentU::StaticModel: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StaticModel *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::AnimatedModel: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AnimatedModel *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::RigidBody: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::RigidBody *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::AudioEmitter: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AudioEmitter *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::AudioListener: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AudioListener *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::SoundEmitter: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SoundEmitter *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::AppComponent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AppComponent *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::Animator: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Animator *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    default: return nullptr;
+  }
+}
+
+inline ::flatbuffers::Offset<void> ComponentUUnion::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher) const {
+  (void)_rehasher;
+  switch (type) {
+    case ComponentU::StaticModel: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StaticModelT *>(value);
+      return CreateStaticModel(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::AnimatedModel: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AnimatedModelT *>(value);
+      return CreateAnimatedModel(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::RigidBody: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::RigidBodyT *>(value);
+      return CreateRigidBody(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::AudioEmitter: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AudioEmitterT *>(value);
+      return CreateAudioEmitter(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::AudioListener: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AudioListenerT *>(value);
+      return CreateAudioListener(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::SoundEmitter: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SoundEmitterT *>(value);
+      return CreateSoundEmitter(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::AppComponent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AppComponentT *>(value);
+      return CreateAppComponent(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::Animator: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::AnimatorT *>(value);
+      return CreateAnimator(_fbb, ptr, _rehasher).Union();
+    }
+    default: return 0;
+  }
+}
+
+inline ComponentUUnion::ComponentUUnion(const ComponentUUnion &u) : type(u.type), value(nullptr) {
+  switch (type) {
+    case ComponentU::StaticModel: {
+      value = new SE::FlatBuffers::StaticModelT(*reinterpret_cast<SE::FlatBuffers::StaticModelT *>(u.value));
+      break;
+    }
+    case ComponentU::AnimatedModel: {
+      value = new SE::FlatBuffers::AnimatedModelT(*reinterpret_cast<SE::FlatBuffers::AnimatedModelT *>(u.value));
+      break;
+    }
+    case ComponentU::RigidBody: {
+      value = new SE::FlatBuffers::RigidBodyT(*reinterpret_cast<SE::FlatBuffers::RigidBodyT *>(u.value));
+      break;
+    }
+    case ComponentU::AudioEmitter: {
+      value = new SE::FlatBuffers::AudioEmitterT(*reinterpret_cast<SE::FlatBuffers::AudioEmitterT *>(u.value));
+      break;
+    }
+    case ComponentU::AudioListener: {
+      value = new SE::FlatBuffers::AudioListenerT(*reinterpret_cast<SE::FlatBuffers::AudioListenerT *>(u.value));
+      break;
+    }
+    case ComponentU::SoundEmitter: {
+      value = new SE::FlatBuffers::SoundEmitterT(*reinterpret_cast<SE::FlatBuffers::SoundEmitterT *>(u.value));
+      break;
+    }
+    case ComponentU::AppComponent: {
+      value = new SE::FlatBuffers::AppComponentT(*reinterpret_cast<SE::FlatBuffers::AppComponentT *>(u.value));
+      break;
+    }
+    case ComponentU::Animator: {
+      value = new SE::FlatBuffers::AnimatorT(*reinterpret_cast<SE::FlatBuffers::AnimatorT *>(u.value));
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+inline void ComponentUUnion::Reset() {
+  switch (type) {
+    case ComponentU::StaticModel: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::StaticModelT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::AnimatedModel: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::AnimatedModelT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::RigidBody: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::RigidBodyT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::AudioEmitter: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::AudioEmitterT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::AudioListener: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::AudioListenerT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::SoundEmitter: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::SoundEmitterT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::AppComponent: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::AppComponentT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::Animator: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::AnimatorT *>(value);
+      delete ptr;
+      break;
+    }
+    default: break;
+  }
+  value = nullptr;
+  type = ComponentU::NONE;
+}
+
 inline const SE::FlatBuffers::Component *GetComponent(const void *buf) {
   return ::flatbuffers::GetRoot<SE::FlatBuffers::Component>(buf);
 }
@@ -1273,6 +2431,18 @@ inline void FinishSizePrefixedComponentBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::Component> root) {
   fbb.FinishSizePrefixed(root);
+}
+
+inline std::unique_ptr<SE::FlatBuffers::ComponentT> UnPackComponent(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::ComponentT>(GetComponent(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::ComponentT> UnPackSizePrefixedComponent(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::ComponentT>(GetSizePrefixedComponent(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

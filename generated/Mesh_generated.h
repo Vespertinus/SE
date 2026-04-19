@@ -22,36 +22,47 @@ struct BoundingBox;
 
 struct VertexAttribute;
 struct VertexAttributeBuilder;
+struct VertexAttributeT;
 
 struct FloatVector;
 struct FloatVectorBuilder;
+struct FloatVectorT;
 
 struct ByteVector;
 struct ByteVectorBuilder;
+struct ByteVectorT;
 
 struct Uint32Vector;
 struct Uint32VectorBuilder;
+struct Uint32VectorT;
 
 struct Uint16Vector;
 struct Uint16VectorBuilder;
+struct Uint16VectorT;
 
 struct Uint8Vector;
 struct Uint8VectorBuilder;
+struct Uint8VectorT;
 
 struct VertexBuffer;
 struct VertexBufferBuilder;
+struct VertexBufferT;
 
 struct IndexBuffer;
 struct IndexBufferBuilder;
+struct IndexBufferT;
 
 struct Shape;
 struct ShapeBuilder;
+struct ShapeT;
 
 struct Mesh;
 struct MeshBuilder;
+struct MeshT;
 
 struct MeshHolder;
 struct MeshHolderBuilder;
+struct MeshHolderT;
 
 enum class AttribDestType : uint8_t {
   DEST_FLOAT = 1,
@@ -135,6 +146,78 @@ template<> struct VertexBufferUTraits<SE::FlatBuffers::Uint32Vector> {
   static const VertexBufferU enum_value = VertexBufferU::Uint32Vector;
 };
 
+template<typename T> struct VertexBufferUUnionTraits {
+  static const VertexBufferU enum_value = VertexBufferU::NONE;
+};
+
+template<> struct VertexBufferUUnionTraits<SE::FlatBuffers::FloatVectorT> {
+  static const VertexBufferU enum_value = VertexBufferU::FloatVector;
+};
+
+template<> struct VertexBufferUUnionTraits<SE::FlatBuffers::ByteVectorT> {
+  static const VertexBufferU enum_value = VertexBufferU::ByteVector;
+};
+
+template<> struct VertexBufferUUnionTraits<SE::FlatBuffers::Uint32VectorT> {
+  static const VertexBufferU enum_value = VertexBufferU::Uint32Vector;
+};
+
+struct VertexBufferUUnion {
+  VertexBufferU type;
+  void *value;
+
+  VertexBufferUUnion() : type(VertexBufferU::NONE), value(nullptr) {}
+  VertexBufferUUnion(VertexBufferUUnion&& u) FLATBUFFERS_NOEXCEPT :
+    type(VertexBufferU::NONE), value(nullptr)
+    { std::swap(type, u.type); std::swap(value, u.value); }
+  VertexBufferUUnion(const VertexBufferUUnion &);
+  VertexBufferUUnion &operator=(const VertexBufferUUnion &u)
+    { VertexBufferUUnion t(u); std::swap(type, t.type); std::swap(value, t.value); return *this; }
+  VertexBufferUUnion &operator=(VertexBufferUUnion &&u) FLATBUFFERS_NOEXCEPT
+    { std::swap(type, u.type); std::swap(value, u.value); return *this; }
+  ~VertexBufferUUnion() { Reset(); }
+
+  void Reset();
+
+  template <typename T>
+  void Set(T&& val) {
+    typedef typename std::remove_reference<T>::type RT;
+    Reset();
+    type = VertexBufferUUnionTraits<RT>::enum_value;
+    if (type != VertexBufferU::NONE) {
+      value = new RT(std::forward<T>(val));
+    }
+  }
+
+  static void *UnPack(const void *obj, VertexBufferU type, const ::flatbuffers::resolver_function_t *resolver);
+  ::flatbuffers::Offset<void> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
+
+  SE::FlatBuffers::FloatVectorT *AsFloatVector() {
+    return type == VertexBufferU::FloatVector ?
+      reinterpret_cast<SE::FlatBuffers::FloatVectorT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::FloatVectorT *AsFloatVector() const {
+    return type == VertexBufferU::FloatVector ?
+      reinterpret_cast<const SE::FlatBuffers::FloatVectorT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::ByteVectorT *AsByteVector() {
+    return type == VertexBufferU::ByteVector ?
+      reinterpret_cast<SE::FlatBuffers::ByteVectorT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::ByteVectorT *AsByteVector() const {
+    return type == VertexBufferU::ByteVector ?
+      reinterpret_cast<const SE::FlatBuffers::ByteVectorT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::Uint32VectorT *AsUint32Vector() {
+    return type == VertexBufferU::Uint32Vector ?
+      reinterpret_cast<SE::FlatBuffers::Uint32VectorT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::Uint32VectorT *AsUint32Vector() const {
+    return type == VertexBufferU::Uint32Vector ?
+      reinterpret_cast<const SE::FlatBuffers::Uint32VectorT *>(value) : nullptr;
+  }
+};
+
 bool VerifyVertexBufferU(::flatbuffers::Verifier &verifier, const void *obj, VertexBufferU type);
 bool VerifyVertexBufferUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<VertexBufferU> *types);
 
@@ -188,6 +271,78 @@ template<> struct IndexBufferUTraits<SE::FlatBuffers::Uint16Vector> {
 
 template<> struct IndexBufferUTraits<SE::FlatBuffers::Uint32Vector> {
   static const IndexBufferU enum_value = IndexBufferU::Uint32Vector;
+};
+
+template<typename T> struct IndexBufferUUnionTraits {
+  static const IndexBufferU enum_value = IndexBufferU::NONE;
+};
+
+template<> struct IndexBufferUUnionTraits<SE::FlatBuffers::Uint8VectorT> {
+  static const IndexBufferU enum_value = IndexBufferU::Uint8Vector;
+};
+
+template<> struct IndexBufferUUnionTraits<SE::FlatBuffers::Uint16VectorT> {
+  static const IndexBufferU enum_value = IndexBufferU::Uint16Vector;
+};
+
+template<> struct IndexBufferUUnionTraits<SE::FlatBuffers::Uint32VectorT> {
+  static const IndexBufferU enum_value = IndexBufferU::Uint32Vector;
+};
+
+struct IndexBufferUUnion {
+  IndexBufferU type;
+  void *value;
+
+  IndexBufferUUnion() : type(IndexBufferU::NONE), value(nullptr) {}
+  IndexBufferUUnion(IndexBufferUUnion&& u) FLATBUFFERS_NOEXCEPT :
+    type(IndexBufferU::NONE), value(nullptr)
+    { std::swap(type, u.type); std::swap(value, u.value); }
+  IndexBufferUUnion(const IndexBufferUUnion &);
+  IndexBufferUUnion &operator=(const IndexBufferUUnion &u)
+    { IndexBufferUUnion t(u); std::swap(type, t.type); std::swap(value, t.value); return *this; }
+  IndexBufferUUnion &operator=(IndexBufferUUnion &&u) FLATBUFFERS_NOEXCEPT
+    { std::swap(type, u.type); std::swap(value, u.value); return *this; }
+  ~IndexBufferUUnion() { Reset(); }
+
+  void Reset();
+
+  template <typename T>
+  void Set(T&& val) {
+    typedef typename std::remove_reference<T>::type RT;
+    Reset();
+    type = IndexBufferUUnionTraits<RT>::enum_value;
+    if (type != IndexBufferU::NONE) {
+      value = new RT(std::forward<T>(val));
+    }
+  }
+
+  static void *UnPack(const void *obj, IndexBufferU type, const ::flatbuffers::resolver_function_t *resolver);
+  ::flatbuffers::Offset<void> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
+
+  SE::FlatBuffers::Uint8VectorT *AsUint8Vector() {
+    return type == IndexBufferU::Uint8Vector ?
+      reinterpret_cast<SE::FlatBuffers::Uint8VectorT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::Uint8VectorT *AsUint8Vector() const {
+    return type == IndexBufferU::Uint8Vector ?
+      reinterpret_cast<const SE::FlatBuffers::Uint8VectorT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::Uint16VectorT *AsUint16Vector() {
+    return type == IndexBufferU::Uint16Vector ?
+      reinterpret_cast<SE::FlatBuffers::Uint16VectorT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::Uint16VectorT *AsUint16Vector() const {
+    return type == IndexBufferU::Uint16Vector ?
+      reinterpret_cast<const SE::FlatBuffers::Uint16VectorT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::Uint32VectorT *AsUint32Vector() {
+    return type == IndexBufferU::Uint32Vector ?
+      reinterpret_cast<SE::FlatBuffers::Uint32VectorT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::Uint32VectorT *AsUint32Vector() const {
+    return type == IndexBufferU::Uint32Vector ?
+      reinterpret_cast<const SE::FlatBuffers::Uint32VectorT *>(value) : nullptr;
+  }
 };
 
 bool VerifyIndexBufferU(::flatbuffers::Verifier &verifier, const void *obj, IndexBufferU type);
@@ -249,7 +404,18 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) BoundingBox FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(BoundingBox, 24);
 
+struct VertexAttributeT : public ::flatbuffers::NativeTable {
+  typedef VertexAttribute TableType;
+  std::string name{};
+  uint16_t offset = 0;
+  uint8_t elem_size = 3;
+  uint8_t buffer_ind = 0;
+  uint32_t custom = 0;
+  SE::FlatBuffers::AttribDestType destination = SE::FlatBuffers::AttribDestType::DEST_FLOAT;
+};
+
 struct VertexAttribute FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef VertexAttributeT NativeTableType;
   typedef VertexAttributeBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
@@ -288,6 +454,9 @@ struct VertexAttribute FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_DESTINATION, 1) &&
            verifier.EndTable();
   }
+  VertexAttributeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(VertexAttributeT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<VertexAttribute> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const VertexAttributeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct VertexAttributeBuilder {
@@ -361,7 +530,15 @@ inline ::flatbuffers::Offset<VertexAttribute> CreateVertexAttributeDirect(
       destination);
 }
 
+::flatbuffers::Offset<VertexAttribute> CreateVertexAttribute(::flatbuffers::FlatBufferBuilder &_fbb, const VertexAttributeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct FloatVectorT : public ::flatbuffers::NativeTable {
+  typedef FloatVector TableType;
+  std::vector<float> data{};
+};
+
 struct FloatVector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef FloatVectorT NativeTableType;
   typedef FloatVectorBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DATA = 4
@@ -375,6 +552,9 @@ struct FloatVector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
+  FloatVectorT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(FloatVectorT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<FloatVector> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const FloatVectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct FloatVectorBuilder {
@@ -412,7 +592,15 @@ inline ::flatbuffers::Offset<FloatVector> CreateFloatVectorDirect(
       data__);
 }
 
+::flatbuffers::Offset<FloatVector> CreateFloatVector(::flatbuffers::FlatBufferBuilder &_fbb, const FloatVectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct ByteVectorT : public ::flatbuffers::NativeTable {
+  typedef ByteVector TableType;
+  std::vector<uint8_t> data{};
+};
+
 struct ByteVector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ByteVectorT NativeTableType;
   typedef ByteVectorBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DATA = 4
@@ -426,6 +614,9 @@ struct ByteVector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
+  ByteVectorT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ByteVectorT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<ByteVector> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ByteVectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ByteVectorBuilder {
@@ -463,7 +654,15 @@ inline ::flatbuffers::Offset<ByteVector> CreateByteVectorDirect(
       data__);
 }
 
+::flatbuffers::Offset<ByteVector> CreateByteVector(::flatbuffers::FlatBufferBuilder &_fbb, const ByteVectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct Uint32VectorT : public ::flatbuffers::NativeTable {
+  typedef Uint32Vector TableType;
+  std::vector<uint32_t> data{};
+};
+
 struct Uint32Vector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef Uint32VectorT NativeTableType;
   typedef Uint32VectorBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DATA = 4
@@ -477,6 +676,9 @@ struct Uint32Vector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
+  Uint32VectorT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(Uint32VectorT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Uint32Vector> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Uint32VectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct Uint32VectorBuilder {
@@ -514,7 +716,15 @@ inline ::flatbuffers::Offset<Uint32Vector> CreateUint32VectorDirect(
       data__);
 }
 
+::flatbuffers::Offset<Uint32Vector> CreateUint32Vector(::flatbuffers::FlatBufferBuilder &_fbb, const Uint32VectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct Uint16VectorT : public ::flatbuffers::NativeTable {
+  typedef Uint16Vector TableType;
+  std::vector<uint16_t> data{};
+};
+
 struct Uint16Vector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef Uint16VectorT NativeTableType;
   typedef Uint16VectorBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DATA = 4
@@ -528,6 +738,9 @@ struct Uint16Vector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
+  Uint16VectorT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(Uint16VectorT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Uint16Vector> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Uint16VectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct Uint16VectorBuilder {
@@ -565,7 +778,15 @@ inline ::flatbuffers::Offset<Uint16Vector> CreateUint16VectorDirect(
       data__);
 }
 
+::flatbuffers::Offset<Uint16Vector> CreateUint16Vector(::flatbuffers::FlatBufferBuilder &_fbb, const Uint16VectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct Uint8VectorT : public ::flatbuffers::NativeTable {
+  typedef Uint8Vector TableType;
+  std::vector<uint8_t> data{};
+};
+
 struct Uint8Vector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef Uint8VectorT NativeTableType;
   typedef Uint8VectorBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DATA = 4
@@ -579,6 +800,9 @@ struct Uint8Vector FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
+  Uint8VectorT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(Uint8VectorT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Uint8Vector> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Uint8VectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct Uint8VectorBuilder {
@@ -616,7 +840,16 @@ inline ::flatbuffers::Offset<Uint8Vector> CreateUint8VectorDirect(
       data__);
 }
 
+::flatbuffers::Offset<Uint8Vector> CreateUint8Vector(::flatbuffers::FlatBufferBuilder &_fbb, const Uint8VectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct VertexBufferT : public ::flatbuffers::NativeTable {
+  typedef VertexBuffer TableType;
+  SE::FlatBuffers::VertexBufferUUnion buf{};
+  uint8_t stride = 32;
+};
+
 struct VertexBuffer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef VertexBufferT NativeTableType;
   typedef VertexBufferBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BUF_TYPE = 4,
@@ -650,6 +883,9 @@ struct VertexBuffer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_STRIDE, 1) &&
            verifier.EndTable();
   }
+  VertexBufferT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(VertexBufferT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<VertexBuffer> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const VertexBufferT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 template<> inline const SE::FlatBuffers::FloatVector *VertexBuffer::buf_as<SE::FlatBuffers::FloatVector>() const {
@@ -701,7 +937,15 @@ inline ::flatbuffers::Offset<VertexBuffer> CreateVertexBuffer(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<VertexBuffer> CreateVertexBuffer(::flatbuffers::FlatBufferBuilder &_fbb, const VertexBufferT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct IndexBufferT : public ::flatbuffers::NativeTable {
+  typedef IndexBuffer TableType;
+  SE::FlatBuffers::IndexBufferUUnion buf{};
+};
+
 struct IndexBuffer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef IndexBufferT NativeTableType;
   typedef IndexBufferBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BUF_TYPE = 4,
@@ -730,6 +974,9 @@ struct IndexBuffer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyIndexBufferU(verifier, buf(), buf_type()) &&
            verifier.EndTable();
   }
+  IndexBufferT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(IndexBufferT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<IndexBuffer> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const IndexBufferT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 template<> inline const SE::FlatBuffers::Uint8Vector *IndexBuffer::buf_as<SE::FlatBuffers::Uint8Vector>() const {
@@ -776,7 +1023,22 @@ inline ::flatbuffers::Offset<IndexBuffer> CreateIndexBuffer(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<IndexBuffer> CreateIndexBuffer(::flatbuffers::FlatBufferBuilder &_fbb, const IndexBufferT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct ShapeT : public ::flatbuffers::NativeTable {
+  typedef Shape TableType;
+  std::unique_ptr<SE::FlatBuffers::BoundingBox> bbox{};
+  uint32_t index_elem_start = 0;
+  uint32_t index_elem_count = 0;
+  uint16_t material_index = 0;
+  ShapeT() = default;
+  ShapeT(const ShapeT &o);
+  ShapeT(ShapeT&&) FLATBUFFERS_NOEXCEPT = default;
+  ShapeT &operator=(ShapeT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct Shape FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ShapeT NativeTableType;
   typedef ShapeBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BBOX = 4,
@@ -804,6 +1066,9 @@ struct Shape FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint16_t>(verifier, VT_MATERIAL_INDEX, 2) &&
            verifier.EndTable();
   }
+  ShapeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ShapeT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Shape> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShapeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ShapeBuilder {
@@ -848,7 +1113,24 @@ inline ::flatbuffers::Offset<Shape> CreateShape(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<Shape> CreateShape(::flatbuffers::FlatBufferBuilder &_fbb, const ShapeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct MeshT : public ::flatbuffers::NativeTable {
+  typedef Mesh TableType;
+  std::unique_ptr<SE::FlatBuffers::IndexBufferT> index{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::VertexBufferT>> vertices{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::VertexAttributeT>> attributes{};
+  SE::FlatBuffers::PrimitiveType primitive_type = SE::FlatBuffers::PrimitiveType::GEOM_TRIANGLES;
+  std::vector<std::unique_ptr<SE::FlatBuffers::ShapeT>> shapes{};
+  std::unique_ptr<SE::FlatBuffers::BoundingBox> bbox{};
+  MeshT() = default;
+  MeshT(const MeshT &o);
+  MeshT(MeshT&&) FLATBUFFERS_NOEXCEPT = default;
+  MeshT &operator=(MeshT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct Mesh FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MeshT NativeTableType;
   typedef MeshBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
@@ -893,6 +1175,9 @@ struct Mesh FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyFieldRequired<SE::FlatBuffers::BoundingBox>(verifier, VT_BBOX, 4) &&
            verifier.EndTable();
   }
+  MeshT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(MeshT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Mesh> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MeshT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct MeshBuilder {
@@ -972,7 +1257,21 @@ inline ::flatbuffers::Offset<Mesh> CreateMeshDirect(
       bbox);
 }
 
+::flatbuffers::Offset<Mesh> CreateMesh(::flatbuffers::FlatBufferBuilder &_fbb, const MeshT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct MeshHolderT : public ::flatbuffers::NativeTable {
+  typedef MeshHolder TableType;
+  std::unique_ptr<SE::FlatBuffers::MeshT> mesh{};
+  std::string path{};
+  std::string name{};
+  MeshHolderT() = default;
+  MeshHolderT(const MeshHolderT &o);
+  MeshHolderT(MeshHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  MeshHolderT &operator=(MeshHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct MeshHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MeshHolderT NativeTableType;
   typedef MeshHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MESH = 4,
@@ -998,6 +1297,9 @@ struct MeshHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
+  MeshHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(MeshHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<MeshHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MeshHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct MeshHolderBuilder {
@@ -1050,6 +1352,398 @@ inline ::flatbuffers::Offset<MeshHolder> CreateMeshHolderDirect(
       name__);
 }
 
+::flatbuffers::Offset<MeshHolder> CreateMeshHolder(::flatbuffers::FlatBufferBuilder &_fbb, const MeshHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline VertexAttributeT *VertexAttribute::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<VertexAttributeT>(new VertexAttributeT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void VertexAttribute::UnPackTo(VertexAttributeT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = offset(); _o->offset = _e; }
+  { auto _e = elem_size(); _o->elem_size = _e; }
+  { auto _e = buffer_ind(); _o->buffer_ind = _e; }
+  { auto _e = custom(); _o->custom = _e; }
+  { auto _e = destination(); _o->destination = _e; }
+}
+
+inline ::flatbuffers::Offset<VertexAttribute> VertexAttribute::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const VertexAttributeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateVertexAttribute(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<VertexAttribute> CreateVertexAttribute(::flatbuffers::FlatBufferBuilder &_fbb, const VertexAttributeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const VertexAttributeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _name = _fbb.CreateString(_o->name);
+  auto _offset = _o->offset;
+  auto _elem_size = _o->elem_size;
+  auto _buffer_ind = _o->buffer_ind;
+  auto _custom = _o->custom;
+  auto _destination = _o->destination;
+  return SE::FlatBuffers::CreateVertexAttribute(
+      _fbb,
+      _name,
+      _offset,
+      _elem_size,
+      _buffer_ind,
+      _custom,
+      _destination);
+}
+
+inline FloatVectorT *FloatVector::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<FloatVectorT>(new FloatVectorT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void FloatVector::UnPackTo(FloatVectorT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = data(); if (_e) { _o->data.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->data[_i] = _e->Get(_i); } } else { _o->data.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<FloatVector> FloatVector::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const FloatVectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateFloatVector(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<FloatVector> CreateFloatVector(::flatbuffers::FlatBufferBuilder &_fbb, const FloatVectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const FloatVectorT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _data = _o->data.size() ? _fbb.CreateVector(_o->data) : 0;
+  return SE::FlatBuffers::CreateFloatVector(
+      _fbb,
+      _data);
+}
+
+inline ByteVectorT *ByteVector::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ByteVectorT>(new ByteVectorT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void ByteVector::UnPackTo(ByteVectorT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = data(); if (_e) { _o->data.resize(_e->size()); std::copy(_e->begin(), _e->end(), _o->data.begin()); } }
+}
+
+inline ::flatbuffers::Offset<ByteVector> ByteVector::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ByteVectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateByteVector(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<ByteVector> CreateByteVector(::flatbuffers::FlatBufferBuilder &_fbb, const ByteVectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ByteVectorT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _data = _o->data.size() ? _fbb.CreateVector(_o->data) : 0;
+  return SE::FlatBuffers::CreateByteVector(
+      _fbb,
+      _data);
+}
+
+inline Uint32VectorT *Uint32Vector::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<Uint32VectorT>(new Uint32VectorT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Uint32Vector::UnPackTo(Uint32VectorT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = data(); if (_e) { _o->data.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->data[_i] = _e->Get(_i); } } else { _o->data.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<Uint32Vector> Uint32Vector::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Uint32VectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateUint32Vector(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Uint32Vector> CreateUint32Vector(::flatbuffers::FlatBufferBuilder &_fbb, const Uint32VectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const Uint32VectorT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _data = _o->data.size() ? _fbb.CreateVector(_o->data) : 0;
+  return SE::FlatBuffers::CreateUint32Vector(
+      _fbb,
+      _data);
+}
+
+inline Uint16VectorT *Uint16Vector::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<Uint16VectorT>(new Uint16VectorT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Uint16Vector::UnPackTo(Uint16VectorT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = data(); if (_e) { _o->data.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->data[_i] = _e->Get(_i); } } else { _o->data.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<Uint16Vector> Uint16Vector::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Uint16VectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateUint16Vector(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Uint16Vector> CreateUint16Vector(::flatbuffers::FlatBufferBuilder &_fbb, const Uint16VectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const Uint16VectorT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _data = _o->data.size() ? _fbb.CreateVector(_o->data) : 0;
+  return SE::FlatBuffers::CreateUint16Vector(
+      _fbb,
+      _data);
+}
+
+inline Uint8VectorT *Uint8Vector::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<Uint8VectorT>(new Uint8VectorT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Uint8Vector::UnPackTo(Uint8VectorT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = data(); if (_e) { _o->data.resize(_e->size()); std::copy(_e->begin(), _e->end(), _o->data.begin()); } }
+}
+
+inline ::flatbuffers::Offset<Uint8Vector> Uint8Vector::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const Uint8VectorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateUint8Vector(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Uint8Vector> CreateUint8Vector(::flatbuffers::FlatBufferBuilder &_fbb, const Uint8VectorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const Uint8VectorT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _data = _o->data.size() ? _fbb.CreateVector(_o->data) : 0;
+  return SE::FlatBuffers::CreateUint8Vector(
+      _fbb,
+      _data);
+}
+
+inline VertexBufferT *VertexBuffer::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<VertexBufferT>(new VertexBufferT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void VertexBuffer::UnPackTo(VertexBufferT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = buf_type(); _o->buf.type = _e; }
+  { auto _e = buf(); if (_e) _o->buf.value = SE::FlatBuffers::VertexBufferUUnion::UnPack(_e, buf_type(), _resolver); }
+  { auto _e = stride(); _o->stride = _e; }
+}
+
+inline ::flatbuffers::Offset<VertexBuffer> VertexBuffer::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const VertexBufferT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateVertexBuffer(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<VertexBuffer> CreateVertexBuffer(::flatbuffers::FlatBufferBuilder &_fbb, const VertexBufferT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const VertexBufferT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _buf_type = _o->buf.type;
+  auto _buf = _o->buf.Pack(_fbb);
+  auto _stride = _o->stride;
+  return SE::FlatBuffers::CreateVertexBuffer(
+      _fbb,
+      _buf_type,
+      _buf,
+      _stride);
+}
+
+inline IndexBufferT *IndexBuffer::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<IndexBufferT>(new IndexBufferT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void IndexBuffer::UnPackTo(IndexBufferT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = buf_type(); _o->buf.type = _e; }
+  { auto _e = buf(); if (_e) _o->buf.value = SE::FlatBuffers::IndexBufferUUnion::UnPack(_e, buf_type(), _resolver); }
+}
+
+inline ::flatbuffers::Offset<IndexBuffer> IndexBuffer::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const IndexBufferT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateIndexBuffer(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<IndexBuffer> CreateIndexBuffer(::flatbuffers::FlatBufferBuilder &_fbb, const IndexBufferT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const IndexBufferT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _buf_type = _o->buf.type;
+  auto _buf = _o->buf.Pack(_fbb);
+  return SE::FlatBuffers::CreateIndexBuffer(
+      _fbb,
+      _buf_type,
+      _buf);
+}
+
+inline ShapeT::ShapeT(const ShapeT &o)
+      : bbox((o.bbox) ? new SE::FlatBuffers::BoundingBox(*o.bbox) : nullptr),
+        index_elem_start(o.index_elem_start),
+        index_elem_count(o.index_elem_count),
+        material_index(o.material_index) {
+}
+
+inline ShapeT &ShapeT::operator=(ShapeT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(bbox, o.bbox);
+  std::swap(index_elem_start, o.index_elem_start);
+  std::swap(index_elem_count, o.index_elem_count);
+  std::swap(material_index, o.material_index);
+  return *this;
+}
+
+inline ShapeT *Shape::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ShapeT>(new ShapeT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Shape::UnPackTo(ShapeT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = bbox(); if (_e) _o->bbox = std::unique_ptr<SE::FlatBuffers::BoundingBox>(new SE::FlatBuffers::BoundingBox(*_e)); }
+  { auto _e = index_elem_start(); _o->index_elem_start = _e; }
+  { auto _e = index_elem_count(); _o->index_elem_count = _e; }
+  { auto _e = material_index(); _o->material_index = _e; }
+}
+
+inline ::flatbuffers::Offset<Shape> Shape::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShapeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateShape(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Shape> CreateShape(::flatbuffers::FlatBufferBuilder &_fbb, const ShapeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ShapeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _bbox = _o->bbox ? _o->bbox.get() : nullptr;
+  auto _index_elem_start = _o->index_elem_start;
+  auto _index_elem_count = _o->index_elem_count;
+  auto _material_index = _o->material_index;
+  return SE::FlatBuffers::CreateShape(
+      _fbb,
+      _bbox,
+      _index_elem_start,
+      _index_elem_count,
+      _material_index);
+}
+
+inline MeshT::MeshT(const MeshT &o)
+      : index((o.index) ? new SE::FlatBuffers::IndexBufferT(*o.index) : nullptr),
+        primitive_type(o.primitive_type),
+        bbox((o.bbox) ? new SE::FlatBuffers::BoundingBox(*o.bbox) : nullptr) {
+  vertices.reserve(o.vertices.size());
+  for (const auto &vertices_ : o.vertices) { vertices.emplace_back((vertices_) ? new SE::FlatBuffers::VertexBufferT(*vertices_) : nullptr); }
+  attributes.reserve(o.attributes.size());
+  for (const auto &attributes_ : o.attributes) { attributes.emplace_back((attributes_) ? new SE::FlatBuffers::VertexAttributeT(*attributes_) : nullptr); }
+  shapes.reserve(o.shapes.size());
+  for (const auto &shapes_ : o.shapes) { shapes.emplace_back((shapes_) ? new SE::FlatBuffers::ShapeT(*shapes_) : nullptr); }
+}
+
+inline MeshT &MeshT::operator=(MeshT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(index, o.index);
+  std::swap(vertices, o.vertices);
+  std::swap(attributes, o.attributes);
+  std::swap(primitive_type, o.primitive_type);
+  std::swap(shapes, o.shapes);
+  std::swap(bbox, o.bbox);
+  return *this;
+}
+
+inline MeshT *Mesh::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<MeshT>(new MeshT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Mesh::UnPackTo(MeshT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = index(); if (_e) { if(_o->index) { _e->UnPackTo(_o->index.get(), _resolver); } else { _o->index = std::unique_ptr<SE::FlatBuffers::IndexBufferT>(_e->UnPack(_resolver)); } } else if (_o->index) { _o->index.reset(); } }
+  { auto _e = vertices(); if (_e) { _o->vertices.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->vertices[_i]) { _e->Get(_i)->UnPackTo(_o->vertices[_i].get(), _resolver); } else { _o->vertices[_i] = std::unique_ptr<SE::FlatBuffers::VertexBufferT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->vertices.resize(0); } }
+  { auto _e = attributes(); if (_e) { _o->attributes.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->attributes[_i]) { _e->Get(_i)->UnPackTo(_o->attributes[_i].get(), _resolver); } else { _o->attributes[_i] = std::unique_ptr<SE::FlatBuffers::VertexAttributeT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->attributes.resize(0); } }
+  { auto _e = primitive_type(); _o->primitive_type = _e; }
+  { auto _e = shapes(); if (_e) { _o->shapes.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->shapes[_i]) { _e->Get(_i)->UnPackTo(_o->shapes[_i].get(), _resolver); } else { _o->shapes[_i] = std::unique_ptr<SE::FlatBuffers::ShapeT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->shapes.resize(0); } }
+  { auto _e = bbox(); if (_e) _o->bbox = std::unique_ptr<SE::FlatBuffers::BoundingBox>(new SE::FlatBuffers::BoundingBox(*_e)); }
+}
+
+inline ::flatbuffers::Offset<Mesh> Mesh::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MeshT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateMesh(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Mesh> CreateMesh(::flatbuffers::FlatBufferBuilder &_fbb, const MeshT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const MeshT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _index = _o->index ? CreateIndexBuffer(_fbb, _o->index.get(), _rehasher) : 0;
+  auto _vertices = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::VertexBuffer>> (_o->vertices.size(), [](size_t i, _VectorArgs *__va) { return CreateVertexBuffer(*__va->__fbb, __va->__o->vertices[i].get(), __va->__rehasher); }, &_va );
+  auto _attributes = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::VertexAttribute>> (_o->attributes.size(), [](size_t i, _VectorArgs *__va) { return CreateVertexAttribute(*__va->__fbb, __va->__o->attributes[i].get(), __va->__rehasher); }, &_va );
+  auto _primitive_type = _o->primitive_type;
+  auto _shapes = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::Shape>> (_o->shapes.size(), [](size_t i, _VectorArgs *__va) { return CreateShape(*__va->__fbb, __va->__o->shapes[i].get(), __va->__rehasher); }, &_va );
+  auto _bbox = _o->bbox ? _o->bbox.get() : nullptr;
+  return SE::FlatBuffers::CreateMesh(
+      _fbb,
+      _index,
+      _vertices,
+      _attributes,
+      _primitive_type,
+      _shapes,
+      _bbox);
+}
+
+inline MeshHolderT::MeshHolderT(const MeshHolderT &o)
+      : mesh((o.mesh) ? new SE::FlatBuffers::MeshT(*o.mesh) : nullptr),
+        path(o.path),
+        name(o.name) {
+}
+
+inline MeshHolderT &MeshHolderT::operator=(MeshHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(mesh, o.mesh);
+  std::swap(path, o.path);
+  std::swap(name, o.name);
+  return *this;
+}
+
+inline MeshHolderT *MeshHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<MeshHolderT>(new MeshHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void MeshHolder::UnPackTo(MeshHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = mesh(); if (_e) { if(_o->mesh) { _e->UnPackTo(_o->mesh.get(), _resolver); } else { _o->mesh = std::unique_ptr<SE::FlatBuffers::MeshT>(_e->UnPack(_resolver)); } } else if (_o->mesh) { _o->mesh.reset(); } }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<MeshHolder> MeshHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MeshHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateMeshHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<MeshHolder> CreateMeshHolder(::flatbuffers::FlatBufferBuilder &_fbb, const MeshHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const MeshHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _mesh = _o->mesh ? CreateMesh(_fbb, _o->mesh.get(), _rehasher) : 0;
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  return SE::FlatBuffers::CreateMeshHolder(
+      _fbb,
+      _mesh,
+      _path,
+      _name);
+}
+
 inline bool VerifyVertexBufferU(::flatbuffers::Verifier &verifier, const void *obj, VertexBufferU type) {
   switch (type) {
     case VertexBufferU::NONE: {
@@ -1083,6 +1777,86 @@ inline bool VerifyVertexBufferUVector(::flatbuffers::Verifier &verifier, const :
   return true;
 }
 
+inline void *VertexBufferUUnion::UnPack(const void *obj, VertexBufferU type, const ::flatbuffers::resolver_function_t *resolver) {
+  (void)resolver;
+  switch (type) {
+    case VertexBufferU::FloatVector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::FloatVector *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case VertexBufferU::ByteVector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::ByteVector *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case VertexBufferU::Uint32Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint32Vector *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    default: return nullptr;
+  }
+}
+
+inline ::flatbuffers::Offset<void> VertexBufferUUnion::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher) const {
+  (void)_rehasher;
+  switch (type) {
+    case VertexBufferU::FloatVector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::FloatVectorT *>(value);
+      return CreateFloatVector(_fbb, ptr, _rehasher).Union();
+    }
+    case VertexBufferU::ByteVector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::ByteVectorT *>(value);
+      return CreateByteVector(_fbb, ptr, _rehasher).Union();
+    }
+    case VertexBufferU::Uint32Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint32VectorT *>(value);
+      return CreateUint32Vector(_fbb, ptr, _rehasher).Union();
+    }
+    default: return 0;
+  }
+}
+
+inline VertexBufferUUnion::VertexBufferUUnion(const VertexBufferUUnion &u) : type(u.type), value(nullptr) {
+  switch (type) {
+    case VertexBufferU::FloatVector: {
+      value = new SE::FlatBuffers::FloatVectorT(*reinterpret_cast<SE::FlatBuffers::FloatVectorT *>(u.value));
+      break;
+    }
+    case VertexBufferU::ByteVector: {
+      value = new SE::FlatBuffers::ByteVectorT(*reinterpret_cast<SE::FlatBuffers::ByteVectorT *>(u.value));
+      break;
+    }
+    case VertexBufferU::Uint32Vector: {
+      value = new SE::FlatBuffers::Uint32VectorT(*reinterpret_cast<SE::FlatBuffers::Uint32VectorT *>(u.value));
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+inline void VertexBufferUUnion::Reset() {
+  switch (type) {
+    case VertexBufferU::FloatVector: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::FloatVectorT *>(value);
+      delete ptr;
+      break;
+    }
+    case VertexBufferU::ByteVector: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::ByteVectorT *>(value);
+      delete ptr;
+      break;
+    }
+    case VertexBufferU::Uint32Vector: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::Uint32VectorT *>(value);
+      delete ptr;
+      break;
+    }
+    default: break;
+  }
+  value = nullptr;
+  type = VertexBufferU::NONE;
+}
+
 inline bool VerifyIndexBufferU(::flatbuffers::Verifier &verifier, const void *obj, IndexBufferU type) {
   switch (type) {
     case IndexBufferU::NONE: {
@@ -1114,6 +1888,86 @@ inline bool VerifyIndexBufferUVector(::flatbuffers::Verifier &verifier, const ::
     }
   }
   return true;
+}
+
+inline void *IndexBufferUUnion::UnPack(const void *obj, IndexBufferU type, const ::flatbuffers::resolver_function_t *resolver) {
+  (void)resolver;
+  switch (type) {
+    case IndexBufferU::Uint8Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint8Vector *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case IndexBufferU::Uint16Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint16Vector *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case IndexBufferU::Uint32Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint32Vector *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    default: return nullptr;
+  }
+}
+
+inline ::flatbuffers::Offset<void> IndexBufferUUnion::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ::flatbuffers::rehasher_function_t *_rehasher) const {
+  (void)_rehasher;
+  switch (type) {
+    case IndexBufferU::Uint8Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint8VectorT *>(value);
+      return CreateUint8Vector(_fbb, ptr, _rehasher).Union();
+    }
+    case IndexBufferU::Uint16Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint16VectorT *>(value);
+      return CreateUint16Vector(_fbb, ptr, _rehasher).Union();
+    }
+    case IndexBufferU::Uint32Vector: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Uint32VectorT *>(value);
+      return CreateUint32Vector(_fbb, ptr, _rehasher).Union();
+    }
+    default: return 0;
+  }
+}
+
+inline IndexBufferUUnion::IndexBufferUUnion(const IndexBufferUUnion &u) : type(u.type), value(nullptr) {
+  switch (type) {
+    case IndexBufferU::Uint8Vector: {
+      value = new SE::FlatBuffers::Uint8VectorT(*reinterpret_cast<SE::FlatBuffers::Uint8VectorT *>(u.value));
+      break;
+    }
+    case IndexBufferU::Uint16Vector: {
+      value = new SE::FlatBuffers::Uint16VectorT(*reinterpret_cast<SE::FlatBuffers::Uint16VectorT *>(u.value));
+      break;
+    }
+    case IndexBufferU::Uint32Vector: {
+      value = new SE::FlatBuffers::Uint32VectorT(*reinterpret_cast<SE::FlatBuffers::Uint32VectorT *>(u.value));
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+inline void IndexBufferUUnion::Reset() {
+  switch (type) {
+    case IndexBufferU::Uint8Vector: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::Uint8VectorT *>(value);
+      delete ptr;
+      break;
+    }
+    case IndexBufferU::Uint16Vector: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::Uint16VectorT *>(value);
+      delete ptr;
+      break;
+    }
+    case IndexBufferU::Uint32Vector: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::Uint32VectorT *>(value);
+      delete ptr;
+      break;
+    }
+    default: break;
+  }
+  value = nullptr;
+  type = IndexBufferU::NONE;
 }
 
 inline const SE::FlatBuffers::Mesh *GetMesh(const void *buf) {
@@ -1162,6 +2016,18 @@ inline void FinishSizePrefixedMeshBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::Mesh> root) {
   fbb.FinishSizePrefixed(root, MeshIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::MeshT> UnPackMesh(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::MeshT>(GetMesh(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::MeshT> UnPackSizePrefixedMesh(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::MeshT>(GetSizePrefixedMesh(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

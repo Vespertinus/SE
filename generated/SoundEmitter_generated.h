@@ -18,8 +18,16 @@ namespace FlatBuffers {
 
 struct SoundEmitter;
 struct SoundEmitterBuilder;
+struct SoundEmitterT;
+
+struct SoundEmitterT : public ::flatbuffers::NativeTable {
+  typedef SoundEmitter TableType;
+  std::string cue_id{};
+  bool auto_play = false;
+};
 
 struct SoundEmitter FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SoundEmitterT NativeTableType;
   typedef SoundEmitterBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_CUE_ID = 4,
@@ -38,6 +46,9 @@ struct SoundEmitter FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_AUTO_PLAY, 1) &&
            verifier.EndTable();
   }
+  SoundEmitterT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(SoundEmitterT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<SoundEmitter> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SoundEmitterT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct SoundEmitterBuilder {
@@ -81,6 +92,37 @@ inline ::flatbuffers::Offset<SoundEmitter> CreateSoundEmitterDirect(
       _fbb,
       cue_id__,
       auto_play);
+}
+
+::flatbuffers::Offset<SoundEmitter> CreateSoundEmitter(::flatbuffers::FlatBufferBuilder &_fbb, const SoundEmitterT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline SoundEmitterT *SoundEmitter::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<SoundEmitterT>(new SoundEmitterT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void SoundEmitter::UnPackTo(SoundEmitterT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = cue_id(); if (_e) _o->cue_id = _e->str(); }
+  { auto _e = auto_play(); _o->auto_play = _e; }
+}
+
+inline ::flatbuffers::Offset<SoundEmitter> SoundEmitter::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SoundEmitterT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateSoundEmitter(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<SoundEmitter> CreateSoundEmitter(::flatbuffers::FlatBufferBuilder &_fbb, const SoundEmitterT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SoundEmitterT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _cue_id = _fbb.CreateString(_o->cue_id);
+  auto _auto_play = _o->auto_play;
+  return SE::FlatBuffers::CreateSoundEmitter(
+      _fbb,
+      _cue_id,
+      _auto_play);
 }
 
 }  // namespace FlatBuffers

@@ -21,11 +21,32 @@ namespace FlatBuffers {
 
 struct AudioEmitter;
 struct AudioEmitterBuilder;
+struct AudioEmitterT;
 
 struct AudioListener;
 struct AudioListenerBuilder;
+struct AudioListenerT;
+
+struct AudioEmitterT : public ::flatbuffers::NativeTable {
+  typedef AudioEmitter TableType;
+  std::unique_ptr<SE::FlatBuffers::AudioClipHolderT> clip{};
+  bool loop = false;
+  bool spatial = true;
+  bool auto_play = false;
+  float gain = 1.0f;
+  float pitch = 1.0f;
+  float ref_dist = 1.0f;
+  float max_dist = 100.0f;
+  float rolloff = 1.0f;
+  uint8_t bus = 2;
+  AudioEmitterT() = default;
+  AudioEmitterT(const AudioEmitterT &o);
+  AudioEmitterT(AudioEmitterT&&) FLATBUFFERS_NOEXCEPT = default;
+  AudioEmitterT &operator=(AudioEmitterT o) FLATBUFFERS_NOEXCEPT;
+};
 
 struct AudioEmitter FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AudioEmitterT NativeTableType;
   typedef AudioEmitterBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_CLIP = 4,
@@ -85,6 +106,9 @@ struct AudioEmitter FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_BUS, 1) &&
            verifier.EndTable();
   }
+  AudioEmitterT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AudioEmitterT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AudioEmitter> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioEmitterT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AudioEmitterBuilder {
@@ -159,7 +183,15 @@ inline ::flatbuffers::Offset<AudioEmitter> CreateAudioEmitter(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<AudioEmitter> CreateAudioEmitter(::flatbuffers::FlatBufferBuilder &_fbb, const AudioEmitterT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AudioListenerT : public ::flatbuffers::NativeTable {
+  typedef AudioListener TableType;
+  float master_gain = 1.0f;
+};
+
 struct AudioListener FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AudioListenerT NativeTableType;
   typedef AudioListenerBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MASTER_GAIN = 4
@@ -172,6 +204,9 @@ struct AudioListener FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_MASTER_GAIN, 4) &&
            verifier.EndTable();
   }
+  AudioListenerT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AudioListenerT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AudioListener> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioListenerT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AudioListenerBuilder {
@@ -198,6 +233,114 @@ inline ::flatbuffers::Offset<AudioListener> CreateAudioListener(
   AudioListenerBuilder builder_(_fbb);
   builder_.add_master_gain(master_gain);
   return builder_.Finish();
+}
+
+::flatbuffers::Offset<AudioListener> CreateAudioListener(::flatbuffers::FlatBufferBuilder &_fbb, const AudioListenerT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline AudioEmitterT::AudioEmitterT(const AudioEmitterT &o)
+      : clip((o.clip) ? new SE::FlatBuffers::AudioClipHolderT(*o.clip) : nullptr),
+        loop(o.loop),
+        spatial(o.spatial),
+        auto_play(o.auto_play),
+        gain(o.gain),
+        pitch(o.pitch),
+        ref_dist(o.ref_dist),
+        max_dist(o.max_dist),
+        rolloff(o.rolloff),
+        bus(o.bus) {
+}
+
+inline AudioEmitterT &AudioEmitterT::operator=(AudioEmitterT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(clip, o.clip);
+  std::swap(loop, o.loop);
+  std::swap(spatial, o.spatial);
+  std::swap(auto_play, o.auto_play);
+  std::swap(gain, o.gain);
+  std::swap(pitch, o.pitch);
+  std::swap(ref_dist, o.ref_dist);
+  std::swap(max_dist, o.max_dist);
+  std::swap(rolloff, o.rolloff);
+  std::swap(bus, o.bus);
+  return *this;
+}
+
+inline AudioEmitterT *AudioEmitter::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AudioEmitterT>(new AudioEmitterT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AudioEmitter::UnPackTo(AudioEmitterT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = clip(); if (_e) { if(_o->clip) { _e->UnPackTo(_o->clip.get(), _resolver); } else { _o->clip = std::unique_ptr<SE::FlatBuffers::AudioClipHolderT>(_e->UnPack(_resolver)); } } else if (_o->clip) { _o->clip.reset(); } }
+  { auto _e = loop(); _o->loop = _e; }
+  { auto _e = spatial(); _o->spatial = _e; }
+  { auto _e = auto_play(); _o->auto_play = _e; }
+  { auto _e = gain(); _o->gain = _e; }
+  { auto _e = pitch(); _o->pitch = _e; }
+  { auto _e = ref_dist(); _o->ref_dist = _e; }
+  { auto _e = max_dist(); _o->max_dist = _e; }
+  { auto _e = rolloff(); _o->rolloff = _e; }
+  { auto _e = bus(); _o->bus = _e; }
+}
+
+inline ::flatbuffers::Offset<AudioEmitter> AudioEmitter::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioEmitterT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAudioEmitter(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AudioEmitter> CreateAudioEmitter(::flatbuffers::FlatBufferBuilder &_fbb, const AudioEmitterT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AudioEmitterT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _clip = _o->clip ? CreateAudioClipHolder(_fbb, _o->clip.get(), _rehasher) : 0;
+  auto _loop = _o->loop;
+  auto _spatial = _o->spatial;
+  auto _auto_play = _o->auto_play;
+  auto _gain = _o->gain;
+  auto _pitch = _o->pitch;
+  auto _ref_dist = _o->ref_dist;
+  auto _max_dist = _o->max_dist;
+  auto _rolloff = _o->rolloff;
+  auto _bus = _o->bus;
+  return SE::FlatBuffers::CreateAudioEmitter(
+      _fbb,
+      _clip,
+      _loop,
+      _spatial,
+      _auto_play,
+      _gain,
+      _pitch,
+      _ref_dist,
+      _max_dist,
+      _rolloff,
+      _bus);
+}
+
+inline AudioListenerT *AudioListener::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AudioListenerT>(new AudioListenerT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AudioListener::UnPackTo(AudioListenerT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = master_gain(); _o->master_gain = _e; }
+}
+
+inline ::flatbuffers::Offset<AudioListener> AudioListener::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioListenerT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAudioListener(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AudioListener> CreateAudioListener(::flatbuffers::FlatBufferBuilder &_fbb, const AudioListenerT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AudioListenerT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _master_gain = _o->master_gain;
+  return SE::FlatBuffers::CreateAudioListener(
+      _fbb,
+      _master_gain);
 }
 
 }  // namespace FlatBuffers

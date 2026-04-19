@@ -22,9 +22,11 @@ struct SeekEntry;
 
 struct AudioClip;
 struct AudioClipBuilder;
+struct AudioClipT;
 
 struct AudioClipHolder;
 struct AudioClipHolderBuilder;
+struct AudioClipHolderT;
 
 enum class AudioFormat : uint8_t {
   PCM16 = 0,
@@ -118,7 +120,25 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) SeekEntry FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(SeekEntry, 16);
 
+struct AudioClipT : public ::flatbuffers::NativeTable {
+  typedef AudioClip TableType;
+  uint32_t schema_version = 1;
+  SE::FlatBuffers::AudioFormat format = SE::FlatBuffers::AudioFormat::PCM16;
+  uint32_t sample_rate = 0;
+  uint8_t channel_count = 0;
+  uint64_t total_samples = 0;
+  float normalized_loudness = 0.0f;
+  uint64_t loop_start_sample = 0;
+  uint64_t loop_end_sample = 0;
+  uint32_t loop_crossfade_samples = 0;
+  uint32_t pre_skip_samples = 0;
+  SE::FlatBuffers::BusHint bus_hint = SE::FlatBuffers::BusHint::SFX;
+  std::vector<SE::FlatBuffers::SeekEntry> seek_table{};
+  std::vector<uint8_t> payload{};
+};
+
 struct AudioClip FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AudioClipT NativeTableType;
   typedef AudioClipBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SCHEMA_VERSION = 4,
@@ -193,6 +213,9 @@ struct AudioClip FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(payload()) &&
            verifier.EndTable();
   }
+  AudioClipT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AudioClipT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AudioClip> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AudioClipBuilder {
@@ -316,7 +339,21 @@ inline ::flatbuffers::Offset<AudioClip> CreateAudioClipDirect(
       payload__);
 }
 
+::flatbuffers::Offset<AudioClip> CreateAudioClip(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct AudioClipHolderT : public ::flatbuffers::NativeTable {
+  typedef AudioClipHolder TableType;
+  std::unique_ptr<SE::FlatBuffers::AudioClipT> clip{};
+  std::string path{};
+  std::string name{};
+  AudioClipHolderT() = default;
+  AudioClipHolderT(const AudioClipHolderT &o);
+  AudioClipHolderT(AudioClipHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  AudioClipHolderT &operator=(AudioClipHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct AudioClipHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AudioClipHolderT NativeTableType;
   typedef AudioClipHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_CLIP = 4,
@@ -342,6 +379,9 @@ struct AudioClipHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
+  AudioClipHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AudioClipHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AudioClipHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct AudioClipHolderBuilder {
@@ -394,6 +434,115 @@ inline ::flatbuffers::Offset<AudioClipHolder> CreateAudioClipHolderDirect(
       name__);
 }
 
+::flatbuffers::Offset<AudioClipHolder> CreateAudioClipHolder(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline AudioClipT *AudioClip::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AudioClipT>(new AudioClipT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AudioClip::UnPackTo(AudioClipT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = schema_version(); _o->schema_version = _e; }
+  { auto _e = format(); _o->format = _e; }
+  { auto _e = sample_rate(); _o->sample_rate = _e; }
+  { auto _e = channel_count(); _o->channel_count = _e; }
+  { auto _e = total_samples(); _o->total_samples = _e; }
+  { auto _e = normalized_loudness(); _o->normalized_loudness = _e; }
+  { auto _e = loop_start_sample(); _o->loop_start_sample = _e; }
+  { auto _e = loop_end_sample(); _o->loop_end_sample = _e; }
+  { auto _e = loop_crossfade_samples(); _o->loop_crossfade_samples = _e; }
+  { auto _e = pre_skip_samples(); _o->pre_skip_samples = _e; }
+  { auto _e = bus_hint(); _o->bus_hint = _e; }
+  { auto _e = seek_table(); if (_e) { _o->seek_table.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->seek_table[_i] = *_e->Get(_i); } } else { _o->seek_table.resize(0); } }
+  { auto _e = payload(); if (_e) { _o->payload.resize(_e->size()); std::copy(_e->begin(), _e->end(), _o->payload.begin()); } }
+}
+
+inline ::flatbuffers::Offset<AudioClip> AudioClip::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAudioClip(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AudioClip> CreateAudioClip(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AudioClipT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _schema_version = _o->schema_version;
+  auto _format = _o->format;
+  auto _sample_rate = _o->sample_rate;
+  auto _channel_count = _o->channel_count;
+  auto _total_samples = _o->total_samples;
+  auto _normalized_loudness = _o->normalized_loudness;
+  auto _loop_start_sample = _o->loop_start_sample;
+  auto _loop_end_sample = _o->loop_end_sample;
+  auto _loop_crossfade_samples = _o->loop_crossfade_samples;
+  auto _pre_skip_samples = _o->pre_skip_samples;
+  auto _bus_hint = _o->bus_hint;
+  auto _seek_table = _o->seek_table.size() ? _fbb.CreateVectorOfStructs(_o->seek_table) : 0;
+  auto _payload = _fbb.CreateVector(_o->payload);
+  return SE::FlatBuffers::CreateAudioClip(
+      _fbb,
+      _schema_version,
+      _format,
+      _sample_rate,
+      _channel_count,
+      _total_samples,
+      _normalized_loudness,
+      _loop_start_sample,
+      _loop_end_sample,
+      _loop_crossfade_samples,
+      _pre_skip_samples,
+      _bus_hint,
+      _seek_table,
+      _payload);
+}
+
+inline AudioClipHolderT::AudioClipHolderT(const AudioClipHolderT &o)
+      : clip((o.clip) ? new SE::FlatBuffers::AudioClipT(*o.clip) : nullptr),
+        path(o.path),
+        name(o.name) {
+}
+
+inline AudioClipHolderT &AudioClipHolderT::operator=(AudioClipHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(clip, o.clip);
+  std::swap(path, o.path);
+  std::swap(name, o.name);
+  return *this;
+}
+
+inline AudioClipHolderT *AudioClipHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AudioClipHolderT>(new AudioClipHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AudioClipHolder::UnPackTo(AudioClipHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = clip(); if (_e) { if(_o->clip) { _e->UnPackTo(_o->clip.get(), _resolver); } else { _o->clip = std::unique_ptr<SE::FlatBuffers::AudioClipT>(_e->UnPack(_resolver)); } } else if (_o->clip) { _o->clip.reset(); } }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<AudioClipHolder> AudioClipHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAudioClipHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AudioClipHolder> CreateAudioClipHolder(::flatbuffers::FlatBufferBuilder &_fbb, const AudioClipHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AudioClipHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _clip = _o->clip ? CreateAudioClip(_fbb, _o->clip.get(), _rehasher) : 0;
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  return SE::FlatBuffers::CreateAudioClipHolder(
+      _fbb,
+      _clip,
+      _path,
+      _name);
+}
+
 inline const SE::FlatBuffers::AudioClip *GetAudioClip(const void *buf) {
   return ::flatbuffers::GetRoot<SE::FlatBuffers::AudioClip>(buf);
 }
@@ -440,6 +589,18 @@ inline void FinishSizePrefixedAudioClipBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::AudioClip> root) {
   fbb.FinishSizePrefixed(root, AudioClipIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::AudioClipT> UnPackAudioClip(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::AudioClipT>(GetAudioClip(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::AudioClipT> UnPackSizePrefixedAudioClip(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::AudioClipT>(GetSizePrefixedAudioClip(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

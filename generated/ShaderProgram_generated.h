@@ -21,14 +21,28 @@ namespace FlatBuffers {
 
 struct Shader;
 struct ShaderBuilder;
+struct ShaderT;
 
 struct ShaderProgram;
 struct ShaderProgramBuilder;
+struct ShaderProgramT;
 
 struct ShaderProgramHolder;
 struct ShaderProgramHolderBuilder;
+struct ShaderProgramHolderT;
+
+struct ShaderT : public ::flatbuffers::NativeTable {
+  typedef Shader TableType;
+  std::string name{};
+  std::unique_ptr<SE::FlatBuffers::ShaderComponentT> data{};
+  ShaderT() = default;
+  ShaderT(const ShaderT &o);
+  ShaderT(ShaderT&&) FLATBUFFERS_NOEXCEPT = default;
+  ShaderT &operator=(ShaderT o) FLATBUFFERS_NOEXCEPT;
+};
 
 struct Shader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ShaderT NativeTableType;
   typedef ShaderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
@@ -48,6 +62,9 @@ struct Shader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(data()) &&
            verifier.EndTable();
   }
+  ShaderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ShaderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Shader> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ShaderBuilder {
@@ -93,7 +110,22 @@ inline ::flatbuffers::Offset<Shader> CreateShaderDirect(
       data);
 }
 
+::flatbuffers::Offset<Shader> CreateShader(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct ShaderProgramT : public ::flatbuffers::NativeTable {
+  typedef ShaderProgram TableType;
+  std::unique_ptr<SE::FlatBuffers::ShaderT> vertex{};
+  std::unique_ptr<SE::FlatBuffers::ShaderT> fragment{};
+  std::unique_ptr<SE::FlatBuffers::ShaderT> geometry{};
+  std::unique_ptr<SE::FlatBuffers::ShaderT> compute{};
+  ShaderProgramT() = default;
+  ShaderProgramT(const ShaderProgramT &o);
+  ShaderProgramT(ShaderProgramT&&) FLATBUFFERS_NOEXCEPT = default;
+  ShaderProgramT &operator=(ShaderProgramT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ShaderProgramT NativeTableType;
   typedef ShaderProgramBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_VERTEX = 4,
@@ -125,6 +157,9 @@ struct ShaderProgram FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(compute()) &&
            verifier.EndTable();
   }
+  ShaderProgramT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ShaderProgramT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<ShaderProgram> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ShaderProgramBuilder {
@@ -168,7 +203,21 @@ inline ::flatbuffers::Offset<ShaderProgram> CreateShaderProgram(
   return builder_.Finish();
 }
 
+::flatbuffers::Offset<ShaderProgram> CreateShaderProgram(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct ShaderProgramHolderT : public ::flatbuffers::NativeTable {
+  typedef ShaderProgramHolder TableType;
+  std::unique_ptr<SE::FlatBuffers::ShaderProgramT> shader{};
+  std::string path{};
+  std::string name{};
+  ShaderProgramHolderT() = default;
+  ShaderProgramHolderT(const ShaderProgramHolderT &o);
+  ShaderProgramHolderT(ShaderProgramHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  ShaderProgramHolderT &operator=(ShaderProgramHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct ShaderProgramHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ShaderProgramHolderT NativeTableType;
   typedef ShaderProgramHolderBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SHADER = 4,
@@ -194,6 +243,9 @@ struct ShaderProgramHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
            verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
+  ShaderProgramHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ShaderProgramHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<ShaderProgramHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ShaderProgramHolderBuilder {
@@ -246,6 +298,143 @@ inline ::flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolderDirec
       name__);
 }
 
+::flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolder(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline ShaderT::ShaderT(const ShaderT &o)
+      : name(o.name),
+        data((o.data) ? new SE::FlatBuffers::ShaderComponentT(*o.data) : nullptr) {
+}
+
+inline ShaderT &ShaderT::operator=(ShaderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(name, o.name);
+  std::swap(data, o.data);
+  return *this;
+}
+
+inline ShaderT *Shader::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ShaderT>(new ShaderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Shader::UnPackTo(ShaderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+  { auto _e = data(); if (_e) { if(_o->data) { _e->UnPackTo(_o->data.get(), _resolver); } else { _o->data = std::unique_ptr<SE::FlatBuffers::ShaderComponentT>(_e->UnPack(_resolver)); } } else if (_o->data) { _o->data.reset(); } }
+}
+
+inline ::flatbuffers::Offset<Shader> Shader::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateShader(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Shader> CreateShader(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ShaderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _name = _fbb.CreateString(_o->name);
+  auto _data = _o->data ? CreateShaderComponent(_fbb, _o->data.get(), _rehasher) : 0;
+  return SE::FlatBuffers::CreateShader(
+      _fbb,
+      _name,
+      _data);
+}
+
+inline ShaderProgramT::ShaderProgramT(const ShaderProgramT &o)
+      : vertex((o.vertex) ? new SE::FlatBuffers::ShaderT(*o.vertex) : nullptr),
+        fragment((o.fragment) ? new SE::FlatBuffers::ShaderT(*o.fragment) : nullptr),
+        geometry((o.geometry) ? new SE::FlatBuffers::ShaderT(*o.geometry) : nullptr),
+        compute((o.compute) ? new SE::FlatBuffers::ShaderT(*o.compute) : nullptr) {
+}
+
+inline ShaderProgramT &ShaderProgramT::operator=(ShaderProgramT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(vertex, o.vertex);
+  std::swap(fragment, o.fragment);
+  std::swap(geometry, o.geometry);
+  std::swap(compute, o.compute);
+  return *this;
+}
+
+inline ShaderProgramT *ShaderProgram::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ShaderProgramT>(new ShaderProgramT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void ShaderProgram::UnPackTo(ShaderProgramT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = vertex(); if (_e) { if(_o->vertex) { _e->UnPackTo(_o->vertex.get(), _resolver); } else { _o->vertex = std::unique_ptr<SE::FlatBuffers::ShaderT>(_e->UnPack(_resolver)); } } else if (_o->vertex) { _o->vertex.reset(); } }
+  { auto _e = fragment(); if (_e) { if(_o->fragment) { _e->UnPackTo(_o->fragment.get(), _resolver); } else { _o->fragment = std::unique_ptr<SE::FlatBuffers::ShaderT>(_e->UnPack(_resolver)); } } else if (_o->fragment) { _o->fragment.reset(); } }
+  { auto _e = geometry(); if (_e) { if(_o->geometry) { _e->UnPackTo(_o->geometry.get(), _resolver); } else { _o->geometry = std::unique_ptr<SE::FlatBuffers::ShaderT>(_e->UnPack(_resolver)); } } else if (_o->geometry) { _o->geometry.reset(); } }
+  { auto _e = compute(); if (_e) { if(_o->compute) { _e->UnPackTo(_o->compute.get(), _resolver); } else { _o->compute = std::unique_ptr<SE::FlatBuffers::ShaderT>(_e->UnPack(_resolver)); } } else if (_o->compute) { _o->compute.reset(); } }
+}
+
+inline ::flatbuffers::Offset<ShaderProgram> ShaderProgram::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateShaderProgram(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<ShaderProgram> CreateShaderProgram(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ShaderProgramT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _vertex = _o->vertex ? CreateShader(_fbb, _o->vertex.get(), _rehasher) : 0;
+  auto _fragment = _o->fragment ? CreateShader(_fbb, _o->fragment.get(), _rehasher) : 0;
+  auto _geometry = _o->geometry ? CreateShader(_fbb, _o->geometry.get(), _rehasher) : 0;
+  auto _compute = _o->compute ? CreateShader(_fbb, _o->compute.get(), _rehasher) : 0;
+  return SE::FlatBuffers::CreateShaderProgram(
+      _fbb,
+      _vertex,
+      _fragment,
+      _geometry,
+      _compute);
+}
+
+inline ShaderProgramHolderT::ShaderProgramHolderT(const ShaderProgramHolderT &o)
+      : shader((o.shader) ? new SE::FlatBuffers::ShaderProgramT(*o.shader) : nullptr),
+        path(o.path),
+        name(o.name) {
+}
+
+inline ShaderProgramHolderT &ShaderProgramHolderT::operator=(ShaderProgramHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(shader, o.shader);
+  std::swap(path, o.path);
+  std::swap(name, o.name);
+  return *this;
+}
+
+inline ShaderProgramHolderT *ShaderProgramHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ShaderProgramHolderT>(new ShaderProgramHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void ShaderProgramHolder::UnPackTo(ShaderProgramHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = shader(); if (_e) { if(_o->shader) { _e->UnPackTo(_o->shader.get(), _resolver); } else { _o->shader = std::unique_ptr<SE::FlatBuffers::ShaderProgramT>(_e->UnPack(_resolver)); } } else if (_o->shader) { _o->shader.reset(); } }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<ShaderProgramHolder> ShaderProgramHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateShaderProgramHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<ShaderProgramHolder> CreateShaderProgramHolder(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderProgramHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ShaderProgramHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _shader = _o->shader ? CreateShaderProgram(_fbb, _o->shader.get(), _rehasher) : 0;
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  return SE::FlatBuffers::CreateShaderProgramHolder(
+      _fbb,
+      _shader,
+      _path,
+      _name);
+}
+
 inline const SE::FlatBuffers::ShaderProgram *GetShaderProgram(const void *buf) {
   return ::flatbuffers::GetRoot<SE::FlatBuffers::ShaderProgram>(buf);
 }
@@ -292,6 +481,18 @@ inline void FinishSizePrefixedShaderProgramBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::ShaderProgram> root) {
   fbb.FinishSizePrefixed(root, ShaderProgramIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::ShaderProgramT> UnPackShaderProgram(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::ShaderProgramT>(GetShaderProgram(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::ShaderProgramT> UnPackSizePrefixedShaderProgram(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::ShaderProgramT>(GetSizePrefixedShaderProgram(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

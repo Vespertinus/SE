@@ -18,6 +18,7 @@ namespace FlatBuffers {
 
 struct ShaderComponent;
 struct ShaderComponentBuilder;
+struct ShaderComponentT;
 
 enum class ShaderType : uint8_t {
   VERTEX = 1,
@@ -58,7 +59,17 @@ inline const char *EnumNameShaderType(ShaderType e) {
   return EnumNamesShaderType()[index];
 }
 
+struct ShaderComponentT : public ::flatbuffers::NativeTable {
+  typedef ShaderComponent TableType;
+  std::vector<std::string> dependencies{};
+  std::vector<std::string> include{};
+  std::vector<std::string> header{};
+  SE::FlatBuffers::ShaderType type = SE::FlatBuffers::ShaderType::FRAGMENT;
+  std::vector<std::string> source{};
+};
+
 struct ShaderComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ShaderComponentT NativeTableType;
   typedef ShaderComponentBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DEPENDENCIES = 4,
@@ -99,6 +110,9 @@ struct ShaderComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfStrings(source()) &&
            verifier.EndTable();
   }
+  ShaderComponentT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(ShaderComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<ShaderComponent> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct ShaderComponentBuilder {
@@ -168,6 +182,46 @@ inline ::flatbuffers::Offset<ShaderComponent> CreateShaderComponentDirect(
       source__);
 }
 
+::flatbuffers::Offset<ShaderComponent> CreateShaderComponent(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline ShaderComponentT *ShaderComponent::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<ShaderComponentT>(new ShaderComponentT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void ShaderComponent::UnPackTo(ShaderComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = dependencies(); if (_e) { _o->dependencies.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->dependencies[_i] = _e->Get(_i)->str(); } } else { _o->dependencies.resize(0); } }
+  { auto _e = include(); if (_e) { _o->include.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->include[_i] = _e->Get(_i)->str(); } } else { _o->include.resize(0); } }
+  { auto _e = header(); if (_e) { _o->header.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->header[_i] = _e->Get(_i)->str(); } } else { _o->header.resize(0); } }
+  { auto _e = type(); _o->type = _e; }
+  { auto _e = source(); if (_e) { _o->source.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->source[_i] = _e->Get(_i)->str(); } } else { _o->source.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<ShaderComponent> ShaderComponent::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateShaderComponent(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<ShaderComponent> CreateShaderComponent(::flatbuffers::FlatBufferBuilder &_fbb, const ShaderComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ShaderComponentT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _dependencies = _o->dependencies.size() ? _fbb.CreateVectorOfStrings(_o->dependencies) : 0;
+  auto _include = _o->include.size() ? _fbb.CreateVectorOfStrings(_o->include) : 0;
+  auto _header = _o->header.size() ? _fbb.CreateVectorOfStrings(_o->header) : 0;
+  auto _type = _o->type;
+  auto _source = _fbb.CreateVectorOfStrings(_o->source);
+  return SE::FlatBuffers::CreateShaderComponent(
+      _fbb,
+      _dependencies,
+      _include,
+      _header,
+      _type,
+      _source);
+}
+
 inline const SE::FlatBuffers::ShaderComponent *GetShaderComponent(const void *buf) {
   return ::flatbuffers::GetRoot<SE::FlatBuffers::ShaderComponent>(buf);
 }
@@ -214,6 +268,18 @@ inline void FinishSizePrefixedShaderComponentBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::ShaderComponent> root) {
   fbb.FinishSizePrefixed(root, ShaderComponentIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::ShaderComponentT> UnPackShaderComponent(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::ShaderComponentT>(GetShaderComponent(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::ShaderComponentT> UnPackSizePrefixedShaderComponent(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::ShaderComponentT>(GetSizePrefixedShaderComponent(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers

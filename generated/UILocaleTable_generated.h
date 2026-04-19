@@ -18,11 +18,20 @@ namespace FlatBuffers {
 
 struct LocaleEntry;
 struct LocaleEntryBuilder;
+struct LocaleEntryT;
 
 struct LocaleTable;
 struct LocaleTableBuilder;
+struct LocaleTableT;
+
+struct LocaleEntryT : public ::flatbuffers::NativeTable {
+  typedef LocaleEntry TableType;
+  std::string key{};
+  std::string value{};
+};
 
 struct LocaleEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef LocaleEntryT NativeTableType;
   typedef LocaleEntryBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_KEY = 4,
@@ -42,6 +51,9 @@ struct LocaleEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(value()) &&
            verifier.EndTable();
   }
+  LocaleEntryT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(LocaleEntryT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<LocaleEntry> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleEntryT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct LocaleEntryBuilder {
@@ -89,7 +101,20 @@ inline ::flatbuffers::Offset<LocaleEntry> CreateLocaleEntryDirect(
       value__);
 }
 
+::flatbuffers::Offset<LocaleEntry> CreateLocaleEntry(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleEntryT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct LocaleTableT : public ::flatbuffers::NativeTable {
+  typedef LocaleTable TableType;
+  std::string locale{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::LocaleEntryT>> entries{};
+  LocaleTableT() = default;
+  LocaleTableT(const LocaleTableT &o);
+  LocaleTableT(LocaleTableT&&) FLATBUFFERS_NOEXCEPT = default;
+  LocaleTableT &operator=(LocaleTableT o) FLATBUFFERS_NOEXCEPT;
+};
+
 struct LocaleTable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef LocaleTableT NativeTableType;
   typedef LocaleTableBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_LOCALE = 4,
@@ -110,6 +135,9 @@ struct LocaleTable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(entries()) &&
            verifier.EndTable();
   }
+  LocaleTableT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(LocaleTableT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<LocaleTable> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleTableT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct LocaleTableBuilder {
@@ -155,6 +183,78 @@ inline ::flatbuffers::Offset<LocaleTable> CreateLocaleTableDirect(
       _fbb,
       locale__,
       entries__);
+}
+
+::flatbuffers::Offset<LocaleTable> CreateLocaleTable(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleTableT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline LocaleEntryT *LocaleEntry::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<LocaleEntryT>(new LocaleEntryT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void LocaleEntry::UnPackTo(LocaleEntryT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = key(); if (_e) _o->key = _e->str(); }
+  { auto _e = value(); if (_e) _o->value = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<LocaleEntry> LocaleEntry::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleEntryT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateLocaleEntry(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<LocaleEntry> CreateLocaleEntry(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleEntryT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const LocaleEntryT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _key = _fbb.CreateString(_o->key);
+  auto _value = _fbb.CreateString(_o->value);
+  return SE::FlatBuffers::CreateLocaleEntry(
+      _fbb,
+      _key,
+      _value);
+}
+
+inline LocaleTableT::LocaleTableT(const LocaleTableT &o)
+      : locale(o.locale) {
+  entries.reserve(o.entries.size());
+  for (const auto &entries_ : o.entries) { entries.emplace_back((entries_) ? new SE::FlatBuffers::LocaleEntryT(*entries_) : nullptr); }
+}
+
+inline LocaleTableT &LocaleTableT::operator=(LocaleTableT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(locale, o.locale);
+  std::swap(entries, o.entries);
+  return *this;
+}
+
+inline LocaleTableT *LocaleTable::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<LocaleTableT>(new LocaleTableT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void LocaleTable::UnPackTo(LocaleTableT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = locale(); if (_e) _o->locale = _e->str(); }
+  { auto _e = entries(); if (_e) { _o->entries.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->entries[_i]) { _e->Get(_i)->UnPackTo(_o->entries[_i].get(), _resolver); } else { _o->entries[_i] = std::unique_ptr<SE::FlatBuffers::LocaleEntryT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->entries.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<LocaleTable> LocaleTable::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleTableT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateLocaleTable(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<LocaleTable> CreateLocaleTable(::flatbuffers::FlatBufferBuilder &_fbb, const LocaleTableT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const LocaleTableT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _locale = _fbb.CreateString(_o->locale);
+  auto _entries = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::LocaleEntry>> (_o->entries.size(), [](size_t i, _VectorArgs *__va) { return CreateLocaleEntry(*__va->__fbb, __va->__o->entries[i].get(), __va->__rehasher); }, &_va );
+  return SE::FlatBuffers::CreateLocaleTable(
+      _fbb,
+      _locale,
+      _entries);
 }
 
 inline const SE::FlatBuffers::LocaleTable *GetLocaleTable(const void *buf) {
@@ -203,6 +303,18 @@ inline void FinishSizePrefixedLocaleTableBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::LocaleTable> root) {
   fbb.FinishSizePrefixed(root, LocaleTableIdentifier());
+}
+
+inline std::unique_ptr<SE::FlatBuffers::LocaleTableT> UnPackLocaleTable(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::LocaleTableT>(GetLocaleTable(buf)->UnPack(res));
+}
+
+inline std::unique_ptr<SE::FlatBuffers::LocaleTableT> UnPackSizePrefixedLocaleTable(
+    const void *buf,
+    const ::flatbuffers::resolver_function_t *res = nullptr) {
+  return std::unique_ptr<SE::FlatBuffers::LocaleTableT>(GetSizePrefixedLocaleTable(buf)->UnPack(res));
 }
 
 }  // namespace FlatBuffers
