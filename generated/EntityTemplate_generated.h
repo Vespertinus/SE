@@ -39,7 +39,7 @@ struct EntityTemplateT;
 /// Typed value union for field overrides.
 /// Float/Bool/Int are scalar wrappers (struct-in-union).
 /// Vec2/Vec3/Vec4/ColorARGB cover all GLM-mapped types.
-/// ResourcePath carries a string (file path or asset name).
+/// ResourcePath carries a file path or asset name; StringValue carries any plain string.
 enum class FieldValueU : uint8_t {
   NONE = 0,
   Float = 1,
@@ -50,11 +50,12 @@ enum class FieldValueU : uint8_t {
   Vec4 = 6,
   ColorARGB = 7,
   ResourcePath = 8,
+  StringValue = 9,
   MIN = NONE,
-  MAX = ResourcePath
+  MAX = StringValue
 };
 
-inline const FieldValueU (&EnumValuesFieldValueU())[9] {
+inline const FieldValueU (&EnumValuesFieldValueU())[10] {
   static const FieldValueU values[] = {
     FieldValueU::NONE,
     FieldValueU::Float,
@@ -64,13 +65,14 @@ inline const FieldValueU (&EnumValuesFieldValueU())[9] {
     FieldValueU::Vec3,
     FieldValueU::Vec4,
     FieldValueU::ColorARGB,
-    FieldValueU::ResourcePath
+    FieldValueU::ResourcePath,
+    FieldValueU::StringValue
   };
   return values;
 }
 
 inline const char * const *EnumNamesFieldValueU() {
-  static const char * const names[10] = {
+  static const char * const names[11] = {
     "NONE",
     "Float",
     "Bool",
@@ -80,13 +82,14 @@ inline const char * const *EnumNamesFieldValueU() {
     "Vec4",
     "ColorARGB",
     "ResourcePath",
+    "StringValue",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameFieldValueU(FieldValueU e) {
-  if (::flatbuffers::IsOutRange(e, FieldValueU::NONE, FieldValueU::ResourcePath)) return "";
+  if (::flatbuffers::IsOutRange(e, FieldValueU::NONE, FieldValueU::StringValue)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesFieldValueU()[index];
 }
@@ -127,6 +130,10 @@ template<> struct FieldValueUTraits<SE::FlatBuffers::ResourcePath> {
   static const FieldValueU enum_value = FieldValueU::ResourcePath;
 };
 
+template<> struct FieldValueUTraits<SE::FlatBuffers::StringValue> {
+  static const FieldValueU enum_value = FieldValueU::StringValue;
+};
+
 template<typename T> struct FieldValueUUnionTraits {
   static const FieldValueU enum_value = FieldValueU::NONE;
 };
@@ -161,6 +168,10 @@ template<> struct FieldValueUUnionTraits<SE::FlatBuffers::ColorARGB> {
 
 template<> struct FieldValueUUnionTraits<SE::FlatBuffers::ResourcePathT> {
   static const FieldValueU enum_value = FieldValueU::ResourcePath;
+};
+
+template<> struct FieldValueUUnionTraits<SE::FlatBuffers::StringValueT> {
+  static const FieldValueU enum_value = FieldValueU::StringValue;
 };
 
 struct FieldValueUUnion {
@@ -256,6 +267,14 @@ struct FieldValueUUnion {
   const SE::FlatBuffers::ResourcePathT *AsResourcePath() const {
     return type == FieldValueU::ResourcePath ?
       reinterpret_cast<const SE::FlatBuffers::ResourcePathT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::StringValueT *AsStringValue() {
+    return type == FieldValueU::StringValue ?
+      reinterpret_cast<SE::FlatBuffers::StringValueT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::StringValueT *AsStringValue() const {
+    return type == FieldValueU::StringValue ?
+      reinterpret_cast<const SE::FlatBuffers::StringValueT *>(value) : nullptr;
   }
 };
 
@@ -483,6 +502,9 @@ struct FieldOverride FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const SE::FlatBuffers::ResourcePath *value_as_ResourcePath() const {
     return value_type() == SE::FlatBuffers::FieldValueU::ResourcePath ? static_cast<const SE::FlatBuffers::ResourcePath *>(value()) : nullptr;
   }
+  const SE::FlatBuffers::StringValue *value_as_StringValue() const {
+    return value_type() == SE::FlatBuffers::FieldValueU::StringValue ? static_cast<const SE::FlatBuffers::StringValue *>(value()) : nullptr;
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_PATH) &&
@@ -527,6 +549,10 @@ template<> inline const SE::FlatBuffers::ColorARGB *FieldOverride::value_as<SE::
 
 template<> inline const SE::FlatBuffers::ResourcePath *FieldOverride::value_as<SE::FlatBuffers::ResourcePath>() const {
   return value_as_ResourcePath();
+}
+
+template<> inline const SE::FlatBuffers::StringValue *FieldOverride::value_as<SE::FlatBuffers::StringValue>() const {
+  return value_as_StringValue();
 }
 
 struct FieldOverrideBuilder {
@@ -1174,6 +1200,10 @@ inline bool VerifyFieldValueU(::flatbuffers::Verifier &verifier, const void *obj
       auto ptr = reinterpret_cast<const SE::FlatBuffers::ResourcePath *>(obj);
       return verifier.VerifyTable(ptr);
     }
+    case FieldValueU::StringValue: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StringValue *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
     default: return true;
   }
 }
@@ -1225,6 +1255,10 @@ inline void *FieldValueUUnion::UnPack(const void *obj, FieldValueU type, const :
       auto ptr = reinterpret_cast<const SE::FlatBuffers::ResourcePath *>(obj);
       return ptr->UnPack(resolver);
     }
+    case FieldValueU::StringValue: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StringValue *>(obj);
+      return ptr->UnPack(resolver);
+    }
     default: return nullptr;
   }
 }
@@ -1264,6 +1298,10 @@ inline ::flatbuffers::Offset<void> FieldValueUUnion::Pack(::flatbuffers::FlatBuf
       auto ptr = reinterpret_cast<const SE::FlatBuffers::ResourcePathT *>(value);
       return CreateResourcePath(_fbb, ptr, _rehasher).Union();
     }
+    case FieldValueU::StringValue: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StringValueT *>(value);
+      return CreateStringValue(_fbb, ptr, _rehasher).Union();
+    }
     default: return 0;
   }
 }
@@ -1300,6 +1338,10 @@ inline FieldValueUUnion::FieldValueUUnion(const FieldValueUUnion &u) : type(u.ty
     }
     case FieldValueU::ResourcePath: {
       value = new SE::FlatBuffers::ResourcePathT(*reinterpret_cast<SE::FlatBuffers::ResourcePathT *>(u.value));
+      break;
+    }
+    case FieldValueU::StringValue: {
+      value = new SE::FlatBuffers::StringValueT(*reinterpret_cast<SE::FlatBuffers::StringValueT *>(u.value));
       break;
     }
     default:
@@ -1346,6 +1388,11 @@ inline void FieldValueUUnion::Reset() {
     }
     case FieldValueU::ResourcePath: {
       auto ptr = reinterpret_cast<SE::FlatBuffers::ResourcePathT *>(value);
+      delete ptr;
+      break;
+    }
+    case FieldValueU::StringValue: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::StringValueT *>(value);
       delete ptr;
       break;
     }

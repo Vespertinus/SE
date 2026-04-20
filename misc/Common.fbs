@@ -62,4 +62,8 @@ table ResourcePath {
         path:string (required);
 }
 
+table StringValue {
+        value:string (required);
+}
+
 

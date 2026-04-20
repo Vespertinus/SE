@@ -13,6 +13,11 @@
 
 namespace SE {
 
+namespace DemoLayers {
+    constexpr uint32_t WORLD = CollisionLayers::DEFAULT;  // static geometry, platforms
+    constexpr uint32_t BALL  = 1u << 1;
+}
+
 // ---------------------------------------------------------------------------
 // Scene constructor
 // ---------------------------------------------------------------------------
@@ -163,7 +168,7 @@ Scene::Scene(const Settings & oSettings) :
         }
 
         // -----------------------------------------------------------------------
-        // Goal platform (static, emissive)
+        // Goal platform (static, emissive) + trigger sphere above it
         // -----------------------------------------------------------------------
         {
                 const glm::vec3 oHalf { 2.0f, 0.25f, 2.0f };
@@ -181,6 +186,19 @@ Scene::Scene(const Settings & oSettings) :
                 desc.is_static              = true;
                 pNode->CreateComponent<RigidBody>(desc);
         }
+        {
+                const glm::vec3 oPos { 11.0f, 3.5f, 0.0f };
+                auto pNode = pSceneTree->Create("GoalTriggerVolume");
+                pNode->SetPos(oPos);
+
+                TriggerVolumeDesc desc;
+                desc.oCollider.type   = ColliderDesc::Sphere;
+                desc.oCollider.radius = 2.5f;
+                desc.on_enter_event   = "goal.enter";
+                desc.on_exit_event    = "goal.exit";
+                desc.collision_mask   = DemoLayers::BALL;
+                pNode->CreateComponent<TriggerVolume>(desc);
+        }
 
         // -----------------------------------------------------------------------
         // Ball (dynamic)
@@ -196,6 +214,7 @@ Scene::Scene(const Settings & oSettings) :
                 desc.oCollider.type     = ColliderDesc::Sphere;
                 desc.oCollider.radius   = 0.5f;
                 desc.vInitialPosition   = vBallStart;
+                desc.collision_layer    = DemoLayers::BALL;
                 desc.mass               = 1.0f;
                 desc.friction           = 0.5f;
                 desc.restitution        = 0.2f;
@@ -266,6 +285,7 @@ Scene::Scene(const Settings & oSettings) :
                 desc.vInitialPosition       = oPos;
                 desc.is_trigger             = true;
                 desc.is_static              = true;
+                desc.collision_mask         = DemoLayers::BALL;
                 pNode->CreateComponent<RigidBody>(desc);
 
                 hGoalBody = pNode->GetComponent<RigidBody>()->GetHandle();
@@ -287,6 +307,7 @@ Scene::Scene(const Settings & oSettings) :
                 desc.vInitialPosition       = oPos;
                 desc.is_trigger             = true;
                 desc.is_static              = true;
+                desc.collision_mask         = DemoLayers::BALL;
                 pNode->CreateComponent<RigidBody>(desc);
 
                 hDeathBody = pNode->GetComponent<RigidBody>()->GetHandle();
@@ -313,6 +334,7 @@ Scene::Scene(const Settings & oSettings) :
                 DirLight oDir;
                 oDir.direction = glm::normalize(glm::vec3(-1.0f, -2.0f, -1.0f));
                 oDir.intensity = 0.6f;
+                //oDir.intensity = 3.0f;
                 GetSystem<TRenderer>().SetDirLight(oDir);
 
                 // Warm light above start area
@@ -330,6 +352,9 @@ Scene::Scene(const Settings & oSettings) :
                 oP2.intensity = 4.0f;
                 oP2.radius    = 8.0f;
                 GetSystem<TRenderer>().AddPointLight(oP2);
+
+                //GetSystem<TRenderer>().SetBloomThreshold(0.2);
+                //GetSystem<TRenderer>().SetBloomStrength(1);
         }
 
         // -----------------------------------------------------------------------
@@ -339,6 +364,7 @@ Scene::Scene(const Settings & oSettings) :
                 auto & oEM = GetSystem<EventManager>();
                 oEM.AddListener<EUpdate,               &Scene::OnUpdate>      (this);
                 oEM.AddListener<EPhysicsTriggerEnter,  &Scene::OnTriggerEnter>(this);
+                oEM.AddListener<ETriggerFired,         &Scene::OnTriggerFire>(this);
                 oEM.AddListener<EKeyDown,              &Scene::OnKeyDown>(this);
         }
 
@@ -353,6 +379,7 @@ Scene::~Scene() noexcept {
         auto & oEM = GetSystem<EventManager>();
         oEM.RemoveListener<EUpdate,              &Scene::OnUpdate>      (this);
         oEM.RemoveListener<EPhysicsTriggerEnter, &Scene::OnTriggerEnter>(this);
+        oEM.RemoveListener<ETriggerFired,        &Scene::OnTriggerFire>(this);
         oEM.RemoveListener<EKeyDown,             &Scene::OnKeyDown>(this);
 }
 
@@ -375,8 +402,26 @@ void Scene::OnKeyDown(const Event & oEvent) {
 // ---------------------------------------------------------------------------
 void Scene::OnTriggerEnter(const Event & oEvent) {
 
+
         const auto & oEv = oEvent.Get<EPhysicsTriggerEnter>();
+        log_d("hTrigger index: {}, generation: {}, hGoalBody: index {}, generation: {}",
+                        oEv.hTrigger.index, oEv.hTrigger.generation,
+                        hGoalBody.index, hGoalBody.generation);
+
         if (oEv.hTrigger == hGoalBody || oEv.hTrigger == hDeathBody) {
+                ResetBall();
+        }
+}
+
+void Scene::OnTriggerFire(const Event & oEvent) {
+
+        const auto & oEv = oEvent.Get<ETriggerFired>();
+
+        static StrID goal_event("goal.enter");
+
+        log_d("event_id: {}, goal_event: {}", oEv.event_id, goal_event);
+
+        if (oEv.event_id == goal_event) {
                 ResetBall();
         }
 }

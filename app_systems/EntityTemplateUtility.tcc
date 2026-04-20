@@ -13,7 +13,8 @@ FlatBuffers::ComponentU EntityTemplateUtility::ComponentNameToEnum(std::string_v
         if (name == "AudioListener") return FlatBuffers::ComponentU::AudioListener;
         if (name == "SoundEmitter")  return FlatBuffers::ComponentU::SoundEmitter;
         if (name == "AppComponent")  return FlatBuffers::ComponentU::AppComponent;
-        if (name == "Animator")      return FlatBuffers::ComponentU::Animator;
+        if (name == "Animator")       return FlatBuffers::ComponentU::Animator;
+        if (name == "TriggerVolume")  return FlatBuffers::ComponentU::TriggerVolume;
         return FlatBuffers::ComponentU::NONE;
 }
 

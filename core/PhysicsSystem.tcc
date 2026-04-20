@@ -117,8 +117,29 @@ class SEContactListener final : public JPH::ContactListener {
         std::vector<PendingContact> vPending;
 public:
         JPH::ValidateResult OnContactValidate(
-                        const JPH::Body&, const JPH::Body&,
+                        const JPH::Body& a, const JPH::Body& b,
                         JPH::RVec3Arg, const JPH::CollideShapeResult&) override {
+
+                uint32_t a_layer = static_cast<uint32_t>(a.GetUserData());
+                uint32_t a_mask  = static_cast<uint32_t>(a.GetUserData() >> 32);
+                uint32_t b_layer = static_cast<uint32_t>(b.GetUserData());
+                uint32_t b_mask  = static_cast<uint32_t>(b.GetUserData() >> 32);
+
+                bool a_trig = (a.GetObjectLayer() == PhysLayers::TRIGGER);
+                bool b_trig = (b.GetObjectLayer() == PhysLayers::TRIGGER);
+
+                if (a_trig || b_trig) {
+                        // Trigger contacts: only the trigger's mask is checked (unidirectional).
+                        // The non-trigger body's mask is irrelevant — it doesn't "subscribe" to triggers.
+                        uint32_t trig_mask   = a_trig ? a_mask  : b_mask;
+                        uint32_t other_layer = a_trig ? b_layer : a_layer;
+                        if (!(trig_mask & other_layer))
+                                return JPH::ValidateResult::RejectAllContactsForThisBodyPair;
+                } else {
+                        // Body–body contacts: bidirectional OR — either side detecting the other suffices.
+                        if (!(a_mask & b_layer) && !(b_mask & a_layer))
+                                return JPH::ValidateResult::RejectAllContactsForThisBodyPair;
+                }
                 return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
         }
 
@@ -464,6 +485,8 @@ BodyHandle PhysicsSystem::CreateRigidBody(const RigidBodyDesc& desc) {
                         motion_type,
                         layer);
 
+        settings.mUserData       = (static_cast<uint64_t>(desc.collision_mask) << 32)
+                                 | static_cast<uint64_t>(desc.collision_layer);
         settings.mFriction       = desc.friction;
         settings.mRestitution    = desc.restitution;
         settings.mLinearDamping  = desc.linear_damping;

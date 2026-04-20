@@ -85,10 +85,23 @@ table RigidBody {
         angular_damping:float = 0.05;
         gravity_scale:float   = 1.0;
         mass:float            = 1.0;
+        collision_layer:uint  = 1;
+        collision_mask:uint   = 4294967295;
 }
 
 table Animator {
         animation_graph: AnimationGraph (required);
+}
+
+table TriggerVolume {
+        collider        : ColliderU (required);
+        on_enter_event  : string;
+        on_exit_event   : string;
+        on_stay_event   : string;
+        stay_interval   : float = 0.0;
+        one_shot        : bool  = false;
+        collision_layer : uint  = 1;
+        collision_mask  : uint  = 4294967295;
 }
 
 union ComponentU {
@@ -103,6 +116,7 @@ union ComponentU {
 //        etc
         AppComponent,
         Animator,
+        TriggerVolume,
 }
 
 table Component {

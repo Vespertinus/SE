@@ -18,7 +18,7 @@ table NodeTemplate {
 /// Typed value union for field overrides.
 /// Float/Bool/Int are scalar wrappers (struct-in-union).
 /// Vec2/Vec3/Vec4/ColorARGB cover all GLM-mapped types.
-/// ResourcePath carries a string (file path or asset name).
+/// ResourcePath carries a file path or asset name; StringValue carries any plain string.
 union FieldValueU {
     Float,
     Bool,
@@ -28,6 +28,7 @@ union FieldValueU {
     Vec4,
     ColorARGB,
     ResourcePath,
+    StringValue,
 }
 
 /// A single field-level patch applied during variant merge.

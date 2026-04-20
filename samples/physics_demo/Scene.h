@@ -28,6 +28,7 @@ class Scene {
 
         void OnUpdate      (const Event & oEvent);
         void OnTriggerEnter(const Event & oEvent);
+        void OnTriggerFire (const Event & oEvent);
         void OnKeyDown(const Event & oEvent);
         void ResetBall();
 

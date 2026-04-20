@@ -7,8 +7,9 @@ namespace SE {
 
 class BasicController;
 class BallController;
+class TriggerVolume;
 
-using TCustomComponents = MP::TypelistWrapper<BasicController, BallController>;
+using TCustomComponents = MP::TypelistWrapper<BasicController, BallController, TriggerVolume>;
 
 }
 
@@ -22,6 +23,7 @@ using TCustomComponents = MP::TypelistWrapper<BasicController, BallController>;
 #include <BasicController.h>
 #include "BallController.h"
 #include "PhysicsDebugController.h"
+#include <TriggerVolume.h>
 
 #endif
 #endif
@@ -30,9 +32,11 @@ using TCustomComponents = MP::TypelistWrapper<BasicController, BallController>;
 #ifndef INC_CUSTOM_COMPONENTS_IMPL_GUARD
 #define INC_CUSTOM_COMPONENTS_IMPL_GUARD
 
+#include <EntityTemplateUtility.tcc>
 #include <BasicController.tcc>
 #include "BallController.tcc"
 #include "PhysicsDebugController.tcc"
+#include <TriggerVolume.tcc>
 
 #endif
 #endif

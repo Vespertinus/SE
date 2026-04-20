@@ -69,6 +69,10 @@ struct Animator;
 struct AnimatorBuilder;
 struct AnimatorT;
 
+struct TriggerVolume;
+struct TriggerVolumeBuilder;
+struct TriggerVolumeT;
+
 struct Component;
 struct ComponentBuilder;
 struct ComponentT;
@@ -229,11 +233,12 @@ enum class ComponentU : uint8_t {
   SoundEmitter = 6,
   AppComponent = 7,
   Animator = 8,
+  TriggerVolume = 9,
   MIN = NONE,
-  MAX = Animator
+  MAX = TriggerVolume
 };
 
-inline const ComponentU (&EnumValuesComponentU())[9] {
+inline const ComponentU (&EnumValuesComponentU())[10] {
   static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
@@ -243,13 +248,14 @@ inline const ComponentU (&EnumValuesComponentU())[9] {
     ComponentU::AudioListener,
     ComponentU::SoundEmitter,
     ComponentU::AppComponent,
-    ComponentU::Animator
+    ComponentU::Animator,
+    ComponentU::TriggerVolume
   };
   return values;
 }
 
 inline const char * const *EnumNamesComponentU() {
-  static const char * const names[10] = {
+  static const char * const names[11] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
@@ -259,13 +265,14 @@ inline const char * const *EnumNamesComponentU() {
     "SoundEmitter",
     "AppComponent",
     "Animator",
+    "TriggerVolume",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameComponentU(ComponentU e) {
-  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::Animator)) return "";
+  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::TriggerVolume)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesComponentU()[index];
 }
@@ -306,6 +313,10 @@ template<> struct ComponentUTraits<SE::FlatBuffers::Animator> {
   static const ComponentU enum_value = ComponentU::Animator;
 };
 
+template<> struct ComponentUTraits<SE::FlatBuffers::TriggerVolume> {
+  static const ComponentU enum_value = ComponentU::TriggerVolume;
+};
+
 template<typename T> struct ComponentUUnionTraits {
   static const ComponentU enum_value = ComponentU::NONE;
 };
@@ -340,6 +351,10 @@ template<> struct ComponentUUnionTraits<SE::FlatBuffers::AppComponentT> {
 
 template<> struct ComponentUUnionTraits<SE::FlatBuffers::AnimatorT> {
   static const ComponentU enum_value = ComponentU::Animator;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::TriggerVolumeT> {
+  static const ComponentU enum_value = ComponentU::TriggerVolume;
 };
 
 struct ComponentUUnion {
@@ -435,6 +450,14 @@ struct ComponentUUnion {
   const SE::FlatBuffers::AnimatorT *AsAnimator() const {
     return type == ComponentU::Animator ?
       reinterpret_cast<const SE::FlatBuffers::AnimatorT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::TriggerVolumeT *AsTriggerVolume() {
+    return type == ComponentU::TriggerVolume ?
+      reinterpret_cast<SE::FlatBuffers::TriggerVolumeT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::TriggerVolumeT *AsTriggerVolume() const {
+    return type == ComponentU::TriggerVolume ?
+      reinterpret_cast<const SE::FlatBuffers::TriggerVolumeT *>(value) : nullptr;
   }
 };
 
@@ -1190,6 +1213,8 @@ struct RigidBodyT : public ::flatbuffers::NativeTable {
   float angular_damping = 0.05f;
   float gravity_scale = 1.0f;
   float mass = 1.0f;
+  uint32_t collision_layer = 1;
+  uint32_t collision_mask = 4294967295;
   RigidBodyT() = default;
   RigidBodyT(const RigidBodyT &o);
   RigidBodyT(RigidBodyT&&) FLATBUFFERS_NOEXCEPT = default;
@@ -1211,7 +1236,9 @@ struct RigidBody FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_LINEAR_DAMPING = 20,
     VT_ANGULAR_DAMPING = 22,
     VT_GRAVITY_SCALE = 24,
-    VT_MASS = 26
+    VT_MASS = 26,
+    VT_COLLISION_LAYER = 28,
+    VT_COLLISION_MASK = 30
   };
   SE::FlatBuffers::ColliderU collider_type() const {
     return static_cast<SE::FlatBuffers::ColliderU>(GetField<uint8_t>(VT_COLLIDER_TYPE, 0));
@@ -1262,6 +1289,12 @@ struct RigidBody FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   float mass() const {
     return GetField<float>(VT_MASS, 1.0f);
   }
+  uint32_t collision_layer() const {
+    return GetField<uint32_t>(VT_COLLISION_LAYER, 1);
+  }
+  uint32_t collision_mask() const {
+    return GetField<uint32_t>(VT_COLLISION_MASK, 4294967295);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_COLLIDER_TYPE, 1) &&
@@ -1277,6 +1310,8 @@ struct RigidBody FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_ANGULAR_DAMPING, 4) &&
            VerifyField<float>(verifier, VT_GRAVITY_SCALE, 4) &&
            VerifyField<float>(verifier, VT_MASS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_COLLISION_LAYER, 4) &&
+           VerifyField<uint32_t>(verifier, VT_COLLISION_MASK, 4) &&
            verifier.EndTable();
   }
   RigidBodyT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -1340,6 +1375,12 @@ struct RigidBodyBuilder {
   void add_mass(float mass) {
     fbb_.AddElement<float>(RigidBody::VT_MASS, mass, 1.0f);
   }
+  void add_collision_layer(uint32_t collision_layer) {
+    fbb_.AddElement<uint32_t>(RigidBody::VT_COLLISION_LAYER, collision_layer, 1);
+  }
+  void add_collision_mask(uint32_t collision_mask) {
+    fbb_.AddElement<uint32_t>(RigidBody::VT_COLLISION_MASK, collision_mask, 4294967295);
+  }
   explicit RigidBodyBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -1365,8 +1406,12 @@ inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(
     float linear_damping = 0.05f,
     float angular_damping = 0.05f,
     float gravity_scale = 1.0f,
-    float mass = 1.0f) {
+    float mass = 1.0f,
+    uint32_t collision_layer = 1,
+    uint32_t collision_mask = 4294967295) {
   RigidBodyBuilder builder_(_fbb);
+  builder_.add_collision_mask(collision_mask);
+  builder_.add_collision_layer(collision_layer);
   builder_.add_mass(mass);
   builder_.add_gravity_scale(gravity_scale);
   builder_.add_angular_damping(angular_damping);
@@ -1442,6 +1487,206 @@ inline ::flatbuffers::Offset<Animator> CreateAnimator(
 
 ::flatbuffers::Offset<Animator> CreateAnimator(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatorT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct TriggerVolumeT : public ::flatbuffers::NativeTable {
+  typedef TriggerVolume TableType;
+  SE::FlatBuffers::ColliderUUnion collider{};
+  std::string on_enter_event{};
+  std::string on_exit_event{};
+  std::string on_stay_event{};
+  float stay_interval = 0.0f;
+  bool one_shot = false;
+  uint32_t collision_layer = 1;
+  uint32_t collision_mask = 4294967295;
+};
+
+struct TriggerVolume FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TriggerVolumeT NativeTableType;
+  typedef TriggerVolumeBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_COLLIDER_TYPE = 4,
+    VT_COLLIDER = 6,
+    VT_ON_ENTER_EVENT = 8,
+    VT_ON_EXIT_EVENT = 10,
+    VT_ON_STAY_EVENT = 12,
+    VT_STAY_INTERVAL = 14,
+    VT_ONE_SHOT = 16,
+    VT_COLLISION_LAYER = 18,
+    VT_COLLISION_MASK = 20
+  };
+  SE::FlatBuffers::ColliderU collider_type() const {
+    return static_cast<SE::FlatBuffers::ColliderU>(GetField<uint8_t>(VT_COLLIDER_TYPE, 0));
+  }
+  const void *collider() const {
+    return GetPointer<const void *>(VT_COLLIDER);
+  }
+  template<typename T> const T *collider_as() const;
+  const SE::FlatBuffers::BoxCollider *collider_as_BoxCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::BoxCollider ? static_cast<const SE::FlatBuffers::BoxCollider *>(collider()) : nullptr;
+  }
+  const SE::FlatBuffers::SphereCollider *collider_as_SphereCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::SphereCollider ? static_cast<const SE::FlatBuffers::SphereCollider *>(collider()) : nullptr;
+  }
+  const SE::FlatBuffers::CapsuleCollider *collider_as_CapsuleCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::CapsuleCollider ? static_cast<const SE::FlatBuffers::CapsuleCollider *>(collider()) : nullptr;
+  }
+  const SE::FlatBuffers::MeshCollider *collider_as_MeshCollider() const {
+    return collider_type() == SE::FlatBuffers::ColliderU::MeshCollider ? static_cast<const SE::FlatBuffers::MeshCollider *>(collider()) : nullptr;
+  }
+  const ::flatbuffers::String *on_enter_event() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ON_ENTER_EVENT);
+  }
+  const ::flatbuffers::String *on_exit_event() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ON_EXIT_EVENT);
+  }
+  const ::flatbuffers::String *on_stay_event() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ON_STAY_EVENT);
+  }
+  float stay_interval() const {
+    return GetField<float>(VT_STAY_INTERVAL, 0.0f);
+  }
+  bool one_shot() const {
+    return GetField<uint8_t>(VT_ONE_SHOT, 0) != 0;
+  }
+  uint32_t collision_layer() const {
+    return GetField<uint32_t>(VT_COLLISION_LAYER, 1);
+  }
+  uint32_t collision_mask() const {
+    return GetField<uint32_t>(VT_COLLISION_MASK, 4294967295);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint8_t>(verifier, VT_COLLIDER_TYPE, 1) &&
+           VerifyOffsetRequired(verifier, VT_COLLIDER) &&
+           VerifyColliderU(verifier, collider(), collider_type()) &&
+           VerifyOffset(verifier, VT_ON_ENTER_EVENT) &&
+           verifier.VerifyString(on_enter_event()) &&
+           VerifyOffset(verifier, VT_ON_EXIT_EVENT) &&
+           verifier.VerifyString(on_exit_event()) &&
+           VerifyOffset(verifier, VT_ON_STAY_EVENT) &&
+           verifier.VerifyString(on_stay_event()) &&
+           VerifyField<float>(verifier, VT_STAY_INTERVAL, 4) &&
+           VerifyField<uint8_t>(verifier, VT_ONE_SHOT, 1) &&
+           VerifyField<uint32_t>(verifier, VT_COLLISION_LAYER, 4) &&
+           VerifyField<uint32_t>(verifier, VT_COLLISION_MASK, 4) &&
+           verifier.EndTable();
+  }
+  TriggerVolumeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(TriggerVolumeT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<TriggerVolume> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerVolumeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+template<> inline const SE::FlatBuffers::BoxCollider *TriggerVolume::collider_as<SE::FlatBuffers::BoxCollider>() const {
+  return collider_as_BoxCollider();
+}
+
+template<> inline const SE::FlatBuffers::SphereCollider *TriggerVolume::collider_as<SE::FlatBuffers::SphereCollider>() const {
+  return collider_as_SphereCollider();
+}
+
+template<> inline const SE::FlatBuffers::CapsuleCollider *TriggerVolume::collider_as<SE::FlatBuffers::CapsuleCollider>() const {
+  return collider_as_CapsuleCollider();
+}
+
+template<> inline const SE::FlatBuffers::MeshCollider *TriggerVolume::collider_as<SE::FlatBuffers::MeshCollider>() const {
+  return collider_as_MeshCollider();
+}
+
+struct TriggerVolumeBuilder {
+  typedef TriggerVolume Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_collider_type(SE::FlatBuffers::ColliderU collider_type) {
+    fbb_.AddElement<uint8_t>(TriggerVolume::VT_COLLIDER_TYPE, static_cast<uint8_t>(collider_type), 0);
+  }
+  void add_collider(::flatbuffers::Offset<void> collider) {
+    fbb_.AddOffset(TriggerVolume::VT_COLLIDER, collider);
+  }
+  void add_on_enter_event(::flatbuffers::Offset<::flatbuffers::String> on_enter_event) {
+    fbb_.AddOffset(TriggerVolume::VT_ON_ENTER_EVENT, on_enter_event);
+  }
+  void add_on_exit_event(::flatbuffers::Offset<::flatbuffers::String> on_exit_event) {
+    fbb_.AddOffset(TriggerVolume::VT_ON_EXIT_EVENT, on_exit_event);
+  }
+  void add_on_stay_event(::flatbuffers::Offset<::flatbuffers::String> on_stay_event) {
+    fbb_.AddOffset(TriggerVolume::VT_ON_STAY_EVENT, on_stay_event);
+  }
+  void add_stay_interval(float stay_interval) {
+    fbb_.AddElement<float>(TriggerVolume::VT_STAY_INTERVAL, stay_interval, 0.0f);
+  }
+  void add_one_shot(bool one_shot) {
+    fbb_.AddElement<uint8_t>(TriggerVolume::VT_ONE_SHOT, static_cast<uint8_t>(one_shot), 0);
+  }
+  void add_collision_layer(uint32_t collision_layer) {
+    fbb_.AddElement<uint32_t>(TriggerVolume::VT_COLLISION_LAYER, collision_layer, 1);
+  }
+  void add_collision_mask(uint32_t collision_mask) {
+    fbb_.AddElement<uint32_t>(TriggerVolume::VT_COLLISION_MASK, collision_mask, 4294967295);
+  }
+  explicit TriggerVolumeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<TriggerVolume> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<TriggerVolume>(end);
+    fbb_.Required(o, TriggerVolume::VT_COLLIDER);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<TriggerVolume> CreateTriggerVolume(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    SE::FlatBuffers::ColliderU collider_type = SE::FlatBuffers::ColliderU::NONE,
+    ::flatbuffers::Offset<void> collider = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> on_enter_event = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> on_exit_event = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> on_stay_event = 0,
+    float stay_interval = 0.0f,
+    bool one_shot = false,
+    uint32_t collision_layer = 1,
+    uint32_t collision_mask = 4294967295) {
+  TriggerVolumeBuilder builder_(_fbb);
+  builder_.add_collision_mask(collision_mask);
+  builder_.add_collision_layer(collision_layer);
+  builder_.add_stay_interval(stay_interval);
+  builder_.add_on_stay_event(on_stay_event);
+  builder_.add_on_exit_event(on_exit_event);
+  builder_.add_on_enter_event(on_enter_event);
+  builder_.add_collider(collider);
+  builder_.add_one_shot(one_shot);
+  builder_.add_collider_type(collider_type);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<TriggerVolume> CreateTriggerVolumeDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    SE::FlatBuffers::ColliderU collider_type = SE::FlatBuffers::ColliderU::NONE,
+    ::flatbuffers::Offset<void> collider = 0,
+    const char *on_enter_event = nullptr,
+    const char *on_exit_event = nullptr,
+    const char *on_stay_event = nullptr,
+    float stay_interval = 0.0f,
+    bool one_shot = false,
+    uint32_t collision_layer = 1,
+    uint32_t collision_mask = 4294967295) {
+  auto on_enter_event__ = on_enter_event ? _fbb.CreateString(on_enter_event) : 0;
+  auto on_exit_event__ = on_exit_event ? _fbb.CreateString(on_exit_event) : 0;
+  auto on_stay_event__ = on_stay_event ? _fbb.CreateString(on_stay_event) : 0;
+  return SE::FlatBuffers::CreateTriggerVolume(
+      _fbb,
+      collider_type,
+      collider,
+      on_enter_event__,
+      on_exit_event__,
+      on_stay_event__,
+      stay_interval,
+      one_shot,
+      collision_layer,
+      collision_mask);
+}
+
+::flatbuffers::Offset<TriggerVolume> CreateTriggerVolume(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerVolumeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 struct ComponentT : public ::flatbuffers::NativeTable {
   typedef Component TableType;
   SE::FlatBuffers::ComponentUUnion component{};
@@ -1485,6 +1730,9 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const SE::FlatBuffers::Animator *component_as_Animator() const {
     return component_type() == SE::FlatBuffers::ComponentU::Animator ? static_cast<const SE::FlatBuffers::Animator *>(component()) : nullptr;
   }
+  const SE::FlatBuffers::TriggerVolume *component_as_TriggerVolume() const {
+    return component_type() == SE::FlatBuffers::ComponentU::TriggerVolume ? static_cast<const SE::FlatBuffers::TriggerVolume *>(component()) : nullptr;
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_COMPONENT_TYPE, 1) &&
@@ -1527,6 +1775,10 @@ template<> inline const SE::FlatBuffers::AppComponent *Component::component_as<S
 
 template<> inline const SE::FlatBuffers::Animator *Component::component_as<SE::FlatBuffers::Animator>() const {
   return component_as_Animator();
+}
+
+template<> inline const SE::FlatBuffers::TriggerVolume *Component::component_as<SE::FlatBuffers::TriggerVolume>() const {
+  return component_as_TriggerVolume();
 }
 
 struct ComponentBuilder {
@@ -1910,7 +2162,9 @@ inline RigidBodyT::RigidBodyT(const RigidBodyT &o)
         linear_damping(o.linear_damping),
         angular_damping(o.angular_damping),
         gravity_scale(o.gravity_scale),
-        mass(o.mass) {
+        mass(o.mass),
+        collision_layer(o.collision_layer),
+        collision_mask(o.collision_mask) {
 }
 
 inline RigidBodyT &RigidBodyT::operator=(RigidBodyT o) FLATBUFFERS_NOEXCEPT {
@@ -1925,6 +2179,8 @@ inline RigidBodyT &RigidBodyT::operator=(RigidBodyT o) FLATBUFFERS_NOEXCEPT {
   std::swap(angular_damping, o.angular_damping);
   std::swap(gravity_scale, o.gravity_scale);
   std::swap(mass, o.mass);
+  std::swap(collision_layer, o.collision_layer);
+  std::swap(collision_mask, o.collision_mask);
   return *this;
 }
 
@@ -1949,6 +2205,8 @@ inline void RigidBody::UnPackTo(RigidBodyT *_o, const ::flatbuffers::resolver_fu
   { auto _e = angular_damping(); _o->angular_damping = _e; }
   { auto _e = gravity_scale(); _o->gravity_scale = _e; }
   { auto _e = mass(); _o->mass = _e; }
+  { auto _e = collision_layer(); _o->collision_layer = _e; }
+  { auto _e = collision_mask(); _o->collision_mask = _e; }
 }
 
 inline ::flatbuffers::Offset<RigidBody> RigidBody::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const RigidBodyT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -1971,6 +2229,8 @@ inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(::flatbuffers::FlatBuffe
   auto _angular_damping = _o->angular_damping;
   auto _gravity_scale = _o->gravity_scale;
   auto _mass = _o->mass;
+  auto _collision_layer = _o->collision_layer;
+  auto _collision_mask = _o->collision_mask;
   return SE::FlatBuffers::CreateRigidBody(
       _fbb,
       _collider_type,
@@ -1984,7 +2244,9 @@ inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(::flatbuffers::FlatBuffe
       _linear_damping,
       _angular_damping,
       _gravity_scale,
-      _mass);
+      _mass,
+      _collision_layer,
+      _collision_mask);
 }
 
 inline AnimatorT::AnimatorT(const AnimatorT &o)
@@ -2020,6 +2282,56 @@ inline ::flatbuffers::Offset<Animator> CreateAnimator(::flatbuffers::FlatBufferB
   return SE::FlatBuffers::CreateAnimator(
       _fbb,
       _animation_graph);
+}
+
+inline TriggerVolumeT *TriggerVolume::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<TriggerVolumeT>(new TriggerVolumeT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void TriggerVolume::UnPackTo(TriggerVolumeT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = collider_type(); _o->collider.type = _e; }
+  { auto _e = collider(); if (_e) _o->collider.value = SE::FlatBuffers::ColliderUUnion::UnPack(_e, collider_type(), _resolver); }
+  { auto _e = on_enter_event(); if (_e) _o->on_enter_event = _e->str(); }
+  { auto _e = on_exit_event(); if (_e) _o->on_exit_event = _e->str(); }
+  { auto _e = on_stay_event(); if (_e) _o->on_stay_event = _e->str(); }
+  { auto _e = stay_interval(); _o->stay_interval = _e; }
+  { auto _e = one_shot(); _o->one_shot = _e; }
+  { auto _e = collision_layer(); _o->collision_layer = _e; }
+  { auto _e = collision_mask(); _o->collision_mask = _e; }
+}
+
+inline ::flatbuffers::Offset<TriggerVolume> TriggerVolume::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerVolumeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateTriggerVolume(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<TriggerVolume> CreateTriggerVolume(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerVolumeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const TriggerVolumeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _collider_type = _o->collider.type;
+  auto _collider = _o->collider.Pack(_fbb);
+  auto _on_enter_event = _o->on_enter_event.empty() ? 0 : _fbb.CreateString(_o->on_enter_event);
+  auto _on_exit_event = _o->on_exit_event.empty() ? 0 : _fbb.CreateString(_o->on_exit_event);
+  auto _on_stay_event = _o->on_stay_event.empty() ? 0 : _fbb.CreateString(_o->on_stay_event);
+  auto _stay_interval = _o->stay_interval;
+  auto _one_shot = _o->one_shot;
+  auto _collision_layer = _o->collision_layer;
+  auto _collision_mask = _o->collision_mask;
+  return SE::FlatBuffers::CreateTriggerVolume(
+      _fbb,
+      _collider_type,
+      _collider,
+      _on_enter_event,
+      _on_exit_event,
+      _on_stay_event,
+      _stay_interval,
+      _one_shot,
+      _collision_layer,
+      _collision_mask);
 }
 
 inline ComponentT *Component::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
@@ -2222,6 +2534,10 @@ inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj,
       auto ptr = reinterpret_cast<const SE::FlatBuffers::Animator *>(obj);
       return verifier.VerifyTable(ptr);
     }
+    case ComponentU::TriggerVolume: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerVolume *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
     default: return true;
   }
 }
@@ -2273,6 +2589,10 @@ inline void *ComponentUUnion::UnPack(const void *obj, ComponentU type, const ::f
       auto ptr = reinterpret_cast<const SE::FlatBuffers::Animator *>(obj);
       return ptr->UnPack(resolver);
     }
+    case ComponentU::TriggerVolume: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerVolume *>(obj);
+      return ptr->UnPack(resolver);
+    }
     default: return nullptr;
   }
 }
@@ -2312,6 +2632,10 @@ inline ::flatbuffers::Offset<void> ComponentUUnion::Pack(::flatbuffers::FlatBuff
       auto ptr = reinterpret_cast<const SE::FlatBuffers::AnimatorT *>(value);
       return CreateAnimator(_fbb, ptr, _rehasher).Union();
     }
+    case ComponentU::TriggerVolume: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerVolumeT *>(value);
+      return CreateTriggerVolume(_fbb, ptr, _rehasher).Union();
+    }
     default: return 0;
   }
 }
@@ -2348,6 +2672,10 @@ inline ComponentUUnion::ComponentUUnion(const ComponentUUnion &u) : type(u.type)
     }
     case ComponentU::Animator: {
       value = new SE::FlatBuffers::AnimatorT(*reinterpret_cast<SE::FlatBuffers::AnimatorT *>(u.value));
+      break;
+    }
+    case ComponentU::TriggerVolume: {
+      value = new SE::FlatBuffers::TriggerVolumeT(*reinterpret_cast<SE::FlatBuffers::TriggerVolumeT *>(u.value));
       break;
     }
     default:
@@ -2394,6 +2722,11 @@ inline void ComponentUUnion::Reset() {
     }
     case ComponentU::Animator: {
       auto ptr = reinterpret_cast<SE::FlatBuffers::AnimatorT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::TriggerVolume: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::TriggerVolumeT *>(value);
       delete ptr;
       break;
     }

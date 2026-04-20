@@ -32,6 +32,11 @@ struct ColliderDesc {
         std::vector<uint32_t>  vMeshIndices;
 };
 
+namespace CollisionLayers {
+    constexpr uint32_t DEFAULT = 1u << 0;
+    // Applications define their own bits: PLAYER = 1u<<1, ENEMY = 1u<<2, …
+}
+
 struct RigidBodyDesc {
         ColliderDesc oCollider;
         glm::vec3    vInitialPosition  {0.0f, 0.0f, 0.0f};
@@ -45,6 +50,8 @@ struct RigidBodyDesc {
         float        angular_damping   = 0.05f;
         float        gravity_scale     = 1.0f;
         float        mass              = 1.0f;
+        uint32_t     collision_layer   = CollisionLayers::DEFAULT;
+        uint32_t     collision_mask    = 0xFFFFFFFFu;
 
         std::string Str() const;
 };

@@ -40,6 +40,10 @@ struct ResourcePath;
 struct ResourcePathBuilder;
 struct ResourcePathT;
 
+struct StringValue;
+struct StringValueBuilder;
+struct StringValueT;
+
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Float FLATBUFFERS_FINAL_CLASS {
  private:
   float value_;
@@ -363,6 +367,69 @@ inline ::flatbuffers::Offset<ResourcePath> CreateResourcePathDirect(
 
 ::flatbuffers::Offset<ResourcePath> CreateResourcePath(::flatbuffers::FlatBufferBuilder &_fbb, const ResourcePathT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct StringValueT : public ::flatbuffers::NativeTable {
+  typedef StringValue TableType;
+  std::string value{};
+};
+
+struct StringValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef StringValueT NativeTableType;
+  typedef StringValueBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_VALUE = 4
+  };
+  const ::flatbuffers::String *value() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_VALUE);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
+           verifier.VerifyString(value()) &&
+           verifier.EndTable();
+  }
+  StringValueT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(StringValueT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<StringValue> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StringValueT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct StringValueBuilder {
+  typedef StringValue Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_value(::flatbuffers::Offset<::flatbuffers::String> value) {
+    fbb_.AddOffset(StringValue::VT_VALUE, value);
+  }
+  explicit StringValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<StringValue> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<StringValue>(end);
+    fbb_.Required(o, StringValue::VT_VALUE);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<StringValue> CreateStringValue(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> value = 0) {
+  StringValueBuilder builder_(_fbb);
+  builder_.add_value(value);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<StringValue> CreateStringValueDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *value = nullptr) {
+  auto value__ = value ? _fbb.CreateString(value) : 0;
+  return SE::FlatBuffers::CreateStringValue(
+      _fbb,
+      value__);
+}
+
+::flatbuffers::Offset<StringValue> CreateStringValue(::flatbuffers::FlatBufferBuilder &_fbb, const StringValueT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 inline ResourcePathT *ResourcePath::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<ResourcePathT>(new ResourcePathT());
   UnPackTo(_o.get(), _resolver);
@@ -387,6 +454,32 @@ inline ::flatbuffers::Offset<ResourcePath> CreateResourcePath(::flatbuffers::Fla
   return SE::FlatBuffers::CreateResourcePath(
       _fbb,
       _path);
+}
+
+inline StringValueT *StringValue::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<StringValueT>(new StringValueT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void StringValue::UnPackTo(StringValueT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = value(); if (_e) _o->value = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<StringValue> StringValue::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StringValueT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateStringValue(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<StringValue> CreateStringValue(::flatbuffers::FlatBufferBuilder &_fbb, const StringValueT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const StringValueT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _value = _fbb.CreateString(_o->value);
+  return SE::FlatBuffers::CreateStringValue(
+      _fbb,
+      _value);
 }
 
 }  // namespace FlatBuffers
