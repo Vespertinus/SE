@@ -14,6 +14,9 @@ template <class T> constexpr bool TEvaluateCond = std::experimental::is_detected
 namespace SE  {
 
 
+template <class ... TComponents>
+uint32_t SceneNode<TComponents...>::nodes_created = 0;
+
 template <class ... TComponents > SceneNode<TComponents ...>::
         SceneNode(const std::string_view sNewName, TSceneTree * pNewScene, const bool enabled) :
                 pParent(nullptr),
@@ -21,9 +24,10 @@ template <class ... TComponents > SceneNode<TComponents ...>::
                 pScene(pNewScene),
                 name_id(sNewName),
                 user_flags(0),
-                internal_flags(enabled ? STATE_ENABLED : 0) {
+                internal_flags(enabled ? STATE_ENABLED : 0),
+                id(nodes_created++) {
 
-        log_d("create node: '{}'", sName);
+        log_d("create node: '{}', id: '{}'", sName, id);
 }
 
 template <class ... TComponents> SceneNode<TComponents...>::~SceneNode() noexcept {
@@ -293,6 +297,12 @@ template <class ... TComponents > const std::string & SceneNode<TComponents ...>
         GetFullName() const {
 
         return sFullName;
+}
+
+template <class ... TComponents > uint32_t SceneNode<TComponents ...>::
+        GetID() const {
+
+        return id;
 }
 
 

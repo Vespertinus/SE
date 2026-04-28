@@ -43,6 +43,8 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         /** user state flags */
         uint8_t                                 user_flags;
         uint8_t                                 internal_flags;
+        uint32_t                                id;
+        static uint32_t                         nodes_created;
 
         protected:
         SceneNode(const std::string_view sNewName,
@@ -80,6 +82,7 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         const std::string &     GetName() const;
         const std::string &     GetFullName() const;
         bool                    SetName(std::string_view sNewName);
+        uint32_t                GetID() const;
         void                    Print(const size_t indent, bool recursive = true);
         TSceneTree            * GetScene() const;
         const Transform       & GetTransform() const;
