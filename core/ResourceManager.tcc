@@ -1,75 +1,20 @@
 
 
-#include <loki/Typelist.h>
-
 namespace SE {
 
-namespace detail {
-
-template <class TList, class RM>
-struct ClearAllHelper {
-        static void Do(RM & rm) {
-                rm.template Clear<typename TList::Head>();
-                ClearAllHelper<typename TList::Tail, RM>::Do(rm);
-        }
-};
-template <class RM>
-struct ClearAllHelper<Loki::NullType, RM> {
-        static void Do(RM &) {}
-};
-
-template <class TList, class RM>
-struct ProcessDeferredHelper {
-        static void Do(RM & rm) {
-                rm.template ProcessDeferredPool<typename TList::Head>();
-                ProcessDeferredHelper<typename TList::Tail, RM>::Do(rm);
-        }
-};
-template <class RM>
-struct ProcessDeferredHelper<Loki::NullType, RM> {
-        static void Do(RM &) {}
-};
-
-template <class TList, class RM>
-struct DestroyUnretainedHelper {
-        static void Do(RM & rm) {
-                rm.template DestroyUnretainedPool<typename TList::Head>();
-                DestroyUnretainedHelper<typename TList::Tail, RM>::Do(rm);
-        }
-};
-template <class RM>
-struct DestroyUnretainedHelper<Loki::NullType, RM> {
-        static void Do(RM &) {}
-};
-
-template <class TList, class RM>
-struct ClearAllRetainsHelper {
-        static void Do(RM & rm) {
-                rm.template ClearRetains<typename TList::Head>();
-                ClearAllRetainsHelper<typename TList::Tail, RM>::Do(rm);
-        }
-};
-template <class RM>
-struct ClearAllRetainsHelper<Loki::NullType, RM> {
-        static void Do(RM &) {}
-};
-
-} // namespace detail
+template <class ... TResources>
+ResourceManager<TResources...>::ResourceManager() {}
 
 
-template <class ResourceList>
-ResourceManager<ResourceList>::ResourceManager() {}
-
-
-template <class ResourceList>
-ResourceManager<ResourceList>::~ResourceManager() noexcept {
-        detail::ClearAllHelper<ResourceList, ResourceManager<ResourceList>>::Do(*this);
+template <class ... TResources>
+ResourceManager<TResources...>::~ResourceManager() noexcept {
+        (Clear<TResources>(), ...);
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource, class ... TConcreateSettings>
-H<Resource> ResourceManager<ResourceList>::Create(
+H<Resource> ResourceManager<TResources...>::Create(
                 const std::string & oPath,
                 const TConcreateSettings & ... oSettings) {
 
@@ -124,9 +69,9 @@ H<Resource> ResourceManager<ResourceList>::Create(
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-H<Resource> ResourceManager<ResourceList>::Get(const std::string & sPath) const {
+H<Resource> ResourceManager<TResources...>::Get(const std::string & sPath) const {
 
         if (sPath.empty()) { return H<Resource>::Null(); }
         rid_t key = Hash64(sPath.c_str(), sPath.length());
@@ -138,9 +83,9 @@ H<Resource> ResourceManager<ResourceList>::Get(const std::string & sPath) const 
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-Resource * ResourceManager<ResourceList>::Get(H<Resource> h) const {
+Resource * ResourceManager<TResources...>::Get(H<Resource> h) const {
 
         if (!h.IsValid()) { return nullptr; }
         const Pool<Resource> & pool = GetPool<Resource>();
@@ -151,9 +96,9 @@ Resource * ResourceManager<ResourceList>::Get(H<Resource> h) const {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::Destroy(H<Resource> h) {
+void ResourceManager<TResources...>::Destroy(H<Resource> h) {
 
         if (!h.IsValid()) { return; }
         Pool<Resource> & pool = GetPool<Resource>();
@@ -169,9 +114,9 @@ void ResourceManager<ResourceList>::Destroy(H<Resource> h) {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-bool ResourceManager<ResourceList>::Lock(H<Resource> h) {
+bool ResourceManager<TResources...>::Lock(H<Resource> h) {
         if (!h.IsValid()) {
                 log_w("Lock called with invalid handle: {}", h);
                 return false;
@@ -185,9 +130,9 @@ bool ResourceManager<ResourceList>::Lock(H<Resource> h) {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::Unlock(H<Resource> h) {
+void ResourceManager<TResources...>::Unlock(H<Resource> h) {
         if (!h.IsValid()) { return; }
         Pool<Resource> & pool = GetPool<Resource>();
         if (h.raw.index >= pool.slots.size()) { return; }
@@ -197,9 +142,9 @@ void ResourceManager<ResourceList>::Unlock(H<Resource> h) {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::ProcessDeferredPool() {
+void ResourceManager<TResources...>::ProcessDeferredPool() {
 
         Pool<Resource> & pool = GetPool<Resource>();
         std::vector<H<Resource>> remaining;
@@ -219,16 +164,15 @@ void ResourceManager<ResourceList>::ProcessDeferredPool() {
 }
 
 
-template <class ResourceList>
-void ResourceManager<ResourceList>::ProcessDeferred() {
-
-        detail::ProcessDeferredHelper<ResourceList, ResourceManager<ResourceList>>::Do(*this);
+template <class ... TResources>
+void ResourceManager<TResources...>::ProcessDeferred() {
+        (ProcessDeferredPool<TResources>(), ...);
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-bool ResourceManager<ResourceList>::IsLoaded(const std::string & sPath) const {
+bool ResourceManager<TResources...>::IsLoaded(const std::string & sPath) const {
 
         if (sPath.empty()) { return false; }
         rid_t key = Hash64(sPath.c_str(), sPath.length());
@@ -239,17 +183,17 @@ bool ResourceManager<ResourceList>::IsLoaded(const std::string & sPath) const {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-bool ResourceManager<ResourceList>::IsLoaded(H<Resource> h) const {
+bool ResourceManager<TResources...>::IsLoaded(H<Resource> h) const {
 
         return Get(h) != nullptr;
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::Clear() {
+void ResourceManager<TResources...>::Clear() {
 
         Pool<Resource> & pool = GetPool<Resource>();
         for (auto & slot : pool.slots) {
@@ -262,9 +206,9 @@ void ResourceManager<ResourceList>::Clear() {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-size_t ResourceManager<ResourceList>::Size() const {
+size_t ResourceManager<TResources...>::Size() const {
 
         const Pool<Resource> & pool = GetPool<Resource>();
         size_t count = 0;
@@ -275,9 +219,9 @@ size_t ResourceManager<ResourceList>::Size() const {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::Retain(H<Resource> h) {
+void ResourceManager<TResources...>::Retain(H<Resource> h) {
         if (!h.IsValid()) { return; }
         Pool<Resource> & pool = GetPool<Resource>();
         if (h.raw.index >= pool.slots.size()) { return; }
@@ -287,9 +231,9 @@ void ResourceManager<ResourceList>::Retain(H<Resource> h) {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::Unretain(H<Resource> h) {
+void ResourceManager<TResources...>::Unretain(H<Resource> h) {
         if (!h.IsValid()) { return; }
         Pool<Resource> & pool = GetPool<Resource>();
         if (h.raw.index >= pool.slots.size()) { return; }
@@ -299,17 +243,17 @@ void ResourceManager<ResourceList>::Unretain(H<Resource> h) {
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::ClearRetains() {
+void ResourceManager<TResources...>::ClearRetains() {
         Pool<Resource> & pool = GetPool<Resource>();
         for (auto & slot : pool.slots) { slot.retain_count = 0; }
 }
 
 
-template <class ResourceList>
+template <class ... TResources>
 template <class Resource>
-void ResourceManager<ResourceList>::DestroyUnretainedPool() {
+void ResourceManager<TResources...>::DestroyUnretainedPool() {
         Pool<Resource> & pool = GetPool<Resource>();
         for (uint32_t i = 0; i < pool.slots.size(); ++i) {
                 auto & slot = pool.slots[i];
@@ -328,15 +272,15 @@ void ResourceManager<ResourceList>::DestroyUnretainedPool() {
 }
 
 
-template <class ResourceList>
-void ResourceManager<ResourceList>::DestroyUnretained() {
-        detail::DestroyUnretainedHelper<ResourceList, ResourceManager<ResourceList>>::Do(*this);
+template <class ... TResources>
+void ResourceManager<TResources...>::DestroyUnretained() {
+        (DestroyUnretainedPool<TResources>(), ...);
 }
 
 
-template <class ResourceList>
-void ResourceManager<ResourceList>::ClearAllRetains() {
-        detail::ClearAllRetainsHelper<ResourceList, ResourceManager<ResourceList>>::Do(*this);
+template <class ... TResources>
+void ResourceManager<TResources...>::ClearAllRetains() {
+        (ClearRetains<TResources>(), ...);
 }
 
 } // namespace SE

@@ -7,7 +7,6 @@
 
 // Loki include
 #include <loki/Singleton.h>
-#include <loki/HierarchyGenerators.h>
 #include <loki/Typelist.h>
 
 #include <ErrCode.h>
@@ -188,7 +187,6 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 #include <App.h>
 #undef INC_CUSTOM_SYSTEMS_HEADER
 
-//TODO INC Resource list
 //TSceneTree dependent resources
 #include <AnimClip.h>
 #include <Skeleton.h>
@@ -202,39 +200,40 @@ using TSceneTree = typename MP::Typelist2TmplPack<
 #include <App.h>
 #undef INC_CUSTOM_COMPONENTS_HEADER
 
-//TODO forward custom resources
+#define FORWARD_CUSTOM_RESOURCES
+#include <App.h>
+#undef FORWARD_CUSTOM_RESOURCES
+
+#define INC_CUSTOM_RESOURCES_HEADER
+#include <App.h>
+#undef INC_CUSTOM_RESOURCES_HEADER
 
 namespace SE {
 
+using TCoreResourcesBase  = MP::TypelistWrapper<
+        TTexture,
+        Material,
+        TMesh,
+        TSceneTree,
+        ShaderComponent,
+        ShaderProgram,
+        AnimClip,
+        Skeleton,
+        AnimGraph
+                >;
+
 #ifdef SE_AUDIO_ENABLED
-typedef LOKI_TYPELIST_10(
-                TTexture,
-                Material,
-                TMesh,
-                TSceneTree,
-                ShaderComponent,
-                ShaderProgram,
-                AudioClip,
-                AnimClip,
-                Skeleton,
-                AnimGraph)                                              TResourseList;
+using TCoreResourcesAudio = MP::TypelistWrapper<AudioClip>;
 #else
-typedef LOKI_TYPELIST_9(
-                TTexture,
-                Material,
-                TMesh,
-                TSceneTree,
-                ShaderComponent,
-                ShaderProgram,
-                AnimClip,
-                Skeleton,
-                AnimGraph)                                              TResourseList;
+using TCoreResourcesAudio = MP::TypelistWrapper<>;
 #endif
-//THINK
-#ifndef SE_IMPL
-extern template class ResourceManager<TResourseList>;  // NOLINT
-#endif
-typedef Loki::SingletonHolder < ResourceManager<TResourseList> >        TResourceManager;
+
+using TCoreResources = decltype(MP::TypelistConcatenate(TCoreResourcesBase{}, TCoreResourcesAudio{}));
+
+using TResourseList  = decltype(MP::TypelistConcatenate(TCoreResources{}, TCustomResources{}));
+
+using TResourceManagerImpl = typename MP::Typelist2TmplPack<ResourceManager, TResourseList>::Type;
+typedef Loki::SingletonHolder<TResourceManagerImpl> TResourceManager;
 
 
 

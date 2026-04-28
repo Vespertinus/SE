@@ -49,3 +49,16 @@ using TCustomSystems = MP::TypelistWrapper<>;
 
 #endif
 #endif
+
+#ifdef FORWARD_CUSTOM_RESOURCES
+#ifndef FORWARD_CUSTOM_RESOURCES_GUARD
+#define FORWARD_CUSTOM_RESOURCES_GUARD
+
+namespace SE {
+
+using TCustomResources = MP::TypelistWrapper<>;
+
+}
+
+#endif
+#endif

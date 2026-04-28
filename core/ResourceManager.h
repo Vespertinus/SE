@@ -3,10 +3,11 @@
 #ifndef __RESOURCE_MANAGER_H_
 #define __RESOURCE_MANAGER_H_ 1
 
-#include <loki/HierarchyGenerators.h>
+#include <MPUtil.h>
 #include <unordered_map>
 #include <vector>
 #include <memory>
+#include <tuple>
 
 #include <ResourceHandle.h>
 #include <ResourceHolder.h>
@@ -14,7 +15,7 @@
 
 namespace SE {
 
-template <class ResourceList> class ResourceManager {
+template <class ... TResources> class ResourceManager {
 
 protected:
 
@@ -32,15 +33,13 @@ protected:
                 std::vector<H<R>>               deferred_destroy;
         };
 
-        typedef Loki::GenScatterHierarchy<ResourceList, Pool> TResourceStorage;
-
-        TResourceStorage oResourceStorage;
+        std::tuple<Pool<TResources>...> oResourceStorage;
 
         template <class Resource> Pool<Resource> & GetPool() {
-                return Loki::Field<Resource>(oResourceStorage);
+                return std::get<Pool<Resource>>(oResourceStorage);
         }
         template <class Resource> const Pool<Resource> & GetPool() const {
-                return Loki::Field<Resource>(oResourceStorage);
+                return std::get<Pool<Resource>>(oResourceStorage);
         }
 
 public:

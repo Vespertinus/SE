@@ -13,4 +13,8 @@
 #include <AudioClip.tcc>
 #endif
 
+#define INC_CUSTOM_RESOURCES_IMPL
+#include <App.h>
+#undef INC_CUSTOM_RESOURCES_IMPL
+
 #endif

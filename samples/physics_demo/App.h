@@ -32,7 +32,6 @@ using TCustomComponents = MP::TypelistWrapper<BasicController, BallController, T
 #ifndef INC_CUSTOM_COMPONENTS_IMPL_GUARD
 #define INC_CUSTOM_COMPONENTS_IMPL_GUARD
 
-#include <EntityTemplateUtility.tcc>
 #include <BasicController.tcc>
 #include "BallController.tcc"
 #include "PhysicsDebugController.tcc"
@@ -48,6 +47,19 @@ using TCustomComponents = MP::TypelistWrapper<BasicController, BallController, T
 namespace SE {
 
 using TCustomSystems = MP::TypelistWrapper<>;
+
+}
+
+#endif
+#endif
+
+#ifdef FORWARD_CUSTOM_RESOURCES
+#ifndef FORWARD_CUSTOM_RESOURCES_GUARD
+#define FORWARD_CUSTOM_RESOURCES_GUARD
+
+namespace SE {
+
+using TCustomResources = MP::TypelistWrapper<>;
 
 }
 
