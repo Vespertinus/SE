@@ -73,6 +73,12 @@ using TCustomSystems = MP::TypelistWrapper<WorldProcessManager, EntityManager, T
 #include <WorldProcess.tcc>
 #include <WorldProcessManager.tcc>
 #include <EntityManager.tcc>
+#include <StaticModelEntityPlugin.h>
+#include <StaticModelEntityPlugin.tcc>
+#include <RigidBodyEntityPlugin.h>
+#include <RigidBodyEntityPlugin.tcc>
+#include <TriggerVolumeEntityPlugin.h>
+#include <TriggerVolumeEntityPlugin.tcc>
 #include <EntityTemplateSystem.tcc>
 
 #endif

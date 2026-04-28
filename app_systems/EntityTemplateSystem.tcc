@@ -246,10 +246,10 @@ template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>
                                                         FlatBuffers::ComponentUTraits<TSerial>::enum_value;
                                                 if (key != comp_type) return;
 
-                                                if constexpr (THasApplyFieldVal<TComp>) {
+                                                if constexpr (THasApplyFieldVal<EntityTemplatePlugin<TComp>>) {
                                                         using TTObj = typename TSerial::NativeTableType;
                                                         auto * pTObj = static_cast<TTObj *>(pCompT->component.value);
-                                                        TComp::ApplyField(*pTObj, field_path, *pFO);
+                                                        EntityTemplatePlugin<TComp>::ApplyField(*pTObj, field_path, *pFO);
                                                         applied = true;
                                                 } else {
                                                         log_w("EntityTemplateSystem: component '{}' has no ApplyField — "

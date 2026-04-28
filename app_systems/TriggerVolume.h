@@ -68,10 +68,6 @@ class TriggerVolume {
 public:
         using TSerialized = FlatBuffers::TriggerVolume;
 
-        static void ApplyField(FlatBuffers::TriggerVolumeT& obj,
-                        std::string_view             path,
-                        const FlatBuffers::FieldOverride& fo);
-
         TriggerVolume(TSceneTree::TSceneNodeExact* pNode, const TriggerVolumeDesc& desc);
         TriggerVolume(TSceneTree::TSceneNodeExact* pNode, const FlatBuffers::TriggerVolume* pFB);
         ~TriggerVolume() noexcept;

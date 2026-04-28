@@ -6,7 +6,6 @@
 #include <string_view>
 #include <PhysicsTypes.h>
 #include <Component_generated.h>
-#include <EntityTemplate_generated.h>
 
 namespace SE {
 
@@ -19,10 +18,6 @@ class RigidBody {
 
 public:
         using TSerialized = FlatBuffers::RigidBody;
-
-        static void ApplyField(FlatBuffers::RigidBodyT& obj,
-                               std::string_view path,
-                               const FlatBuffers::FieldOverride& fo);
 
         RigidBody(TSceneTree::TSceneNodeExact* pNode, const RigidBodyDesc& desc);
         RigidBody(TSceneTree::TSceneNodeExact* pNode,

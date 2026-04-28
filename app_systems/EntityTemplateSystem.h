@@ -14,6 +14,7 @@
 #include <MPTraits.h>
 #include <EntityTemplate_generated.h>
 #include <EntityTemplateUtility.h>
+#include <EntityTemplatePlugin.h>
 
 namespace SE {
 
