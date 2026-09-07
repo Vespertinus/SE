@@ -28,7 +28,9 @@ void* FrameAllocator::allocate(size_t size, size_t align) {
         uint8_t* next    = aligned + size;
         if (next > base_ + capacity_) {
                 log_e("FrameAllocator exhausted, used = {}, capacity = {}", used(), capacity_);
-                se_assert(false);
+                // Never hand out memory past the arena — in release builds the
+                // assert is compiled out and continuing would corrupt the heap.
+                throw std::bad_alloc();
         }
         current_ = next;
         size_t w = static_cast<size_t>(current_ - base_);
