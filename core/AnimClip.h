@@ -51,22 +51,29 @@ public:
         };
 
 private:
-        float                    duration = 0.0f;
-        bool                     looping  = false;
+        float                    duration           = 0.0f;
+        bool                     looping            = false;
+        bool                     delta_translations = false;
         std::vector<CurveChannel> vChannels;
         std::vector<AnimEvent>    vEvents;   // sorted by time
+        float                     src_pelvis_scale = 0.0f;  // |pelvis_bind_local| of source skel; 0 for non-retargeted clips
 
         void LoadFromFB(const SE::FlatBuffers::AnimationClip* pFB);
+        /** Negates quaternion keys with negative dot vs their predecessor so
+         *  per-component interpolation follows the short arc (see AnimClip.tcc). */
+        void EnforceQuatContinuity();
 
 public:
         AnimClip(const std::string& sName, rid_t rid);
         AnimClip(const std::string& sName, rid_t rid,
                  const SE::FlatBuffers::AnimationClip* pFB);
 
-        float                           Duration()  const { return duration; }
-        bool                            Looping()   const { return looping; }
-        const std::vector<CurveChannel>& Channels() const { return vChannels; }
-        const std::vector<AnimEvent>&    Events()   const { return vEvents; }
+        float                           Duration()          const { return duration; }
+        bool                            Looping()           const { return looping; }
+        bool                            DeltaTranslations() const { return delta_translations; }
+        const std::vector<CurveChannel>& Channels()        const { return vChannels; }
+        const std::vector<AnimEvent>&    Events()           const { return vEvents; }
+        float                            SrcPelvisScale()  const { return src_pelvis_scale; }
 
         std::string Str() const;
 };

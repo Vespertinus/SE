@@ -29,11 +29,19 @@ table AnimEvent {
 }
 
 table AnimationClip {
-    schema_version: uint32 = 1;
-    duration:       float;
-    looping:        bool = false;
-    channels:       [CurveChannel];
-    events:         [AnimEvent];   // must be sorted by time at export
+    schema_version:      uint32 = 1;
+    duration:            float;
+    looping:             bool = false;
+    channels:            [CurveChannel];
+    events:              [AnimEvent];   // must be sorted by time at export
+    // When true, translation channel values are deltas from the source skeleton's
+    // bind pose.  SampleClip adds them to the bind pose instead of replacing it,
+    // so animations retargeted from a different skeleton preserve character proportions.
+    delta_translations:  bool = false;
+    // |pelvis_bind_local| of the source skeleton (bone 1).  Non-zero only for
+    // retargeted clips.  SampleClip derives a uniform scale = char_pelvis / src_pelvis
+    // so all translation deltas stay proportional to the character's height.
+    src_pelvis_scale:    float = 0;
 }
 
 table AnimClipHolder {

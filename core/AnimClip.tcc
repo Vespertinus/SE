@@ -8,7 +8,9 @@
 #include <flatbuffers/flatbuffers.h>
 
 #include <algorithm>
+#include <array>
 #include <fstream>
+#include <unordered_map>
 #include <vector>
 
 namespace SE {
@@ -21,8 +23,7 @@ AnimClip::AnimClip(const std::string& sName, rid_t rid)
 
         std::ifstream f(sName, std::ios::binary | std::ios::ate);
         if (!f.is_open()) {
-                log_e("AnimClip: failed to open '{}'", sName);
-                return;
+                throw(std::runtime_error(fmt::format("AnimClip: failed to open '{}'", sName)));
         }
         size_t sz = static_cast<size_t>(f.tellg());
         f.seekg(0);
@@ -32,7 +33,7 @@ AnimClip::AnimClip(const std::string& sName, rid_t rid)
         // Verify "SEAK" file identifier
         flatbuffers::Verifier verifier(buf.data(), buf.size());
         if (!SE::FlatBuffers::VerifyAnimationClipBuffer(verifier)) {
-                log_e("AnimClip: FlatBuffer verify failed for '{}'", sName);
+                throw(std::runtime_error(fmt::format("AnimClip: FlatBuffer verify failed for '{}'", sName)));
                 return;
         }
 
@@ -57,12 +58,14 @@ AnimClip::AnimClip(const std::string& sName, rid_t rid,
 void AnimClip::LoadFromFB(const SE::FlatBuffers::AnimationClip* pFB) {
 
         if (!pFB) {
-                log_e("AnimClip: LoadFromFB: null FlatBuffer pointer for '{}'", sName);
+                throw(std::runtime_error(fmt::format("AnimClip: LoadFromFB: null FlatBuffer pointer for '{}'", sName)));
                 return;
         }
 
-        duration = pFB->duration();
-        looping  = pFB->looping();
+        duration           = pFB->duration();
+        looping            = pFB->looping();
+        delta_translations = pFB->delta_translations();
+        src_pelvis_scale = pFB->src_pelvis_scale();
 
         // --- Channels ---
         if (pFB->channels()) {
@@ -140,8 +143,72 @@ void AnimClip::LoadFromFB(const SE::FlatBuffers::AnimationClip* pFB) {
                           });
         }
 
+        EnforceQuatContinuity();
+
         log_d("AnimClip: loaded '{}' dur={:.3f}s loop={} channels={} events={}",
               sName, duration, looping, vChannels.size(), vEvents.size());
+}
+
+// ---------------------------------------------------------------------------
+// Quaternion sign continuity (fixes the "limb sweeps through the wrong arc"
+// artifact).
+//
+// Rotation channels (targets 3..6) are stored per component and interpolated
+// per component at runtime (see SampleCurve). q and -q describe the same
+// rotation, but a sign flip between adjacent keys makes that interpolation
+// sweep the limb the long way round — e.g. thigh_r in the shipped UAL clips
+// ("leg rotates behind the head" in jump_start/walk/sprint). Importers emit
+// discontinuous quaternions whenever their internal euler wrap flips
+// hemisphere, so the fix belongs at decode: walk each bone's 4 rotation
+// channels in key order and negate every key whose quaternion has a negative
+// dot product with its predecessor — values AND hermite tangents, so cubic
+// segments keep their shape. This mirrors what UE5/Unity importers do
+// (quaternion continuity fixup at import time).
+// ---------------------------------------------------------------------------
+void AnimClip::EnforceQuatContinuity() {
+
+        constexpr uint8_t kRotTarget0 = 3;   // targets 3,4,5,6 = rot x,y,z,w
+        constexpr size_t  kRotAxes    = 4;
+
+        // Gather the 4 rotation channels of each bone (bone -> [x,y,z,w])
+        std::unordered_map<uint16_t, std::array<CurveChannel*, kRotAxes>> mBones;
+        mBones.reserve(vChannels.size() / kRotAxes);
+        for (auto& ch : vChannels) {
+                if (ch.target >= kRotTarget0 && ch.target < kRotTarget0 + kRotAxes) {
+                        mBones[ch.bone_index][ch.target - kRotTarget0] = &ch;
+                }
+        }
+
+        for (auto& [bone, vAxes] : mBones) {
+
+                bool complete = true;
+                const size_t key_cnt = vAxes[0] ? vAxes[0]->vValues.size() : 0;
+                for (size_t axis = 0; axis < kRotAxes; ++axis) {
+                        if (!vAxes[axis] || vAxes[axis]->vValues.size() != key_cnt) {
+                                complete = false;
+                                break;
+                        }
+                }
+                if (!complete || key_cnt < 2) continue;   // partial rig — leave as-is
+
+                for (size_t k = 1; k < key_cnt; ++k) {
+
+                        float dot = 0.0f;
+                        for (size_t axis = 0; axis < kRotAxes; ++axis) {
+                                dot += vAxes[axis]->vValues[k - 1] * vAxes[axis]->vValues[k];
+                        }
+                        if (dot >= 0.0f) continue;
+
+                        // Same rotation, opposite hemisphere — flip key k in place
+                        for (size_t axis = 0; axis < kRotAxes; ++axis) {
+                                CurveChannel& ch = *vAxes[axis];
+                                ch.vValues[k] = -ch.vValues[k];
+                                if (ch.vTangents.size() == key_cnt) {
+                                        ch.vTangents[k] = -ch.vTangents[k];
+                                }
+                        }
+                }
+        }
 }
 
 // ---------------------------------------------------------------------------

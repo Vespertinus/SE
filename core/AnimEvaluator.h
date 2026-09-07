@@ -6,6 +6,8 @@
 #include <cmath>
 #include <algorithm>
 #include <functional>
+#include <string>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -138,6 +140,22 @@ inline void SampleCurve(const AnimClip::CurveChannel& ch, float time, float& out
 // Call with a pose pre-filled via InitBindPose() so that bones with no channels
 // keep their bind-pose values.  Caller must call RenormalizeRotations() after.
 inline void SampleClip(const AnimClip& clip, float time, LocalPose& outPose) {
+        const bool delta = clip.DeltaTranslations();
+
+        // Uniform proportional scale: char_pelvis_height / src_pelvis_height (bone 1).
+        // Using one uniform factor ensures foot-planting compensation channels scale
+        // by the same ratio as the pelvis movement they cancel — per-bone scaling
+        // gives inconsistent ratios across the chain and breaks the cancellation.
+        float uniform_scale = 1.0f;
+        if (delta) {
+                const float src_pelvis = clip.SrcPelvisScale();
+                if (src_pelvis > 1e-4f) {
+                        const float char_pelvis = glm::length(outPose.pPos[1]);
+                        if (char_pelvis > 1e-4f)
+                                uniform_scale = char_pelvis / src_pelvis;
+                }
+        }
+
         for (const auto& ch : clip.Channels()) {
                 if (ch.bone_index >= outPose.bone_count) continue;
 
@@ -145,8 +163,12 @@ inline void SampleClip(const AnimClip& clip, float time, LocalPose& outPose) {
                 SampleCurve(ch, time, value);
 
                 if (ch.target <= 2) {
-                        // pos x/y/z
-                        outPose.pPos[ch.bone_index][ch.target] = value;
+                        // pos x/y/z — delta clips add scaled delta to the bind-pose value
+                        // seeded by InitBindPose; absolute clips overwrite it.
+                        if (delta)
+                                outPose.pPos[ch.bone_index][ch.target] += value * uniform_scale;
+                        else
+                                outPose.pPos[ch.bone_index][ch.target] = value;
                 } else if (ch.target <= 6) {
                         // rot x/y/z/w  (target 3=x, 4=y, 5=z, 6=w)
                         outPose.pRot[ch.bone_index][ch.target - 3] = value;
@@ -175,6 +197,75 @@ inline void RenormalizeRotations(LocalPose& pose) {
                 } else {
                         pose.pRot[i] = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);  // identity fallback
                 }
+        }
+}
+
+// ============================================================
+// Mirroring (AnimState.mirror / ClipNodeData.mirror)
+// ============================================================
+
+// Build the L/R partner table for [skeleton]: for every bone the index of its
+// mirrored counterpart (_l <-> _r suffix swap), or itself for center bones.
+// Compute once per skeleton and cache it — see AnimGraphInstance::MirrorPairs.
+inline std::vector<uint16_t> BuildMirrorPairs(const Skeleton& skeleton) {
+        const auto& bones = skeleton.Bones();
+        const uint32_t count = static_cast<uint32_t>(bones.size());
+
+        std::unordered_map<std::string, uint16_t> mByName;
+        mByName.reserve(count);
+        for (uint32_t i = 0; i < count; ++i) mByName.emplace(bones[i].name, static_cast<uint16_t>(i));
+
+        std::vector<uint16_t> pairs(count);
+        for (uint32_t i = 0; i < count; ++i) {
+                const std::string sName = bones[i].name;
+                uint16_t partner = static_cast<uint16_t>(i);
+                std::string sBase, sSuffix;
+                if (sName.size() > 2 && (sName.compare(sName.size() - 2, 2, "_l") == 0 ||
+                                         sName.compare(sName.size() - 2, 2, "_L") == 0)) {
+                        sBase   = sName.substr(0, sName.size() - 2);
+                        sSuffix = "_r";
+                } else if (sName.size() > 2 && (sName.compare(sName.size() - 2, 2, "_r") == 0 ||
+                                                sName.compare(sName.size() - 2, 2, "_R") == 0)) {
+                        sBase   = sName.substr(0, sName.size() - 2);
+                        sSuffix = "_l";
+                }
+                if (!sBase.empty()) {
+                        auto it = mByName.find(sBase + sSuffix);
+                        if (it != mByName.end()) partner = it->second;
+                }
+                pairs[i] = partner;
+        }
+        return pairs;
+}
+
+// Reflect [pose] across the character's sagittal plane using [pairs] (from
+// BuildMirrorPairs): each bone's local TRS is read from its partner bone,
+// X components of translations are negated and quaternions are reflected
+// ((w,x,y,z) -> (w,-x,y,-z)), then L/R entries are swapped. Assumes the rig's
+// local bone frames share the root's axis convention (X = left/right) —
+// standard for uniform-asset rigs (UAL-style), matching UE5's MirrorDataTable
+// assumptions.
+inline void MirrorPose(LocalPose& pose, const std::vector<uint16_t>& pairs) {
+
+        // Scratch copy — MirrorPose is not called on the hot path of unmirrored
+        // graphs; mirrored states pay one pose copy.
+        static thread_local std::vector<glm::vec3> vPos, vScl;
+        static thread_local std::vector<glm::quat> vRot;
+        vPos.assign(pose.pPos, pose.pPos + pose.bone_count);
+        vRot.assign(pose.pRot, pose.pRot + pose.bone_count);
+        vScl.assign(pose.pScl, pose.pScl + pose.bone_count);
+
+        const auto reflect = [](const glm::quat& q) {
+                return glm::quat(q.w, -q.x, q.y, -q.z);
+        };
+
+        for (uint32_t i = 0; i < pose.bone_count; ++i) {
+                const uint16_t partner = (i < pairs.size()) ? pairs[i] : static_cast<uint16_t>(i);
+                if (partner >= pose.bone_count) continue;
+
+                pose.pPos[i] = glm::vec3(-vPos[partner].x, vPos[partner].y, vPos[partner].z);
+                pose.pRot[i] = reflect(vRot[partner]);
+                pose.pScl[i] = vScl[partner];
         }
 }
 
