@@ -2,6 +2,8 @@
 if(TOOLS)
         add_subdirectory("convert")
         add_subdirectory("audio_import")
+        add_subdirectory("compose")
+        add_subdirectory("normalize_skel")
         if (GPU)
                 add_subdirectory("scene_viewer")
         endif()
