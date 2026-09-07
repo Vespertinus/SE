@@ -109,6 +109,10 @@ class ShaderProgramState {
         ret_code_t              Validate() const;
         void                    Apply() const;
         void                    ApplyMaterialStateOnly() const;  // textures, blocks, blend — no shader change
+        /** Bind one uniform block by unit (no shader/texture/blend change).
+         *  Used by passes that draw with their own shader but need e.g. the
+         *  animated pose data (ANIMATION) from the render command state. */
+        void                    ApplyBlock(const UniformUnitInfo::Type unit_id) const;
         //uint64_t                GetSortKey() const;
         std::string             StrDump(const size_t indent) const;
 };

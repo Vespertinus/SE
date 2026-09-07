@@ -754,9 +754,8 @@ void DeferredRenderer<TVisibilityManager>::SetScreenSize(glm::uvec2 new_size) {
         DestroyLdrBuffer();
         CreateLdrBuffer();
 
-        // Recompute cluster config and reinitialize SSBOs
-        oClusterSSBO.Destroy();
-        oClusterSSBO.Init(oClusterConfig, maxLightCapacity);
+        // Recompute cluster config: RebuildClusterConfig reinitializes the SSBOs
+        // itself when the cluster count changed (light buffers are size-independent).
         RebuildClusterConfig();
 
         if (pCamera) {

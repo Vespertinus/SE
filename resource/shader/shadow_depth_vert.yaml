@@ -4,10 +4,32 @@ source:
         #version 330 core
 
         in vec3 Position;
+        in vec4  JointWeights;
+        in uvec4 JointIndices;
 
         uniform mat4 MVPMatrix;   // light VP (set via gs.SetViewProjection)
         uniform mat4 MVMatrix;    // model matrix (set via gs.SetTransform)
 
+        // Same block layout as pbr_geometry_animated_vert (std140 keeps the
+        // packing identical across programs sharing the ANIMATION UBO).
+        layout(std140) uniform Animation {
+                int   BlendShapesCnt;
+                float BlendShapesWeights[12];
+                uint  JointsPerVertex;
+                mat4  JointsMatrices[100];
+        };
+
         void main() {
-            gl_Position = MVPMatrix * MVMatrix * vec4(Position, 1.0);
+            // Skeletal skinning — the shadow map must follow the animated pose.
+            // Blendshapes are not applied here (BufferTex is not bound in the
+            // depth pass); skinning covers the visible pose for characters.
+            vec4 skinned = vec4(Position, 1.0);
+            if (JointsPerVertex > 0u) {
+                mat4 SkinMatrix = JointsMatrices[JointIndices[0]] * JointWeights[0];
+                for (uint j = 1u; j < JointsPerVertex; ++j)
+                    SkinMatrix += JointsMatrices[JointIndices[j]] * JointWeights[j];
+                skinned = SkinMatrix * skinned;
+            }
+
+            gl_Position = MVPMatrix * MVMatrix * skinned;
         }

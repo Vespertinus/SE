@@ -50,6 +50,24 @@ class ClusterSSBO {
 
         ClusterConfig cfg;
 
+        /** Change-detection key for the header upload: the headers are a pure function
+         *  of these values, so an identical key means byte-identical content and the
+         *  rebuild + full-buffer re-upload can be skipped (the compute shader resets
+         *  lightCount itself, so the GPU side does not depend on periodic re-uploads). */
+        struct HeaderKey {
+                uint32_t  tileX, tileY, depthSlices;
+                float     nearZ, farZ, invFovX, invFovY;
+                bool operator == (const HeaderKey & o) const {
+                        return tileX == o.tileX && tileY == o.tileY && depthSlices == o.depthSlices
+                            && nearZ == o.nearZ && farZ == o.farZ
+                            && invFovX == o.invFovX && invFovY == o.invFovY;
+                }
+        };
+        HeaderKey                oHeaderKey {};
+        bool                     headers_valid { false };
+        std::vector<uint32_t>    vHeaderData;  // persistent CPU copy — avoids a ~12 MB alloc per rebuild
+        std::vector<float>       vTileNDC;     // per-tile NDC corners (x4), hoisted out of the z loop
+
         public:
 
         ClusterSSBO()  = default;

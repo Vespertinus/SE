@@ -11,7 +11,9 @@ source:
         uniform mat4 MVPMatrix;
         uniform mat4 MVMatrix;
 
-        uniform Animation {
+        // std140 — explicit layout keeps the packing identical across every
+        // program sharing the ANIMATION uniform buffer (shadow_depth_vert does).
+        layout(std140) uniform Animation {
                 int     BlendShapesCnt;
                 float   BlendShapesWeights[12];
                 uint    JointsPerVertex;

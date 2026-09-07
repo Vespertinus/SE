@@ -56,6 +56,9 @@ void ClusterSSBO::Init(const ClusterConfig & newCfg, uint32_t maxLightCount) {
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
+        // The header buffer was re-created: next UploadClusterHeaders must rebuild
+        headers_valid = false;
+
         log_d("ClusterSSBO: headers={} KB, index={} KB, light_data_capacity={} lights",
                         headerBufferSize / 1024,
                         indexBufferSize / 1024,
@@ -93,8 +96,25 @@ void ClusterSSBO::UploadClusterHeaders(const ClusterConfig & newCfg, const glm::
 
         cfg = newCfg;
 
-        // Build header data on CPU
-        std::vector<uint32_t> headerData;
+        // projMatrix[col][row] in GLM (column-major):
+        //   [0][0] = P_00 = 1/tan(fovX/2) = invFovX
+        //   [1][1] = P_11 = 1/tan(fovY/2) = invFovY
+        const HeaderKey oKey { cfg.tileX, cfg.tileY, cfg.depthSlices,
+                               cfg.nearZ, cfg.farZ,
+                               projMatrix[0][0], projMatrix[1][1] };
+
+        // Steady state (unchanged camera/resolution): the headers are already in
+        // place — skip the full-grid rebuild and the ~12 MB re-upload.
+        if (headers_valid && oKey == oHeaderKey) { return; }
+        oHeaderKey    = oKey;
+        headers_valid = true;
+
+        const float invFovX = projMatrix[0][0];
+        const float invFovY = projMatrix[1][1];
+
+        // Build header data on CPU. Persistent buffer: resize() to the same size is
+        // a no-op, so only genuine resizes pay the allocation + zero-fill.
+        std::vector<uint32_t> & headerData = vHeaderData;
         const size_t totalUint32 = (HEADER_PREFIX + cfg.totalClusters * CLUSTER_DATA_SIZE) / 4;
         headerData.resize(totalUint32, 0);
 
@@ -109,39 +129,41 @@ void ClusterSSBO::UploadClusterHeaders(const ClusterConfig & newCfg, const glm::
         const uint32_t clusterOffset = HEADER_PREFIX / 4;  // 4 uint32
         const uint32_t stride = CLUSTER_DATA_SIZE / 4;     // 12 uint32
 
-        // projMatrix[col][row] in GLM (column-major):
-        //   [0][0] = P_00 = 1/tan(fovX/2) = invFovX
-        //   [1][1] = P_11 = 1/tan(fovY/2) = invFovY
-        const float invFovX = projMatrix[0][0];
-        const float invFovY = projMatrix[1][1];
+        // NDC corners of each tile — depend only on (tx, ty), so compute them once
+        // instead of once per depth slice.
+        // UV convention: V=0 at bottom (NDC y=-1), V=1 at top (NDC y=+1).
+        // ComputeClusterCoord maps tileUV.y = screenUV.y * tileCountY,
+        // so tile ty=0 is at the bottom (NDC y=-1).
+        vTileNDC.resize(cfg.tileX * cfg.tileY * 4);
+        for (uint32_t ty = 0; ty < cfg.tileY; ++ty) {
+                for (uint32_t tx = 0; tx < cfg.tileX; ++tx) {
+                        float * pNDC = &vTileNDC[(ty * cfg.tileX + tx) * 4];
+                        pNDC[0] = static_cast<float>(tx)     / cfg.tileX * 2.f - 1.f;
+                        pNDC[1] = static_cast<float>(tx + 1) / cfg.tileX * 2.f - 1.f;
+                        pNDC[2] = static_cast<float>(ty)     / cfg.tileY * 2.f - 1.f;
+                        pNDC[3] = static_cast<float>(ty + 1) / cfg.tileY * 2.f - 1.f;
+                }
+        }
 
         uint32_t lightStartAccum = 0;
         for (uint32_t z = 0; z < cfg.depthSlices; ++z) {
                 const float dNear = cfg.SliceMinZ(z);   // positive depth (distance from camera)
                 const float dFar  = cfg.SliceMaxZ(z);
+                const float d[2]  = { dNear, dFar  };
 
                 for (uint32_t ty = 0; ty < cfg.tileY; ++ty) {
                         for (uint32_t tx = 0; tx < cfg.tileX; ++tx) {
                                 const uint32_t clusterIdx = z * cfg.tileX * cfg.tileY + ty * cfg.tileX + tx;
                                 const uint32_t base = clusterOffset + clusterIdx * stride;
 
-                                // NDC corners of this tile.
-                                // UV convention: V=0 at bottom (NDC y=-1), V=1 at top (NDC y=+1).
-                                // ComputeClusterCoord maps tileUV.y = screenUV.y * tileCountY,
-                                // so tile ty=0 is at the bottom (NDC y=-1).
-                                const float nxMin = static_cast<float>(tx)     / cfg.tileX * 2.f - 1.f;
-                                const float nxMax = static_cast<float>(tx + 1) / cfg.tileX * 2.f - 1.f;
-                                const float nyMin = static_cast<float>(ty)     / cfg.tileY * 2.f - 1.f;
-                                const float nyMax = static_cast<float>(ty + 1) / cfg.tileY * 2.f - 1.f;
-
                                 // Compute view-space AABB from 8 frustum corners.
                                 // For NDC coord (nx, ny) at positive camera distance d:
                                 //   x_view = d * nx / invFovX
                                 //   y_view = d * ny / invFovY
                                 //   z_view = -d   (OpenGL: camera looks toward -Z)
-                                const float nx[2] = { nxMin, nxMax };
-                                const float ny[2] = { nyMin, nyMax };
-                                const float d[2]  = { dNear, dFar  };
+                                const float * pNDC = &vTileNDC[(ty * cfg.tileX + tx) * 4];
+                                const float nx[2] = { pNDC[0], pNDC[1] };
+                                const float ny[2] = { pNDC[2], pNDC[3] };
 
                                 glm::vec3 aabbMin( FLT_MAX,  FLT_MAX,  FLT_MAX);
                                 glm::vec3 aabbMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
@@ -182,6 +204,9 @@ void ClusterSSBO::UploadClusterHeaders(const ClusterConfig & newCfg, const glm::
                         static_cast<GLsizeiptr>(headerData.size() * sizeof(uint32_t)),
                         headerData.data());
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        log_d("ClusterSSBO: cluster headers rebuilt ({} clusters, {} KB upload)",
+                        cfg.totalClusters, headerData.size() * sizeof(uint32_t) / 1024);
 }
 
 void ClusterSSBO::BindForCompute() const {

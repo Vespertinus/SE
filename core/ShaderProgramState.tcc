@@ -436,6 +436,13 @@ void ShaderProgramState::ApplyMaterialStateOnly() const {
         }
 }
 
+void ShaderProgramState::ApplyBlock(const UniformUnitInfo::Type unit_id) const {
+
+        auto it = mShaderBlocks.find(unit_id);
+        if (it == mShaderBlocks.end()) { return; }   // state does not own this unit — nothing to bind
+        it->second->Apply();
+}
+
 ret_code_t ShaderProgramState::Validate() const {
 
         if (!pShader) {
