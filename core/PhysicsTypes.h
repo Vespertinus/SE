@@ -56,6 +56,27 @@ struct RigidBodyDesc {
         std::string Str() const;
 };
 
+struct CharHandle {
+        uint32_t id = UINT32_MAX;
+        bool IsValid() const { return id != UINT32_MAX; }
+};
+
+inline bool operator==(CharHandle a, CharHandle b) { return a.id == b.id; }
+inline bool operator!=(CharHandle a, CharHandle b) { return a.id != b.id; }
+
+struct CharacterDesc {
+        float    radius          = 0.3f;
+        float    half_height     = 0.9f;   // half-height of the cylindrical section
+        float    step_height     = 0.3f;   // max stair riser
+        float    slope_angle     = 50.0f;  // max walkable slope in degrees
+        float    mass            = 70.0f;
+        float    max_strength    = 100.0f;
+        uint32_t collision_layer = CollisionLayers::DEFAULT;
+        uint32_t collision_mask  = 0xFFFFFFFFu;
+        glm::vec3 vInitialPosition {0.f, 0.f, 0.f};
+        glm::quat qInitialRotation {1.f, 0.f, 0.f, 0.f};
+};
+
 struct RaycastHit {
         BodyHandle  hBody;
         float       distance  = 0.0f;

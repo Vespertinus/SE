@@ -40,6 +40,19 @@ public:
         void  Interpolate(); // sync interpolated transforms to scene nodes
         float GetInterpolationAlpha() const;
 
+        // Character (CharacterVirtual) API
+        CharHandle    CreateCharacter(const CharacterDesc& desc);
+        void          DestroyCharacter(CharHandle h);
+        void          RegisterCharacterNode(CharHandle h, void* pNode);
+        void          UnregisterCharacterNode(CharHandle h);
+        void          SetCharacterVelocity(CharHandle h, glm::vec3 vel);
+        bool          IsCharacterGrounded(CharHandle h) const;
+        glm::vec3     GetCharacterFloorNormal(CharHandle h) const;
+        glm::vec3     GetCharacterGroundVelocity(CharHandle h) const;
+        void          TeleportCharacter(CharHandle h, glm::vec3 pos, glm::quat rot);
+
+        glm::vec3     GetGravity() const;
+
         bool Raycast(const PhysicsRay& ray, RaycastHit& out, QueryFilter filter = {}) const;
 
         // Debug

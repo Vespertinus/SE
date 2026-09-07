@@ -18,6 +18,8 @@
 #include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 
 #include <GlobalTypes.h>
 #include <Logging.h>
@@ -99,6 +101,20 @@ public:
                         default:
                                 return false;
                 }
+        }
+};
+
+// ---- character collision filters -------------------------------------------
+
+class SECharBPFilter final : public JPH::BroadPhaseLayerFilter {
+public:
+        bool ShouldCollide(JPH::BroadPhaseLayer) const override { return true; }
+};
+
+class SECharObjFilter final : public JPH::ObjectLayerFilter {
+public:
+        bool ShouldCollide(JPH::ObjectLayer inLayer) const override {
+                return inLayer != PhysLayers::TRIGGER;
         }
 };
 
@@ -251,6 +267,16 @@ struct PhysicsSystem::Impl {
         // Body states (keyed by body array index for fast lookup)
         std::unordered_map<uint32_t, BodyState>    mBodyStates;
 
+        // Character states (keyed by CharHandle::id)
+        struct CharState {
+                JPH::Ref<JPH::CharacterVirtual> pChar;
+                glm::vec3 vDesiredVelocity {0.f, 0.f, 0.f};
+                float     step_height      = 0.3f;
+                void*     pNode            = nullptr;
+        };
+        std::unordered_map<uint32_t, CharState> mCharacters;
+        uint32_t next_char_id = 0;
+
         // Deferred commands (game thread → physics thread)
         std::mutex                                 oCmdMtx;
         std::vector<DeferredCmd>                   vPendingCmds;
@@ -389,9 +415,33 @@ struct PhysicsSystem::Impl {
                 }
         }
 
+        // ---- step all CharacterVirtual instances at fixed_dt ----------------
+        void StepCharacters(float dt) {
+                if (mCharacters.empty()) return;
+
+                SECharBPFilter  oBPFilter;
+                SECharObjFilter oObjFilter;
+                JPH::BodyFilter  oBodyFilter;
+                JPH::ShapeFilter oShapeFilter;
+                JPH::Vec3        vGravity = pPhysics->GetGravity();
+
+                JPH::CharacterVirtual::ExtendedUpdateSettings oExtSettings;
+
+                for (auto& [id, cs] : mCharacters) {
+                        oExtSettings.mWalkStairsStepUp    = JPH::Vec3(0.f, cs.step_height, 0.f);
+                        oExtSettings.mStickToFloorStepDown = JPH::Vec3(0.f, -cs.step_height, 0.f);
+
+                        cs.pChar->SetLinearVelocity(ToJolt(cs.vDesiredVelocity));
+                        cs.pChar->ExtendedUpdate(dt, vGravity, oExtSettings,
+                                        oBPFilter, oObjFilter, oBodyFilter, oShapeFilter,
+                                        *pTempAlloc);
+                }
+        }
+
         // ---- run a single fixed step (shared by Update and StepOnce) --------
         void RunFixedStep() {
                 FlushCommands();
+                StepCharacters(oCfg.fixed_dt);
                 SnapshotCurrentState();
                 pPhysics->Update(
                         oCfg.fixed_dt,
@@ -449,6 +499,11 @@ void PhysicsSystem::Shutdown() {
         if (!pImpl->initialized) return;
 
         pImpl->mBodyStates.clear();
+        // Characters hold JPH::Ref<CharacterVirtual> bound to the dying Jolt
+        // system — leaving them here would resurrect dangling objects on the
+        // next Init (found by the physics functional suite).
+        pImpl->mCharacters.clear();
+        pImpl->next_char_id = 0;
         pImpl->pPhysics.reset();
         pImpl->pJobSystem.reset();
         pImpl->pTempAlloc.reset();
@@ -739,6 +794,13 @@ void PhysicsSystem::Interpolate() {
                 pNode->SetWorldPos(pos);
                 pNode->SetRotation(rot);
         }
+
+        // Sync character node positions (no interpolation — we own the velocity)
+        for (auto& [id, cs] : pImpl->mCharacters) {
+                if (!cs.pNode) continue;
+                auto* pNode = static_cast<TSceneTree::TSceneNodeExact*>(cs.pNode);
+                pNode->SetWorldPos(ToGlm(cs.pChar->GetPosition()));
+        }
 }
 
 float PhysicsSystem::GetInterpolationAlpha() const {
@@ -776,6 +838,103 @@ bool PhysicsSystem::Raycast(const PhysicsRay& ray, RaycastHit& out, QueryFilter)
 
 bool PhysicsSystem::IsInitialized() const {
         return pImpl->initialized;
+}
+
+// ============================================================================
+// CharacterVirtual public API
+// ============================================================================
+
+CharHandle PhysicsSystem::CreateCharacter(const CharacterDesc& desc) {
+        assert(pImpl->initialized);
+
+        JPH::Ref<JPH::CapsuleShapeSettings> capsule_settings =
+                new JPH::CapsuleShapeSettings(desc.half_height, desc.radius);
+        JPH::Ref<JPH::RotatedTranslatedShapeSettings> rts_settings =
+                new JPH::RotatedTranslatedShapeSettings(
+                        JPH::Vec3(0.f, desc.half_height + desc.radius, 0.f),
+                        JPH::Quat::sIdentity(),
+                        capsule_settings);
+
+        auto shape_result = rts_settings->Create();
+        if (!shape_result.IsValid()) {
+                log_e("PhysicsSystem: CreateCharacter failed to build shape");
+                return CharHandle{};
+        }
+
+        JPH::CharacterVirtualSettings settings;
+        settings.mMaxSlopeAngle       = JPH::DegreesToRadians(desc.slope_angle);
+        settings.mShape               = shape_result.Get();
+        settings.mMass                = desc.mass;
+        settings.mMaxStrength         = desc.max_strength;
+
+        auto* pChar = new JPH::CharacterVirtual(
+                &settings,
+                ToJoltR(desc.vInitialPosition),
+                ToJolt(desc.qInitialRotation),
+                0,
+                pImpl->pPhysics.get());
+
+        CharHandle h{ pImpl->next_char_id++ };
+
+        Impl::CharState cs;
+        cs.pChar       = pChar;
+        cs.step_height = desc.step_height;
+        pImpl->mCharacters.emplace(h.id, std::move(cs));
+
+        return h;
+}
+
+void PhysicsSystem::DestroyCharacter(CharHandle h) {
+        if (!h.IsValid()) return;
+        pImpl->mCharacters.erase(h.id);
+}
+
+void PhysicsSystem::RegisterCharacterNode(CharHandle h, void* pNode) {
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it != pImpl->mCharacters.end())
+                it->second.pNode = pNode;
+}
+
+void PhysicsSystem::UnregisterCharacterNode(CharHandle h) {
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it != pImpl->mCharacters.end())
+                it->second.pNode = nullptr;
+}
+
+void PhysicsSystem::SetCharacterVelocity(CharHandle h, glm::vec3 vel) {
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it != pImpl->mCharacters.end())
+                it->second.vDesiredVelocity = vel;
+}
+
+bool PhysicsSystem::IsCharacterGrounded(CharHandle h) const {
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it == pImpl->mCharacters.end()) return false;
+        return it->second.pChar->GetGroundState() == JPH::CharacterBase::EGroundState::OnGround;
+}
+
+glm::vec3 PhysicsSystem::GetCharacterFloorNormal(CharHandle h) const {
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it == pImpl->mCharacters.end()) return {0.f, 1.f, 0.f};
+        return ToGlm(it->second.pChar->GetGroundNormal());
+}
+
+glm::vec3 PhysicsSystem::GetCharacterGroundVelocity(CharHandle h) const {
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it == pImpl->mCharacters.end()) return {0.f, 0.f, 0.f};
+        return ToGlm(it->second.pChar->GetGroundVelocity());
+}
+
+void PhysicsSystem::TeleportCharacter(CharHandle h, glm::vec3 pos, glm::quat rot) {
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it == pImpl->mCharacters.end()) return;
+        it->second.pChar->SetPosition(ToJoltR(pos));
+        it->second.pChar->SetRotation(ToJolt(rot));
+}
+
+glm::vec3 PhysicsSystem::GetGravity() const {
+        if (!pImpl->initialized) return {0.f, -9.81f, 0.f};
+        return ToGlm(pImpl->pPhysics->GetGravity());
 }
 
 } // namespace SE
