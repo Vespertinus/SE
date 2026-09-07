@@ -1,7 +1,9 @@
 #ifndef __UNIFORM_BUFFER_H__
 #define __UNIFORM_BUFFER_H__ 1
 
+#include <vector>
 #include <unordered_set>
+#include <cstdint>
 
 namespace SE {
 
@@ -15,7 +17,10 @@ class UniformBuffer {
         std::vector<uint8_t>            vShadowBuffer;
         /** store free block offset */
         std::vector<uint32_t>           vFreeEntryList;
-        mutable std::unordered_set<uint16_t>    sDirty;
+        /** Dirty-block bitmap: O(1) test/set per write with no node allocations —
+         *  the per-joint SetValue path hits this up to ~55× per skinned model per frame. */
+        mutable std::vector<uint64_t>   vDirtyWords;
+        mutable uint16_t                dirty_blocks_cnt { 0 };
         mutable bool                    size_changed;
 
         public:

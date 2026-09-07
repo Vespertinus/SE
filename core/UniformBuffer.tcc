@@ -5,6 +5,7 @@ UniformBuffer::UniformBuffer(const uint16_t new_block_size, const uint16_t initi
         block_size(new_block_size),
         allocated_blocks_cnt(initial_block_cnt),
         vShadowBuffer(initial_block_cnt * block_size, 0),
+        vDirtyWords((initial_block_cnt + 63) / 64, 0),
         size_changed(true) {
 
         int alignment = GetSystem<GraphicsConfig>().GetValue(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
@@ -75,7 +76,11 @@ ret_code_t UniformBuffer::SetValue(
 
         memcpy(&vShadowBuffer[block_id * block_size + value_offset], pValue, value_size);
 
-        sDirty.insert(block_id);
+        const uint64_t oMask = 1ull << (block_id & 63);
+        if (!(vDirtyWords[block_id >> 6] & oMask)) {
+                vDirtyWords[block_id >> 6] |= oMask;
+                ++dirty_blocks_cnt;
+        }
         return uSUCCESS;
 }
 
@@ -121,6 +126,7 @@ uint16_t UniformBuffer::AllocateBlock() {
                 uint16_t old_allocated_cnt = allocated_blocks_cnt;
                 allocated_blocks_cnt *= 1.5;
                 vShadowBuffer.resize(allocated_blocks_cnt * block_size, 0);
+                vDirtyWords.resize((allocated_blocks_cnt + 63) / 64, 0);
                 block_id = old_allocated_cnt;
                 for (uint32_t i = old_allocated_cnt + 1; i < allocated_blocks_cnt; ++i) {
                         vFreeEntryList.emplace_back(i);
@@ -149,35 +155,42 @@ void UniformBuffer::ReleaseBlock(const uint16_t block_id) {
 
 void UniformBuffer::UploadToDevice() const {
 
-        if (!sDirty.size()) { return; }
+        if (!dirty_blocks_cnt) { return; }
 
-        if (size_changed || sDirty.size() > (allocated_blocks_cnt * 0.3) ) {
+        if (size_changed || dirty_blocks_cnt > (allocated_blocks_cnt * 0.3) ) {
                 //copy full buffer
                 GetSystem<GraphicsState>().UploadUniformBufferData(gl_id, vShadowBuffer.size(), vShadowBuffer.data());
 
                 size_changed = false;
         }
         else {
-                //copy dirty
-                uint32_t buf_offset;
-                for (auto block_id : sDirty) {
+                //copy dirty blocks, lowest block id first (walk the bitmap words)
+                for (size_t word = 0; word < vDirtyWords.size(); ++word) {
 
-                        buf_offset = block_id * block_size;
-                        GetSystem<GraphicsState>().UploadUniformBufferSubData(
-                                        gl_id,
-                                        buf_offset,
-                                        block_size,
-                                        &vShadowBuffer[buf_offset]);
+                        uint64_t bits = vDirtyWords[word];
+                        while (bits) {
+                                // g++-12 toolchain: count trailing zeros of the word
+                                const uint16_t block_id = static_cast<uint16_t>((word << 6) + __builtin_ctzll(bits));
+                                bits &= bits - 1;
+
+                                const uint32_t buf_offset = block_id * block_size;
+                                GetSystem<GraphicsState>().UploadUniformBufferSubData(
+                                                gl_id,
+                                                buf_offset,
+                                                block_size,
+                                                &vShadowBuffer[buf_offset]);
+                        }
                 }
         }
 
-        sDirty.clear();
+        memset(vDirtyWords.data(), 0, vDirtyWords.size() * sizeof(uint64_t));
+        dirty_blocks_cnt = 0;
 }
 
 
 void UniformBuffer::Apply(const uint16_t block_id, const UniformUnitInfo::Type uniform_buffer_unit) const {
 
-        if (sDirty.count(block_id) == 1) {
+        if (vDirtyWords[block_id >> 6] & (1ull << (block_id & 63))) {
                 UploadToDevice();
         }
 
