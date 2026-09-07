@@ -31,7 +31,7 @@ table CharacterShell {
 
 table AnimatedModel {
         mesh:MeshHolder (required);
-        material:MaterialHolder;
+        materials:[MaterialHolder];
         //blendshapes or skeleton must exist
         blendshapes:TextureHolder;//or as vertex buffer
         blendshapes_weights:[float];
@@ -91,7 +91,7 @@ table RigidBody {
 }
 
 table Animator {
-        animation_graph: AnimationGraph (required);
+        animation_graph: AnimationGraphHolder (required);
 }
 
 table TriggerVolume {

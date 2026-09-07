@@ -54,6 +54,11 @@ void RenderCommand::Draw() const {
 
 void RenderCommand::DrawDepth() const {
 
+        // Skinned models keep their animated pose in the shadow map: bind the
+        // ANIMATION block (skin matrices) — the depth shader applies the same
+        // skinning as the geometry pass. Static models own no such block: no-op.
+        oState.ApplyBlock(UniformUnitInfo::Type::ANIMATION);
+
         GetSystem<GraphicsState>().SetTransform(oTransform.GetWorld());
         pGeom->Draw();
 }

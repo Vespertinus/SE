@@ -97,7 +97,8 @@ template <class TLoop> void Application<TLoop>::ResizeViewport(const int32_t & n
 
 template <class TLoop> void Application<TLoop>::Run() {
 
-        GetSystem<GraphicsState>().Clear(oSettings.clear_flag);
+        // NOTE: no Clear here — the deferred path clears the GBuffer (GeometryPass)
+        // and the output target is cleared/overwritten by ToneMapPass every frame.
 
         auto & oEventManager = TEngine::Instance().Get<EventManager>();
 
@@ -128,6 +129,10 @@ template <class TLoop> void Application<TLoop>::Run() {
 #ifdef SE_PHYSICS_ENABLED
         GetSystem<PhysicsSystem>().Interpolate();
 #endif
+
+        // Physics has written the final node transforms for this frame — bake any
+        // derived GPU state (e.g. skinning matrices) before rendering.
+        oEventManager.TriggerEvent(EPreRenderUpdate{last_frame_time});
 
         //Render
         TEngine::Instance().Get<TRenderer>().Render();
