@@ -57,8 +57,12 @@ template <class ResizeHandler,  class DrawHandler>
         //oResizeHandler(oSettings.width, oSettings.height);
 
         SDL_GL_MakeCurrent(pWindow, pGLContext);
-        
+
+        // Cap the loop on the display refresh rate (off = free-running, uncapped FPS)
+        SDL_GL_SetSwapInterval(oSettings.vsync ? 1 : 0);
+
         log_i("Running in {} mode", oSettings.fullscreen ? "fullscreen" : "window");
+
 }
 
 template <class ResizeHandler,  class DrawHandler> SDLWindow<ResizeHandler, DrawHandler>::~SDLWindow() throw() {
