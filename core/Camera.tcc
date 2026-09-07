@@ -112,8 +112,14 @@ const glm::mat4 & Camera::GetWorldMVP() {
 
         RecalcProjection();
 
-        //View matrix -> inverse world
-        mModelViewProjection = mProjection * glm::inverse(pNode->GetTransform().GetWorld());
+        //View matrix -> inverse world (cached on the world value — this getter is
+        // called several times per frame across passes)
+        const glm::mat4 & mWorld = pNode->GetTransform().GetWorld();
+        if (mWorld != mLastWorld) {
+                mLastWorld    = mWorld;
+                mInverseWorld = glm::inverse(mWorld);
+        }
+        mModelViewProjection = mProjection * mInverseWorld;
         return mModelViewProjection;
 }
 
@@ -142,6 +148,8 @@ void Camera::UpdateZoom() {
 }
 
 void Camera::SetZoom(const float new_zoom) {
+
+        if (zoom == new_zoom) { return; }
 
         zoom = new_zoom;
         float min_dim = std::min(view_size.x, view_size.y);
@@ -174,6 +182,8 @@ void Camera::ZoomTo(const float width) {
 
 void Camera::UpdateDimension(const glm::uvec2 new_view_size) {
 
+        if (new_view_size == view_size) { return; }
+
         view_size       = new_view_size;
         oVolume.aspect  = (float)view_size.x / (float)view_size.y;
 
@@ -205,6 +215,9 @@ void Camera::SetRotation(const float new_x, const float new_y, const float new_z
 }
 
 void Camera::SetFOV(const float new_fov) {
+        // Identical-value writes are skipped: re-dirtying the volume costs a full
+        // projection recalc + ECameraProjChanged (cluster grid rebuild) downstream.
+        if (oVolume.fov == new_fov) { return; }
         oVolume.fov = new_fov;
         flags |= Dirty::VOLUME;
 }

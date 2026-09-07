@@ -52,6 +52,10 @@ class Camera {
         Volume                          oVolume;
         glm::mat4                       mModelViewProjection;
         glm::mat4                       mProjection;
+        /** inverse of the node world matrix, cached on value (GetWorldMVP is read
+         *  several times per frame across passes; a 16-compare beats an inverse) */
+        glm::mat4                       mInverseWorld    {1.f};
+        glm::mat4                       mLastWorld;
         uint8_t                         flags           {Dirty::PROJECTION | Dirty::VOLUME};
 
         void UpdateZoom();
