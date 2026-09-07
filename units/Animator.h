@@ -13,14 +13,26 @@ namespace SE {
 
 class AnimGraph;
 class Skeleton;
+class AnimatedModel;
 
 class Animator {
 
+public:
+        // Where the per-frame joint pose comes from.
+        //   GRAPH    — evaluate the AnimGraph (default).
+        //   EXTERNAL — skip graph evaluation; another system (e.g. physics ragdoll)
+        //              writes the joint nodes. Set via the character animation layer.
+        enum class PoseSource : uint8_t { GRAPH, EXTERNAL };
+
+private:
         TSceneTree::TSceneNodeExact*  pNode;
         H<AnimGraph>                  hGraph;
         H<Skeleton>                   hSkeleton;
         AnimGraphInstance             oGraphInstance;
+        // Root delta extracted by the last graph Update() (valid when root motion enabled).
+        RootMotionDelta               last_root_delta;
         bool                          show_bind_pose = false;
+        PoseSource                    pose_source    = PoseSource::GRAPH;
 
         void ApplyPoseToJointNodes(const LocalPose& pose);
         void OnUpdate(const Event& oEvent);
@@ -63,8 +75,27 @@ public:
         void SetShowBindPose(bool show) { show_bind_pose = show; }
         bool IsShowingBindPose() const  { return show_bind_pose; }
 
+        // Pose-source seam — when EXTERNAL, Evaluate() skips graph evaluation and leaves
+        // the joint nodes untouched so an external system (physics ragdoll) can drive them.
+        void       SetPoseSource(PoseSource src) { pose_source = src; }
+        PoseSource GetPoseSource() const         { return pose_source; }
+
+        // Root motion — forwards to the graph instance; when enabled, Evaluate()
+        // also strips the animated root-bone translation from the pose (the
+        // locomotion layer receives it as velocity instead) and exposes the
+        // delta extracted by the last graph Update().
+        void SetUseRootMotion(bool enable) { oGraphInstance.SetUseRootMotion(enable); }
+        bool IsRootMotionEnabled() const   { return oGraphInstance.IsRootMotionEnabled(); }
+        const RootMotionDelta& GetRootMotionDelta() const { return last_root_delta; }
+
         std::string Str()       const;
         void        DrawDebug() const {}
+
+        // Weak handle to the owning node — lifetime guard for systems that hold
+        // raw Animator pointers (e.g. CharacterAnimationSystem links).
+        TSceneTree::TSceneNodeWeak GetNodeWeak() const {
+                return pNode ? pNode->weak_from_this() : TSceneTree::TSceneNodeWeak{};
+        }
 };
 
 } // namespace SE

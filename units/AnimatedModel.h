@@ -33,7 +33,12 @@ class AnimatedModel : public StaticModel {
         H<TTexture>                     hTexBuffer;
         std::unique_ptr<UniformBlock>   pBlock;
         SkeletonPart                    oSkeletonMeta;
-        std::vector<TSceneTree::TSceneNodeWeak> vJointNodes;
+        // Joint nodes owning shared refs, resolved once at bind time. Per-frame
+        // access is vJointNodes[i].get() — a raw pointer load, no refcount
+        // traffic. Ownership guarantees the joints cannot be destroyed while this
+        // model lives, wherever in the scene the bind resolved them (skin meshes
+        // are siblings of the bone nodes under the armature, not their ancestors).
+        std::vector<TSceneTree::TSceneNode> vJointNodes;
         uint8_t                         blendshapes_cnt{};
         /** supported max 4 */ //THINK inside Mesh
         uint8_t                         joints_per_vertex{};
@@ -73,7 +78,7 @@ class AnimatedModel : public StaticModel {
         const std::string & GetSkeletonRootNode() const;
         const std::vector<uint16_t> & GetJointIndexes() const;
         std::vector<uint16_t> & GetJointIndexes();
-        const std::vector<TSceneTree::TSceneNodeWeak>& JointNodes() const { return vJointNodes; }
+        const std::vector<TSceneTree::TSceneNode>& JointNodes() const { return vJointNodes; }
         H<Skeleton> GetSkeletonHandle() const { return oSkeletonMeta.hSkeleton; }
 };
 

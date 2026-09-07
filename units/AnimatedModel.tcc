@@ -137,20 +137,24 @@ AnimatedModel::AnimatedModel(
                                                 )));
         }
 
-        if (pModel->material()) {
-                if (pModel->material()->path() != nullptr) {
-                        hMaterials.push_back(CreateResource<Material>(oConfig.sResourceDir + pModel->material()->path()->c_str()));
-                }
-                else if (pModel->material()->name() != nullptr && pModel->material()->material() != nullptr) {
-                        hMaterials.push_back(CreateResource<Material>(
-                                        pModel->material()->name()->c_str(),
-                                        pModel->material()->material()));
-                }
-                else {
-                        throw(std::runtime_error(fmt::format("wrong material state, material {:p}, name {:p}",
-                                                        (void *)pModel->material()->material(),
-                                                        (void *)pModel->material()->name()
+        if (pModel->materials() && pModel->materials()->size() > 0) {
+                for (uint32_t i = 0; i < pModel->materials()->size(); ++i) {
+                        const auto * pMat = pModel->materials()->Get(i);
+                        if (pMat->path() != nullptr) {
+                                hMaterials.push_back(CreateResource<Material>(oConfig.sResourceDir + pMat->path()->c_str()));
+                        }
+                        else if (pMat->name() != nullptr && pMat->material() != nullptr) {
+                                hMaterials.push_back(CreateResource<Material>(
+                                                pMat->name()->c_str(),
+                                                pMat->material()));
+                        }
+                        else {
+                                throw(std::runtime_error(fmt::format("wrong material state at index {}, material {:p}, name {:p}",
+                                                        i,
+                                                        (void *)pMat->material(),
+                                                        (void *)pMat->name()
                                                         )));
+                        }
                 }
         }
         else {
@@ -224,8 +228,6 @@ ret_code_t AnimatedModel::PostLoad(const SE::FlatBuffers::AnimatedModel * pModel
                 BindSkeleton(oSkeletonMeta.hSkeleton);
         }
 
-        GetSystem<EventManager>().AddListener<EPostUpdate, &AnimatedModel::PostUpdate>(this);
-
         static StrID IndAttrID("JointIndices");
 
         if (!oSkeletonMeta.vJointsIndexes.empty()) {
@@ -262,8 +264,7 @@ void AnimatedModel::BindSkeleton(H<Skeleton> hSkel) {
         // Unsubscribe from any previously bound joint nodes
         for (auto idx : oSkeletonMeta.vJointsIndexes) {
                 if (idx < vJointNodes.size()) {
-                        if (auto p = vJointNodes[idx].lock())
-                                p->RemoveListener(this);
+                        vJointNodes[idx]->RemoveListener(this);
                 }
         }
         vJointNodes.clear();
@@ -283,13 +284,31 @@ void AnimatedModel::BindSkeleton(H<Skeleton> hSkel) {
         auto* pScene = pNode->GetScene();
         auto* vNodes = pScene->FindLocalName(oSkeletonMeta.sSkeletonRootNode.c_str());
 
-        if (!vNodes || vNodes->size() != 1) {
+        if (!vNodes || vNodes->empty()) {
                 log_e("AnimatedModel::BindSkeleton: skeleton root '{}' not found (or ambiguous) on node '{}'",
                       oSkeletonMeta.sSkeletonRootNode, pNode->GetName());
                 return;
         }
 
-        auto& pRootNode  = (*vNodes)[0];
+        //THINK consider changing the candidate comparison method.
+        // When multiple nodes share the same local name (multi-character scenes),
+        // pick the one whose full path shares the longest prefix with this mesh node.
+        auto pRootNode = (*vNodes)[0];
+        if (vNodes->size() > 1) {
+                const std::string& sMeshPath = pNode->GetFullName();
+                size_t best = 0;
+                for (const auto& candidate : *vNodes) {
+                        const std::string& sCandPath = candidate->GetFullName();
+                        size_t n = 0;
+                        while (n < sMeshPath.size() && n < sCandPath.size() && sMeshPath[n] == sCandPath[n]) {
+                                ++n;
+                        }
+                        if (n > best) {
+                                best = n;
+                                pRootNode = candidate;
+                        }
+                }
+        }
         const auto& vBones = pSkel->Bones();
         vJointNodes.reserve(vBones.size());
 
@@ -305,6 +324,9 @@ void AnimatedModel::BindSkeleton(H<Skeleton> hSkel) {
                                         bone.name, oSkeletonMeta.sSkeletonRootNode, pNode->GetName()));
                         }
                 }
+                // vJointNodes owns shared refs: the joints cannot be destroyed while
+                // this model lives, regardless of where the bind resolved them (skin
+                // meshes are siblings of the bone nodes, not their ancestors).
                 vJointNodes.emplace_back(pJointNode);
         }
 
@@ -313,8 +335,7 @@ void AnimatedModel::BindSkeleton(H<Skeleton> hSkel) {
 
         for (auto idx : oSkeletonMeta.vJointsIndexes) {
                 if (idx < vJointNodes.size()) {
-                        if (auto p = vJointNodes[idx].lock())
-                                p->AddListener(this);
+                        vJointNodes[idx]->AddListener(this);
                 }
         }
 
@@ -344,6 +365,12 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
 
         //log_d("update skinning: node: '{}'", pNode->GetName());
 
+        // Skin matrices are baked in MODEL space: the vertex shaders apply the model
+        // world matrix (MVMatrix) on top of them, so the joint chain must be made
+        // relative to the model node first — otherwise the model transform (capsule
+        // movement, facing rotation) is applied twice to skinned vertices.
+        const glm::mat4 mModelWorldInv = glm::inverse(pNode->GetTransform().GetWorld());
+
         for (size_t i = 0; i < oSkeletonMeta.vJointsIndexes.size(); ++i) {
 
                 const uint16_t joint_idx = oSkeletonMeta.vJointsIndexes[i];
@@ -353,21 +380,24 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
                         continue;
                 }
 
-                if (auto pJointNode = vJointNodes[joint_idx].lock()) {
+                if (const auto* pJointNode = vJointNodes[joint_idx].get()) {
 
                         auto & mJointInvBindPose = oSkeletonMeta.vJointsInvBindPose[i];
 
-                        // Standard linear blend skinning: skinMatrix = currentWorld * invBind
-                        // invBind = inverse(worldBindPose) was precomputed at import.
+                        // Model-relative linear blend skinning:
+                        // skinMatrix = inverse(modelWorld) * jointWorld * invBind
+                        // invBind = inverse(bindPose) was precomputed at import.
                         glm::mat4 mResTransform =
-                                pJointNode->GetTransform().GetWorld()
-                                *
-                                mJointInvBindPose;
+                                mModelWorldInv
+                                * pJointNode->GetTransform().GetWorld()
+                                * mJointInvBindPose;
 
                         pBlock->SetArrayElement(JOINTS_MATRICES, i, mResTransform );
                 }
                 else {
-                        pBlock->SetArrayElement(JOINTS_MATRICES, i, pNode->GetTransform().GetWorld());
+                        // Unbound joint: identity keeps affected vertices at their
+                        // bind pose position in model space.
+                        pBlock->SetArrayElement(JOINTS_MATRICES, i, glm::mat4(1.0f));
                 }
         }
 
@@ -511,12 +541,15 @@ float AnimatedModel::GetWeight(const uint8_t index) {
 void AnimatedModel::Enable() {
 
         StaticModel::Enable();
-        GetSystem<EventManager>().AddListener<EPostUpdate, &AnimatedModel::PostUpdate>(this);
+        // Skin matrices are baked on EPreRenderUpdate: after physics transform
+        // writeback (Interpolate), immediately before rendering. Enable/Disable
+        // own this subscription — PostLoad must not re-add it (SceneNode calls
+        // Enable before PostLoad, and RemoveListener removes a single entry).
+        GetSystem<EventManager>().AddListener<EPreRenderUpdate, &AnimatedModel::PostUpdate>(this);
 
         for (auto idx : oSkeletonMeta.vJointsIndexes) {
                 if (idx < vJointNodes.size()) {
-                        if (auto p = vJointNodes[idx].lock())
-                                p->AddListener(this);
+                        vJointNodes[idx]->AddListener(this);
                 }
         }
 }
@@ -525,13 +558,14 @@ void AnimatedModel::Disable() {
 
         for (auto idx : oSkeletonMeta.vJointsIndexes) {
                 if (idx < vJointNodes.size()) {
-                        if (auto p = vJointNodes[idx].lock())
-                                p->RemoveListener(this);
+                        vJointNodes[idx]->RemoveListener(this);
                 }
         }
 
         StaticModel::Disable();
-        GetSystem<EventManager>().RemoveListener<EPostUpdate, &AnimatedModel::PostUpdate>(this);
+        // Matches the AddListener in Enable(); the removal must happen exactly
+        // once, otherwise the delegate outlives this component (use-after-free).
+        GetSystem<EventManager>().RemoveListener<EPreRenderUpdate, &AnimatedModel::PostUpdate>(this);
 }
 
 void AnimatedModel::DrawDebug() const {
