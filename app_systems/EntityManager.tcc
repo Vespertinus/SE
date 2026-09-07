@@ -33,7 +33,16 @@ TSceneTree::TSceneNodeWeak EntityManager::Spawn(const SpawnRequest & req) {
                 pParent = pSceneTree->GetRoot();
         }
 
-        auto pNode = pSceneTree->Create(pParent, req.name, req.enabled);
+        // Resolve a unique full name up-front so repeated spawns of the same intent name
+        // never collide (Create would otherwise fail and log a duplicate-name warning).
+        std::string node_name = req.name;
+        if (!node_name.empty()) {
+                while (pSceneTree->FindFullName(StrID(pParent->GetFullName() + "|" + node_name))) {
+                        node_name = req.name + "_" + std::to_string(++spawn_serial);
+                }
+        }
+
+        auto pNode = pSceneTree->Create(pParent, node_name, req.enabled);
         if (!pNode) {
                 log_e("EntityManager::Spawn failed to create node '{}'", req.name);
                 return {};

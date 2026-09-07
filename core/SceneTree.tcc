@@ -3,7 +3,6 @@
 #include <MPTraits.h>
 #include <MPUtil.h>
 #include <ResourceHandle.h>
-#include <AnimClip.h>
 #include <ComponentLoader.h>
 
 namespace SE {
@@ -16,8 +15,10 @@ H<Resource> CreateResource(const std::string &, const TArgs & ...);
 template <class ... TComponents > SceneTree<TComponents ...>::SceneTree(
                 const std::string & sName,
                 const rid_t new_rid,
-                bool empty) :
+                bool empty,
+                std::string sFilePath) :
         ResourceHolder(new_rid, sName),
+        sLoadPath(sFilePath.empty() ? sName : std::move(sFilePath)),
         pRoot(std::make_shared<NodeWrapper>("root", this, true)) {
 
         mNamedNodes.emplace(pRoot->GetName(), pRoot);
@@ -117,12 +118,12 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
 }
 
 
-template <class ... TComponents > void SceneTree<TComponents ...>::
-        Load() {
+template <class ... TComponents > std::vector<char> SceneTree<TComponents ...>::
+        ReadSceneFile(const std::string & sFilePath) {
 
         static const size_t max_file_size = 1024 * 1024 * 100;
 
-        auto file_size = boost::filesystem::file_size(sName);
+        auto file_size = boost::filesystem::file_size(sFilePath);
         if (file_size > max_file_size) {
                 throw(std::runtime_error(
                                         "too big file size, allowed max = " +
@@ -130,7 +131,7 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
                                         ", got " +
                                         std::to_string(file_size) +
                                         " bytes, file: " +
-                                        sName));
+                                        sFilePath));
         }
 
         std::vector<char> vBuffer(file_size);
@@ -138,45 +139,45 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
 
         //TODO rewrite on os wrappers that in linux case call mmap
         {
-                std::ifstream oInput(sName, std::ios::binary | std::ios::in);
+                std::ifstream oInput(sFilePath, std::ios::binary | std::ios::in);
                 if(!oInput.is_open()) {
-                        throw(std::runtime_error("failed to open file: " + sName));
+                        throw(std::runtime_error("failed to open file: " + sFilePath));
                 }
                 oInput.read(&vBuffer[0], file_size);
         }
         flatbuffers::Verifier oVerifier(reinterpret_cast<uint8_t *>(&vBuffer[0]), file_size);
         if (SE::FlatBuffers::VerifySceneTreeBuffer(oVerifier) != true) {
-                throw(std::runtime_error("failed to verify data in: " + sName));
+                throw(std::runtime_error("failed to verify data in: " + sFilePath));
         }
 
+        return vBuffer;
+}
+
+template <class ... TComponents > void SceneTree<TComponents ...>::
+        Load() {
+
+        std::vector<char> vBuffer = ReadSceneFile(sLoadPath);
         auto * pSceneFB = SE::FlatBuffers::GetSceneTree(&vBuffer[0]);
 
-        // Register embedded animation clips BEFORE loading the scene tree so that
-        // Animator constructors (which run during Load) can find them via Init().
-        // Normalise sName by stripping a leading "./" so the key matches the
-        // canonical path stored by the convert tool (e.g. "sesc:fox.sesc:Survey").
-        {
-                std::string sKeyBase = sName;
-                if (sKeyBase.size() >= 2 && sKeyBase[0] == '.' && sKeyBase[1] == '/') {
-                        sKeyBase = sKeyBase.substr(2);
-                }
-                if (auto * pClips = pSceneFB->animation_clips()) {
-                        for (uint32_t i = 0; i < pClips->size(); ++i) {
-                                const auto * pHolder = pClips->Get(i);
-                                if (!pHolder->name() || !pHolder->clip()) continue;
-                                std::string sKey = "sesc:" + sKeyBase + ":" + pHolder->name()->str();
-                                CreateResource<AnimClip>(sKey, pHolder->clip());
-                                log_d("SceneTree: registered embedded AnimClip '{}'", sKey);
-                        }
-                }
-        }
+        // pParent = nullptr → the FB root replaces this tree's root node.
+        LoadFB(pSceneFB->root(), nullptr);
+}
 
-        Load(pSceneFB->root());
+template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
+        Instantiate(const std::string & sFilePath, TSceneNode pParent) {
+
+        // No parent → instantiate under the scene root (still a child, not a root replace).
+        if (!pParent) { pParent = pRoot; }
+
+        std::vector<char> vBuffer = ReadSceneFile(sFilePath);
+        auto * pSceneFB = SE::FlatBuffers::GetSceneTree(&vBuffer[0]);
+
+        return LoadFB(pSceneFB->root(), pParent);
 }
 
 
-template <class ... TComponents > void SceneTree<TComponents ...>::
-        Load(const SE::FlatBuffers::Node * pRootFB) {
+template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
+        LoadFB(const SE::FlatBuffers::Node * pRootFB, TSceneNode pParent) {
 
 
         using TFilteredTypes    = MP::FilteredTypelist<THasSerialized, TComponents...>;
@@ -218,7 +219,8 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
         //init loaders map
         MP::TupleForEach(oLoaders, InitMap);
 
-        if (auto res = LoadNode(pRootFB, nullptr, mLoaders, vPostLoadComponents); res != uSUCCESS) {
+        TSceneNode pInstanceRoot;
+        if (auto res = LoadNode(pRootFB, pParent, mLoaders, vPostLoadComponents, &pInstanceRoot); res != uSUCCESS) {
                 throw (std::runtime_error("failed to load tree, reason: " +
                                           std::to_string(res) +
                                           ", from: " +
@@ -243,6 +245,8 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
                 },
                 oEntry.first);
         }
+
+        return pInstanceRoot;
 }
 
 template <class ... TComponents >
@@ -252,7 +256,8 @@ template <class ... TComponents >
                                         const SE::FlatBuffers::Node * pSrcNode,
                                         TSceneNode pParent,
                                         const TMap & mLoaders,
-                                        TVec & vPostLoadComponents) {
+                                        TVec & vPostLoadComponents,
+                                        TSceneNode * pOutCreated) {
 
         TSceneNode pDstNode;
         auto * pNameFB = pSrcNode->name();
@@ -272,6 +277,9 @@ template <class ... TComponents >
                         return uWRONG_INPUT_DATA;
                 }
         }
+
+        // Report the node created/updated at the top level (the instance root).
+        if (pOutCreated) { *pOutCreated = pDstNode; }
 
 
         auto * pTranslationFB   = pSrcNode->translation();

@@ -85,6 +85,7 @@ private:
         void FlushQueues();
 
         TSceneTree *                                              pSceneTree   { nullptr };
+        uint32_t                                                  spawn_serial { 0 };  // disambiguates colliding spawn names
         SPSCQueue<SpawnIntent,               kQueueCapacity>      oSpawnQueue;
         SPSCQueue<TSceneTree::TSceneNodeWeak,kQueueCapacity>      oDestroyQueue;
         std::function<TSceneTree::TSceneNodeWeak(const SpawnIntent &)> fnTemplateInstantiator;

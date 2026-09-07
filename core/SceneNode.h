@@ -83,6 +83,7 @@ template <class ... TComponents> class SceneNode : public std::enable_shared_fro
         const std::string &     GetFullName() const;
         bool                    SetName(std::string_view sNewName);
         uint32_t                GetID() const;
+        TSceneNodeExact       * GetParent() const;
         void                    Print(const size_t indent, bool recursive = true);
         TSceneTree            * GetScene() const;
         const Transform       & GetTransform() const;

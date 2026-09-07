@@ -1,6 +1,7 @@
 
 //#include <MPTraits.h>
 #include <experimental/type_traits>
+#include <glm/gtc/quaternion.hpp>
 #include <MPUtil.h>
 
 
@@ -46,12 +47,20 @@ template <class ... TComponents> SceneNode<TComponents...>::~SceneNode() noexcep
 template <class ... TComponents > void SceneNode<TComponents ...>::
         SetPos(const glm::vec3 & vPos) {
 
+        // Identical-value writes are skipped: the invalidation cascade and
+        // listener notifications would produce no observable change. This keeps
+        // paused/static animators from dirtying the whole joint subtree per frame.
+        if (oTransform.GetPos() == vPos) return;
+
         oTransform.SetPos(vPos);
         InvalidateChildren();
 }
 
 template <class ... TComponents > void SceneNode<TComponents ...>::
         SetRotation(const glm::vec3 & vDegreeAngles) {
+
+        const glm::quat qNewRotation(glm::radians(vDegreeAngles));
+        if (oTransform.GetRotation() == qNewRotation) return;
 
         oTransform.SetRotation(vDegreeAngles);
         InvalidateChildren();
@@ -60,12 +69,16 @@ template <class ... TComponents > void SceneNode<TComponents ...>::
 template <class ... TComponents > void SceneNode<TComponents ...>::
         SetRotation(const glm::quat & qNewRotation) {
 
+        if (oTransform.GetRotation() == qNewRotation) return;
+
         oTransform.SetRotation(qNewRotation);
         InvalidateChildren();
 }
 
 template <class ... TComponents > void SceneNode<TComponents ...>::
         SetScale(const glm::vec3 & new_scale) {
+
+        if (oTransform.GetScale() == new_scale) return;
 
         oTransform.SetScale(new_scale);
         InvalidateChildren();
@@ -74,12 +87,29 @@ template <class ... TComponents > void SceneNode<TComponents ...>::
 template <class ... TComponents > void SceneNode<TComponents ...>::
         SetWorldPos(const glm::vec3 & vWorldPos) {
 
-        oTransform.SetWorldPos(vWorldPos);
+        // Compare in local space — exact, and it does not touch this node's cache.
+        // (GetWorldPos() would RecalcWorld() here, clearing childs_notified and
+        // un-deduping a pending invalidation cascade; the world→local→world
+        // round-trip also misses by 1 ulp under a moving parent.)
+        const glm::vec3 vLocalPos = glm::inverse(oTransform.GetParentWorld()) * glm::vec4(vWorldPos, 1.0f);
+        if (oTransform.GetPos() == vLocalPos) return;
+
+        oTransform.SetPos(vLocalPos);
         InvalidateChildren();
 }
 
 template <class ... TComponents > void SceneNode<TComponents ...>::
         SetWorldRotation(const glm::vec3 & vDegreeAngles) {
+
+        // Reproduce the local rotation Transform::SetWorldRotation would derive and
+        // skip the write when it changes nothing — without RecalcWorld() touching
+        // childs_notified. Comparing world quats instead would be unsound: the
+        // setter derives the local from quat_cast, so only this candidate-local
+        // compare is exact.
+        const glm::quat qWorldRotation = glm::quat_cast(oTransform.GetParentWorld() * oTransform.Get());
+        const glm::quat qNewLocal = glm::normalize(
+                        glm::inverse(qWorldRotation) * glm::quat(glm::radians(vDegreeAngles)));
+        if (oTransform.GetRotation() == qNewLocal) return;
 
         oTransform.SetWorldRotation(vDegreeAngles);
         InvalidateChildren();
@@ -163,12 +193,26 @@ template <class ... TComponents > ret_code_t SceneNode<TComponents ...>::
 
         TSceneNodeExact * pOldParent = pNode->pParent;
         if (pOldParent) {
-
+                // Detach from the old parent. RemoveChild also unregisters the node
+                // from the scene name maps without clearing its stored full name —
+                // drop the stale name so UpdateNodeName registers it fresh below.
                 pOldParent->RemoveChild(pNode);
+                pNode->sFullName.clear();
         }
-        else {
-                pNode->pScene = pScene;
+        else if (pNode->pScene && pNode->pScene != pScene) {
+                // Cross-tree adopt of an already-detached node: unregister it from
+                // its previous scene before it becomes a member of this one.
+                //TODO descendants keep their registration and pScene pointer in the
+                // previous tree — subtree re-registration is not implemented yet.
+                pNode->pScene->HandleNodeUnlink(pNode.get());
+                pNode->sFullName.clear();
         }
+        else if (!pNode->pScene && !pNode->sFullName.empty()) {
+                // Detached earlier (Unlink): the stored full name is stale.
+                pNode->sFullName.clear();
+        }
+
+        pNode->pScene = pScene;
 
         std::string sNewFullName;
         pNode->BuildFullName(sNewFullName, pNode->sName, this);
@@ -190,8 +234,12 @@ template <class ... TComponents > ret_code_t SceneNode<TComponents ...>::
 
         pNode->pParent = this;
         pNode->oTransform.SetParent(&oTransform);
+        // The moved subtree cached world matrices under the old parent chain —
+        // SetParent only marks the node itself, so dirty all descendants and
+        // notify listeners (e.g. skinning) explicitly.
+        pNode->InvalidateChildren();
         //pNode->RebuildFullName();
-        pNode->internal_flags ^= STATE_UNLINKED;
+        pNode->internal_flags &= ~STATE_UNLINKED;
 
         vChildren.emplace_back(pNode);
 
@@ -303,6 +351,12 @@ template <class ... TComponents > uint32_t SceneNode<TComponents ...>::
         GetID() const {
 
         return id;
+}
+
+template <class ... TComponents > SceneNode<TComponents ...> * SceneNode<TComponents ...>::
+        GetParent() const {
+
+        return pParent;
 }
 
 
@@ -562,6 +616,21 @@ template <class ... TComponents>
         for (auto it = vComponents.begin(); it != vComponents.end(); ++it) {
 
                 if (std::holds_alternative<std::unique_ptr<TComponent>>(*it)) {
+                        auto * pComponent = std::get<std::unique_ptr<TComponent>>(*it).get();
+
+                        // Mirror CreateComponent: a disabled node never enabled it.
+                        // Disable unregisters EventManager delegates and node listeners
+                        // (per component convention), so they never outlive the object.
+                        if (internal_flags & STATE_ENABLED) {
+                                pComponent->Disable();
+                        }
+
+                        // A leftover transform-listener entry would make
+                        // InvalidateChildren call into freed memory.
+                        if constexpr (TEvaluateCond< TComponent >) {
+                                RemoveListener(pComponent);
+                        }
+
                         vComponents.erase(it);
                         break;
                 }
