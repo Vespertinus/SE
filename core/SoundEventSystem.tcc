@@ -87,6 +87,8 @@ bool SoundEventSystem::LoadCues(const std::string& sPath) {
                                 start = pos + 1;
                         }
                 }
+                // Pre-warm the post-time hierarchy cache for this full cue id
+                mHierarchyCache[oCue.id] = oCue.vHierarchy;
                 oCue.selection_mode = static_cast<SelectionMode>(fbCue->selection_mode());
                 oCue.play_mode      = static_cast<PlayMode>(fbCue->play_mode());
                 oCue.volume_min     = fbCue->volume_min();
@@ -139,6 +141,18 @@ bool SoundEventSystem::LoadCues(const std::string& sPath) {
 }
 
 // ---------------------------------------------------------------------------
+
+const std::vector<StrID>& SoundEventSystem::CachedHierarchy(std::string_view sv) {
+
+        // One hash of the full id at post time; the per-segment hashing and the
+        // vector allocation happen once per unique id (pre-warmed at cue load),
+        // not on every post.
+        const StrID full_id(sv);
+        if (auto it = mHierarchyCache.find(full_id); it != mHierarchyCache.end()) {
+                return it->second;
+        }
+        return mHierarchyCache.emplace(full_id, BuildHierarchy(sv)).first->second;
+}
 
 std::vector<StrID> SoundEventSystem::BuildHierarchy(std::string_view sv) {
         std::vector<StrID> ids;

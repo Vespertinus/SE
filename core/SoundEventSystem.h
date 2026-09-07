@@ -143,6 +143,11 @@ private:
                                    std::string_view sDebugName = {});
         MixBusId        ResolveBus(StrID bus_id);
 
+        /** Full-id StrID → pre-built hierarchy. Returns a cached reference (no
+         *  per-post segment hashing or vector allocation); misses build + insert.
+         *  Pre-warmed for every loaded cue id. */
+        const std::vector<StrID>& CachedHierarchy(std::string_view sv);
+
         template<class TCtx>
         const SoundVariation* SelectVariation(const SoundCue&, const TCtx&, uint64_t emitter_key);
 
@@ -154,6 +159,7 @@ private:
                              const TCtx& ctx, SoundEventResult& oRes);
 
         std::unordered_map<StrID, SoundCue> mCues;
+        std::unordered_map<StrID, std::vector<StrID>> mHierarchyCache;
 
         struct PerEmitterState {
                 std::unordered_map<StrID, std::vector<int>>         mShuffleOrder;
@@ -269,7 +275,7 @@ VoiceHandle SoundEventSystem::Post(const std::vector<StrID>& ids, const TCtx& ct
 template<class TCtx>
 VoiceHandle SoundEventSystem::Post(std::string_view sEventId, const TCtx& ctx) {
         SoundEventResult oDummy;
-        return PostImpl(BuildHierarchy(sEventId), sEventId, ctx, oDummy);
+        return PostImpl(CachedHierarchy(sEventId), sEventId, ctx, oDummy);
 }
 
 template<class TCtx>
@@ -281,7 +287,7 @@ VoiceHandle SoundEventSystem::PostEx(const std::vector<StrID>& ids, const TCtx& 
 template<class TCtx>
 VoiceHandle SoundEventSystem::PostEx(std::string_view sEventId, const TCtx& ctx,
                                      SoundEventResult& oResult) {
-        return PostImpl(BuildHierarchy(sEventId), sEventId, ctx, oResult);
+        return PostImpl(CachedHierarchy(sEventId), sEventId, ctx, oResult);
 }
 
 template<class TCtx>
