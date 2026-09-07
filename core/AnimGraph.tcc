@@ -86,10 +86,9 @@ RebuildAnimGraph(flatbuffers::FlatBufferBuilder& b,
                                         switch (data_type) {
                                         case BlendNodeDataU::ClipNodeData: {
                                                 auto* c = n->data_as_ClipNodeData();
-                                                auto path_off = c->clip_path()
-                                                        ? b.CreateString(c->clip_path()) : 0;
-                                                data_off = CreateClipNodeData(b, path_off,
-                                                        c->playback_rate(), c->mirror()).Union();
+                                                ClipNodeDataT oNative;
+                                                c->UnPackTo(&oNative);
+                                                data_off = ClipNodeData::Pack(b, &oNative).Union();
                                                 break;
                                         }
                                         case BlendNodeDataU::Blend1DNodeData: {
