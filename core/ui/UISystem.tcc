@@ -159,12 +159,21 @@ void UISystem::OnUpdate(const Event & oEvent) {
 #endif
 
         for (auto & layer : vLayers) {
+                if (layer.oDocManager.IsEmpty()) { continue; }   // nothing loaded — nothing to update
                 layer.oScreenManager.Update(dt);
                 if (layer.pContext) layer.pContext->Update();
         }
 }
 
 void UISystem::OnPostRenderUpdate(const Event & /* oEvent */) {
+
+        // No documents on any layer — skip the whole save/setup/render/restore
+        // block (~20 GL state queries per frame while the UI is unused).
+        bool has_documents = false;
+        for (const auto & layer : vLayers) {
+                if (!layer.oDocManager.IsEmpty()) { has_documents = true; break; }
+        }
+        if (!has_documents) { return; }
 
         // --- Save GL state ---
         GLint     last_scissor_box[4];   glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
@@ -202,7 +211,7 @@ void UISystem::OnPostRenderUpdate(const Event & /* oEvent */) {
         glDisable(GL_STENCIL_TEST);
 
         for (auto & layer : vLayers)
-                if (layer.pContext) layer.pContext->Render();
+                if (layer.pContext && !layer.oDocManager.IsEmpty()) layer.pContext->Render();
 
         // --- Restore GL state ---
         glBlendEquationSeparate(last_blend_eq_rgb, last_blend_eq_alpha);

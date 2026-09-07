@@ -39,6 +39,10 @@ public:
         Rml::ElementDocument * Get       (UIDocumentId id) const;
         const std::string &    GetPath   (UIDocumentId id) const;
 
+        /** True while no document is loaded on this layer — lets the UI system
+         *  skip per-frame update/render work for empty layers. */
+        bool                   IsEmpty   () const { return vDocs.empty(); }
+
         // Hot-reload: reload .rml (close+reopen) or .rcss (ReloadStyleSheet).
         // No-op if no document with this path is currently loaded.
         void                   ReloadPath(const std::string & path);
