@@ -6,8 +6,9 @@
 namespace SE {
 
 class BasicController;
+class StateMachine;
 
-using TCustomComponents = MP::TypelistWrapper<BasicController>;
+using TCustomComponents = MP::TypelistWrapper<BasicController, StateMachine>;
 
 }
 
@@ -19,6 +20,7 @@ using TCustomComponents = MP::TypelistWrapper<BasicController>;
 #define INC_CUSTOM_COMPONENTS_HEADER_GUARD
 
 #include <BasicController.h>
+#include <hsm/StateMachine.h>
 
 #endif
 #endif
@@ -28,6 +30,7 @@ using TCustomComponents = MP::TypelistWrapper<BasicController>;
 #define INC_CUSTOM_COMPONENTS_IMPL_GUARD
 
 #include <BasicController.tcc>
+#include <hsm/StateMachine.tcc>
 
 #endif
 #endif
@@ -39,8 +42,10 @@ using TCustomComponents = MP::TypelistWrapper<BasicController>;
 namespace SE {
 
 class EntityManager;
+class StateMachineSystem;
+class StateMachineDebugger;
 
-using TCustomSystems = MP::TypelistWrapper<EntityManager>;
+using TCustomSystems = MP::TypelistWrapper<EntityManager, StateMachineSystem, StateMachineDebugger>;
 
 }
 
@@ -52,6 +57,8 @@ using TCustomSystems = MP::TypelistWrapper<EntityManager>;
 #define INC_CUSTOM_SYSTEMS_HEADER_GUARD
 
 #include <EntityManager.h>
+#include <hsm/StateMachineSystem.h>
+#include <hsm/StateMachineDebugger.h>
 
 #endif
 #endif
@@ -61,6 +68,42 @@ using TCustomSystems = MP::TypelistWrapper<EntityManager>;
 #define INC_CUSTOM_SYSTEMS_IMPL_GUARD
 
 #include <EntityManager.tcc>
+#include <hsm/HSMResolver.tcc>
+#include <hsm/StateMachineSystem.tcc>
+#include <hsm/StateMachineDebugger.tcc>
+
+#endif
+#endif
+
+#ifdef FORWARD_CUSTOM_RESOURCES
+#ifndef FORWARD_CUSTOM_RESOURCES_GUARD
+#define FORWARD_CUSTOM_RESOURCES_GUARD
+
+namespace SE {
+
+class StateMachineAsset;
+
+using TCustomResources = MP::TypelistWrapper<StateMachineAsset>;
+
+}
+
+#endif
+#endif
+
+#ifdef INC_CUSTOM_RESOURCES_HEADER
+#ifndef INC_CUSTOM_RESOURCES_HEADER_GUARD
+#define INC_CUSTOM_RESOURCES_HEADER_GUARD
+
+#include <hsm/StateMachineAsset.h>
+
+#endif
+#endif
+
+#if defined(INC_CUSTOM_RESOURCES_IMPL) && defined (SE_IMPL)
+#ifndef INC_CUSTOM_RESOURCES_IMPL_GUARD
+#define INC_CUSTOM_RESOURCES_IMPL_GUARD
+
+#include <hsm/StateMachineAsset.tcc>
 
 #endif
 #endif

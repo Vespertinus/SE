@@ -30,8 +30,10 @@ class Scene {
         SE::HELPERS::ImGuiWrapper       oImGui;
         bool                            toggle_controller{false};
         bool                            show_skeleton{false};
+        bool                            step_one_frame{false};
 
         void ShowGUI();
+        void ShowTimeGUI();
         void DrawSkeletonOverlay();
         void OnMouseButtonUp(const Event & oEvent);
 
