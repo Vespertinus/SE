@@ -198,6 +198,49 @@ TEST_F(SceneTreeTest, NodeTransforms) {
 
 }
 
+TEST_F(SceneTreeTest, Reparenting) {
+
+        auto * pScene = Scene();
+
+        auto pParentA = pScene->Create("parent a", true);
+        auto pParentB = pScene->Create("parent b", true);
+        ASSERT_TRUE(pParentA);
+        ASSERT_TRUE(pParentB);
+
+        auto pChild = pScene->Create(pParentA, "child", true);
+        ASSERT_TRUE(pChild);
+        auto pGrandChild = pScene->Create(pChild, "grand child", true);
+        ASSERT_TRUE(pGrandChild);
+
+        pParentA->Translate(glm::vec3(10, 0, 0));
+        EXPECT_EQ(pGrandChild->GetTransform().GetWorldPos(), glm::vec3(10, 0, 0));
+
+        // Reparent a still-linked subtree: must succeed and update the name
+        // registration and the descendants' cached world matrices.
+        EXPECT_EQ(pParentB->AddChild(pChild), SE::uSUCCESS);
+
+        EXPECT_STREQ(pChild->GetFullName().c_str(), "root|parent b|child");
+        EXPECT_EQ(pScene->FindFullName("root|parent b|child"), pChild);
+        EXPECT_FALSE(pScene->FindFullName("root|parent a|child"));
+
+        // Old-parent translation must no longer affect the moved subtree.
+        pParentA->Translate(glm::vec3(10, 0, 0));
+        EXPECT_EQ(pGrandChild->GetTransform().GetWorldPos(), glm::vec3(0, 0, 0));
+
+        // New-parent motion must reach it.
+        pParentB->Translate(glm::vec3(5, 0, 0));
+        EXPECT_EQ(pGrandChild->GetTransform().GetWorldPos(), glm::vec3(5, 0, 0));
+
+        // Unlink then attach elsewhere — the registration must follow the new parent.
+        pChild->Unlink();
+        EXPECT_FALSE(pScene->FindFullName("root|parent b|child"));
+
+        EXPECT_EQ(pParentA->AddChild(pChild), SE::uSUCCESS);
+        EXPECT_EQ(pScene->FindFullName("root|parent a|child"), pChild);
+        EXPECT_EQ(pChild->GetTransform().GetWorldPos(), pParentA->GetTransform().GetWorldPos());
+        EXPECT_EQ(pGrandChild->GetTransform().GetWorldPos(), pParentA->GetTransform().GetWorldPos());
+}
+
 TEST_F(SceneTreeTest, NodeComponents) {
 
         auto * pScene = Scene();
