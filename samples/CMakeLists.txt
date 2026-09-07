@@ -15,6 +15,9 @@ endif()
 
 if(UI)
         add_subdirectory("ui_demo")
+        if(GPU AND PHYSICS AND AUDIO)
+                add_subdirectory("moving_actors")
+        endif()
 endif()
 
 add_subdirectory("offscreen_rendering")
