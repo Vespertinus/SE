@@ -2,6 +2,8 @@
 namespace SE {
 
 static StrID    oScreenSizeID("ScreenSize");
+static StrID    oMVPMatrixID("MVPMatrix");
+static StrID    oMVMatrixID("MVMatrix");
 /*
 using IndexType2Size = MP::Dict< -1,
       MP::Pair<GL_UNSIGNED_BYTE,        sizeof(uint8_t)>,
@@ -131,7 +133,7 @@ void GraphicsState::SetViewProjection(const glm::mat4 & oMat) {
 
         pModelViewProjection = &oMat;
         if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVPMatrix)) {
-                pShader->SetVariable("MVPMatrix", oMat);
+                pShader->SetVariable(oMVPMatrixID, oMat);
         }
 }
 
@@ -139,7 +141,7 @@ void GraphicsState::SetTransform(const glm::mat4 & oMat) {
 
         pTransformMat = &oMat;
         if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix)) {
-                pShader->SetVariable("MVMatrix", oMat);
+                pShader->SetVariable(oMVMatrixID, oMat);
         }
 }
 
@@ -152,11 +154,11 @@ void GraphicsState::SetShaderProgram(ShaderProgram * pNewShader) {
         pShader->Use();
 
         if (pTransformMat && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix)) {
-                pShader->SetVariable("MVMatrix", *pTransformMat);
+                pShader->SetVariable(oMVMatrixID, *pTransformMat);
         }
         if (pModelViewProjection && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVPMatrix)) {
 
-                pShader->SetVariable("MVPMatrix", *pModelViewProjection);
+                pShader->SetVariable(oMVPMatrixID, *pModelViewProjection);
         }
         if (pShader->UsedSystemVariables() & ShaderSystemVariables::ScreenSize) {
                 pShader->SetVariable(oScreenSizeID, screen_size);

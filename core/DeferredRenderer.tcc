@@ -204,7 +204,7 @@ void DeferredRenderer<TVisibilityManager>::CreateQuad() {
 template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::PrepareVisible() {
 
-        auto result = pManager->GetVisible(pCamera->GetWorldPos());
+        auto result = pManager->GetVisible();
 
         if (!result.changed) { return; }
 
@@ -246,6 +246,19 @@ void DeferredRenderer<TVisibilityManager>::GeometryPass() {
 }
 
 template <class TVisibilityManager>
+const glm::mat4 & DeferredRenderer<TVisibilityManager>::GetInverseVP() const {
+
+        // GetWorldMVP() itself caches per value — the recomputed VP is bit-identical
+        // between calls with an unchanged camera, so this compare skips the inverse.
+        const glm::mat4 & vp = pCamera->GetWorldMVP();
+        if (vp != mLastVP) {
+                mLastVP = vp;
+                mInvVP  = glm::inverse(vp);
+        }
+        return mInvVP;
+}
+
+template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::SSAOPass() {
 
         oSSAOBuffer.Bind();
@@ -267,7 +280,7 @@ void DeferredRenderer<TVisibilityManager>::SSAOPass() {
         static StrID noise_scale_id("NoiseScale");
 
         const glm::mat4 & vp    = pCamera->GetWorldMVP();
-        glm::mat4         inv_vp = glm::inverse(vp);
+        const glm::mat4 & inv_vp = GetInverseVP();
         glm::vec2         noise_scale(
                         static_cast<float>(screen_size.x) / 4.0f,
                         static_cast<float>(screen_size.y) / 4.0f);
@@ -432,7 +445,7 @@ void DeferredRenderer<TVisibilityManager>::ClusteredLightingPass() {
         static StrID ibl_scale_id("IBLScale");
         static StrID ibl_rot_id("IBLRotation");
 
-        glm::mat4         inv_vp = glm::inverse(pCamera->GetWorldMVP());
+        const glm::mat4 & inv_vp = GetInverseVP();
         glm::vec3         cam_pos = pCamera->GetWorldPos();
 
         gs.SetVariable(inv_vp_id, inv_vp);

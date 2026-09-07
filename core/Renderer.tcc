@@ -16,7 +16,7 @@ template <class TVisibilityManager>
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::PrepareVisible() {
 
-        auto result = pManager->GetVisible(pCamera->GetWorldPos());
+        auto result = pManager->GetVisible();
 
         if (!result.changed) { return; }
 

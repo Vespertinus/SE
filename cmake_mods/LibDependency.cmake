@@ -9,7 +9,7 @@ list(APPEND LIBRARIES_LIST ${Boost_LIBRARIES})
 #set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 find_package(spdlog REQUIRED)
-list(APPEND LIBRARIES_LIST spdlog::spdlog)
+list(APPEND LIBRARIES_LIST spdlog::spdlog fmt)
 
 if (GPU)
         #check OpenGL

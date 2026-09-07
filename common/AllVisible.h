@@ -26,15 +26,15 @@ template <class ... TRenderableComponents > class AllVisible {
         std::vector<RenderCommand const *>              vOpaqueCommands;
         std::vector<RenderCommand const *>              vTransparentCommands;
         bool                                            changed{true};
-        glm::vec3                                       lastCameraPos{0.f};
-        bool                                            cameraChanged{true};
 
         public:
 
         AllVisible();
         template <class TRenderable > void AddRenderable(TRenderable * pComponent);
         template <class TRenderable > void RemoveRenderable(TRenderable * pComponent);
-        VisibilityResult GetVisible(const glm::vec3 & cameraPos);
+        /** Rebuilds the command lists only when the renderable set changed — camera
+         *  movement does not affect their contents (no camera-dependent data today). */
+        VisibilityResult GetVisible();
 };
 
 

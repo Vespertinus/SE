@@ -5,6 +5,12 @@
 #with tests:
 #./build_gpu.sh scene_viewer "-DTESTS=ON"
 
+# test
+# cmake --build build_dir/ --target all_tests -j `nproc`
+# cmake --build build_dir/ --target test -j `nproc`
+#
+# ctest --test-dir build_dir/tests
+
 mkdir -p build_dir/
 CXX=g++-12 CC=gcc-12 cmake -H. -Bbuild_dir $2
 cd build_dir

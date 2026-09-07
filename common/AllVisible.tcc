@@ -26,34 +26,28 @@ void AllVisible<TRenderableComponents ...>::RemoveRenderable(TRenderable * pComp
 
 template <class ... TRenderableComponents>
 typename AllVisible<TRenderableComponents ...>::VisibilityResult
-AllVisible<TRenderableComponents ...>::GetVisible(const glm::vec3 & cameraPos) {
+AllVisible<TRenderableComponents ...>::GetVisible() {
 
-        cameraChanged = (cameraPos != lastCameraPos);
-        lastCameraPos = cameraPos;
+        const bool need_rebuild = changed;
 
-        const bool needRebuild = changed || cameraChanged;
+        if (need_rebuild) {
+                // Full rebuild: re-gather all commands from renderables
+                vOpaqueCommands.clear();
+                vTransparentCommands.clear();
 
-        if (needRebuild) {
-
-                if (changed) {
-                        // Full rebuild: re-gather all commands from renderables
-                        vOpaqueCommands.clear();
-                        vTransparentCommands.clear();
-
-                        for (auto & item : mActiveRenderables) {
-                                TVariant * pVar = &item.second;
-                                std::visit([this](auto * pRenderable) {
-                                        auto & cmds = pRenderable->GetRenderCommands();
-                                        for (auto & oCmd : cmds) {
-                                                BlendMode mode = oCmd.State().GetBlendMode();
-                                                if (mode == BlendMode::Opaque || mode == BlendMode::Masked) {
-                                                        vOpaqueCommands.emplace_back(&oCmd);
-                                                } else {
-                                                        vTransparentCommands.emplace_back(&oCmd);
-                                                }
+                for (auto & item : mActiveRenderables) {
+                        TVariant * pVar = &item.second;
+                        std::visit([this](auto * pRenderable) {
+                                auto & cmds = pRenderable->GetRenderCommands();
+                                for (auto & oCmd : cmds) {
+                                        BlendMode mode = oCmd.State().GetBlendMode();
+                                        if (mode == BlendMode::Opaque || mode == BlendMode::Masked) {
+                                                vOpaqueCommands.emplace_back(&oCmd);
+                                        } else {
+                                                vTransparentCommands.emplace_back(&oCmd);
                                         }
-                                }, *pVar);
-                        }
+                                }
+                        }, *pVar);
                 }
 
                 changed = false;
@@ -62,7 +56,7 @@ AllVisible<TRenderableComponents ...>::GetVisible(const glm::vec3 & cameraPos) {
         return VisibilityResult {
                 vOpaqueCommands,
                 vTransparentCommands,
-                needRebuild
+                need_rebuild
         };
 }
 

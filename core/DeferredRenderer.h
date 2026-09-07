@@ -119,6 +119,12 @@ template <class TVisibilityManager> class DeferredRenderer {
         void BloomPass();
         void FxaaPass();
 
+        /** Inverse view-projection, cached on the VP value — several passes
+         *  (SSAO, clustered lighting) need it every frame. */
+        const glm::mat4 & GetInverseVP() const;
+        mutable glm::mat4 mInvVP    { 1.f };
+        mutable glm::mat4 mLastVP   { 0.f };
+
         /** Recompute cluster depth slices from camera near/far and re-upload
          *  view-space AABBs. Called at init, on camera set, and on projection change. */
         void RebuildClusterConfig();
