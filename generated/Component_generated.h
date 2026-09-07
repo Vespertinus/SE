@@ -21,6 +21,7 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
 #include "Material_generated.h"
 #include "Mesh_generated.h"
 #include "SoundEmitter_generated.h"
+#include "StateMachine_generated.h"
 
 namespace SE {
 namespace FlatBuffers {
@@ -72,6 +73,10 @@ struct AnimatorT;
 struct TriggerVolume;
 struct TriggerVolumeBuilder;
 struct TriggerVolumeT;
+
+struct StateMachine;
+struct StateMachineBuilder;
+struct StateMachineT;
 
 struct Component;
 struct ComponentBuilder;
@@ -234,11 +239,12 @@ enum class ComponentU : uint8_t {
   AppComponent = 7,
   Animator = 8,
   TriggerVolume = 9,
+  StateMachine = 10,
   MIN = NONE,
-  MAX = TriggerVolume
+  MAX = StateMachine
 };
 
-inline const ComponentU (&EnumValuesComponentU())[10] {
+inline const ComponentU (&EnumValuesComponentU())[11] {
   static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
@@ -249,13 +255,14 @@ inline const ComponentU (&EnumValuesComponentU())[10] {
     ComponentU::SoundEmitter,
     ComponentU::AppComponent,
     ComponentU::Animator,
-    ComponentU::TriggerVolume
+    ComponentU::TriggerVolume,
+    ComponentU::StateMachine
   };
   return values;
 }
 
 inline const char * const *EnumNamesComponentU() {
-  static const char * const names[11] = {
+  static const char * const names[12] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
@@ -266,13 +273,14 @@ inline const char * const *EnumNamesComponentU() {
     "AppComponent",
     "Animator",
     "TriggerVolume",
+    "StateMachine",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameComponentU(ComponentU e) {
-  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::TriggerVolume)) return "";
+  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::StateMachine)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesComponentU()[index];
 }
@@ -317,6 +325,10 @@ template<> struct ComponentUTraits<SE::FlatBuffers::TriggerVolume> {
   static const ComponentU enum_value = ComponentU::TriggerVolume;
 };
 
+template<> struct ComponentUTraits<SE::FlatBuffers::StateMachine> {
+  static const ComponentU enum_value = ComponentU::StateMachine;
+};
+
 template<typename T> struct ComponentUUnionTraits {
   static const ComponentU enum_value = ComponentU::NONE;
 };
@@ -355,6 +367,10 @@ template<> struct ComponentUUnionTraits<SE::FlatBuffers::AnimatorT> {
 
 template<> struct ComponentUUnionTraits<SE::FlatBuffers::TriggerVolumeT> {
   static const ComponentU enum_value = ComponentU::TriggerVolume;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::StateMachineT> {
+  static const ComponentU enum_value = ComponentU::StateMachine;
 };
 
 struct ComponentUUnion {
@@ -458,6 +474,14 @@ struct ComponentUUnion {
   const SE::FlatBuffers::TriggerVolumeT *AsTriggerVolume() const {
     return type == ComponentU::TriggerVolume ?
       reinterpret_cast<const SE::FlatBuffers::TriggerVolumeT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::StateMachineT *AsStateMachine() {
+    return type == ComponentU::StateMachine ?
+      reinterpret_cast<SE::FlatBuffers::StateMachineT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::StateMachineT *AsStateMachine() const {
+    return type == ComponentU::StateMachine ?
+      reinterpret_cast<const SE::FlatBuffers::StateMachineT *>(value) : nullptr;
   }
 };
 
@@ -690,7 +714,7 @@ inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShellDirect(
 struct AnimatedModelT : public ::flatbuffers::NativeTable {
   typedef AnimatedModel TableType;
   std::unique_ptr<SE::FlatBuffers::MeshHolderT> mesh{};
-  std::unique_ptr<SE::FlatBuffers::MaterialHolderT> material{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::MaterialHolderT>> materials{};
   std::unique_ptr<SE::FlatBuffers::TextureHolderT> blendshapes{};
   std::vector<float> blendshapes_weights{};
   std::unique_ptr<SE::FlatBuffers::SkeletonHolderT> skeleton{};
@@ -709,7 +733,7 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef AnimatedModelBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_MESH = 4,
-    VT_MATERIAL = 6,
+    VT_MATERIALS = 6,
     VT_BLENDSHAPES = 8,
     VT_BLENDSHAPES_WEIGHTS = 10,
     VT_SKELETON = 12,
@@ -721,8 +745,8 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const SE::FlatBuffers::MeshHolder *mesh() const {
     return GetPointer<const SE::FlatBuffers::MeshHolder *>(VT_MESH);
   }
-  const SE::FlatBuffers::MaterialHolder *material() const {
-    return GetPointer<const SE::FlatBuffers::MaterialHolder *>(VT_MATERIAL);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> *materials() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> *>(VT_MATERIALS);
   }
   const SE::FlatBuffers::TextureHolder *blendshapes() const {
     return GetPointer<const SE::FlatBuffers::TextureHolder *>(VT_BLENDSHAPES);
@@ -749,8 +773,9 @@ struct AnimatedModel FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_MESH) &&
            verifier.VerifyTable(mesh()) &&
-           VerifyOffset(verifier, VT_MATERIAL) &&
-           verifier.VerifyTable(material()) &&
+           VerifyOffset(verifier, VT_MATERIALS) &&
+           verifier.VerifyVector(materials()) &&
+           verifier.VerifyVectorOfTables(materials()) &&
            VerifyOffset(verifier, VT_BLENDSHAPES) &&
            verifier.VerifyTable(blendshapes()) &&
            VerifyOffset(verifier, VT_BLENDSHAPES_WEIGHTS) &&
@@ -780,8 +805,8 @@ struct AnimatedModelBuilder {
   void add_mesh(::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh) {
     fbb_.AddOffset(AnimatedModel::VT_MESH, mesh);
   }
-  void add_material(::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material) {
-    fbb_.AddOffset(AnimatedModel::VT_MATERIAL, material);
+  void add_materials(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>>> materials) {
+    fbb_.AddOffset(AnimatedModel::VT_MATERIALS, materials);
   }
   void add_blendshapes(::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes) {
     fbb_.AddOffset(AnimatedModel::VT_BLENDSHAPES, blendshapes);
@@ -819,7 +844,7 @@ struct AnimatedModelBuilder {
 inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
-    ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>>> materials = 0,
     ::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<float>> blendshapes_weights = 0,
     ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0,
@@ -835,7 +860,7 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
   builder_.add_skeleton(skeleton);
   builder_.add_blendshapes_weights(blendshapes_weights);
   builder_.add_blendshapes(blendshapes);
-  builder_.add_material(material);
+  builder_.add_materials(materials);
   builder_.add_mesh(mesh);
   return builder_.Finish();
 }
@@ -843,7 +868,7 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(
 inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<SE::FlatBuffers::MeshHolder> mesh = 0,
-    ::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder> material = 0,
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> *materials = nullptr,
     ::flatbuffers::Offset<SE::FlatBuffers::TextureHolder> blendshapes = 0,
     const std::vector<float> *blendshapes_weights = nullptr,
     ::flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder> skeleton = 0,
@@ -851,6 +876,7 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
     const std::vector<uint16_t> *joints_indexes = nullptr,
     const std::vector<::flatbuffers::Offset<SE::FlatBuffers::BindSQT>> *joints_inv_bind_pose = nullptr,
     ::flatbuffers::Offset<SE::FlatBuffers::BindSQT> mesh_bind_pos = 0) {
+  auto materials__ = materials ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>>(*materials) : 0;
   auto blendshapes_weights__ = blendshapes_weights ? _fbb.CreateVector<float>(*blendshapes_weights) : 0;
   auto skeleton_root_node__ = skeleton_root_node ? _fbb.CreateString(skeleton_root_node) : 0;
   auto joints_indexes__ = joints_indexes ? _fbb.CreateVector<uint16_t>(*joints_indexes) : 0;
@@ -858,7 +884,7 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModelDirect(
   return SE::FlatBuffers::CreateAnimatedModel(
       _fbb,
       mesh,
-      material,
+      materials__,
       blendshapes,
       blendshapes_weights__,
       skeleton,
@@ -1431,7 +1457,7 @@ inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(
 
 struct AnimatorT : public ::flatbuffers::NativeTable {
   typedef Animator TableType;
-  std::unique_ptr<SE::FlatBuffers::AnimationGraphT> animation_graph{};
+  std::unique_ptr<SE::FlatBuffers::AnimationGraphHolderT> animation_graph{};
   AnimatorT() = default;
   AnimatorT(const AnimatorT &o);
   AnimatorT(AnimatorT&&) FLATBUFFERS_NOEXCEPT = default;
@@ -1444,8 +1470,8 @@ struct Animator FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_ANIMATION_GRAPH = 4
   };
-  const SE::FlatBuffers::AnimationGraph *animation_graph() const {
-    return GetPointer<const SE::FlatBuffers::AnimationGraph *>(VT_ANIMATION_GRAPH);
+  const SE::FlatBuffers::AnimationGraphHolder *animation_graph() const {
+    return GetPointer<const SE::FlatBuffers::AnimationGraphHolder *>(VT_ANIMATION_GRAPH);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1462,7 +1488,7 @@ struct AnimatorBuilder {
   typedef Animator Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_animation_graph(::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> animation_graph) {
+  void add_animation_graph(::flatbuffers::Offset<SE::FlatBuffers::AnimationGraphHolder> animation_graph) {
     fbb_.AddOffset(Animator::VT_ANIMATION_GRAPH, animation_graph);
   }
   explicit AnimatorBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
@@ -1479,7 +1505,7 @@ struct AnimatorBuilder {
 
 inline ::flatbuffers::Offset<Animator> CreateAnimator(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> animation_graph = 0) {
+    ::flatbuffers::Offset<SE::FlatBuffers::AnimationGraphHolder> animation_graph = 0) {
   AnimatorBuilder builder_(_fbb);
   builder_.add_animation_graph(animation_graph);
   return builder_.Finish();
@@ -1687,6 +1713,75 @@ inline ::flatbuffers::Offset<TriggerVolume> CreateTriggerVolumeDirect(
 
 ::flatbuffers::Offset<TriggerVolume> CreateTriggerVolume(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerVolumeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct StateMachineT : public ::flatbuffers::NativeTable {
+  typedef StateMachine TableType;
+  std::unique_ptr<SE::FlatBuffers::StateMachineHolderT> hms{};
+  float tick_interval = 0.0f;
+  StateMachineT() = default;
+  StateMachineT(const StateMachineT &o);
+  StateMachineT(StateMachineT&&) FLATBUFFERS_NOEXCEPT = default;
+  StateMachineT &operator=(StateMachineT o) FLATBUFFERS_NOEXCEPT;
+};
+
+struct StateMachine FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef StateMachineT NativeTableType;
+  typedef StateMachineBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_HMS = 4,
+    VT_TICK_INTERVAL = 6
+  };
+  const SE::FlatBuffers::StateMachineHolder *hms() const {
+    return GetPointer<const SE::FlatBuffers::StateMachineHolder *>(VT_HMS);
+  }
+  float tick_interval() const {
+    return GetField<float>(VT_TICK_INTERVAL, 0.0f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_HMS) &&
+           verifier.VerifyTable(hms()) &&
+           VerifyField<float>(verifier, VT_TICK_INTERVAL, 4) &&
+           verifier.EndTable();
+  }
+  StateMachineT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(StateMachineT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<StateMachine> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StateMachineT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct StateMachineBuilder {
+  typedef StateMachine Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_hms(::flatbuffers::Offset<SE::FlatBuffers::StateMachineHolder> hms) {
+    fbb_.AddOffset(StateMachine::VT_HMS, hms);
+  }
+  void add_tick_interval(float tick_interval) {
+    fbb_.AddElement<float>(StateMachine::VT_TICK_INTERVAL, tick_interval, 0.0f);
+  }
+  explicit StateMachineBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<StateMachine> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<StateMachine>(end);
+    fbb_.Required(o, StateMachine::VT_HMS);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<StateMachine> CreateStateMachine(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::StateMachineHolder> hms = 0,
+    float tick_interval = 0.0f) {
+  StateMachineBuilder builder_(_fbb);
+  builder_.add_tick_interval(tick_interval);
+  builder_.add_hms(hms);
+  return builder_.Finish();
+}
+
+::flatbuffers::Offset<StateMachine> CreateStateMachine(::flatbuffers::FlatBufferBuilder &_fbb, const StateMachineT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 struct ComponentT : public ::flatbuffers::NativeTable {
   typedef Component TableType;
   SE::FlatBuffers::ComponentUUnion component{};
@@ -1732,6 +1827,9 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   const SE::FlatBuffers::TriggerVolume *component_as_TriggerVolume() const {
     return component_type() == SE::FlatBuffers::ComponentU::TriggerVolume ? static_cast<const SE::FlatBuffers::TriggerVolume *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::StateMachine *component_as_StateMachine() const {
+    return component_type() == SE::FlatBuffers::ComponentU::StateMachine ? static_cast<const SE::FlatBuffers::StateMachine *>(component()) : nullptr;
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1779,6 +1877,10 @@ template<> inline const SE::FlatBuffers::Animator *Component::component_as<SE::F
 
 template<> inline const SE::FlatBuffers::TriggerVolume *Component::component_as<SE::FlatBuffers::TriggerVolume>() const {
   return component_as_TriggerVolume();
+}
+
+template<> inline const SE::FlatBuffers::StateMachine *Component::component_as<SE::FlatBuffers::StateMachine>() const {
+  return component_as_StateMachine();
 }
 
 struct ComponentBuilder {
@@ -1929,20 +2031,21 @@ inline ::flatbuffers::Offset<CharacterShell> CreateCharacterShell(::flatbuffers:
 
 inline AnimatedModelT::AnimatedModelT(const AnimatedModelT &o)
       : mesh((o.mesh) ? new SE::FlatBuffers::MeshHolderT(*o.mesh) : nullptr),
-        material((o.material) ? new SE::FlatBuffers::MaterialHolderT(*o.material) : nullptr),
         blendshapes((o.blendshapes) ? new SE::FlatBuffers::TextureHolderT(*o.blendshapes) : nullptr),
         blendshapes_weights(o.blendshapes_weights),
         skeleton((o.skeleton) ? new SE::FlatBuffers::SkeletonHolderT(*o.skeleton) : nullptr),
         skeleton_root_node(o.skeleton_root_node),
         joints_indexes(o.joints_indexes),
         mesh_bind_pos((o.mesh_bind_pos) ? new SE::FlatBuffers::BindSQTT(*o.mesh_bind_pos) : nullptr) {
+  materials.reserve(o.materials.size());
+  for (const auto &materials_ : o.materials) { materials.emplace_back((materials_) ? new SE::FlatBuffers::MaterialHolderT(*materials_) : nullptr); }
   joints_inv_bind_pose.reserve(o.joints_inv_bind_pose.size());
   for (const auto &joints_inv_bind_pose_ : o.joints_inv_bind_pose) { joints_inv_bind_pose.emplace_back((joints_inv_bind_pose_) ? new SE::FlatBuffers::BindSQTT(*joints_inv_bind_pose_) : nullptr); }
 }
 
 inline AnimatedModelT &AnimatedModelT::operator=(AnimatedModelT o) FLATBUFFERS_NOEXCEPT {
   std::swap(mesh, o.mesh);
-  std::swap(material, o.material);
+  std::swap(materials, o.materials);
   std::swap(blendshapes, o.blendshapes);
   std::swap(blendshapes_weights, o.blendshapes_weights);
   std::swap(skeleton, o.skeleton);
@@ -1963,7 +2066,7 @@ inline void AnimatedModel::UnPackTo(AnimatedModelT *_o, const ::flatbuffers::res
   (void)_o;
   (void)_resolver;
   { auto _e = mesh(); if (_e) { if(_o->mesh) { _e->UnPackTo(_o->mesh.get(), _resolver); } else { _o->mesh = std::unique_ptr<SE::FlatBuffers::MeshHolderT>(_e->UnPack(_resolver)); } } else if (_o->mesh) { _o->mesh.reset(); } }
-  { auto _e = material(); if (_e) { if(_o->material) { _e->UnPackTo(_o->material.get(), _resolver); } else { _o->material = std::unique_ptr<SE::FlatBuffers::MaterialHolderT>(_e->UnPack(_resolver)); } } else if (_o->material) { _o->material.reset(); } }
+  { auto _e = materials(); if (_e) { _o->materials.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->materials[_i]) { _e->Get(_i)->UnPackTo(_o->materials[_i].get(), _resolver); } else { _o->materials[_i] = std::unique_ptr<SE::FlatBuffers::MaterialHolderT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->materials.resize(0); } }
   { auto _e = blendshapes(); if (_e) { if(_o->blendshapes) { _e->UnPackTo(_o->blendshapes.get(), _resolver); } else { _o->blendshapes = std::unique_ptr<SE::FlatBuffers::TextureHolderT>(_e->UnPack(_resolver)); } } else if (_o->blendshapes) { _o->blendshapes.reset(); } }
   { auto _e = blendshapes_weights(); if (_e) { _o->blendshapes_weights.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->blendshapes_weights[_i] = _e->Get(_i); } } else { _o->blendshapes_weights.resize(0); } }
   { auto _e = skeleton(); if (_e) { if(_o->skeleton) { _e->UnPackTo(_o->skeleton.get(), _resolver); } else { _o->skeleton = std::unique_ptr<SE::FlatBuffers::SkeletonHolderT>(_e->UnPack(_resolver)); } } else if (_o->skeleton) { _o->skeleton.reset(); } }
@@ -1982,7 +2085,7 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(::flatbuffers::F
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimatedModelT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _mesh = _o->mesh ? CreateMeshHolder(_fbb, _o->mesh.get(), _rehasher) : 0;
-  auto _material = _o->material ? CreateMaterialHolder(_fbb, _o->material.get(), _rehasher) : 0;
+  auto _materials = _o->materials.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>> (_o->materials.size(), [](size_t i, _VectorArgs *__va) { return CreateMaterialHolder(*__va->__fbb, __va->__o->materials[i].get(), __va->__rehasher); }, &_va ) : 0;
   auto _blendshapes = _o->blendshapes ? CreateTextureHolder(_fbb, _o->blendshapes.get(), _rehasher) : 0;
   auto _blendshapes_weights = _o->blendshapes_weights.size() ? _fbb.CreateVector(_o->blendshapes_weights) : 0;
   auto _skeleton = _o->skeleton ? CreateSkeletonHolder(_fbb, _o->skeleton.get(), _rehasher) : 0;
@@ -1993,7 +2096,7 @@ inline ::flatbuffers::Offset<AnimatedModel> CreateAnimatedModel(::flatbuffers::F
   return SE::FlatBuffers::CreateAnimatedModel(
       _fbb,
       _mesh,
-      _material,
+      _materials,
       _blendshapes,
       _blendshapes_weights,
       _skeleton,
@@ -2250,7 +2353,7 @@ inline ::flatbuffers::Offset<RigidBody> CreateRigidBody(::flatbuffers::FlatBuffe
 }
 
 inline AnimatorT::AnimatorT(const AnimatorT &o)
-      : animation_graph((o.animation_graph) ? new SE::FlatBuffers::AnimationGraphT(*o.animation_graph) : nullptr) {
+      : animation_graph((o.animation_graph) ? new SE::FlatBuffers::AnimationGraphHolderT(*o.animation_graph) : nullptr) {
 }
 
 inline AnimatorT &AnimatorT::operator=(AnimatorT o) FLATBUFFERS_NOEXCEPT {
@@ -2267,7 +2370,7 @@ inline AnimatorT *Animator::UnPack(const ::flatbuffers::resolver_function_t *_re
 inline void Animator::UnPackTo(AnimatorT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = animation_graph(); if (_e) { if(_o->animation_graph) { _e->UnPackTo(_o->animation_graph.get(), _resolver); } else { _o->animation_graph = std::unique_ptr<SE::FlatBuffers::AnimationGraphT>(_e->UnPack(_resolver)); } } else if (_o->animation_graph) { _o->animation_graph.reset(); } }
+  { auto _e = animation_graph(); if (_e) { if(_o->animation_graph) { _e->UnPackTo(_o->animation_graph.get(), _resolver); } else { _o->animation_graph = std::unique_ptr<SE::FlatBuffers::AnimationGraphHolderT>(_e->UnPack(_resolver)); } } else if (_o->animation_graph) { _o->animation_graph.reset(); } }
 }
 
 inline ::flatbuffers::Offset<Animator> Animator::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimatorT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -2278,7 +2381,7 @@ inline ::flatbuffers::Offset<Animator> CreateAnimator(::flatbuffers::FlatBufferB
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimatorT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _animation_graph = _o->animation_graph ? CreateAnimationGraph(_fbb, _o->animation_graph.get(), _rehasher) : 0;
+  auto _animation_graph = _o->animation_graph ? CreateAnimationGraphHolder(_fbb, _o->animation_graph.get(), _rehasher) : 0;
   return SE::FlatBuffers::CreateAnimator(
       _fbb,
       _animation_graph);
@@ -2332,6 +2435,46 @@ inline ::flatbuffers::Offset<TriggerVolume> CreateTriggerVolume(::flatbuffers::F
       _one_shot,
       _collision_layer,
       _collision_mask);
+}
+
+inline StateMachineT::StateMachineT(const StateMachineT &o)
+      : hms((o.hms) ? new SE::FlatBuffers::StateMachineHolderT(*o.hms) : nullptr),
+        tick_interval(o.tick_interval) {
+}
+
+inline StateMachineT &StateMachineT::operator=(StateMachineT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(hms, o.hms);
+  std::swap(tick_interval, o.tick_interval);
+  return *this;
+}
+
+inline StateMachineT *StateMachine::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<StateMachineT>(new StateMachineT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void StateMachine::UnPackTo(StateMachineT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = hms(); if (_e) { if(_o->hms) { _e->UnPackTo(_o->hms.get(), _resolver); } else { _o->hms = std::unique_ptr<SE::FlatBuffers::StateMachineHolderT>(_e->UnPack(_resolver)); } } else if (_o->hms) { _o->hms.reset(); } }
+  { auto _e = tick_interval(); _o->tick_interval = _e; }
+}
+
+inline ::flatbuffers::Offset<StateMachine> StateMachine::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StateMachineT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateStateMachine(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<StateMachine> CreateStateMachine(::flatbuffers::FlatBufferBuilder &_fbb, const StateMachineT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const StateMachineT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _hms = _o->hms ? CreateStateMachineHolder(_fbb, _o->hms.get(), _rehasher) : 0;
+  auto _tick_interval = _o->tick_interval;
+  return SE::FlatBuffers::CreateStateMachine(
+      _fbb,
+      _hms,
+      _tick_interval);
 }
 
 inline ComponentT *Component::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
@@ -2538,6 +2681,10 @@ inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj,
       auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerVolume *>(obj);
       return verifier.VerifyTable(ptr);
     }
+    case ComponentU::StateMachine: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StateMachine *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
     default: return true;
   }
 }
@@ -2593,6 +2740,10 @@ inline void *ComponentUUnion::UnPack(const void *obj, ComponentU type, const ::f
       auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerVolume *>(obj);
       return ptr->UnPack(resolver);
     }
+    case ComponentU::StateMachine: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StateMachine *>(obj);
+      return ptr->UnPack(resolver);
+    }
     default: return nullptr;
   }
 }
@@ -2636,6 +2787,10 @@ inline ::flatbuffers::Offset<void> ComponentUUnion::Pack(::flatbuffers::FlatBuff
       auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerVolumeT *>(value);
       return CreateTriggerVolume(_fbb, ptr, _rehasher).Union();
     }
+    case ComponentU::StateMachine: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::StateMachineT *>(value);
+      return CreateStateMachine(_fbb, ptr, _rehasher).Union();
+    }
     default: return 0;
   }
 }
@@ -2676,6 +2831,10 @@ inline ComponentUUnion::ComponentUUnion(const ComponentUUnion &u) : type(u.type)
     }
     case ComponentU::TriggerVolume: {
       value = new SE::FlatBuffers::TriggerVolumeT(*reinterpret_cast<SE::FlatBuffers::TriggerVolumeT *>(u.value));
+      break;
+    }
+    case ComponentU::StateMachine: {
+      value = new SE::FlatBuffers::StateMachineT(*reinterpret_cast<SE::FlatBuffers::StateMachineT *>(u.value));
       break;
     }
     default:
@@ -2727,6 +2886,11 @@ inline void ComponentUUnion::Reset() {
     }
     case ComponentU::TriggerVolume: {
       auto ptr = reinterpret_cast<SE::FlatBuffers::TriggerVolumeT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::StateMachine: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::StateMachineT *>(value);
       delete ptr;
       break;
     }

@@ -326,6 +326,8 @@ struct AnimationClipT : public ::flatbuffers::NativeTable {
   bool looping = false;
   std::vector<std::unique_ptr<SE::FlatBuffers::CurveChannelT>> channels{};
   std::vector<std::unique_ptr<SE::FlatBuffers::AnimEventT>> events{};
+  bool delta_translations = false;
+  float src_pelvis_scale = 0.0f;
   AnimationClipT() = default;
   AnimationClipT(const AnimationClipT &o);
   AnimationClipT(AnimationClipT&&) FLATBUFFERS_NOEXCEPT = default;
@@ -340,7 +342,9 @@ struct AnimationClip FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_DURATION = 6,
     VT_LOOPING = 8,
     VT_CHANNELS = 10,
-    VT_EVENTS = 12
+    VT_EVENTS = 12,
+    VT_DELTA_TRANSLATIONS = 14,
+    VT_SRC_PELVIS_SCALE = 16
   };
   uint32_t schema_version() const {
     return GetField<uint32_t>(VT_SCHEMA_VERSION, 1);
@@ -357,6 +361,12 @@ struct AnimationClip FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>> *events() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>> *>(VT_EVENTS);
   }
+  bool delta_translations() const {
+    return GetField<uint8_t>(VT_DELTA_TRANSLATIONS, 0) != 0;
+  }
+  float src_pelvis_scale() const {
+    return GetField<float>(VT_SRC_PELVIS_SCALE, 0.0f);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_SCHEMA_VERSION, 4) &&
@@ -368,6 +378,8 @@ struct AnimationClip FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_EVENTS) &&
            verifier.VerifyVector(events()) &&
            verifier.VerifyVectorOfTables(events()) &&
+           VerifyField<uint8_t>(verifier, VT_DELTA_TRANSLATIONS, 1) &&
+           VerifyField<float>(verifier, VT_SRC_PELVIS_SCALE, 4) &&
            verifier.EndTable();
   }
   AnimationClipT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -394,6 +406,12 @@ struct AnimationClipBuilder {
   void add_events(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>>> events) {
     fbb_.AddOffset(AnimationClip::VT_EVENTS, events);
   }
+  void add_delta_translations(bool delta_translations) {
+    fbb_.AddElement<uint8_t>(AnimationClip::VT_DELTA_TRANSLATIONS, static_cast<uint8_t>(delta_translations), 0);
+  }
+  void add_src_pelvis_scale(float src_pelvis_scale) {
+    fbb_.AddElement<float>(AnimationClip::VT_SRC_PELVIS_SCALE, src_pelvis_scale, 0.0f);
+  }
   explicit AnimationClipBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -411,12 +429,16 @@ inline ::flatbuffers::Offset<AnimationClip> CreateAnimationClip(
     float duration = 0.0f,
     bool looping = false,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::CurveChannel>>> channels = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>>> events = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>>> events = 0,
+    bool delta_translations = false,
+    float src_pelvis_scale = 0.0f) {
   AnimationClipBuilder builder_(_fbb);
+  builder_.add_src_pelvis_scale(src_pelvis_scale);
   builder_.add_events(events);
   builder_.add_channels(channels);
   builder_.add_duration(duration);
   builder_.add_schema_version(schema_version);
+  builder_.add_delta_translations(delta_translations);
   builder_.add_looping(looping);
   return builder_.Finish();
 }
@@ -427,7 +449,9 @@ inline ::flatbuffers::Offset<AnimationClip> CreateAnimationClipDirect(
     float duration = 0.0f,
     bool looping = false,
     const std::vector<::flatbuffers::Offset<SE::FlatBuffers::CurveChannel>> *channels = nullptr,
-    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>> *events = nullptr) {
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>> *events = nullptr,
+    bool delta_translations = false,
+    float src_pelvis_scale = 0.0f) {
   auto channels__ = channels ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::CurveChannel>>(*channels) : 0;
   auto events__ = events ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>>(*events) : 0;
   return SE::FlatBuffers::CreateAnimationClip(
@@ -436,7 +460,9 @@ inline ::flatbuffers::Offset<AnimationClip> CreateAnimationClipDirect(
       duration,
       looping,
       channels__,
-      events__);
+      events__,
+      delta_translations,
+      src_pelvis_scale);
 }
 
 ::flatbuffers::Offset<AnimationClip> CreateAnimationClip(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationClipT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -618,7 +644,9 @@ inline ::flatbuffers::Offset<AnimEvent> CreateAnimEvent(::flatbuffers::FlatBuffe
 inline AnimationClipT::AnimationClipT(const AnimationClipT &o)
       : schema_version(o.schema_version),
         duration(o.duration),
-        looping(o.looping) {
+        looping(o.looping),
+        delta_translations(o.delta_translations),
+        src_pelvis_scale(o.src_pelvis_scale) {
   channels.reserve(o.channels.size());
   for (const auto &channels_ : o.channels) { channels.emplace_back((channels_) ? new SE::FlatBuffers::CurveChannelT(*channels_) : nullptr); }
   events.reserve(o.events.size());
@@ -631,6 +659,8 @@ inline AnimationClipT &AnimationClipT::operator=(AnimationClipT o) FLATBUFFERS_N
   std::swap(looping, o.looping);
   std::swap(channels, o.channels);
   std::swap(events, o.events);
+  std::swap(delta_translations, o.delta_translations);
+  std::swap(src_pelvis_scale, o.src_pelvis_scale);
   return *this;
 }
 
@@ -648,6 +678,8 @@ inline void AnimationClip::UnPackTo(AnimationClipT *_o, const ::flatbuffers::res
   { auto _e = looping(); _o->looping = _e; }
   { auto _e = channels(); if (_e) { _o->channels.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->channels[_i]) { _e->Get(_i)->UnPackTo(_o->channels[_i].get(), _resolver); } else { _o->channels[_i] = std::unique_ptr<SE::FlatBuffers::CurveChannelT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->channels.resize(0); } }
   { auto _e = events(); if (_e) { _o->events.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->events[_i]) { _e->Get(_i)->UnPackTo(_o->events[_i].get(), _resolver); } else { _o->events[_i] = std::unique_ptr<SE::FlatBuffers::AnimEventT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->events.resize(0); } }
+  { auto _e = delta_translations(); _o->delta_translations = _e; }
+  { auto _e = src_pelvis_scale(); _o->src_pelvis_scale = _e; }
 }
 
 inline ::flatbuffers::Offset<AnimationClip> AnimationClip::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationClipT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -663,13 +695,17 @@ inline ::flatbuffers::Offset<AnimationClip> CreateAnimationClip(::flatbuffers::F
   auto _looping = _o->looping;
   auto _channels = _o->channels.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::CurveChannel>> (_o->channels.size(), [](size_t i, _VectorArgs *__va) { return CreateCurveChannel(*__va->__fbb, __va->__o->channels[i].get(), __va->__rehasher); }, &_va ) : 0;
   auto _events = _o->events.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::AnimEvent>> (_o->events.size(), [](size_t i, _VectorArgs *__va) { return CreateAnimEvent(*__va->__fbb, __va->__o->events[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _delta_translations = _o->delta_translations;
+  auto _src_pelvis_scale = _o->src_pelvis_scale;
   return SE::FlatBuffers::CreateAnimationClip(
       _fbb,
       _schema_version,
       _duration,
       _looping,
       _channels,
-      _events);
+      _events,
+      _delta_translations,
+      _src_pelvis_scale);
 }
 
 inline AnimClipHolderT::AnimClipHolderT(const AnimClipHolderT &o)

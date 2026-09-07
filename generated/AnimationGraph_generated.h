@@ -13,6 +13,7 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
               FLATBUFFERS_VERSION_REVISION == 26,
              "Non-compatible flatbuffers version included");
 
+#include "AnimationClip_generated.h"
 #include "Common_generated.h"
 
 namespace SE {
@@ -63,6 +64,10 @@ struct AnimStateT;
 struct AnimationGraph;
 struct AnimationGraphBuilder;
 struct AnimationGraphT;
+
+struct AnimationGraphHolder;
+struct AnimationGraphHolderBuilder;
+struct AnimationGraphHolderT;
 
 enum class AnimParamType : uint8_t {
   Float = 0,
@@ -835,21 +840,25 @@ inline ::flatbuffers::Offset<AnimTransition> CreateAnimTransitionDirect(
 
 struct ClipNodeDataT : public ::flatbuffers::NativeTable {
   typedef ClipNodeData TableType;
-  std::string clip_path{};
+  std::unique_ptr<SE::FlatBuffers::AnimClipHolderT> clip{};
   float playback_rate = 1.0f;
   bool mirror = false;
+  ClipNodeDataT() = default;
+  ClipNodeDataT(const ClipNodeDataT &o);
+  ClipNodeDataT(ClipNodeDataT&&) FLATBUFFERS_NOEXCEPT = default;
+  ClipNodeDataT &operator=(ClipNodeDataT o) FLATBUFFERS_NOEXCEPT;
 };
 
 struct ClipNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ClipNodeDataT NativeTableType;
   typedef ClipNodeDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_CLIP_PATH = 4,
+    VT_CLIP = 4,
     VT_PLAYBACK_RATE = 6,
     VT_MIRROR = 8
   };
-  const ::flatbuffers::String *clip_path() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_CLIP_PATH);
+  const SE::FlatBuffers::AnimClipHolder *clip() const {
+    return GetPointer<const SE::FlatBuffers::AnimClipHolder *>(VT_CLIP);
   }
   float playback_rate() const {
     return GetField<float>(VT_PLAYBACK_RATE, 1.0f);
@@ -859,8 +868,8 @@ struct ClipNodeData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffsetRequired(verifier, VT_CLIP_PATH) &&
-           verifier.VerifyString(clip_path()) &&
+           VerifyOffsetRequired(verifier, VT_CLIP) &&
+           verifier.VerifyTable(clip()) &&
            VerifyField<float>(verifier, VT_PLAYBACK_RATE, 4) &&
            VerifyField<uint8_t>(verifier, VT_MIRROR, 1) &&
            verifier.EndTable();
@@ -874,8 +883,8 @@ struct ClipNodeDataBuilder {
   typedef ClipNodeData Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_clip_path(::flatbuffers::Offset<::flatbuffers::String> clip_path) {
-    fbb_.AddOffset(ClipNodeData::VT_CLIP_PATH, clip_path);
+  void add_clip(::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder> clip) {
+    fbb_.AddOffset(ClipNodeData::VT_CLIP, clip);
   }
   void add_playback_rate(float playback_rate) {
     fbb_.AddElement<float>(ClipNodeData::VT_PLAYBACK_RATE, playback_rate, 1.0f);
@@ -890,34 +899,21 @@ struct ClipNodeDataBuilder {
   ::flatbuffers::Offset<ClipNodeData> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<ClipNodeData>(end);
-    fbb_.Required(o, ClipNodeData::VT_CLIP_PATH);
+    fbb_.Required(o, ClipNodeData::VT_CLIP);
     return o;
   }
 };
 
 inline ::flatbuffers::Offset<ClipNodeData> CreateClipNodeData(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::String> clip_path = 0,
+    ::flatbuffers::Offset<SE::FlatBuffers::AnimClipHolder> clip = 0,
     float playback_rate = 1.0f,
     bool mirror = false) {
   ClipNodeDataBuilder builder_(_fbb);
   builder_.add_playback_rate(playback_rate);
-  builder_.add_clip_path(clip_path);
+  builder_.add_clip(clip);
   builder_.add_mirror(mirror);
   return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<ClipNodeData> CreateClipNodeDataDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    const char *clip_path = nullptr,
-    float playback_rate = 1.0f,
-    bool mirror = false) {
-  auto clip_path__ = clip_path ? _fbb.CreateString(clip_path) : 0;
-  return SE::FlatBuffers::CreateClipNodeData(
-      _fbb,
-      clip_path__,
-      playback_rate,
-      mirror);
 }
 
 ::flatbuffers::Offset<ClipNodeData> CreateClipNodeData(::flatbuffers::FlatBufferBuilder &_fbb, const ClipNodeDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -1707,6 +1703,101 @@ inline ::flatbuffers::Offset<AnimationGraph> CreateAnimationGraphDirect(
 
 ::flatbuffers::Offset<AnimationGraph> CreateAnimationGraph(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct AnimationGraphHolderT : public ::flatbuffers::NativeTable {
+  typedef AnimationGraphHolder TableType;
+  std::unique_ptr<SE::FlatBuffers::AnimationGraphT> graph{};
+  std::string path{};
+  std::string name{};
+  AnimationGraphHolderT() = default;
+  AnimationGraphHolderT(const AnimationGraphHolderT &o);
+  AnimationGraphHolderT(AnimationGraphHolderT&&) FLATBUFFERS_NOEXCEPT = default;
+  AnimationGraphHolderT &operator=(AnimationGraphHolderT o) FLATBUFFERS_NOEXCEPT;
+};
+
+struct AnimationGraphHolder FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AnimationGraphHolderT NativeTableType;
+  typedef AnimationGraphHolderBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_GRAPH = 4,
+    VT_PATH = 6,
+    VT_NAME = 8
+  };
+  const SE::FlatBuffers::AnimationGraph *graph() const {
+    return GetPointer<const SE::FlatBuffers::AnimationGraph *>(VT_GRAPH);
+  }
+  const ::flatbuffers::String *path() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_PATH);
+  }
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_GRAPH) &&
+           verifier.VerifyTable(graph()) &&
+           VerifyOffset(verifier, VT_PATH) &&
+           verifier.VerifyString(path()) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           verifier.EndTable();
+  }
+  AnimationGraphHolderT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AnimationGraphHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AnimationGraphHolder> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct AnimationGraphHolderBuilder {
+  typedef AnimationGraphHolder Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_graph(::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> graph) {
+    fbb_.AddOffset(AnimationGraphHolder::VT_GRAPH, graph);
+  }
+  void add_path(::flatbuffers::Offset<::flatbuffers::String> path) {
+    fbb_.AddOffset(AnimationGraphHolder::VT_PATH, path);
+  }
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(AnimationGraphHolder::VT_NAME, name);
+  }
+  explicit AnimationGraphHolderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<AnimationGraphHolder> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<AnimationGraphHolder>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<AnimationGraphHolder> CreateAnimationGraphHolder(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> graph = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> path = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
+  AnimationGraphHolderBuilder builder_(_fbb);
+  builder_.add_name(name);
+  builder_.add_path(path);
+  builder_.add_graph(graph);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<AnimationGraphHolder> CreateAnimationGraphHolderDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::AnimationGraph> graph = 0,
+    const char *path = nullptr,
+    const char *name = nullptr) {
+  auto path__ = path ? _fbb.CreateString(path) : 0;
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  return SE::FlatBuffers::CreateAnimationGraphHolder(
+      _fbb,
+      graph,
+      path__,
+      name__);
+}
+
+::flatbuffers::Offset<AnimationGraphHolder> CreateAnimationGraphHolder(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 inline AnimParamT *AnimParam::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<AnimParamT>(new AnimParamT());
   UnPackTo(_o.get(), _resolver);
@@ -1848,6 +1939,19 @@ inline ::flatbuffers::Offset<AnimTransition> CreateAnimTransition(::flatbuffers:
       _conditions);
 }
 
+inline ClipNodeDataT::ClipNodeDataT(const ClipNodeDataT &o)
+      : clip((o.clip) ? new SE::FlatBuffers::AnimClipHolderT(*o.clip) : nullptr),
+        playback_rate(o.playback_rate),
+        mirror(o.mirror) {
+}
+
+inline ClipNodeDataT &ClipNodeDataT::operator=(ClipNodeDataT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(clip, o.clip);
+  std::swap(playback_rate, o.playback_rate);
+  std::swap(mirror, o.mirror);
+  return *this;
+}
+
 inline ClipNodeDataT *ClipNodeData::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<ClipNodeDataT>(new ClipNodeDataT());
   UnPackTo(_o.get(), _resolver);
@@ -1857,7 +1961,7 @@ inline ClipNodeDataT *ClipNodeData::UnPack(const ::flatbuffers::resolver_functio
 inline void ClipNodeData::UnPackTo(ClipNodeDataT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = clip_path(); if (_e) _o->clip_path = _e->str(); }
+  { auto _e = clip(); if (_e) { if(_o->clip) { _e->UnPackTo(_o->clip.get(), _resolver); } else { _o->clip = std::unique_ptr<SE::FlatBuffers::AnimClipHolderT>(_e->UnPack(_resolver)); } } else if (_o->clip) { _o->clip.reset(); } }
   { auto _e = playback_rate(); _o->playback_rate = _e; }
   { auto _e = mirror(); _o->mirror = _e; }
 }
@@ -1870,12 +1974,12 @@ inline ::flatbuffers::Offset<ClipNodeData> CreateClipNodeData(::flatbuffers::Fla
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ClipNodeDataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _clip_path = _fbb.CreateString(_o->clip_path);
+  auto _clip = _o->clip ? CreateAnimClipHolder(_fbb, _o->clip.get(), _rehasher) : 0;
   auto _playback_rate = _o->playback_rate;
   auto _mirror = _o->mirror;
   return SE::FlatBuffers::CreateClipNodeData(
       _fbb,
-      _clip_path,
+      _clip,
       _playback_rate,
       _mirror);
 }
@@ -2162,6 +2266,51 @@ inline ::flatbuffers::Offset<AnimationGraph> CreateAnimationGraph(::flatbuffers:
       _states,
       _transitions,
       _entry_state);
+}
+
+inline AnimationGraphHolderT::AnimationGraphHolderT(const AnimationGraphHolderT &o)
+      : graph((o.graph) ? new SE::FlatBuffers::AnimationGraphT(*o.graph) : nullptr),
+        path(o.path),
+        name(o.name) {
+}
+
+inline AnimationGraphHolderT &AnimationGraphHolderT::operator=(AnimationGraphHolderT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(graph, o.graph);
+  std::swap(path, o.path);
+  std::swap(name, o.name);
+  return *this;
+}
+
+inline AnimationGraphHolderT *AnimationGraphHolder::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AnimationGraphHolderT>(new AnimationGraphHolderT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AnimationGraphHolder::UnPackTo(AnimationGraphHolderT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = graph(); if (_e) { if(_o->graph) { _e->UnPackTo(_o->graph.get(), _resolver); } else { _o->graph = std::unique_ptr<SE::FlatBuffers::AnimationGraphT>(_e->UnPack(_resolver)); } } else if (_o->graph) { _o->graph.reset(); } }
+  { auto _e = path(); if (_e) _o->path = _e->str(); }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<AnimationGraphHolder> AnimationGraphHolder::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphHolderT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateAnimationGraphHolder(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AnimationGraphHolder> CreateAnimationGraphHolder(::flatbuffers::FlatBufferBuilder &_fbb, const AnimationGraphHolderT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AnimationGraphHolderT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _graph = _o->graph ? CreateAnimationGraph(_fbb, _o->graph.get(), _rehasher) : 0;
+  auto _path = _o->path.empty() ? 0 : _fbb.CreateString(_o->path);
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
+  return SE::FlatBuffers::CreateAnimationGraphHolder(
+      _fbb,
+      _graph,
+      _path,
+      _name);
 }
 
 inline bool VerifyBlendNodeDataU(::flatbuffers::Verifier &verifier, const void *obj, BlendNodeDataU type) {
