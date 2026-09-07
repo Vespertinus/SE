@@ -17,38 +17,51 @@ using SE::FlatBuffers::Component;
 
 static std::tuple<flatbuffers::Offset<Node>, ret_code_t> SerializeNode(
                 const NodeData & oNode,
-                flatbuffers::FlatBufferBuilder & oBuilder) {
+                flatbuffers::FlatBufferBuilder & oBuilder,
+                const ImportCtx & oCtx) {
 
         std::vector<flatbuffers::Offset<Node>> vChildren;
         std::vector<flatbuffers::Offset<Component>> vComponents;
 
         for (auto & item : oNode.vComponents) {
 
-                auto [offset, res] =  SerializeComponent(item, oBuilder);
+                auto [offset, res] =  SerializeComponent(item, oBuilder, oCtx);
                 if (res != uSUCCESS) {
                         return {0, res};
                 }
 
                 vComponents.emplace_back(offset);
+
+                // For a skinned model with animation clips, also emit an Animator component.
+                if (const auto * pModel = std::get_if<ModelData>(&item)) {
+                        const bool has_skin  = pModel->pSkin && !pModel->pSkin->vJointIndexes.empty();
+                        const bool has_clips = !oCtx.vAnimClips.empty();
+                        if (has_skin && has_clips) {
+                                auto animator_offset = SerializeAnimatorComponent(oBuilder, oCtx);
+                                if (!animator_offset.IsNull()) {
+                                        vComponents.emplace_back(animator_offset);
+                                }
+                        }
+                }
         }
 
         for (auto & item : oNode.vChildren) {
-                auto [offset, res] =  SerializeNode(item, oBuilder);
+                auto [offset, res] =  SerializeNode(item, oBuilder, oCtx);
                 if (res != uSUCCESS) {
                         return {0, res};
                 }
                 vChildren.emplace_back(offset);
         }
 
-        auto translation_fb = Vec3(oNode.translation.x,
-                                   oNode.translation.y,
-                                   oNode.translation.z);
-        auto rotation_fb    = Vec3(oNode.rotation.x,
-                                   oNode.rotation.y,
-                                   oNode.rotation.z);
-        auto scale_fb       = Vec3(oNode.scale.x,
-                                   oNode.scale.y,
-                                   oNode.scale.z);
+        auto translation_fb = Vec3(oNode.vTranslation.x,
+                                   oNode.vTranslation.y,
+                                   oNode.vTranslation.z);
+        auto rotation_fb    = Vec3(oNode.vRotation.x,
+                                   oNode.vRotation.y,
+                                   oNode.vRotation.z);
+        auto scale_fb       = Vec3(oNode.vScale.x,
+                                   oNode.vScale.y,
+                                   oNode.vScale.z);
 
         return {
                 CreateNode(oBuilder,
@@ -65,12 +78,12 @@ static std::tuple<flatbuffers::Offset<Node>, ret_code_t> SerializeNode(
 
 }
 
-SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNode) {
-
+SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNode,
+                              const ImportCtx & oCtx) {
 
         flatbuffers::FlatBufferBuilder oBuilder(1024);
 
-        auto [root_fb, res] = SerializeNode(oRootNode, oBuilder);
+        auto [root_fb, res] = SerializeNode(oRootNode, oBuilder, oCtx);
         if (res != uSUCCESS) {
                 return res;
         }

@@ -8,7 +8,8 @@
 namespace SE {
 namespace TOOLS {
 
-SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNode);
+SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNode,
+                              const ImportCtx & oCtx);
 
 }
 }

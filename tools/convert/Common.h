@@ -26,9 +26,11 @@ struct ShapeData {
         uint32_t        start;
         uint32_t        count;
         BoundingBox     oBBox;
+        uint16_t        material_index{0};
 
-        ShapeData(uint32_t new_start, uint32_t new_count, const BoundingBox & oNewBBox) :
-                start(new_start), count(new_count), oBBox(oNewBBox) { ;; }
+        ShapeData(uint32_t new_start, uint32_t new_count, const BoundingBox & oNewBBox,
+                  uint16_t mat_idx = 0) :
+                start(new_start), count(new_count), oBBox(oNewBBox), material_index(mat_idx) { ;; }
 };
 
 struct BlendShapeData {
@@ -48,36 +50,29 @@ struct BlendShapeData {
 
 struct BindPoseData {
 
-        glm::vec4               bind_rot;
-        glm::vec3               bind_pos;
-        glm::vec3               bind_scale;
+        glm::vec4               vBindRot;
+        glm::vec3               vBindPos;
+        glm::vec3               vBindScale;
 };
 
 struct JointData {
 
-        static const uint8_t    ROOT_PARENT_IND = -1;
+        static const uint16_t   ROOT_PARENT_IND = 0xFFFF;
 
         std::string             sName;
-        uint8_t                 parent_index{};
+        uint16_t                parent_index{};
         bool                    bind_inited{false};
+        BindPoseData            oBindLocal;       ///< local bind SQT (parent-relative)
+        BindPoseData            oInvBind;         ///< inv bind SQT (used when inv_bind_is_mat4==false)
+        glm::mat4               mInvBindMat4{1.0f}; ///< exact inv bind mat4 from GLTF
+        bool                    inv_bind_is_mat4{false}; ///< use inv_bind_mat4 instead of SQT reconstruction
 };
 
 struct Skeleton {
 
         std::string             sName;
         std::vector<JointData>  vJoints;
-
-        uint32_t                serialized_fb{};
 };
-
-struct CharacterShellData {
-
-        std::string             sName;
-        Skeleton              * pSkeleton{};
-        std::string             sRootNode;
-        uint32_t                serialized_fb{};
-};
-
 
 struct MeshData {
 
@@ -102,7 +97,7 @@ struct MeshData {
                 uint8_t         elem_size;
                 uint8_t         buffer_ind;
                 uint32_t        custom{};
-                Type            destination{Type::DEST_FLOAT};
+                Type            oDestination{Type::DEST_FLOAT};
         };
 
         struct VertexBuffer {
@@ -123,13 +118,24 @@ struct MeshData {
 
 using TPackVertexIndex = void (*)(MeshData::TIndexVariant & oData, const uint32_t value);
 
+enum class TextureEncoding : uint8_t {
+        RGBA8 = 0,  // raw decoded pixels (legacy / GLTF embedded)
+        PNG   = 1,
+        JPG   = 2,
+        TGA   = 3,
+        DDS   = 4,  // future: GPU-compressed BC1..BC7
+        KTX2  = 5,  // future: Basis/UASTC
+};
+
 struct TextureData {
 
         std::string                     sPath;
         std::string                     sName;
-        //THINK rewrite to store as is in encoded format and later decode on load
-        std::vector<uint8_t>            vImageData;   // owns decoded RGBA pixels for embedded images
+        std::vector<uint8_t>            vImageData;    // decoded RGBA pixels (GLTF embedded path)
         TextureStock                    oStock;
+        std::vector<uint8_t>            vEncodedData;  // original compressed file bytes (inline_all)
+        TextureEncoding                 oEncoding{TextureEncoding::RGBA8};
+        int32_t                         wrap_mode{10497}; // GL_REPEAT (glTF spec default)
         uint32_t                        serialized_fb{};
 };
 
@@ -151,36 +157,84 @@ struct MaterialData {
         /** TODO currently inplace storage for shader program unsupported */
         std::string                                     sShaderPath;
         std::string                                     sName;
+        BlendMode                                       oBlendMode{BlendMode::Opaque};
 
         uint32_t                                        serialized_fb{};
 };
 
 struct SkinData {
 
-        CharacterShellData    * pShell{};
-        std::vector<uint8_t>    vJointIndexes;
+        Skeleton             * pSkeleton{};
+        std::string            sRootNode;
+        std::vector<uint16_t>  vJointIndexes;
         std::vector<
                 BindPoseData
-                >               vJointsInvBindPose;
-        BindPoseData            oMeshBindPose;
-        std::string             sName;
+                >              vJointsInvBindPose;
+        BindPoseData           oMeshBindPose;
+        std::string            sName;
 };
 
 struct ModelData {
 
-        MeshData              * pMesh{};
-        MaterialData          * pMaterial{};
-        BlendShapeData        * pBlendShape{};
-        SkinData              * pSkin{};
+        MeshData                    * pMesh{};
+        std::vector<MaterialData*>    vMaterials;   ///< one entry per material group; index matches ShapeData::material_index
+        BlendShapeData              * pBlendShape{};
+        SkinData                    * pSkin{};
+};
+
+/** One sampled channel (position/quaternion/scale component) for one bone */
+struct AnimCurveChannel {
+        enum class Format : uint8_t {
+                ConstantF32 = 0,
+                StepF32     = 1,
+                HermiteF32  = 2,
+                LinearF32   = 4  // matches FlatBuffer CurveFormat::LinearF32
+        };
+
+        uint16_t                bone_index;
+        uint8_t                 target; // 0-2 TX/TY/TZ, 3-6 QX/QY/QZ/QW, 7-9 SX/SY/SZ
+        Format                  oFormat{Format::StepF32};
+        std::vector<float>      vTimes;
+        std::vector<float>      vValues;
+        std::vector<float>      vTangents;  // hermite tangents; empty for non-HermiteF32
+};
+
+/** Negates quaternion keys with negative dot vs their predecessor, per bone
+ *  (targets 3..6), so per-component interpolation follows the short arc.
+ *  Mirrors the load-time pass in AnimClip — call once per clip before export. */
+void EnforceQuatContinuity(std::vector<AnimCurveChannel> & vChannels);
+
+/**
+ * One animation event authored on a FBX stack.
+ *
+ * Convention: add a custom string property named "events" to the FbxAnimStack
+ * (or to the root joint node) with the format:
+ *   "time:name:value;time:name:value;..."
+ * e.g. "0.40:footstep.left:0.0;0.95:footstep.right:0.0"
+ * The value field is optional (defaults to 0.0 if omitted).
+ */
+struct AnimEventData {
+        float           time{};
+        std::string     sName;
+        float           value{0.0f};
+};
+
+/** One exported animation clip (one FBX animation stack) */
+struct AnimClipData {
+        std::string                     sName;
+        float                           duration{};
+        bool                            looping{false};
+        std::vector<AnimCurveChannel>   vChannels;
+        std::vector<AnimEventData>      vEvents;    // sorted by time
 };
 
 using TComponent = std::variant<ModelData/*, Camera, Light, CustomComponent etc*/>;
 
 struct NodeData {
 
-        glm::vec3               translation;
-        glm::vec3               rotation;
-        glm::vec3               scale;
+        glm::vec3               vTranslation{0};
+        glm::vec3               vRotation{0};
+        glm::vec3               vScale{1};
         std::string             sName;
         std::vector<NodeData>   vChildren;
         std::vector<TComponent> vComponents;
@@ -208,7 +262,7 @@ struct NodeData {
  */
 struct ImportCtx {
 
-        std::optional<std::regex>       sCutPath;
+        std::optional<std::regex>       oCutPath;
         std::string             sReplace;
         std::string             sPackName;
         bool                    skip_normals;
@@ -217,10 +271,28 @@ struct ImportCtx {
         bool                    import_info_prop;
         bool                    import_blend_shapes;
         bool                    import_skin;
+        bool                    import_animations;
         bool                    disable_nodes;
+        bool                    skeleton_inline{false};  ///< embed skeleton inline vs separate file
+        bool                    inline_all{false};       ///< embed all resources (textures, clips) in .sesc
+        float                   anim_sample_rate{30.0f};
+        /** per-clip import overrides (populated from .sceneimport sidecar) */
+        struct ClipImportSettings {
+                bool loop{false};
+        };
+        std::unordered_map<std::string, ClipImportSettings> mClipSettings;
+        /** output: exported animation clips */
+        std::vector<AnimClipData> vAnimClips;
+        /** output: resource path for each clip, parallel to vAnimClips.
+         *  Populated in main.cpp before WriteSceneTree so SerializeAnimatorComponent
+         *  can reference them.  Uses the FixPath-adjusted relative path. */
+        std::vector<std::string> vAnimClipPaths;
+        /** output: Skeleton* -> relative resource path (separate mode only) */
+        std::unordered_map<Skeleton*, std::string> mSkeletonPaths;
         /** stats */
         uint32_t                node_cnt;
         uint32_t                mesh_cnt;
+        uint32_t                shape_cnt;
         uint32_t                total_triangles_cnt;
         uint32_t                total_vertices_cnt;
         uint32_t                textures_cnt;
@@ -237,6 +309,7 @@ class VertexIndex {
         public:
 
         VertexIndex();
+        explicit VertexIndex(uint32_t base_offset);
         bool Get(std::vector<float> & mData, uint32_t & index);
         void Clear();
         uint32_t Size() const;
@@ -253,7 +326,7 @@ TPackVertexIndex PackVertexIndexInit(const uint32_t index_size, MeshData::TIndex
 
 struct ResourceStash {
 
-        using TResourceData = std::variant<MeshData, TextureData, MaterialData, BlendShapeData, Skeleton, CharacterShellData, SkinData>;
+        using TResourceData = std::variant<MeshData, TextureData, MaterialData, BlendShapeData, Skeleton, SkinData>;
         /** TODO later rewrite on tuple of vectors of all types
          and return handle
          */

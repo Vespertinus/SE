@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <string_view>
 #include <unordered_set>
+#include <fstream>
+#include <algorithm>
 
 #include <fbxsdk.h>
 #include "FBXReader.h"
@@ -25,7 +27,8 @@
                         - scale (3f)
                 - for each Mesh node:
                         - name
-                        - first material diffuse texture path
+                        - material with diffuse / normal / specular / emissive textures
+                        - shader auto-selected: pbr_geometry.sesp when normal or specular present
                         - for each polygon:
                                 - vertex position (3f)
                                 - normal (3f)
@@ -37,30 +40,31 @@ namespace SE {
 namespace TOOLS {
 
 ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx, ResourceStash & oResStash);
+static ret_code_t ImportAnimationClips(fbxsdk::FbxScene * pScene, ResourceStash & oResStash, ImportCtx & oCtx);
 
 
 struct SkinVertInfo {
-        glm::vec4       weights{0};
-        uint8_t         indices[4]{0};
+        glm::vec4       vWeights{0};
+        uint16_t        indices[4]{0};
         uint8_t         cur_joint{0};
 
-        uint8_t AddJoint(const uint8_t joint_id, const float weight, const uint32_t vert_id);
+        uint8_t AddJoint(const uint16_t joint_id, const float weight, const uint32_t vert_id);
         void    Normalize();
 };
 
-uint8_t SkinVertInfo::AddJoint(const uint8_t joint_id, const float weight, const uint32_t vert_id) {
+uint8_t SkinVertInfo::AddJoint(const uint16_t joint_id, const float weight, const uint32_t vert_id) {
 
         /** exceed allowed joints cnt per vertex
             drop joint with smallest weight
             later re normalize weights
         */
         if (cur_joint >= 4) {
-                float   min_w   = weights[0];
+                float   min_w   = vWeights[0];
                 uint8_t min_ind = 0;
 
                 for (uint8_t i = 1; i < 4; ++i) {
-                        if (weights[i] < min_w) {
-                                min_w   = weights[i];
+                        if (vWeights[i] < min_w) {
+                                min_w   = vWeights[i];
                                 min_ind = i;
                         }
                 }
@@ -78,13 +82,13 @@ uint8_t SkinVertInfo::AddJoint(const uint8_t joint_id, const float weight, const
                                 cur_joint + 1,
                                 vert_id,
                                 indices[min_ind],
-                                weights[min_ind]);
+                                vWeights[min_ind]);
 
-                weights[min_ind] = weight;
+                vWeights[min_ind] = weight;
                 indices[min_ind] = joint_id;
         }
         else {
-                weights[cur_joint] = weight;
+                vWeights[cur_joint] = weight;
                 indices[cur_joint] = joint_id;
         }
 
@@ -95,8 +99,8 @@ void SkinVertInfo::Normalize() {
 
         if (cur_joint <= 4) { return; }
 
-        float sum_w = weights.x + weights.y + weights.z + weights.w;
-        weights *= 1 / sum_w;
+        float sum_w = vWeights.x + vWeights.y + vWeights.z + vWeights.w;
+        vWeights *= 1 / sum_w;
 }
 
 
@@ -204,7 +208,17 @@ ret_code_t FBXReader::ReadScene(const std::string_view sPath, NodeData & oRootNo
                 return uWRONG_INPUT_DATA;
         }
 
-        return ImportNode(pNode, oRootNode, oCtx, oResStash);
+        if (auto res = ImportNode(pNode, oRootNode, oCtx, oResStash); res != uSUCCESS) {
+                return res;
+        }
+
+        if (oCtx.import_animations) {
+                if (auto res = ImportAnimationClips(pScene.get(), oResStash, oCtx); res != uSUCCESS) {
+                        return res;
+                }
+        }
+
+        return uSUCCESS;
 }
 
 static ret_code_t GetUV(
@@ -449,7 +463,7 @@ data layout inside buffer:
 static ret_code_t ImportSkeleton(
                 ModelData & oModel,
                 FbxNode * pJointNode,
-                std::unordered_map<std::string, uint8_t> & mJoints,
+                std::unordered_map<std::string, uint16_t> & mJoints,
                 ResourceStash & oResStash,
                 const std::string & sPackName) {
 
@@ -480,7 +494,7 @@ static ret_code_t ImportSkeleton(
                 return uWRONG_INPUT_DATA;
         }
 
-        mJoints.emplace(pRootNode->GetName(), 0);
+        mJoints.emplace(pRootNode->GetName(), uint16_t(0));
         vJointFbxNodes.emplace_back(pRootNode);
 
         std::function<ret_code_t (FbxNode * pCurNode) > ProcessSkeletonNode;
@@ -495,7 +509,7 @@ static ret_code_t ImportSkeleton(
                         }
 
                         log_d("skeleton contain joint node: '{}'", pChild->GetName() );
-                        mJoints.emplace(pChild->GetName(), vJointFbxNodes.size());
+                        mJoints.emplace(pChild->GetName(), static_cast<uint16_t>(vJointFbxNodes.size()));
                         vJointFbxNodes.emplace_back(pChild);
 
                         if (auto res = ProcessSkeletonNode(pChild); res != uSUCCESS) {
@@ -508,6 +522,7 @@ static ret_code_t ImportSkeleton(
 
         ProcessSkeletonNode(pRootNode);
 
+        se_assert(vJointFbxNodes.size() <= 65535);
         log_d("build skeleton with {} joints", vJointFbxNodes.size());
 
         std::string sRootNodeName;
@@ -519,22 +534,11 @@ static ret_code_t ImportSkeleton(
                 sRootNodeName = vJointFbxNodes[0]->GetName();
         };
 
-        //THINK duplication in differet fbx..
-        //same with skeleton?
-        std::string sShellName = fmt::format("cs:{}|pc:{}", StrID(sRootNodeName), sPackName);
-
-        if (oResStash.GetResourceData(sShellName, &oModel.pSkin->pShell) ) {
-                oModel.pSkin->pShell->sName     = sShellName;
-                oModel.pSkin->pShell->sRootNode = sRootNodeName;
-        }
-        else {
-                log_d("shell: '{}' already created", sShellName);
-                return uSUCCESS;
-        }
+        oModel.pSkin->sRootNode  = sRootNodeName;
 
         //build skeleton name
         std::string sSkeletonBones;
-        for (uint8_t i = 0; i < vJointFbxNodes.size(); ++i) {
+        for (uint16_t i = 0; i < static_cast<uint16_t>(vJointFbxNodes.size()); ++i) {
 
                 sSkeletonBones += vJointFbxNodes[i]->GetName();
         }
@@ -543,21 +547,36 @@ static ret_code_t ImportSkeleton(
                         StrID(sSkeletonBones),
                         sPackName);
 
-        if (!oResStash.GetResourceData(sSkeletonName, &oModel.pSkin->pShell->pSkeleton) ) {
+        if (!oResStash.GetResourceData(sSkeletonName, &oModel.pSkin->pSkeleton) ) {
 
                 log_d("skeleton: '{}' already created", sSkeletonName);
                 return uSUCCESS;
         }
 
-        oModel.pSkin->pShell->pSkeleton->sName = sSkeletonName;
-        oModel.pSkin->pShell->pSkeleton->vJoints.reserve(vJointFbxNodes.size());
+        oModel.pSkin->pSkeleton->sName = sSkeletonName;
+        oModel.pSkin->pSkeleton->vJoints.reserve(vJointFbxNodes.size());
 
-        oModel.pSkin->pShell->pSkeleton->vJoints.emplace_back(JointData{
-                        vJointFbxNodes[0]->GetName(),
-                        JointData::ROOT_PARENT_IND
-                        });
+        auto ExtractLocalBindSQT = [](FbxNode * pNode, JointData & jd) {
+                // Sample at T=0 which is the reference/bind pose for most DCC tools
+                FbxAMatrix local   = pNode->EvaluateLocalTransform(FbxTime(0));
+                FbxVector4    t    = local.GetT();
+                FbxQuaternion r    = local.GetQ();
+                FbxVector4    s    = local.GetS();
+                jd.oBindLocal.vBindPos   = {(float)t[0], (float)t[1], (float)t[2]};
+                jd.oBindLocal.vBindRot   = {(float)r[0], (float)r[1], (float)r[2], (float)r[3]};
+                jd.oBindLocal.vBindScale = {(float)s[0], (float)s[1], (float)s[2]};
+                jd.bind_inited = true;
+        };
 
-        for (uint8_t i = 1; i < vJointFbxNodes.size(); ++i) {
+        {
+                JointData oRoot;
+                oRoot.sName         = vJointFbxNodes[0]->GetName();
+                oRoot.parent_index  = JointData::ROOT_PARENT_IND;
+                ExtractLocalBindSQT(vJointFbxNodes[0], oRoot);
+                oModel.pSkin->pSkeleton->vJoints.emplace_back(std::move(oRoot));
+        }
+
+        for (uint16_t i = 1; i < static_cast<uint16_t>(vJointFbxNodes.size()); ++i) {
 
                 auto * pParent = vJointFbxNodes[i]->GetParent();
                 se_assert(pParent);
@@ -571,11 +590,16 @@ static ret_code_t ImportSkeleton(
                         return uWRONG_INPUT_DATA;
                 }
 
+                // Topological sort invariant: parent index must be less than child index.
+                // DFS traversal from root guarantees this for well-formed skeletons.
+                se_assert(itParentInd->second < i);
+
                 JointData oCurJoint;
                 oCurJoint.sName         = vJointFbxNodes[i]->GetName();
                 oCurJoint.parent_index  = itParentInd->second;
+                ExtractLocalBindSQT(vJointFbxNodes[i], oCurJoint);
 
-                oModel.pSkin->pShell->pSkeleton->vJoints.emplace_back(std::move(oCurJoint));
+                oModel.pSkin->pSkeleton->vJoints.emplace_back(std::move(oCurJoint));
         }
 
         return uSUCCESS;
@@ -620,7 +644,7 @@ static ret_code_t ImportSkin(
         uint8_t  cur_joints_per_vertes{0};
         uint32_t cluster_cnt       = ((FbxSkin *)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetClusterCount();
         uint32_t cur_pos;
-        std::unordered_map<std::string, uint8_t> mJoints;
+        std::unordered_map<std::string, uint16_t> mJoints;
 
         if (!cluster_cnt) {
                 log_w("zero clusters");
@@ -677,9 +701,9 @@ static ret_code_t ImportSkin(
                 FbxVector4 vBindScale   = pTransformMatrix.GetS();
                 FbxQuaternion qRot      = pTransformMatrix.GetQ();
 
-                oModel.pSkin->oMeshBindPose.bind_pos   = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
-                oModel.pSkin->oMeshBindPose.bind_scale = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
-                oModel.pSkin->oMeshBindPose.bind_rot   = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
+                oModel.pSkin->oMeshBindPose.vBindPos   = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
+                oModel.pSkin->oMeshBindPose.vBindScale = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
+                oModel.pSkin->oMeshBindPose.vBindRot   = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
 
                 /*
                 log_d("orig node: '{}' mesh bind pose global transform pos: ({}, {}, {}), scale: ({}, {}, {})",
@@ -715,9 +739,10 @@ static ret_code_t ImportSkin(
                                 pCluster->GetLink()->GetName(),
                                 indices_cnt);
 
+                se_assert(i <= 65535);
                 for (uint32_t j = 0; j < indices_cnt; ++j) {
                         se_assert(static_cast<uint32_t>(pIndices[j]) < vSkinInfo.size());
-                        cur_joints_per_vertes = vSkinInfo[pIndices[j]].AddJoint(i, pWeights[j], pIndices[j]);
+                        cur_joints_per_vertes = vSkinInfo[pIndices[j]].AddJoint(static_cast<uint16_t>(i), pWeights[j], pIndices[j]);
                         if (cur_joints_per_vertes > joints_per_vertex) {
                                 joints_per_vertex = cur_joints_per_vertes;
                         }
@@ -728,7 +753,7 @@ static ret_code_t ImportSkin(
 
                         log_e("joint '{}' not found in skeleton: '{}'",
                                         pCluster->GetLink()->GetName(),
-                                        oModel.pSkin->pShell->pSkeleton->sName);
+                                        oModel.pSkin->pSkeleton->sName);
                         return uWRONG_INPUT_DATA;
                 }
 
@@ -768,9 +793,19 @@ static ret_code_t ImportSkin(
                 FbxVector4 vBindScale   = pLinkTransformMatrix.GetS();
                 FbxQuaternion qRot      = pLinkTransformMatrix.GetQ();
 
-                oInvBindPose.bind_pos   = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
-                oInvBindPose.bind_scale = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
-                oInvBindPose.bind_rot   = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
+                oInvBindPose.vBindPos   = glm::vec3(vBindPos[0], vBindPos[1], vBindPos[2]);
+                oInvBindPose.vBindScale = glm::vec3(vBindScale[0], vBindScale[1], vBindScale[2]);
+                oInvBindPose.vBindRot   = glm::vec4(qRot[0], qRot[1], qRot[2], qRot[3]);
+
+                // Mirror inv bind SQT into the skeleton for WriteSkeleton.
+                // For the common case (single bind pose per skeleton) this is correct.
+                // If multiple meshes share a skeleton with different bind poses (rare)
+                // the last mesh to call ImportSkin wins; a separate .sesk per mesh
+                // would be needed to handle that case correctly.
+                {
+                        auto & jd        = oModel.pSkin->pSkeleton->vJoints[itJointInd->second];
+                        jd.oInvBind      = oInvBindPose;
+                }
 
                 //log_d("current node name: {}", pCluster->GetLink()->GetName());
 
@@ -799,15 +834,15 @@ static ret_code_t ImportSkin(
 
                 log_d("vert: {} weights: ({:<10}, {:<10}, {:<10}, {:<10})",
                                 i,
-                                vSkinInfo[i].weights.x,
-                                vSkinInfo[i].weights.y,
-                                vSkinInfo[i].weights.z,
-                                vSkinInfo[i].weights.w);
+                                vSkinInfo[i].vWeights.x,
+                                vSkinInfo[i].vWeights.y,
+                                vSkinInfo[i].vWeights.z,
+                                vSkinInfo[i].vWeights.w);
         }*/
 
         //remap vertices, compress and write into output buffer
-        std::vector<float>      vWeightsBuffer(remaped_vertices_cnt * joints_per_vertex);
-        std::vector<uint8_t>    vIndicesBuffer(remaped_vertices_cnt * joints_per_vertex);
+        std::vector<float>    vWeightsBuffer(remaped_vertices_cnt * joints_per_vertex);
+        std::vector<uint32_t> vIndicesBuffer(remaped_vertices_cnt * joints_per_vertex);
 
         for (uint32_t i = 0; i < vSkinInfo.size(); ++i) {
 
@@ -820,14 +855,16 @@ static ret_code_t ImportSkin(
                 for (auto new_index : it->second) {
 
                         cur_pos = new_index * joints_per_vertex;
-                        memcpy(&vWeightsBuffer[cur_pos], &vSkinInfo[i].weights[0], sizeof(float) * joints_per_vertex);
-                        memcpy(&vIndicesBuffer[cur_pos], &vSkinInfo[i].indices[0], sizeof(uint8_t) * joints_per_vertex);
+                        memcpy(&vWeightsBuffer[cur_pos], &vSkinInfo[i].vWeights[0], sizeof(float) * joints_per_vertex);
+                        for (uint8_t j = 0; j < joints_per_vertex; ++j) {
+                                vIndicesBuffer[cur_pos + j] = vSkinInfo[i].indices[j];
+                        }
                 }
         }
 
         log_d("skeleton: '{}', root node: '{}', cluster cnt: {}, joints_per_vertex: {}",
-                        oModel.pSkin->pShell->pSkeleton->sName,
-                        oModel.pSkin->pShell->sRootNode,
+                        oModel.pSkin->pSkeleton->sName,
+                        oModel.pSkin->sRootNode,
                         cluster_cnt,
                         joints_per_vertex);
 
@@ -835,7 +872,7 @@ static ret_code_t ImportSkin(
         uint8_t weights_buffer_ind = oModel.pMesh->vVertexBuffers.size();
         oModel.pMesh->vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vWeightsBuffer), stride});
         //TODO write indices and weights in one buffer
-        stride = joints_per_vertex * sizeof(uint8_t);
+        stride = joints_per_vertex * sizeof(uint32_t);
         uint8_t indices_buffer_ind = oModel.pMesh->vVertexBuffers.size();
         oModel.pMesh->vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vIndicesBuffer), stride});
 
@@ -857,72 +894,117 @@ static ret_code_t ImportSkin(
         return uSUCCESS;
 }
 
-static ret_code_t ImportMaterial(FbxNode * pNode, MaterialData ** pMaterialData, ImportCtx & oCtx, ResourceStash & oResStash) {
+static ret_code_t ImportMaterial(FbxNode * pNode, int mat_idx, MaterialData ** pMaterialData, ImportCtx & oCtx, ResourceStash & oResStash) {
 
-        if (!(pNode->GetSrcObjectCount<FbxSurfaceMaterial>() > 0 && !oCtx.skip_material)) {
+        FbxSurfaceMaterial * pMaterial = pNode->GetSrcObject<FbxSurfaceMaterial>(mat_idx);
+        if (!pMaterial) {
                 return uSUCCESS;
         }
 
-        FbxSurfaceMaterial * pMaterial = pNode->GetSrcObject<FbxSurfaceMaterial>(0);
+        // Returns the file path for the first texture attached to a material property,
+        // or empty string if none found.
+        auto GetTexturePath = [&](FbxSurfaceMaterial * pMat, const char * propName) -> std::string {
+                auto prop = pMat->FindProperty(propName);
+                if (!prop.IsValid() || prop.GetSrcObjectCount<FbxTexture>() == 0)
+                        return {};
 
-        if(pMaterial) {
-                //check by name in resource cache
-
-                std::string sTextureName;
-                auto oProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
-
-                if (oProperty.IsValid() &&  oProperty.GetSrcObjectCount<FbxTexture>() > 0) {
-
-                        if (FbxLayeredTexture * pLayeredTexture = oProperty.GetSrcObject<FbxLayeredTexture>(0);
-                                        pLayeredTexture != nullptr &&
-                                        pLayeredTexture->GetSrcObjectCount<FbxTexture>() > 0) {
-
-                                FbxTexture * pTexture = pLayeredTexture->GetSrcObject<FbxTexture>(0);
-                                if (pTexture != nullptr) {
-                                        FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
-                                        sTextureName = pFileTexture->GetFileName();
-                                        oCtx.FixPath(sTextureName);
-                                        ++oCtx.textures_cnt;
-                                }
-                        }
-                        else if (FbxTexture * pTexture = oProperty.GetSrcObject<FbxTexture>(0) ) {
-                                FbxFileTexture * pFileTexture = FbxCast<FbxFileTexture>(pTexture);
-                                sTextureName = pFileTexture->GetFileName();
-                                oCtx.FixPath(sTextureName);
-                                ++oCtx.textures_cnt;
-                        }
+                FbxTexture * pTex = nullptr;
+                if (auto * pLayered = prop.GetSrcObject<FbxLayeredTexture>(0)) {
+                        if (pLayered->GetSrcObjectCount<FbxTexture>() > 0)
+                                pTex = pLayered->GetSrcObject<FbxTexture>(0);
                 }
+                if (!pTex)
+                        pTex = prop.GetSrcObject<FbxTexture>(0);
 
-                /** create basic material with one texture */
-                if (!sTextureName.empty()) {
-
-                        static std::string sDefaultShader = "shader_program/simple_tex.sesp";
-
-                        std::string sMaterialName = pMaterial->GetName();
-                        if (sMaterialName.empty()) {
-                                sMaterialName = oCtx.sPackName + std::to_string(StrID(sTextureName + sDefaultShader));
-                        }
-                        else {
-                                sMaterialName = oCtx.sPackName + sMaterialName;
-                        }
-
-                        log_d("diffuse texture: '{}', material: '{}'", sTextureName, sMaterialName);
-
-                        bool created = oResStash.GetResourceData(sMaterialName, pMaterialData);
-                        if (created) {
-                                //TextureData by ptr for reusing
-                                //currently only by material name
-                                (*pMaterialData)->sName       = sMaterialName;
-                                (*pMaterialData)->sShaderPath = sDefaultShader;
-                                (*pMaterialData)->mTextures.emplace(
-                                                TextureUnit::DIFFUSE,
-                                                TextureData{std::move(sTextureName)} );
-
-                                ++oCtx.material_cnt;
-                        }
+                if (auto * pFileTex = FbxCast<FbxFileTexture>(pTex)) {
+                        std::string sPath = pFileTex->GetFileName();
+                        oCtx.FixPath(sPath);
+                        return sPath;
                 }
+                return {};
+        };
+
+        std::string sDiffuse  = GetTexturePath(pMaterial, FbxSurfaceMaterial::sDiffuse);
+        std::string sNormal   = GetTexturePath(pMaterial, FbxSurfaceMaterial::sNormalMap);
+        if (sNormal.empty())
+                sNormal       = GetTexturePath(pMaterial, FbxSurfaceMaterial::sBump);
+        std::string sSpecular = GetTexturePath(pMaterial, FbxSurfaceMaterial::sSpecular);
+        std::string sEmissive = GetTexturePath(pMaterial, FbxSurfaceMaterial::sEmissive);
+
+        if (sDiffuse.empty() && sNormal.empty() && sSpecular.empty() && sEmissive.empty()) {
+                return uSUCCESS;
         }
 
+        const bool bPBR = !sNormal.empty() || !sSpecular.empty();
+        const std::string sShader = bPBR
+                ? "shader_program/pbr_geometry.sesp"
+                : "shader_program/simple_tex.sesp";
+
+        std::string sMaterialName = pMaterial->GetName();
+        if (sMaterialName.empty())
+                sMaterialName = oCtx.sPackName + std::to_string(StrID(sDiffuse + sNormal + sShader));
+        else
+                sMaterialName = oCtx.sPackName + sMaterialName;
+
+        log_d("material '{}' shader '{}' diffuse '{}' normal '{}' specular '{}' emissive '{}'",
+                        sMaterialName, sShader, sDiffuse, sNormal, sSpecular, sEmissive);
+
+        bool created = oResStash.GetResourceData(StrID(sMaterialName), pMaterialData);
+        if (created) {
+                (*pMaterialData)->sName       = sMaterialName;
+                (*pMaterialData)->sShaderPath = sShader;
+
+                if (bPBR) {
+                        (*pMaterialData)->mVariables["BaseColor"] = glm::vec4(1.f, 1.f, 1.f, 1.f);
+                        (*pMaterialData)->mVariables["Roughness"] = 0.5f;
+                        (*pMaterialData)->mVariables["Metallic"]  = 0.0f;
+                        (*pMaterialData)->mVariables["Emissive"]  = glm::vec3(0.f, 0.f, 0.f);
+                        (*pMaterialData)->mVariables["AO"]        = 1.0f;
+                }
+
+                auto AddTex = [&](const std::string & sPath, TextureUnit unit) {
+                        if (sPath.empty()) return;
+                        (*pMaterialData)->mTextures.emplace(unit, TextureData{sPath});
+                        ++oCtx.textures_cnt;
+                };
+
+                AddTex(sDiffuse,  TextureUnit::DIFFUSE);
+                AddTex(sNormal,   TextureUnit::NORMAL);
+                AddTex(sSpecular, TextureUnit::SPECULAR);
+                AddTex(sEmissive, TextureUnit::EMISSIVE);
+
+                // inline_all: read original compressed bytes; clear sPath so writer
+                // uses vEncodedData instead of a path reference
+                if (oCtx.inline_all) {
+                        for (auto & [unit, oTex] : (*pMaterialData)->mTextures) {
+                                if (oTex.sPath.empty() || !oTex.vEncodedData.empty()) continue;
+                                std::ifstream f(oTex.sPath, std::ios::binary);
+                                if (!f) {
+                                        log_w("inline_all: cannot open texture '{}'", oTex.sPath);
+                                        continue;
+                                }
+                                oTex.vEncodedData.assign(
+                                        std::istreambuf_iterator<char>(f),
+                                        std::istreambuf_iterator<char>());
+
+                                // Detect encoding from file extension
+                                auto pos = oTex.sPath.rfind('.');
+                                std::string ext = (pos != std::string::npos) ? oTex.sPath.substr(pos + 1) : "";
+                                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                                if      (ext == "png")              oTex.oEncoding = TextureEncoding::PNG;
+                                else if (ext == "jpg" || ext == "jpeg") oTex.oEncoding = TextureEncoding::JPG;
+                                else if (ext == "tga")              oTex.oEncoding = TextureEncoding::TGA;
+                                else if (ext == "dds")              oTex.oEncoding = TextureEncoding::DDS;
+                                else if (ext == "ktx2")             oTex.oEncoding = TextureEncoding::KTX2;
+                                else                                oTex.oEncoding = TextureEncoding::RGBA8;
+
+                                oTex.sName = oTex.sPath; // preserve for debug; writer uses vEncodedData
+                                oTex.sPath.clear();      // signal writer to use inline encoded path
+                        }
+                }
+
+                ++oCtx.material_cnt;
+        }
 
         return uSUCCESS;
 }
@@ -990,6 +1072,24 @@ static ret_code_t ImportMesh(
 
         Pack = PackVertexIndexInit(index_size, pModelMesh->oIndex);
 
+        // --- Per-polygon material index ---
+        FbxLayerElementMaterial * pMatLayer = nullptr;
+        if (pMesh->GetLayerCount() > 0)
+                pMatLayer = pMesh->GetLayer(0)->GetMaterials();
+
+        const bool bByPolygon = pMatLayer &&
+                pMatLayer->GetMappingMode() == FbxLayerElement::eByPolygon;
+
+        std::vector<int> vPolyMat(polygon_cnt, 0);
+        if (bByPolygon) {
+                const auto & rIdx = pMatLayer->GetIndexArray();
+                for (int32_t p = 0; p < polygon_cnt; ++p)
+                        vPolyMat[p] = rIdx.GetAt(p);
+        }
+
+        // Per-material deduplicated index lists (uint32 staging; converted via Pack at end)
+        std::map<int, std::vector<uint32_t>> mMatIndices;
+
         for (int32_t polygon_num = 0; polygon_num < polygon_cnt; ++polygon_num) {
 
                 polygon_size = pMesh->GetPolygonSize(polygon_num);
@@ -999,19 +1099,11 @@ static ret_code_t ImportMesh(
                         return uWRONG_INPUT_DATA;
                 }
 
+                auto & vGroupIdx = mMatIndices[vPolyMat[polygon_num]];
+
                 for (int32_t polygon_vert_ind = 0; polygon_vert_ind < polygon_size; ++polygon_vert_ind) {
 
                         int32_t vertex_ind = pMesh->GetPolygonVertex(polygon_num, polygon_vert_ind);
-                        /*
-                           log_d("polygon: {}, vertex: local index {}, global index {}, pos {}, {}, {}",
-                           polygon_num,
-                           polygon_vert_ind,
-                           vertex_ind,
-                           pControlPoints[vertex_ind][0],
-                           pControlPoints[vertex_ind][1],
-                           pControlPoints[vertex_ind][2]);
-
-                         */
 
                         vVertexData.clear();
 
@@ -1029,26 +1121,15 @@ static ret_code_t ImportMesh(
                                                         vertex_ind,
                                                         pNode->GetName());
                                         return uWRONG_INPUT_DATA;
-                                        //TODO calc normals
                                 }
 
                                 vVertexData.push_back(oNormal[0]);
                                 vVertexData.push_back(oNormal[1]);
                                 vVertexData.push_back(oNormal[2]);
-                                /*
-                                   log_d("polygon: {}, vertex: local index {}, global index {}, normal: {}, {}, {}",
-                                   polygon_num,
-                                   polygon_vert_ind,
-                                   vertex_ind,
-                                   oNormal[0],
-                                   oNormal[1],
-                                   oNormal[2]);
-                                 */
                         }
 
                         FbxVector2 oUV;
                         for (uint32_t cur_uv_set = 0; cur_uv_set < uv_sets_cnt; ++cur_uv_set) {
-                                //TODO replace with GetPolygonVertexUV
                                 ret_code_t result = GetUV(pMesh->GetElementUV(cur_uv_set), pNode, pMesh, polygon_num, polygon_vert_ind, vertex_ind, oUV);
                                 if (result != uSUCCESS) {
                                         log_e("failed to get uv");
@@ -1068,62 +1149,47 @@ static ret_code_t ImportMesh(
                                         }
                                 }
 
-                                /*
-                                log_d("new index = {}, pos ({}, {}, {}), normal ({}, {}, {}), uv ({}, {})",
-                                                cur_index,
-                                                vVertexData[0], vVertexData[1], vVertexData[2],
-                                                (oCtx.skip_normals) ? 0 : vVertexData[3],
-                                                (oCtx.skip_normals) ? 0 : vVertexData[4],
-                                                (oCtx.skip_normals) ? 0 : vVertexData[5],
-                                                vVertexData[6], vVertexData[7]);
-                                                */
-
                                 vVertices.insert(vVertices.end(), vVertexData.begin(), vVertexData.end());
                                 ++oCtx.total_vertices_cnt;
                                 mRemapIndex[vertex_ind].emplace(cur_index);
-                        }/*
-                        else {
-                                log_d("old index = {}, pos ({}, {}, {}), normal ({}, {}, {}), uv ({}, {})",
-                                                cur_index,
-                                                vVertexData[0], vVertexData[1], vVertexData[2],
-                                                (oCtx.skip_normals) ? 0 : vVertexData[3],
-                                                (oCtx.skip_normals) ? 0 : vVertexData[4],
-                                                (oCtx.skip_normals) ? 0 : vVertexData[5],
-                                                vVertexData[6], vVertexData[7]);
-                        }*/
-                        Pack(pModelMesh->oIndex, cur_index);
-/*
-                        log_d("vertex {}, map to: {}, pos: ({}, {}, {}), normal: ({}, {}, {}), uv: ({}, {})",
-                                        vertex_ind,
-                                        cur_index,
-                                        pControlPoints[vertex_ind][0],
-                                        pControlPoints[vertex_ind][1],
-                                        pControlPoints[vertex_ind][2],
-                                        vVertexData[3],
-                                        vVertexData[4],
-                                        vVertexData[5],
-                                        vVertexData[6],
-                                        vVertexData[7]
-                                        );
-*/
+                        }
 
+                        vGroupIdx.push_back(cur_index);
                 }
         }
 
-        log_d("input vertex cnt: {}, output vertex cnt: {}, output estimated index cnt: {}, vertex elements cnt: {}, uv sets cnt: {}",
+        log_d("input vertex cnt: {}, output vertex cnt: {}, output estimated index cnt: {}, vertex elements cnt: {}, uv sets cnt: {}, material groups: {}",
                         vertices_cnt,
                         oVertexIndex.Size(),
                         index_size,
-                        elements_cnt, uv_sets_cnt);
+                        elements_cnt, uv_sets_cnt,
+                        mMatIndices.size());
 
         oCtx.total_triangles_cnt += polygon_cnt;
         ++oCtx.mesh_cnt;
+        oCtx.shape_cnt += static_cast<uint32_t>(mMatIndices.size());
         remaped_vertices_cnt = oVertexIndex.Size();
 
+        // --- Build per-material shapes and concatenate index buffer ---
+        for (auto & [mat_idx, vGroupIdx] : mMatIndices) {
 
-        BoundingBox oBBox;
-        oBBox.Calc(vVertices, elements_cnt);
-        pModelMesh->vShapes.emplace_back(0, index_size, std::move(oBBox));
+                BoundingBox oGroupBBox;
+                for (uint32_t vi : vGroupIdx) {
+                        oGroupBBox.Concat(glm::vec3(
+                                vVertices[vi * elements_cnt],
+                                vVertices[vi * elements_cnt + 1],
+                                vVertices[vi * elements_cnt + 2]));
+                }
+
+                uint32_t shape_start = std::visit([](auto & v) -> uint32_t { return v.size(); }, pModelMesh->oIndex);
+                for (uint32_t vi : vGroupIdx) {
+                        Pack(pModelMesh->oIndex, vi);
+                }
+                uint32_t shape_count = static_cast<uint32_t>(vGroupIdx.size());
+
+                pModelMesh->vShapes.emplace_back(shape_start, shape_count, oGroupBBox,
+                                                 static_cast<uint16_t>(mat_idx));
+        }
 
         uint8_t buffer_ind = pModelMesh->vVertexBuffers.size();
         pModelMesh->vVertexBuffers.emplace_back(MeshData::VertexBuffer{std::move(vVertices), stride});
@@ -1167,10 +1233,193 @@ static ret_code_t ImportMesh(
 
         }
 
-        //currently only one shape per mesh
-        //TODO support per material sub meshes;
+        // Combine all per-material shape bboxes into the mesh bbox
         for (auto & oShape : pModelMesh->vShapes) {
                 pModelMesh->oBBox.Concat(oShape.oBBox);
+        }
+
+        return uSUCCESS;
+}
+
+static ret_code_t ImportAnimationClips(
+                FbxScene      * pScene,
+                ResourceStash & oResStash,
+                ImportCtx     & oCtx) {
+
+        int32_t stackCount = pScene->GetSrcObjectCount<FbxAnimStack>();
+        if (stackCount == 0) {
+                log_d("no animation stacks in scene");
+                return uSUCCESS;
+        }
+
+        // Find first skeleton in stash to get joint names/count
+        std::vector<std::string> vJointNames;
+        for (auto & [name, pData] : oResStash.mResources) {
+                if (auto * pSkel = std::get_if<Skeleton>(pData.get())) {
+                        vJointNames.reserve(pSkel->vJoints.size());
+                        for (auto & joint : pSkel->vJoints) {
+                                vJointNames.push_back(joint.sName);
+                        }
+                        log_d("ImportAnimationClips: using skeleton '{}' with {} joints",
+                                pSkel->sName, vJointNames.size());
+                        break;
+                }
+        }
+
+        if (vJointNames.empty()) {
+                log_d("ImportAnimationClips: no skeleton found, skipping animation export");
+                return uSUCCESS;
+        }
+
+        // Resolve FbxNode* for each joint by name
+        std::vector<FbxNode *> vJointNodes;
+        vJointNodes.reserve(vJointNames.size());
+        for (auto & sName : vJointNames) {
+                vJointNodes.push_back(pScene->FindNodeByName(sName.c_str()));
+        }
+
+        const float sampleRate = oCtx.anim_sample_rate;
+
+        for (int32_t si = 0; si < stackCount; ++si) {
+
+                FbxAnimStack * pStack = pScene->GetSrcObject<FbxAnimStack>(si);
+                pScene->SetCurrentAnimationStack(pStack);
+
+                FbxTimeSpan ts       = pStack->GetLocalTimeSpan();
+                double      startSec = ts.GetStart().GetSecondDouble();
+                double      stopSec  = ts.GetStop().GetSecondDouble();
+                float       duration = static_cast<float>(stopSec - startSec);
+
+                if (duration <= 0.0f) {
+                        log_w("animation stack '{}' has zero/negative duration, skipped", pStack->GetName());
+                        continue;
+                }
+
+                int32_t sampleCount = std::max(2, static_cast<int32_t>(duration * sampleRate) + 1);
+                log_d("exporting animation stack '{}', duration: {}s, samples: {}", pStack->GetName(), duration, sampleCount);
+
+                AnimClipData oClip;
+                oClip.sName    = pStack->GetName();
+                oClip.duration = duration;
+                {
+                        auto it = oCtx.mClipSettings.find(oClip.sName);
+                        oClip.looping = (it != oCtx.mClipSettings.end()) ? it->second.loop : false;
+                }
+
+                // Read "events" custom property from the stack or its local time-node.
+                // Format: "time:name[:value];time:name[:value];..."
+                // e.g.  "0.40:footstep.left;0.95:footstep.right:1.0"
+                auto ParseEventsProperty = [&](FbxObject * pObj) {
+                        FbxProperty prop = pObj->FindProperty("events");
+                        if (!prop.IsValid()) { return; }
+                        if (prop.GetPropertyDataType().GetType() != eFbxString) { return; }
+                        std::string sEvents = prop.Get<FbxString>().Buffer();
+                        // Tokenise by ';'
+                        size_t pos = 0;
+                        while (pos < sEvents.size()) {
+                                size_t end = sEvents.find(';', pos);
+                                std::string token = sEvents.substr(pos, end == std::string::npos ? std::string::npos : end - pos);
+                                pos = (end == std::string::npos) ? sEvents.size() : end + 1;
+                                if (token.empty()) { continue; }
+                                // Parse "time:name[:value]"
+                                size_t p1 = token.find(':');
+                                if (p1 == std::string::npos) { continue; }
+                                std::string sTime  = token.substr(0, p1);
+                                std::string sRest  = token.substr(p1 + 1);
+                                size_t p2 = sRest.find(':');
+                                std::string sName  = (p2 == std::string::npos) ? sRest : sRest.substr(0, p2);
+                                float       fVal   = (p2 == std::string::npos) ? 0.0f : std::stof(sRest.substr(p2 + 1));
+                                try {
+                                        AnimEventData ev;
+                                        ev.time  = std::stof(sTime);
+                                        ev.sName = sName;
+                                        ev.value = fVal;
+                                        oClip.vEvents.push_back(std::move(ev));
+                                }
+                                catch (...) {
+                                        log_w("animation stack '{}': failed to parse event token: '{}'",
+                                                oClip.sName, token);
+                                }
+                        }
+                        if (!oClip.vEvents.empty()) {
+                                std::sort(oClip.vEvents.begin(), oClip.vEvents.end(),
+                                                [](const AnimEventData & a, const AnimEventData & b){ return a.time < b.time; });
+                                log_d("stack '{}': {} animation event(s) found", oClip.sName, oClip.vEvents.size());
+                        }
+                };
+                ParseEventsProperty(pStack);
+                // Fallback: check "events" on the first joint node (root bone)
+                if (oClip.vEvents.empty() && !vJointNodes.empty() && vJointNodes[0]) {
+                        ParseEventsProperty(vJointNodes[0]);
+                }
+
+                for (uint16_t ji = 0; ji < static_cast<uint16_t>(vJointNodes.size()); ++ji) {
+
+                        FbxNode * pJointNode = vJointNodes[ji];
+                        if (!pJointNode) {
+                                log_w("joint '{}' not found in scene, skipping channel", vJointNames[ji]);
+                                continue;
+                        }
+
+                        AnimCurveChannel txCh, tyCh, tzCh;
+                        AnimCurveChannel qxCh, qyCh, qzCh, qwCh;
+                        AnimCurveChannel sxCh, syCh, szCh;
+
+                        txCh.bone_index = tyCh.bone_index = tzCh.bone_index = ji;
+                        qxCh.bone_index = qyCh.bone_index = qzCh.bone_index = qwCh.bone_index = ji;
+                        sxCh.bone_index = syCh.bone_index = szCh.bone_index = ji;
+
+                        txCh.target = 0; tyCh.target = 1; tzCh.target = 2;
+                        qxCh.target = 3; qyCh.target = 4; qzCh.target = 5; qwCh.target = 6;
+                        sxCh.target = 7; syCh.target = 8; szCh.target = 9;
+
+                        txCh.vTimes.reserve(sampleCount); tyCh.vTimes.reserve(sampleCount); tzCh.vTimes.reserve(sampleCount);
+                        qxCh.vTimes.reserve(sampleCount); qyCh.vTimes.reserve(sampleCount); qzCh.vTimes.reserve(sampleCount); qwCh.vTimes.reserve(sampleCount);
+                        sxCh.vTimes.reserve(sampleCount); syCh.vTimes.reserve(sampleCount); szCh.vTimes.reserve(sampleCount);
+
+                        for (int32_t s = 0; s < sampleCount; ++s) {
+
+                                float     t = (sampleCount > 1) ? (float(s) / float(sampleCount - 1) * duration) : 0.0f;
+                                FbxTime   fbxTime;
+                                fbxTime.SetSecondDouble(startSec + t);
+
+                                FbxAMatrix    localMat = pJointNode->EvaluateLocalTransform(fbxTime);
+                                FbxVector4    pos      = localMat.GetT();
+                                FbxQuaternion q        = localMat.GetQ();
+                                FbxVector4    scale    = localMat.GetS();
+
+                                txCh.vTimes.push_back(t); txCh.vValues.push_back(static_cast<float>(pos[0]));
+                                tyCh.vTimes.push_back(t); tyCh.vValues.push_back(static_cast<float>(pos[1]));
+                                tzCh.vTimes.push_back(t); tzCh.vValues.push_back(static_cast<float>(pos[2]));
+
+                                qxCh.vTimes.push_back(t); qxCh.vValues.push_back(static_cast<float>(q[0]));
+                                qyCh.vTimes.push_back(t); qyCh.vValues.push_back(static_cast<float>(q[1]));
+                                qzCh.vTimes.push_back(t); qzCh.vValues.push_back(static_cast<float>(q[2]));
+                                qwCh.vTimes.push_back(t); qwCh.vValues.push_back(static_cast<float>(q[3]));
+
+                                sxCh.vTimes.push_back(t); sxCh.vValues.push_back(static_cast<float>(scale[0]));
+                                syCh.vTimes.push_back(t); syCh.vValues.push_back(static_cast<float>(scale[1]));
+                                szCh.vTimes.push_back(t); szCh.vValues.push_back(static_cast<float>(scale[2]));
+                        }
+
+                        oClip.vChannels.push_back(std::move(txCh));
+                        oClip.vChannels.push_back(std::move(tyCh));
+                        oClip.vChannels.push_back(std::move(tzCh));
+                        oClip.vChannels.push_back(std::move(qxCh));
+                        oClip.vChannels.push_back(std::move(qyCh));
+                        oClip.vChannels.push_back(std::move(qzCh));
+                        oClip.vChannels.push_back(std::move(qwCh));
+                        oClip.vChannels.push_back(std::move(sxCh));
+                        oClip.vChannels.push_back(std::move(syCh));
+                        oClip.vChannels.push_back(std::move(szCh));
+                }
+
+                // FBX EvaluateLocalTransform flips quaternion hemisphere whenever its
+                // internal euler wrap crosses ±180° — per-component runtime
+                // interpolation would sweep limbs the long way round. Fix at the source.
+                EnforceQuatContinuity(oClip.vChannels);
+
+                oCtx.vAnimClips.emplace_back(std::move(oClip));
         }
 
         return uSUCCESS;
@@ -1207,8 +1456,15 @@ static ret_code_t ImportAttributes(FbxNode * pNode, NodeData & oNodeData, Import
                         return res;
                 }
 
-                if (res = ImportMaterial(pNode, &oModel.pMaterial, oCtx, oResStash); res != uSUCCESS) {
-                        return res;
+                if (!oCtx.skip_material) {
+                        int mat_cnt = pNode->GetSrcObjectCount<FbxSurfaceMaterial>();
+                        for (int mi = 0; mi < mat_cnt; ++mi) {
+                                MaterialData * pMat = nullptr;
+                                if (res = ImportMaterial(pNode, mi, &pMat, oCtx, oResStash); res != uSUCCESS) {
+                                        return res;
+                                }
+                                oModel.vMaterials.push_back(pMat);
+                        }
                 }
 
                 //import vertex deformers
@@ -1275,30 +1531,30 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx, R
         FbxDouble4 scaling              = mLocalTransform.GetS();
 
         if (oCtx.flip_yz) {
-                oNodeData.translation.x = translation[0];
-                oNodeData.translation.y = - translation[2];
-                oNodeData.translation.z = translation[1];
+                oNodeData.vTranslation.x = translation[0];
+                oNodeData.vTranslation.y = - translation[2];
+                oNodeData.vTranslation.z = translation[1];
 
-                oNodeData.rotation.x = rotation[0];
-                oNodeData.rotation.y = - rotation[2];
-                oNodeData.rotation.z = rotation[1];
+                oNodeData.vRotation.x = rotation[0];
+                oNodeData.vRotation.y = - rotation[2];
+                oNodeData.vRotation.z = rotation[1];
 
-                oNodeData.scale.x = scaling[0];
-                oNodeData.scale.y = - scaling[2];
-                oNodeData.scale.z = scaling[1];
+                oNodeData.vScale.x = scaling[0];
+                oNodeData.vScale.y = - scaling[2];
+                oNodeData.vScale.z = scaling[1];
         }
         else {
-                oNodeData.translation.x = translation[0];
-                oNodeData.translation.y = translation[1];
-                oNodeData.translation.z = translation[2];
+                oNodeData.vTranslation.x = translation[0];
+                oNodeData.vTranslation.y = translation[1];
+                oNodeData.vTranslation.z = translation[2];
 
-                oNodeData.rotation.x = rotation[0];
-                oNodeData.rotation.y = rotation[1];
-                oNodeData.rotation.z = rotation[2];
+                oNodeData.vRotation.x = rotation[0];
+                oNodeData.vRotation.y = rotation[1];
+                oNodeData.vRotation.z = rotation[2];
 
-                oNodeData.scale.x = scaling[0];
-                oNodeData.scale.y = scaling[1];
-                oNodeData.scale.z = scaling[2];
+                oNodeData.vScale.x = scaling[0];
+                oNodeData.vScale.y = scaling[1];
+                oNodeData.vScale.z = scaling[2];
         }
 
         if (oCtx.disable_nodes) {
@@ -1306,9 +1562,9 @@ ret_code_t ImportNode(FbxNode * pNode, NodeData & oNodeData, ImportCtx & oCtx, R
         }
         oNodeData.sName = pNode->GetName();
 
-        log_d("node translation: {}, {}, {}", oNodeData.translation.x, oNodeData.translation.y, oNodeData.translation.z);
-        log_d("node rotation:    {}, {}, {}", oNodeData.rotation.x, oNodeData.rotation.y, oNodeData.rotation.z);
-        log_d("node scaling:     {}, {}, {}", oNodeData.scale.x, oNodeData.scale.y, oNodeData.scale.z);
+        log_d("node translation: {}, {}, {}", oNodeData.vTranslation.x, oNodeData.vTranslation.y, oNodeData.vTranslation.z);
+        log_d("node rotation:    {}, {}, {}", oNodeData.vRotation.x, oNodeData.vRotation.y, oNodeData.vRotation.z);
+        log_d("node scaling:     {}, {}, {}", oNodeData.vScale.x, oNodeData.vScale.y, oNodeData.vScale.z);
 
         ret_code_t res = ImportAttributes(pNode, oNodeData, oCtx, oResStash);
         if (res != uSUCCESS) {

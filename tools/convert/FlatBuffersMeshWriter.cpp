@@ -34,7 +34,8 @@ std::tuple<flatbuffers::Offset<SE::FlatBuffers::Mesh>, ret_code_t> SerializeMesh
                                 oBuilder,
                                 &bbox_fb,
                                 oItem.start,
-                                oItem.count);
+                                oItem.count,
+                                oItem.material_index);
 
                 vFBShapes.emplace_back(shape_fb);
         }
@@ -121,7 +122,7 @@ std::tuple<flatbuffers::Offset<SE::FlatBuffers::Mesh>, ret_code_t> SerializeMesh
                                         oVertexAttribute.buffer_ind,
                                         oVertexAttribute.custom,
                                         static_cast<SE::FlatBuffers::AttribDestType>(
-                                                oVertexAttribute.destination
+                                                oVertexAttribute.oDestination
                                                 )
                                         )
                                 );

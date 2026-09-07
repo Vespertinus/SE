@@ -78,12 +78,14 @@ include_directories(${TOOLS_INC_DIRS})
 
 set(SOURCES     "main.cpp"
                 "Common.cpp"
+                "SceneImport.cpp"
                 "OBJReader.cpp"
                 "FBXReader.cpp"
                 "GLTFReader.cpp"
                 "FlatBuffersMeshWriter.cpp"
                 "FlatBuffersComponentWriter.cpp"
-                "FlatBuffersSceneTreeWriter.cpp")
+                "FlatBuffersSceneTreeWriter.cpp"
+                "FlatBuffersAnimWriter.cpp")
 
 add_executable(         convert
                         ${SOURCES})
