@@ -15,3 +15,4 @@ flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/AnimationSkeleton
 flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/AnimationGraph.fbs
 flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/EntityTemplate.fbs
 flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/SoundEmitter.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/StateMachine.fbs
