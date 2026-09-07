@@ -1,0 +1,81 @@
+
+namespace SE.FlatBuffers;
+
+// --- Parameter defaults — type encoded in union tag ---
+
+table SMParamFloat   { value: float; }
+table SMParamBool    { value: bool; }
+table SMParamInt     { value: int32; }
+table SMParamTrigger {}
+
+union SMParamValue { SMParamFloat, SMParamBool, SMParamInt, SMParamTrigger }
+
+table SMParameterDefault {
+    name  : string (required);
+    value : SMParamValue;
+}
+
+// --- Conditions ---
+
+enum SMConditionOp : byte {
+    Greater      = 0,
+    GreaterEqual = 1,
+    Less         = 2,
+    LessEqual    = 3,
+    Equal        = 4,
+    NotEqual     = 5,
+    IsTrue       = 6,
+    IsFalse      = 7,
+    Triggered    = 8
+}
+
+table SMCondition {
+    parameter : string (required);
+    op        : SMConditionOp = IsTrue;
+    threshold : float = 0.0;
+}
+
+// --- Transitions ---
+
+table SMTransition {
+    from          : string (required);
+    to            : string (required);
+    priority      : float = 0.0;
+    duration      : float = 0.0;   // blend duration hint for animation system
+    exit_time     : float = 0.0;   // seconds; 0 = transition any time
+    can_interrupt : bool  = false;
+    conditions    : [SMCondition];
+}
+
+// --- States ---
+
+table SMState {
+    id              : string (required);
+    parent          : string;          // empty = top-level state
+    on_enter_event  : string;          // EStateMachineEvent.event_name value posted on enter
+    on_exit_event   : string;
+    on_update_event : string;          // posted each frame while active (use sparingly)
+}
+
+// --- Full definition (shared asset, loaded once) ---
+
+table StateMachineDefinition {
+    id            : string (required);
+    version       : uint32 = 1;
+    initial_state : string (required);
+    states        : [SMState] (required);
+    transitions   : [SMTransition];
+    parameters    : [SMParameterDefault];
+}
+
+root_type StateMachineDefinition;
+file_identifier "SESM";
+file_extension  "sesm";
+
+// --- Resource holder: path reference or inline embedding ---
+
+table StateMachineHolder {
+    state_machine : StateMachineDefinition;
+    path          : string;
+    name          : string;
+}

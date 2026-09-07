@@ -5,6 +5,7 @@ include "Audio.fbs";
 include "SoundEmitter.fbs";
 include "AnimationSkeleton.fbs";
 include "AnimationGraph.fbs";
+include "StateMachine.fbs";
 
 namespace SE.FlatBuffers;
 
@@ -104,6 +105,11 @@ table TriggerVolume {
         collision_mask  : uint  = 4294967295;
 }
 
+table StateMachine {
+        hms           : StateMachineHolder (required);
+        tick_interval : float = 0.0;
+}
+
 union ComponentU {
         StaticModel,
         AnimatedModel,
@@ -117,6 +123,7 @@ union ComponentU {
         AppComponent,
         Animator,
         TriggerVolume,
+        StateMachine,
 }
 
 table Component {
