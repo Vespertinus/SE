@@ -325,11 +325,13 @@ H<TTexture> LoadTexture(const SE::FlatBuffers::TextureHolder * pTextureHolder) {
                 }
         };
 
+        const auto& oConfig = GetSystem<Config>();
+
         if (pTextureHolder->path() != nullptr) {
                 hTex = LoadTex(
                                 pTextureHolder->store_type(),
                                 pTextureHolder,
-                                pTextureHolder->path()->c_str());
+                                oConfig.sResourceDir + pTextureHolder->path()->c_str());
 
         }
         else if (pTextureHolder->name() != nullptr &&
