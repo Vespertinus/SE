@@ -11,6 +11,8 @@ if(GPU)
         add_library(            SEImGui STATIC
                                 "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui.cpp"
                                 "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_draw.cpp"
+                                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_widgets.cpp"
+                                "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_tables.cpp"
                 )
 endif()
 
