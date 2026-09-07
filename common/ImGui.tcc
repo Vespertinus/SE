@@ -1,4 +1,27 @@
 
+static ImGuiKey ScancodeToImGuiKey(int sc) {
+        if (sc >= 4  && sc <= 29) return (ImGuiKey)(ImGuiKey_A  + (sc - 4));
+        if (sc >= 58 && sc <= 69) return (ImGuiKey)(ImGuiKey_F1 + (sc - 58));
+        switch (sc) {
+                case 40: return ImGuiKey_Enter;
+                case 41: return ImGuiKey_Escape;
+                case 42: return ImGuiKey_Backspace;
+                case 43: return ImGuiKey_Tab;
+                case 44: return ImGuiKey_Space;
+                case 73: return ImGuiKey_Insert;
+                case 74: return ImGuiKey_Home;
+                case 75: return ImGuiKey_PageUp;
+                case 76: return ImGuiKey_Delete;
+                case 77: return ImGuiKey_End;
+                case 78: return ImGuiKey_PageDown;
+                case 79: return ImGuiKey_RightArrow;
+                case 80: return ImGuiKey_LeftArrow;
+                case 81: return ImGuiKey_DownArrow;
+                case 82: return ImGuiKey_UpArrow;
+                default: return ImGuiKey_None;
+        }
+}
+
 namespace SE {
 namespace HELPERS {
 
@@ -13,6 +36,7 @@ ImGuiWrapper::ImGuiWrapper() {
         BuildFontTex();
 
         ImGui::StyleColorsDark();
+        ImGui::GetStyle().WindowRounding = 7.0f;
 
         auto & oEM = GetSystem<EventManager>();
         oEM.AddListener<EKeyDown,         &ImGuiWrapper::OnKeyDown>        (this);
@@ -28,8 +52,6 @@ ImGuiWrapper::ImGuiWrapper() {
 
 ImGuiWrapper::~ImGuiWrapper() {
 
-        ImGuiIO& io = ImGui::GetIO();
-        io.Fonts->TexID = 0;
         UnlockResource(hFontTex);
         ImGui::DestroyContext();
 
@@ -52,31 +74,8 @@ ImGuiWrapper::~ImGuiWrapper() {
 void ImGuiWrapper::InitWndData() {
 
         ImGuiIO& io = ImGui::GetIO();
-        io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
-        io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
-
-        //fill keys mapping (SE scancodes fit io.KeysDown[512])
-        io.KeyMap[ImGuiKey_Tab]         = Scancodes::TAB;
-        io.KeyMap[ImGuiKey_LeftArrow]   = Scancodes::LEFT;
-        io.KeyMap[ImGuiKey_RightArrow]  = Scancodes::RIGHT;
-        io.KeyMap[ImGuiKey_UpArrow]     = Scancodes::UP;
-        io.KeyMap[ImGuiKey_DownArrow]   = Scancodes::DOWN;
-        io.KeyMap[ImGuiKey_PageUp]      = Scancodes::PAGE_UP;
-        io.KeyMap[ImGuiKey_PageDown]    = Scancodes::PAGE_DOWN;
-        io.KeyMap[ImGuiKey_Home]        = Scancodes::HOME;
-        io.KeyMap[ImGuiKey_End]         = Scancodes::END;
-        io.KeyMap[ImGuiKey_Insert]      = Scancodes::INSERT;
-        io.KeyMap[ImGuiKey_Delete]      = Scancodes::DELETE_;
-        io.KeyMap[ImGuiKey_Backspace]   = Scancodes::BACKSPACE;
-        io.KeyMap[ImGuiKey_Space]       = Scancodes::SPACE;
-        io.KeyMap[ImGuiKey_Enter]       = Scancodes::RETURN;
-        io.KeyMap[ImGuiKey_Escape]      = Scancodes::ESCAPE;
-        io.KeyMap[ImGuiKey_A]           = Scancodes::A;
-        io.KeyMap[ImGuiKey_C]           = Scancodes::C;
-        io.KeyMap[ImGuiKey_V]           = Scancodes::V;
-        io.KeyMap[ImGuiKey_X]           = Scancodes::X;
-        io.KeyMap[ImGuiKey_Y]           = Scancodes::Y;
-        io.KeyMap[ImGuiKey_Z]           = Scancodes::Z;
+        io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
+        io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 }
 
 void ImGuiWrapper::InitGLData() {
@@ -119,9 +118,9 @@ void ImGuiWrapper::InitGLData() {
         glEnableVertexAttribArray(uv_location);
         glEnableVertexAttribArray(color_location);
 
-        glVertexAttribPointer(pos_location, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, pos));
-        glVertexAttribPointer(uv_location, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, uv));
-        glVertexAttribPointer(color_location, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, col));
+        glVertexAttribPointer(pos_location, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)offsetof(ImDrawVert, pos));
+        glVertexAttribPointer(uv_location, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)offsetof(ImDrawVert, uv));
+        glVertexAttribPointer(color_location, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)offsetof(ImDrawVert, col));
 
         glBindVertexArray(0);
 }
@@ -148,7 +147,7 @@ void ImGuiWrapper::BuildFontTex() {
                         StoreTexture2D::Settings(false));
 
         LockResource(hFontTex);
-        io.Fonts->TexID = (ImTextureID)GetResource(hFontTex);
+        io.Fonts->SetTexID((ImTextureID)(intptr_t)GetResource(hFontTex));
 }
 
 void ImGuiWrapper::Render(const Event & oEvent [[maybe_unused]]) {
@@ -156,6 +155,13 @@ void ImGuiWrapper::Render(const Event & oEvent [[maybe_unused]]) {
         ImGui::Render();
         ImDrawData * pDrawData = ImGui::GetDrawData();
         ImGuiIO & io           = ImGui::GetIO();
+
+        // No windows drawn this frame (DisplaySize is still set, so the
+        // framebuffer-size check below does not catch it) — skip the whole
+        // GL state save/draw/restore pass.
+        if (pDrawData->CmdListsCount == 0) {
+                return;
+        }
 
         static StrID mat_id("MVPMatrix");
         int fb_width  = (int)(pDrawData->DisplaySize.x * io.DisplayFramebufferScale.x);
@@ -237,7 +243,7 @@ void ImGuiWrapper::Render(const Event & oEvent [[maybe_unused]]) {
                                                   (int)(clip_rect.w - clip_rect.y));
 
                                         // Bind texture, Draw
-                                        oGraphicsState.SetTexture(SE::TextureUnit::DIFFUSE, (TTexture *)pcmd->TextureId);
+                                        oGraphicsState.SetTexture(SE::TextureUnit::DIFFUSE, (TTexture *)(intptr_t)pcmd->GetTexID());
                                         oGraphicsState.Draw(
                                                         vao_id,
                                                         GL_TRIANGLES,
@@ -300,12 +306,10 @@ void ImGuiWrapper::OnKeyDown(const Event & oEvent) {
         ImGuiIO & io = ImGui::GetIO();
         auto & ev = oEvent.Get<EKeyDown>();
 
-        IM_ASSERT(ev.scancode >= 0 && ev.scancode < IM_ARRAYSIZE(io.KeysDown));
-        io.KeysDown[ev.scancode] = true;
-
-        io.KeyShift = (ev.mod & Keymods::SHIFT) != 0;
-        io.KeyCtrl  = (ev.mod & Keymods::CTRL)  != 0;
-        io.KeyAlt   = (ev.mod & Keymods::ALT)   != 0;
+        io.AddKeyEvent(ScancodeToImGuiKey(ev.scancode), true);
+        io.AddKeyEvent(ImGuiMod_Shift, (ev.mod & Keymods::SHIFT) != 0);
+        io.AddKeyEvent(ImGuiMod_Ctrl,  (ev.mod & Keymods::CTRL)  != 0);
+        io.AddKeyEvent(ImGuiMod_Alt,   (ev.mod & Keymods::ALT)   != 0);
 }
 
 void ImGuiWrapper::OnKeyUp(const Event & oEvent) {
@@ -313,12 +317,10 @@ void ImGuiWrapper::OnKeyUp(const Event & oEvent) {
         ImGuiIO & io = ImGui::GetIO();
         auto & ev = oEvent.Get<EKeyUp>();
 
-        IM_ASSERT(ev.scancode >= 0 && ev.scancode < IM_ARRAYSIZE(io.KeysDown));
-        io.KeysDown[ev.scancode] = false;
-
-        io.KeyShift = (ev.mod & Keymods::SHIFT) != 0;
-        io.KeyCtrl  = (ev.mod & Keymods::CTRL)  != 0;
-        io.KeyAlt   = (ev.mod & Keymods::ALT)   != 0;
+        io.AddKeyEvent(ScancodeToImGuiKey(ev.scancode), false);
+        io.AddKeyEvent(ImGuiMod_Shift, (ev.mod & Keymods::SHIFT) != 0);
+        io.AddKeyEvent(ImGuiMod_Ctrl,  (ev.mod & Keymods::CTRL)  != 0);
+        io.AddKeyEvent(ImGuiMod_Alt,   (ev.mod & Keymods::ALT)   != 0);
 }
 
 void ImGuiWrapper::OnTextInput(const Event & oEvent) {
