@@ -21,7 +21,7 @@ struct WindowSettings {
   //std::string sTitle;
   std::string title;
   bool        fullscreen;
-  bool        vsync;
+  bool        vsync{true};
 };
 
 template <class ResizeHandler,  class DrawHandler> class SDLWindow {
