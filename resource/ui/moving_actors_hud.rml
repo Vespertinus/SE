@@ -1,0 +1,94 @@
+<rml>
+<head>
+    <title>Moving Actors HUD</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <style>
+        body { color: #e0e8f0; }
+
+        #top-left {
+            display: block;
+            position: absolute;
+            top: 16dp;
+            left: 16dp;
+            width: 240dp;
+            background-color: rgba(10, 20, 36, 180);
+            border-width: 1dp;
+            border-color: #1a3a60;
+            border-radius: 6dp;
+            padding: 10dp 14dp;
+        }
+
+        .orb-label {
+            display: block;
+            font-size: 22dp;
+            color: #ffd700;
+            margin-bottom: 6dp;
+        }
+
+        .timer-label {
+            display: block;
+            font-size: 18dp;
+            color: #80c8ff;
+        }
+
+        #stamina-bar-container {
+            display: block;
+            margin-top: 8dp;
+            height: 6dp;
+            background-color: rgba(255,255,255,20);
+            border-radius: 3dp;
+            overflow: hidden;
+        }
+
+        #stamina-bar {
+            display: block;
+            height: 6dp;
+            background-color: #40b060;
+            border-radius: 3dp;
+        }
+
+        #complete-panel {
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -50dp;
+            margin-left: -180dp;
+            width: 360dp;
+            text-align: center;
+            background-color: rgba(10, 20, 36, 220);
+            border-width: 2dp;
+            border-color: #ffd700;
+            border-radius: 10dp;
+            padding: 20dp;
+        }
+
+        #complete-panel .big-text {
+            display: block;
+            font-size: 28dp;
+            color: #ffd700;
+        }
+
+        #complete-panel .sub-text {
+            display: block;
+            font-size: 16dp;
+            color: #80c8ff;
+            margin-top: 6dp;
+        }
+    </style>
+</head>
+<body data-model="moving_actors_hud">
+    <div id="top-left">
+        <span class="orb-label">&#9733; {{orbs_collected}} / {{orbs_total}}</span>
+        <span class="timer-label">&#9201; {{timer_str}}</span>
+        <div id="stamina-bar-container">
+            <div id="stamina-bar" data-style-width="stamina_pct"></div>
+        </div>
+    </div>
+
+    <div id="complete-panel" data-if="is_complete">
+        <span class="big-text">{{complete_str}}</span>
+        <span class="sub-text">ESC to unlock cursor</span>
+    </div>
+</body>
+</rml>

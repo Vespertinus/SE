@@ -1,0 +1,34 @@
+{
+  "id": "player_behavior",
+  "version": 1,
+  "initial_state": "Normal",
+
+  "states": [
+    { "id": "Normal" },
+    {
+      "id": "Ragdoll",
+      "on_enter_event": "OnRagdollEnter",
+      "on_exit_event":  "OnRagdollExit"
+    }
+  ],
+
+  "transitions": [
+    {
+      "from": "Normal",
+      "to":   "Ragdoll",
+      "priority": 1.0,
+      "conditions": [{ "parameter": "ragdoll", "op": "Triggered" }]
+    },
+    {
+      "from": "Ragdoll",
+      "to":   "Normal",
+      "priority": 1.0,
+      "conditions": [{ "parameter": "recover", "op": "Triggered" }]
+    }
+  ],
+
+  "parameters": [
+    { "name": "ragdoll", "value_type": "SMParamTrigger", "value": {} },
+    { "name": "recover", "value_type": "SMParamTrigger", "value": {} }
+  ]
+}

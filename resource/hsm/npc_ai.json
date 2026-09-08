@@ -1,0 +1,50 @@
+{
+  "id": "npc_ai",
+  "version": 1,
+  "initial_state": "Idle",
+
+  "states": [
+    { "id": "Idle" },
+    { "id": "Wander" },
+    { "id": "Chase" }
+  ],
+
+  "transitions": [
+    {
+      "from": "Idle",
+      "to":   "Chase",
+      "priority": 2.0,
+      "conditions": [{ "parameter": "dist_to_player", "op": "Less", "threshold": 5.0 }]
+    },
+    {
+      "from": "Wander",
+      "to":   "Chase",
+      "priority": 2.0,
+      "conditions": [{ "parameter": "dist_to_player", "op": "Less", "threshold": 5.0 }]
+    },
+    {
+      "from": "Chase",
+      "to":   "Wander",
+      "priority": 1.0,
+      "conditions": [{ "parameter": "dist_to_player", "op": "Greater", "threshold": 8.0 }]
+    },
+    {
+      "from": "Idle",
+      "to":   "Wander",
+      "priority": 0.0,
+      "conditions": [{ "parameter": "idle_done", "op": "Triggered" }]
+    },
+    {
+      "from": "Wander",
+      "to":   "Idle",
+      "priority": 0.0,
+      "conditions": [{ "parameter": "wander_done", "op": "Triggered" }]
+    }
+  ],
+
+  "parameters": [
+    { "name": "dist_to_player", "value_type": "SMParamFloat",   "value": { "value": 1000000.0 } },
+    { "name": "idle_done",      "value_type": "SMParamTrigger", "value": {} },
+    { "name": "wander_done",    "value_type": "SMParamTrigger", "value": {} }
+  ]
+}

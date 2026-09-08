@@ -1,0 +1,402 @@
+{
+    "schema_version": 1,
+    "entry_state": "locomotion",
+
+    "params": [
+        { "name": "speed",        "type": "Float",   "float_val": 0.0  },
+        { "name": "grounded",     "type": "Bool",    "bool_val": false },
+        { "name": "is_crouching", "type": "Bool",    "bool_val": false },
+        { "name": "is_aiming",    "type": "Bool",    "bool_val": false },
+        { "name": "is_dead",      "type": "Bool",    "bool_val": false },
+        { "name": "aim_vertical", "type": "Float",   "float_val": 0.0  },
+        { "name": "aim_active",   "type": "Float",   "float_val": 0.0  },
+        { "name": "jump",         "type": "Trigger"                    },
+        { "name": "land",         "type": "Trigger"                    },
+        { "name": "hit",          "type": "Trigger"                    }
+    ],
+
+    "states": [
+
+        {
+            "id": "locomotion",
+            "nodes": [
+                {
+                    "data_type": "Blend1DNodeData",
+                    "data": {
+                        "parameter": "speed",
+                        "thresholds": [ 0.0, 1.0, 2.0 ],
+                        "child_indices": [ 1, 2, 3 ]
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Idle_Loop", "path": "animation/ual1_Idle_Loop.seak" },
+                        "playback_rate": 1.0
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Walk_Loop", "path": "animation/ual1_Walk_Loop.seak" },
+                        "playback_rate": 1.0
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Sprint_Loop", "path": "animation/ual1_Sprint_Loop.seak" },
+                        "playback_rate": 1.0
+                    }
+                }
+            ]
+        },
+
+        {
+            "id": "crouch",
+            "nodes": [
+                {
+                    "data_type": "Blend1DNodeData",
+                    "data": {
+                        "parameter": "speed",
+                        "thresholds": [ 0.0, 1.0 ],
+                        "child_indices": [ 1, 2 ]
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Crouch_Idle_Loop", "path": "animation/ual1_Crouch_Idle_Loop.seak" }
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Crouch_Fwd_Loop", "path": "animation/ual1_Crouch_Fwd_Loop.seak" }
+                    }
+                }
+            ]
+        },
+
+        {
+            "id": "aiming",
+            "nodes": [
+                {
+                    "data_type": "LayerNodeData",
+                    "data": {
+                        "base_index":  1,
+                        "layer_index": 5,
+                        "mask_name":   "upper_body",
+                        "weight":      1.0,
+                        "blend_mode":  "Override"
+                    }
+                },
+                {
+                    "data_type": "Blend1DNodeData",
+                    "data": {
+                        "parameter": "speed",
+                        "thresholds": [ 0.0, 1.0, 2.0 ],
+                        "child_indices": [ 2, 3, 4 ]
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Pistol_Idle_Loop", "path": "animation/ual1_Pistol_Idle_Loop.seak" }
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Walk_Loop", "path": "animation/ual1_Walk_Loop.seak" }
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Sprint_Loop", "path": "animation/ual1_Sprint_Loop.seak" }
+                    }
+                },
+                {
+                    "data_type": "Blend2DNodeData",
+                    "data": {
+                        "param_x":   "aim_active",
+                        "param_y":   "aim_vertical",
+                        "algorithm": "FreeformCartesian",
+                        "positions": [
+                            { "x": 0.0, "y":  0.0 },
+                            { "x": 1.0, "y": -1.0 },
+                            { "x": 1.0, "y":  0.0 },
+                            { "x": 1.0, "y":  1.0 }
+                        ],
+                        "child_indices": [ 6, 7, 8, 9 ]
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Pistol_Idle_Loop_Aim", "path": "animation/ual1_Pistol_Idle_Loop.seak" }
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Pistol_Aim_Down", "path": "animation/ual1_Pistol_Aim_Down.seak" }
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Pistol_Aim_Neutral", "path": "animation/ual1_Pistol_Aim_Neutral.seak" }
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Pistol_Aim_Up", "path": "animation/ual1_Pistol_Aim_Up.seak" }
+                    }
+                }
+            ]
+        },
+
+        {
+            "id": "hit_reaction",
+            "nodes": [
+                {
+                    "data_type": "AdditiveNodeData",
+                    "data": {
+                        "base_index":     1,
+                        "additive_index": 2,
+                        "weight":         1.0
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Idle_Loop", "path": "animation/ual1_Idle_Loop.seak" }
+                    }
+                },
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Hit_Chest", "path": "animation/ual1_Hit_Chest.seak" }
+                    }
+                }
+            ]
+        },
+
+        {
+            "id": "jump_start",
+            "nodes": [
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Jump_Start", "path": "animation/ual1_Jump_Start.seak" }
+                    }
+                }
+            ]
+        },
+
+        {
+            "id": "jump_loop",
+            "nodes": [
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Jump_Loop", "path": "animation/ual1_Jump_Loop.seak" }
+                    }
+                }
+            ]
+        },
+
+        {
+            "id": "jump_land",
+            "nodes": [
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Jump_Land", "path": "animation/ual1_Jump_Land.seak" }
+                    }
+                }
+            ]
+        },
+
+        {
+            "id": "death",
+            "nodes": [
+                {
+                    "data_type": "ClipNodeData",
+                    "data": {
+                        "clip": { "name": "ual1_Death01", "path": "animation/ual1_Death01.seak" }
+                    }
+                }
+            ]
+        }
+
+    ],
+
+    "transitions": [
+
+        {
+            "from": "locomotion", "to": "crouch",
+            "duration": 0.6, "mode": "CrossFade",
+            "conditions": [
+                { "parameter": "is_crouching", "op": "IsTrue" }
+            ]
+        },
+
+        {
+            "from": "crouch", "to": "locomotion",
+            "duration": 0.6, "mode": "CrossFade",
+            "conditions": [
+                { "parameter": "is_crouching", "op": "IsFalse" }
+            ]
+        },
+
+        {
+            "from": "locomotion", "to": "aiming",
+            "duration": 0.2, "mode": "CrossFade",
+            "can_interrupt": true,
+            "conditions": [
+                { "parameter": "is_aiming", "op": "IsTrue"  },
+                { "parameter": "speed",     "op": "Less", "threshold": 1.5 }
+            ]
+        },
+
+        {
+            "from": "crouch", "to": "aiming",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [
+                { "parameter": "is_aiming", "op": "IsTrue" }
+            ]
+        },
+
+        {
+            "from": "aiming", "to": "locomotion",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [
+                { "parameter": "is_aiming",    "op": "IsFalse" },
+                { "parameter": "is_crouching", "op": "IsFalse" }
+            ]
+        },
+
+        {
+            "from": "aiming", "to": "crouch",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [
+                { "parameter": "is_aiming",    "op": "IsFalse" },
+                { "parameter": "is_crouching", "op": "IsTrue"  }
+            ]
+        },
+
+        {
+            "from": "locomotion", "to": "jump_start",
+            "duration": 0.1, "mode": "CrossFade",
+            "can_interrupt": true,
+            "conditions": [
+                { "parameter": "jump", "op": "Triggered" }
+            ]
+        },
+
+        {
+            "from": "jump_start", "to": "jump_land",
+            "duration": 0.2, "mode": "CrossFade",
+            "can_interrupt": true,
+            "conditions": [
+                { "parameter": "grounded", "op": "IsTrue" }
+            ]
+        },
+
+        {
+            "from": "jump_start", "to": "jump_loop",
+            "duration": 0.15, "mode": "Frozen",
+            "has_exit_time": true, "exit_time": 0.85
+        },
+
+        {
+            "from": "jump_loop", "to": "jump_start",
+            "duration": 0.1, "mode": "CrossFade",
+            "can_interrupt": true,
+            "conditions": [
+                { "parameter": "jump", "op": "Triggered" }
+            ]
+        },
+
+        {
+            "from": "jump_loop", "to": "jump_land",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [
+                { "parameter": "land", "op": "Triggered" }
+            ]
+        },
+
+        {
+            "from": "jump_loop", "to": "jump_land",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [
+                { "parameter": "grounded", "op": "IsTrue" }
+            ]
+        },
+
+        {
+            "from": "jump_land", "to": "jump_start",
+            "duration": 0.1, "mode": "CrossFade",
+            "can_interrupt": true,
+            "conditions": [
+                { "parameter": "jump", "op": "Triggered" }
+            ]
+        },
+
+        {
+            "from": "jump_land", "to": "locomotion",
+            "duration": 0.25, "mode": "CrossFade",
+            "has_exit_time": true, "exit_time": 0.9
+        },
+
+        {
+            "from": "locomotion", "to": "hit_reaction",
+            "duration": 0.05, "mode": "CrossFade",
+            "can_interrupt": true,
+            "conditions": [
+                { "parameter": "hit", "op": "Triggered" }
+            ]
+        },
+
+        {
+            "from": "hit_reaction", "to": "locomotion",
+            "duration": 0.3, "mode": "AdditiveBlend",
+            "has_exit_time": true, "exit_time": 0.7
+        },
+
+        {
+            "from": "locomotion",   "to": "death",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [ { "parameter": "is_dead", "op": "IsTrue" } ]
+        },
+
+        {
+            "from": "crouch",       "to": "death",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [ { "parameter": "is_dead", "op": "IsTrue" } ]
+        },
+
+        {
+            "from": "aiming",       "to": "death",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [ { "parameter": "is_dead", "op": "IsTrue" } ]
+        },
+
+        {
+            "from": "jump_loop",    "to": "death",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [ { "parameter": "is_dead", "op": "IsTrue" } ]
+        },
+
+        {
+            "from": "hit_reaction", "to": "death",
+            "duration": 0.2, "mode": "CrossFade",
+            "conditions": [ { "parameter": "is_dead", "op": "IsTrue" } ]
+        }
+
+    ]
+}

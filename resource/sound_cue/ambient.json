@@ -1,0 +1,15 @@
+{
+  "cues": [
+    {
+      "id": "ambient",
+      "selection_mode": "SEQUENTIAL",
+      "play_mode": "LOOPING",
+      "volume_min": 0.4,
+      "volume_max": 0.4,
+      "bus": "music",
+      "variations": [
+        { "clip": "resource/audio/music/TownTheme.seac", "weight": 1.0 }
+      ]
+    }
+  ]
+}
