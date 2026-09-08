@@ -230,9 +230,9 @@ using TCoreResourcesAudio = MP::TypelistWrapper<>;
 
 using TCoreResources = decltype(MP::TypelistConcatenate(TCoreResourcesBase{}, TCoreResourcesAudio{}));
 
-using TResourseList  = decltype(MP::TypelistConcatenate(TCoreResources{}, TCustomResources{}));
+using TResourceList  = decltype(MP::TypelistConcatenate(TCoreResources{}, TCustomResources{}));
 
-using TResourceManagerImpl = typename MP::Typelist2TmplPack<ResourceManager, TResourseList>::Type;
+using TResourceManagerImpl = typename MP::Typelist2TmplPack<ResourceManager, TResourceList>::Type;
 typedef Loki::SingletonHolder<TResourceManagerImpl> TResourceManager;
 
 
