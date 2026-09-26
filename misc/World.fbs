@@ -1,0 +1,93 @@
+include "Common.fbs";
+include "NavMesh.fbs";
+include "Blackboard.fbs";
+
+namespace SE.FlatBuffers;
+
+// Streaming configuration. enabled=false is the "one room, no streaming" path:
+// every non-Manual sub-level activates at startup through the same code path.
+table StreamingConfig {
+
+        enabled                  :bool = true;
+        cell_size                :float = 64.0;   // meters, grid for the runtime partition
+        load_radius              :float = 96.0;   // from focus points (Step 2 director)
+        unload_radius            :float = 128.0;  // > load_radius => hysteresis band
+        max_activations_per_frame:uint32 = 1;
+        main_budget_ms           :float = 2.0;    // per-frame activation work budget
+        unload_frame_delay       :uint32 = 60;    // frames below unload_radius before unloading
+}
+
+// Bit flags for SubLevelRef.flags (OR-combine in JSON as a plain uint32).
+enum SubLevelFlags : uint32 {
+    None         = 0,
+    AlwaysLoaded = 1,   // activates at world start, never unloads
+    Manual       = 2,   // activates only by explicit game request
+    NoNav        = 4,
+    NoSpawn      = 8,
+}
+
+table SubLevelRef {
+
+        path        :string (required);   // .sesc; identity is the slot index, not this path
+        bounds_min  :Vec3 (required);     // baked by the world-building tool; runtime only reads
+        bounds_max  :Vec3 (required);
+        translation :Vec3;                // instance placement (UE5 Level Instance model)
+        rotation    :Vec3;                // Euler degrees, engine convention
+        flags       :uint32 = 0;          // see SubLevelFlags
+        layer       :string;              // DataLayer-ish grouping tag
+        weight      :float = 1.0;         // relative activation cost hint
+}
+
+// Parsed + stored by WorldAsset; consumed by the Step 5 spawner system.
+table WorldSpawnDef {
+
+        population :string;
+}
+
+// World-level terrain grid (flight-sim consumption mode): the manifest's tiles
+// page by distance through the terrain director using the focus registry.
+// RPG/strategy terrains ride inside sub-levels as Terrain components instead.
+table TerrainGridDef {
+
+        manifest :string (required);   // .seterrain
+}
+
+// world-declared navigation. One .senm per agent class — the
+// content declares its nav
+// agent dimensions live baked inside each .senm. Apps without the navigation runtime
+// simply never read this table.
+table NavMeshEntry {
+
+        agent_class :string (required);
+        mesh        :NavMeshHolder (required);   // path reference or inline embedding
+}
+
+table NavConfig {
+
+        meshes        :[NavMeshEntry];
+        default_class :string;                     // queries without an explicit class
+}
+
+table World {
+
+        id            :string (required);
+        version       :uint32 = 1;
+        streaming     :StreamingConfig;
+        sub_levels    :[SubLevelRef] (required);
+        spawn         :[WorldSpawnDef];
+        initial_focus :Vec3;
+        seed          :uint64 = 0;   // deterministic spawner PRNG
+        terrain_grid  :TerrainGridDef;
+        nav           :NavConfig;
+        // the world-level (global) blackboard schema. Holder
+        // convention: path to a .sebb or an inline definition. BlackboardSystem
+        // loads it on EWorldLoaded and resets it to defaults on EWorldUnloaded;
+        // apps without the AI side never read this field.
+        global_blackboard : BlackboardHolder;
+}
+
+root_type World;
+
+file_identifier "SEWD";
+file_extension "seworld";
+

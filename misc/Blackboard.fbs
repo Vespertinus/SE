@@ -1,0 +1,61 @@
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+// Blackboard 
+//
+// The schema (keys + types + defaults) is an asset (.sebb); the state lives in the
+// per-entity Blackboard component and in the world-level global instance. Keys are
+// plain strings here — hashed to StrID once at load, never at runtime.
+//
+// Value types are deliberately minimal (float/bool/int/Vec3/entity): strings in hot
+// AI paths are an anti-pattern every engine converged away from. Entity references
+// are runtime-only values — a node that does not exist yet cannot be authored — so
+// BBValueU (struct-in-union, the EntityTemplate FieldValueU convention) covers only
+// the authorable four. Reuses the Common.fbs scalar wrapper structs.
+
+enum EBType : byte {
+        Float  = 0,
+        Bool   = 1,
+        Int    = 2,
+        Vec3   = 3,
+        Entity = 4,   // runtime-only value; no authored default
+}
+
+union BBValueU {
+        Float,
+        Bool,
+        Int,
+        Vec3,
+}
+
+table BlackboardKey {
+        name          : string (required);
+        type          : EBType  = Float;
+        default_value : BBValueU;   // absent = 0 / false / (0,0,0) / invalid
+}
+
+// Full definition (shared asset, loaded once per agent class).
+table BlackboardDefinition {
+        id   : string (required);   // debug name ("guard_bb")
+        keys : [BlackboardKey] (required);
+}
+
+root_type BlackboardDefinition;
+file_identifier "SEBB";
+file_extension  "sebb";
+
+// --- Resource holder: path reference or inline embedding ---
+
+table BlackboardHolder {
+        blackboard : BlackboardDefinition;
+        path       : string;
+        name       : string;   // resource key for inline use
+}
+
+// Per-instance initial value override (Blackboard component): validated against the
+// referenced schema at load — unknown key or type mismatch is a load error.
+table BlackboardInitial {
+        key   : string (required);
+        value : BBValueU (required);
+}

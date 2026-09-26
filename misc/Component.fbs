@@ -6,6 +6,11 @@ include "SoundEmitter.fbs";
 include "AnimationSkeleton.fbs";
 include "AnimationGraph.fbs";
 include "StateMachine.fbs";
+include "Terrain.fbs";
+include "Spawner.fbs";
+include "NavMesh.fbs";
+include "Blackboard.fbs";
+include "BehaviorTree.fbs";
 
 namespace SE.FlatBuffers;
 
@@ -110,6 +115,73 @@ table StateMachine {
         tick_interval : float = 0.0;
 }
 
+// per-entity blackboard instance. The schema (keys + types +
+// defaults) is the referenced .sebb asset; `initial` overrides defaults per
+// instance (each guard bakes a different home post) and is validated at load.
+table Blackboard {
+        bb      : BlackboardHolder (required);
+        initial : [BlackboardInitial];
+}
+
+// authored trigger→blackboard writes. Inert marker placed on the
+// same node as a TriggerVolume; BlackboardSystem dispatches on ETriggerFired.
+// Matching by on_event covers enter/exit/stay uniformly ("occupied = false" is an
+// on_exit binding). Value must match the target key's schema type; write_position
+// instead stores the entering actor's position into a Vec3 key.
+enum TriggerBBTarget : byte {
+        Global = 0,   // the world-level blackboard (WorldSystem::GetGlobalBlackboard)
+        Self   = 1,   // the trigger node's own Blackboard component
+}
+
+table TriggerBindingDef {
+        on_event       : string (required);
+        target         : TriggerBBTarget = Global;
+        key            : string (required);
+        value          : BBValueU;
+        write_position : bool = false;
+}
+
+table TriggerBinding {
+        bindings : [TriggerBindingDef] (required);
+}
+
+// Behavior-tree brain. The tree structure is the referenced
+// .sebt asset; runtime state (node statuses, timers, task memory) lives per
+// instance. tick_interval staggers the tree's ticks (0 = every frame); the
+// scheduler phase-seeds from the entity name so agents never tick in lockstep.
+table BehaviorTree {
+        tree          : BehaviorTreeHolder (required);
+        tick_interval : float = 0.0;
+}
+
+// Heightfield terrain. One per terrain-bearing sub-level
+// (component mode: tiles activate with this node) or per world-level grid node
+// (grid_mode: tiles page by distance; this node only renders).
+table TerrainComponent {
+        manifest : string (required);   // .seterrain path
+        grid_mode: bool = false;
+}
+
+// Gameplay spatial-index marker (world query grid: spawner
+// conditions, perception, streaming-context queries). One point/radius of
+// interest; position comes from the node transform.
+table SpatialEntry {
+        tag       : string (required);
+        radius    : float = 0.0;
+        track_node: bool  = false;   // entry position follows the node transform
+}
+
+// Interior/world portal — the reusable door↔sub-level link.
+// While any streaming focus (player, ...) is inside activate_radius of this
+// node, the referenced Manual sub-level is staged through the budgeted drain;
+// past release_radius (> activate: hysteresis band) it is released again.
+// Levels the streaming director already manages are ignored.
+table Portal {
+        level_path     : string (required);   // sub-level path inside the .seworld
+        activate_radius: float  = 22.0;
+        release_radius : float  = 34.0;
+}
+
 union ComponentU {
         StaticModel,
         AnimatedModel,
@@ -124,6 +196,19 @@ union ComponentU {
         Animator,
         TriggerVolume,
         StateMachine,
+        TerrainComponent,
+        SpatialEntry,
+        SpawnPoint,
+        SpawnVolume,
+        Population,
+        NavArea,
+        NavLink,
+        NavAgent,
+        PathFollower,
+        TriggerBinding,
+        Blackboard,
+        BehaviorTree,
+        Portal,
 }
 
 table Component {

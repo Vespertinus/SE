@@ -1,0 +1,121 @@
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+// Spawner system
+//
+// Roles:
+//   SpawnPoint  — geometry + simple standalone policy (self-spawns template_id at its transform).
+//   SpawnVolume — geometry only (placement provider populations sample; never spawns itself).
+//   Population  — the manager: members (template + quota), max_active, respawn, waves,
+//                 conditions, despawn, lifetime policy, deterministic seed offset.
+//
+// All components embed in .sesc scenes via union ComponentU (Component.fbs includes this file).
+
+// ---- conditions: typed, data-driven; extensible without touching the spawner core ----
+
+// Any registered world focus point within `radius` of the evaluated origin.
+table FocusNear {
+        radius: float = 0.0;   // must be > 0 (validated at parse; 0 never matches)
+}
+
+// Any spatial-index entry carrying `tag` within `radius` of the evaluated origin
+// (requires the app to compose SpatialIndexSystem and wire SpawnerSystem::SetIndex).
+table TagNear {
+        tag   : string (required);
+        radius: float = 0.0;   // must be > 0 (validated at parse)
+}
+
+// Seconds since the population armed (AppClock-scaled).
+table AtTime {
+        at_s: float = 0.0;     // must be >= 0 (validated at parse)
+}
+
+// the world-level (global) blackboard bool key must be true.
+// Needs the app to compose BlackboardSystem (WorldSystem::GetGlobalBlackboard);
+// absent global or unresolvable key ⇒ false + one-shot warn at Arm (pIndex rule).
+table WorldFlag {
+        key: string (required);
+}
+
+union SpawnConditionU {
+        FocusNear,
+        TagNear,
+        AtTime,
+        WorldFlag,
+}
+
+// Standard FlatBuffers union wrapper (the "Component table" pattern).
+table SpawnCondition {
+        type : SpawnConditionU (required);
+        value: SpawnConditionU (required);
+}
+
+// ---- enums ----
+
+enum SpawnDistribution : ubyte {
+        Uniform       = 0,
+        BestCandidate = 1,   // Mitchell k-candidate; even spread, deterministic
+}
+
+enum SpawnLifetime : ubyte {
+        SubLevel   = 0,   // spawns parent under the population node; die with its teardown
+        Persistent = 1,   // spawns parent under the world dynamics root; survive other cells' teardown
+}
+
+enum SpawnSnap : ubyte {
+        None          = 0,
+        TerrainHeight = 1,   // TerrainSystem::TryGetHeight (requires SetTerrain)
+        PhysicsRay    = 2,   // Jolt raycast down (requires SetPhysics)
+        NavMesh       = 3,
+}
+
+// ---- population building blocks ----
+
+table SpawnMember {
+        template_id     : string (required);
+        weight          : float  = 1.0;        // spawn-order tie-break when quota < demand (higher first)
+        count           : uint32 = 1;          // simultaneous instances of this member
+        initial_delay_s : float  = 0.0;        // gate before this member's first spawns
+        respawn_limit   : uint32 = 4294967295; // total respawns allowed (default: unlimited)
+        geometry        : string;              // SpawnPoint/SpawnVolume node local name under the population; absent = origin
+}
+
+table Wave {
+        at_time_s : float = -1.0;             // >= 0: one-shot at t (seconds since arm)
+        on_event  : string;                   // fires on ETriggerFired{event_id} match; re-arms only via FireWave
+        members   : [SpawnMember] (required);
+}
+
+table Population {
+        id              : string (required);
+        members         : [SpawnMember];
+        waves           : [Wave];
+        max_active      : uint32 = 0;         // 0 = sum of member counts
+        respawn_delay_s : float  = 0.0;       // < 0 disables respawn of destroyed spawns
+        tick_interval_s : float  = 0.25;      // staggered; phase derived from hash64(id)
+        conditions      : [SpawnCondition];   // arming gate — all must pass before any spawn
+        despawn_radius  : float  = 0.0;       // 0 = off; destroy owned spawns farther than this from every focus
+        lifetime        : SpawnLifetime = SubLevel;
+        snap            : SpawnSnap     = None;
+        seed_offset     : uint32 = 0;         // PRNG diversification between otherwise identical populations
+}
+
+// ---- standalone components ----
+
+table SpawnPoint {
+        template_id     : string (required);
+        initial_delay_s : float  = 0.0;
+        max_spawns      : uint32 = 1;         // lifetime cap
+        respawn_delay_s : float  = -1.0;      // < 0: no respawn
+        condition       : SpawnCondition;     // optional gate
+        snap            : SpawnSnap = None;
+}
+
+table SpawnVolume {
+        size            : Vec3 (required);    // full extents, box centered on the node
+        distribution    : SpawnDistribution = Uniform;
+        candidate_count : uint32 = 8;         // best-candidate samples per slot
+        capacity        : uint32 = 0;         // 0 = unlimited draws
+        seed_offset     : uint32 = 0;
+}

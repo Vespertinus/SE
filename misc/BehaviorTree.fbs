@@ -1,0 +1,115 @@
+include "Common.fbs";
+include "StateMachine.fbs";
+
+namespace SE.FlatBuffers;
+
+// Basic behavior trees
+//
+// The tree is an asset (.sebt); runtime state lives in the per-entity
+// BehaviorTree component. Nodes form a recursive structure here — the asset
+// bakes them into a flat pointer-free node pool at load. Node params are a
+// generic key/value run so the schema never grows for game tasks; built-in
+// tasks validate their params at load, game tasks at Init. SubTree nodes are
+// an authoring convenience: they are expanded inline at asset load and do not
+// exist at runtime.
+
+enum EBTCompositeKind : byte {
+        Sequence  = 0,
+        Selector  = 1,
+        Parallel  = 2,   // "n required successes" semantics (n_required; 0 = all)
+}
+
+enum EBTDecoratorKind : byte {
+        BlackboardCondition = 0,
+        Cooldown            = 1,
+        TimeLimit           = 2,
+        Loop                = 3,
+        ForceStatus         = 4,
+}
+
+// UE5's third mode ("Both") is the union of these two — deferred until a game
+// needs it (stage plan risk 8).
+enum EBTAbort : byte {
+        None          = 0,
+        Self          = 1,   // re-checked while own subtree runs; fail ⇒ abort it
+        LowerPriority = 2,   // re-checked while later siblings run; pass ⇒ preempt
+}
+
+enum EBTForceTo : byte {
+        Success = 0,
+        Failure = 1,
+}
+
+// --- Generic authored parameters -------------------------------------------
+// Float/Bool/Int/Vec3 reuse the Common.fbs wrapper structs (the Blackboard
+// BBValueU convention); strings have no wrapper struct, hence BTParamString.
+
+table BTParamString { value : string; }
+
+union BTParamValue { Float, Bool, Int, Vec3, BTParamString }
+
+table BTParam {
+        key   : string (required);
+        value : BTParamValue (required);
+}
+
+// --- Nodes ------------------------------------------------------------------
+
+table BTComposite {
+        kind       : EBTCompositeKind = Sequence;
+        n_required : int = 0;            // Parallel only: successes required; 0 = all
+        children   : [BTNode] (required);
+}
+
+// Engine decorators carry typed fields (validated at load); the generic params
+// run is for tasks only — game tasks cannot extend this schema, so their
+// authoring data is always key/value. `child` is not schema-required: the
+// object-API tag carrier packs an empty payload, and TBehaviorTreeAsset's
+// build throws on a missing child (the authoritative check).
+table BTDecorator {
+        kind      : EBTDecoratorKind = BlackboardCondition;
+        abort     : EBTAbort = None;
+        child     : BTNode;
+        key       : string;              // BlackboardCondition: target key (absent = none)
+        op        : SMConditionOp = IsTrue;
+        threshold : float = 0.0;         // BlackboardCondition: compare value
+        duration  : float = 0.0;         // Cooldown gate / TimeLimit budget
+        count     : int = 0;             // Loop iterations; 0 = infinite
+        force_to  : EBTForceTo = Success;
+}
+
+table BTTask {
+        task_id : string (required);     // resolved against the app's task table at load
+        params  : [BTParam];
+}
+
+table BTSubTree {
+        path : string (required);        // inlined at load; cycles are load errors
+}
+
+union BTNodeU { BTComposite, BTDecorator, BTTask, BTSubTree }
+
+table BTNode {
+        name  : string;                  // opt-in EBTEvent identity + debugger label
+        type  : BTNodeU (required);
+        value : BTNodeU (required);
+}
+
+// --- Full definition (shared asset, loaded once) -----------------------------
+
+table BehaviorTreeDefinition {
+        id   : string (required);
+        root : BTNode (required);
+}
+
+root_type BehaviorTreeDefinition;
+file_identifier "SEBT";
+file_extension  "sebt";
+
+// --- Resource holder: path reference or inline embedding ----------------------
+
+table BehaviorTreeHolder {
+        behavior_tree : BehaviorTreeDefinition;
+        path          : string;
+        name          : string;
+}

@@ -1,5 +1,6 @@
 
 include "Component.fbs";
+include "Resources.fbs";
 
 namespace SE.FlatBuffers;
 
@@ -18,6 +19,7 @@ table Node {
 table SceneTree {
 
         root:Node (required);
+        resources:[ResourceRef];
 }
 
 root_type SceneTree;

@@ -1,0 +1,131 @@
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+// Navigation bake pipeline.
+//
+// .senm (NavMeshAsset): one baked tiled navmesh per (world, agent class).
+//   Tiles are aligned to the streaming grid (tile_dim divides cell_size) so that
+//   "activate sub-level => add its tiles" is a pure set operation on dtNavMesh.
+//   Tile `data` holds raw dtCreateNavMeshData bytes — Step 7's NavMeshAsset
+//   resource hands them straight to dtNavMesh::addTile (Detour copies ownership).
+//
+// NavArea / NavLink: authoring marker components for .sesc sub-levels. No
+// behavior at runtime — tools/navbake consumes them at bake time; inert runtime
+// components in app_systems/nav/ carry the data for debug draws (Step 7).
+
+// One baked navmesh tile. `group` is the owning content-group id: the sub-level
+// .sesc path, the terrain manifest path, or "" for world-level content. It is
+// the streaming key — adds/removes tiles per activated content group.
+// `layer` is dtMeshHeader::layer: normal groups bake at layer 0; coexisting
+// groups (Manual interiors overlapping an exterior cell) each bake at their own
+// distinct layer, since dtNavMesh allows one tile per (x, y, layer).
+
+table NavTile {
+
+        x     :uint32;
+        y     :uint32;
+        layer :uint16 = 0;
+        group :string (required);
+        data  :[ubyte] (required);   // dtCreateNavMeshData output
+}
+
+// Authored off-mesh connection (jump-down, ladder, door). The traversable
+// connection polys are embedded into the owning group's tile data at bake time;
+// this table is the authored round-trip record (validation, debugging, and the
+// Step 7 debug renderer). `group` selects which content group's tiles carry it,
+// so the link streams with its level.
+table OffMeshLink {
+
+        start         :Vec3 (required);
+        end           :Vec3 (required);
+        radius        :float = 0.5;
+        area          :uint16 = 0;
+        flags         :uint16 = 1;   // walk
+        bidirectional :bool = true;
+        group         :string (required);
+}
+
+table NavMeshAsset {
+
+        agent_class  :string (required);   // one .senm per agent class
+        version      :uint32 = 1;
+        origin       :Vec3 (required);     // world position of tile (0,0) min corner
+        tile_dim     :float = 0.0;         // nav tile world size (XZ); divides streaming cell_size
+        voxel_size   :float;               // rcConfig cellSize (bake fidelity record)
+        voxel_height :float;               // rcConfig cellHeight
+        areas        :[string];            // area-name registry; poly area bytes index this
+        tiles        :[NavTile] (required);
+        links        :[OffMeshLink];
+}
+
+root_type NavMeshAsset;
+
+file_identifier "SENM";
+file_extension "senm";
+
+// --- Resource holder: path reference or inline embedding
+// worlds declare their nav meshes through this). 
+// Deliberately NOT a ResourceU member: 
+// that union is the scene (.sesc) declared-dependency table, nav is world-scope. --
+
+table NavMeshHolder {
+
+        mesh :NavMeshAsset;   // inline embedding (packed worlds)
+        path :string;         // external .senm reference
+        name :string;         // resource cache key for inline use
+}
+
+// --- Authoring marker components (no runtime behavior) -----------------------
+
+// Axis-aligned box around the node position. Tags the enclosed navmesh polygons
+// with `area` (dtQueryFilter area costs per agent class pick paths per area, so
+// "wolves avoid roads, vehicles stick to roads" is data). An empty `area` marks
+// an exclusion volume: the bake removes walkable spans inside the box (nav hole
+// — used to carve an exterior where a Manual interior sits).
+table NavArea {
+
+        size :Vec3 (required);       // full extents of the box, centered on the node
+        area :string (required);     // "" = exclusion volume
+}
+
+// Off-mesh connection starting at the node position. End point: the named
+// sibling node's position when `end_node` is set, else the node-local offset
+// `end`.
+table NavLink {
+
+        end_node      :string;       // target node name (same sub-level)
+        end           :Vec3;         // fallback end point, node-local offset
+        radius        :float = 0.5;
+        area          :string;
+        bidirectional :bool = true;
+}
+
+// navigation agent marker. `agent_class` selects the .senm
+// (and its dtQueryFilter); radius/height override the class defaults for query
+// half-extents and crowd params. Per-agent area preferences are
+// deliberately absent — class filters express them.
+//
+// `avoidance`: enroll the agent into the local-avoidance crowd
+// when the app composes a CrowdSystem. Default true so buffers gain
+// avoidance when a crowd system is present; false for agents that must be
+// steered but never push (cinematic walkers, scripted extras).
+table NavAgent {
+
+        agent_class :string (required);
+        radius      :float = 0;   // 0 = class default
+        height      :float = 0;   // 0 = class default
+        avoidance   :bool  = true;
+}
+
+// path-following intent. Component pairs with NavAgent on the
+// same node; CrowdSystem drives it — corridor following via NavigationSystem
+// primitives, desired velocity adjusted by the local-avoidance backend, output
+// written as analog InputState.move_axis for CharacterMovementSystem.
+table PathFollower {
+
+        arrival_radius      :float = 0.35;   // stop within this distance of the goal
+        slow_radius         :float = 2.5;    // start decelerating inside this radius
+        repath_interval     :float = 0.5;    // seconds between automatic re-paths; 0 = never
+        accept_partial_paths:bool  = true;   // follow unreachable-goal partial paths
+}

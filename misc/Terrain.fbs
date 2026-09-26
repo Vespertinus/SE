@@ -1,0 +1,98 @@
+include "Common.fbs";
+
+namespace SE.FlatBuffers;
+
+// --- Baked terrain ---
+//
+// Two artifacts share this schema family (identifier "SETN"):
+//   .seterrain — the manifest: tile grid geometry, per-tile refs, material/physics config.
+//   .setile    — one tile's LOD chain (heights + normals per LOD). One streaming unit.
+//
+// Sample grid convention (load-bearing — runtime GetHeight bilinear and Jolt's
+// HeightFieldShapeSettings must agree exactly): sample (i, j) of tile (x, y) sits at
+//   world = origin + (x*tile_size + j*step, h, y*tile_size + i*step)
+// with step = tile_size / (resolution - 1) — vertices on cell corners, adjacent tiles
+// share the edge sample line exactly. Row-major index = i*resolution + j.
+//
+// Heights are int16-quantized per tile: world_h = height_offset + height_scale * sample.
+// Worst-case quantization error = (height_max - height_min) / 65534.
+
+// Bit flags for TerrainTileRef.flags.
+enum TerrainTileFlags : uint16 {
+    None  = 0,
+    Holes = 1,   // hole_mask in the tile payload is meaningful (render/physics holes deferred)
+    NoNav = 2,   // heightfield nav bake skips this tile
+}
+
+table TerrainLod {
+
+        resolution :ushort;      // samples per edge
+        heights    :[int16];     // row-major i*resolution + j, quantized
+        normals    :[ubyte];     // 2 bytes/sample, octahedral-encoded world-space normal
+}
+
+// Root of a .setile file. Verified at load with
+// flatbuffers::VerifyBuffer<TerrainTileData>("SETN", ...) (flatc allows one
+// file_identifier per schema file, shared with the manifest).
+table TerrainTileData {
+
+        x             :ushort;
+        y             :ushort;
+        height_offset :float;
+        height_scale  :float;
+        lods          :[TerrainLod] (required);   // index 0 == LOD0 (physics/query resolution)
+        hole_mask     :[ubyte];                   // deferred consumer (holes are Step 3d)
+}
+
+table TerrainTileRef {
+
+        x          :ushort;
+        y          :ushort;
+        path       :string (required);   // .setile, relative to the resource dir
+        bounds_min :Vec3 (required);
+        bounds_max :Vec3 (required);
+        height_min :float;
+        height_max :float;
+        flags      :uint16 = 0;
+}
+
+table TerrainPhysics {
+
+        friction      :float = 0.8;
+        max_slope_deg :float = 50.0;   // default walkability hint for the heightfield nav bake
+}
+
+table TerrainMaterial {
+
+        material_path :string (required);   // .semt
+        uv_scale      :float = 0.05;        // uv = world_xz * uv_scale
+}
+
+// Root of a .seterrain manifest.
+table Terrain {
+
+        id              :string (required);
+        version         :uint32 = 1;
+        tile_size       :float = 512.0;
+        origin          :Vec3;                       // world position of tile (0,0) min corner
+        lod_resolutions :[ushort] (required);        // per-LOD samples per edge, LOD0 first
+        tiles           :[TerrainTileRef] (required);
+        material        :TerrainMaterial;
+        physics         :TerrainPhysics;
+        height_min      :float;                      // global; validation + skirt sizing hints
+        height_max      :float;
+}
+
+root_type Terrain;
+
+file_identifier "SETN";
+file_extension "seterrain";
+
+// --- Resource holder: path reference or inline embedding (declared dependency pinning) ---
+
+table TerrainHolder {
+
+        terrain :Terrain;
+        path    :string;
+        name    :string;
+}

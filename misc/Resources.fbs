@@ -1,0 +1,32 @@
+include "Mesh.fbs";
+include "Material.fbs";
+include "AnimationSkeleton.fbs";
+include "AudioClip.fbs";
+include "AnimationGraph.fbs";
+include "StateMachine.fbs";
+include "Terrain.fbs";
+
+namespace SE.FlatBuffers;
+
+// Typed dependency table for scene files (.sesc): every external resource a scene
+// needs, deduplicated at bake time. 
+// The union members are the very holder tables
+// embedded in component fields, so a writer emits each holder once and the same
+// offset serves both the scene's resources array and the component fields.
+// Extending: holder table + union member + one dispatch case (same as ComponentU).
+union ResourceU {
+        MeshHolder,             // Mesh.fbs
+        MaterialHolder,         // Material.fbs
+        SkeletonHolder,         // AnimationSkeleton.fbs
+        AudioClipHolder,        // AudioClip.fbs
+        AnimationGraphHolder,   // AnimationGraph.fbs
+        StateMachineHolder,     // StateMachine.fbs
+        TerrainHolder,          // Terrain.fbs
+}
+
+table ResourceRef {
+
+        resource:ResourceU (required);
+}
+
+root_type ResourceRef;
