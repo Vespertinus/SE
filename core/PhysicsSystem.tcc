@@ -13,6 +13,7 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Body/BodyLock.h>
@@ -40,7 +41,17 @@ namespace PhysLayers {
         static constexpr JPH::ObjectLayer STATIC  = 0;
         static constexpr JPH::ObjectLayer DYNAMIC = 1;
         static constexpr JPH::ObjectLayer TRIGGER = 2;
-        static constexpr JPH::ObjectLayer NUM     = 3;
+        // Inner presence body of player characters (CharacterVirtual). Sensors
+        // pair ONLY with this layer — NPCs/props can't ring bells, and the
+        // characters' own sweeps ignore it (SECharObjFilter) so movement
+        // behavior is unchanged.
+        static constexpr JPH::ObjectLayer PLAYER  = 3;
+        // Kinematic followers (door leaves, NPC blocking capsules). Pairs with
+        // NOTHING body-body; only "player-class" character sweeps collide with
+        // it — NPC CharacterVirtuals ghost through their own and each other's
+        // followers (a self-collision feedback loop otherwise).
+        static constexpr JPH::ObjectLayer KINEMATIC = 4;
+        static constexpr JPH::ObjectLayer NUM     = 5;
 }
 
 namespace PhysBPLayers {
@@ -62,6 +73,8 @@ public:
                         case PhysLayers::STATIC:  return PhysBPLayers::NON_MOVING;
                         case PhysLayers::DYNAMIC: return PhysBPLayers::MOVING;
                         case PhysLayers::TRIGGER: return PhysBPLayers::MOVING;
+                        case PhysLayers::PLAYER:  return PhysBPLayers::MOVING;
+                        case PhysLayers::KINEMATIC: return PhysBPLayers::MOVING;
                         default:                  return PhysBPLayers::NON_MOVING;
                 }
         }
@@ -81,6 +94,13 @@ public:
                         case PhysLayers::STATIC:  return bp == PhysBPLayers::MOVING;
                         case PhysLayers::DYNAMIC: return true;
                         case PhysLayers::TRIGGER: return bp == PhysBPLayers::MOVING;
+                        // Both BP layers: presence bodies must pair with static
+                        // geometry too (floors/walls are NON_MOVING).
+                        case PhysLayers::PLAYER:  return true;
+                        // Kinematic followers live in the MOVING broadphase so
+                        // their contacts with DYNAMIC bodies are found (the
+                        // pair filter below gates what actually resolves).
+                        case PhysLayers::KINEMATIC: return bp == PhysBPLayers::MOVING;
                         default:                  return false;
                 }
         }
@@ -93,11 +113,25 @@ public:
         bool ShouldCollide(JPH::ObjectLayer a, JPH::ObjectLayer b) const override {
                 switch (a) {
                         case PhysLayers::STATIC:
-                                return b == PhysLayers::DYNAMIC || b == PhysLayers::TRIGGER;
+                                return b == PhysLayers::DYNAMIC || b == PhysLayers::TRIGGER
+                                        || b == PhysLayers::PLAYER;
                         case PhysLayers::DYNAMIC:
-                                return b == PhysLayers::STATIC || b == PhysLayers::DYNAMIC || b == PhysLayers::TRIGGER;
+                                // No TRIGGER: only the player's presence body fires sensors.
+                                // KINEMATIC: platforms carry crates, door leaves push props.
+                                return b == PhysLayers::STATIC || b == PhysLayers::DYNAMIC
+                                        || b == PhysLayers::PLAYER || b == PhysLayers::KINEMATIC;
                         case PhysLayers::TRIGGER:
-                                return b == PhysLayers::STATIC || b == PhysLayers::DYNAMIC;
+                                return b == PhysLayers::PLAYER;
+                        case PhysLayers::PLAYER:
+                                return b == PhysLayers::STATIC || b == PhysLayers::DYNAMIC
+                                        || b == PhysLayers::TRIGGER;
+                        // KINEMATIC (MoveKinematic-driven: platforms, door leaves,
+                        // NPC presence capsules) resolves contacts against DYNAMIC
+                        // bodies only — never with statics, other kinematics, the
+                        // player's presence body, or sensors (the PLAYER character
+                        // still sweeps followers via SEPlayerCharObjFilter).
+                        case PhysLayers::KINEMATIC:
+                                return b == PhysLayers::DYNAMIC;
                         default:
                                 return false;
                 }
@@ -114,7 +148,23 @@ public:
 class SECharObjFilter final : public JPH::ObjectLayerFilter {
 public:
         bool ShouldCollide(JPH::ObjectLayer inLayer) const override {
-                return inLayer != PhysLayers::TRIGGER;
+                // TRIGGER: sensors never block movement. PLAYER: presence bodies
+                // (the character's own and other characters') — characters keep
+                // ghosting through each other; only the sim sees the presence.
+                // KINEMATIC: followers (door leaves, NPC blocking capsules) —
+                // an NPC sweeping its own follower capsule degenerates into a
+                // depenetration feedback loop.
+                return inLayer != PhysLayers::TRIGGER && inLayer != PhysLayers::PLAYER
+                        && inLayer != PhysLayers::KINEMATIC;
+        }
+};
+
+// Player-class characters DO collide with kinematic followers (closed doors,
+// solid NPCs) — selected per character in StepCharacters.
+class SEPlayerCharObjFilter final : public JPH::ObjectLayerFilter {
+public:
+        bool ShouldCollide(JPH::ObjectLayer inLayer) const override {
+                return inLayer != PhysLayers::TRIGGER && inLayer != PhysLayers::PLAYER;
         }
 };
 
@@ -198,6 +248,11 @@ struct BodyState {
         glm::quat  qCurrRot  {1.0f, 0.0f, 0.0f, 0.0f};
         ColliderDesc oCollider;
         void*      pNode       = nullptr;  // TSceneTree::TSceneNodeExact*
+        // Slot in Impl::vSimStates (UINT32_MAX = never simulated — static).
+        // Jolt recycles body indexes; generation is what makes a stale
+        // handle fail the lookup instead of resolving to the new body.
+        uint32_t   sim_slot    = UINT32_MAX;
+        uint32_t   generation = 0;
         bool       is_trigger  = false;
         bool       is_static   = false;
         bool       is_kinematic = false;
@@ -267,15 +322,56 @@ struct PhysicsSystem::Impl {
         // Body states (keyed by body array index for fast lookup)
         std::unordered_map<uint32_t, BodyState>    mBodyStates;
 
+        // Bodies that can actually move (dynamic + kinematic), referencing the
+        // stable unordered_map nodes. The per-fixed-step snapshot/update/
+        // interpolate sweeps walk THIS, not mBodyStates — with streamed terrain
+        // tiles and level statics the map is ~95% statics that never move.
+        std::vector<BodyState*>                    vSimStates;
+
+        // Character presence bodies (Jolt body index → node): kept apart from
+        // mBodyStates so the interpolation loops never see them — the node is
+        // driven by the CharacterController, not by body interpolation.
+        // Generation-checked: recycled inner-body indexes of destroyed
+        // characters must not resolve a stale event handle to a new character.
+        struct InnerBodyRef {
+                uint32_t generation = 0;
+                void*    pNode       = nullptr;
+        };
+        std::unordered_map<uint32_t, InnerBodyRef> mInnerBodyNodes;
+
+        // Targeted sensor-contact delivery (see AttachSensorListener). Raw
+        // EPhysicsTriggerEnter/Exit still broadcast; this map is what lets a
+        // TriggerVolume receive only its own contacts.
+        struct SensorEntry {
+                uint32_t       generation = 0;
+                SensorContactFn fn;
+        };
+        std::unordered_map<uint32_t, SensorEntry>  mSensorListeners;
+
         // Character states (keyed by CharHandle::id)
         struct CharState {
                 JPH::Ref<JPH::CharacterVirtual> pChar;
                 glm::vec3 vDesiredVelocity {0.f, 0.f, 0.f};
                 float     step_height      = 0.3f;
                 void*     pNode            = nullptr;
+                bool      bCollidesKinematic = true;
+                // update LOD: step every Nth fixed step, staggered by phase
+                uint32_t  update_divider   = 1;
+                uint32_t  update_phase     = 0;
+                // presence body (for body→node lookups: sensors report it as
+                // the event's hOther — trigger bindings resolve the actor)
+                JPH::BodyID inner_body_id  {};
         };
         std::unordered_map<uint32_t, CharState> mCharacters;
         uint32_t next_char_id = 0;
+
+        // Kinematic followers are node-driven: Jolt keeps the (delta/dt)
+        // velocity MoveKinematic sets and keeps integrating it, so a body whose
+        // node rested after a move would drift (or rocket) away. Bodies that
+        // received no move this fixed step get their velocities zeroed.
+        std::vector<JPH::BodyID>                 vKinematicBodies;
+        std::unordered_map<JPH::BodyID, uint64_t> mKinematicMoved;
+        uint64_t                                 step_counter = 0;
 
         // Deferred commands (game thread → physics thread)
         std::mutex                                 oCmdMtx;
@@ -328,7 +424,28 @@ struct PhysicsSystem::Impl {
                         if (cmd.type == DeferredCmd::Destroy) {
                                 if (bi.IsAdded(cmd.hId)) bi.RemoveBody(cmd.hId);
                                 bi.DestroyBody(cmd.hId);
-                                mBodyStates.erase(cmd.hId.GetIndex());
+                                vKinematicBodies.erase(
+                                                std::remove(vKinematicBodies.begin(), vKinematicBodies.end(), cmd.hId),
+                                                vKinematicBodies.end());
+                                mKinematicMoved.erase(cmd.hId);
+                                const auto st_it = mBodyStates.find(cmd.hId.GetIndex());
+                                if (st_it != mBodyStates.end()
+                                    && st_it->second.generation == cmd.hId.GetSequenceNumber()) {
+                                        // swap-remove from the dense sim list, fixing
+                                        // the moved element's slot
+                                        if (st_it->second.sim_slot != UINT32_MAX) {
+                                                const size_t slot = st_it->second.sim_slot;
+                                                vSimStates[slot]  = vSimStates.back();
+                                                vSimStates[slot]->sim_slot = uint32_t(slot);
+                                                vSimStates.pop_back();
+                                        }
+                                        mBodyStates.erase(st_it);
+                                }
+                                const auto sen_it = mSensorListeners.find(cmd.hId.GetIndex());
+                                if (sen_it != mSensorListeners.end()
+                                    && sen_it->second.generation == cmd.hId.GetSequenceNumber()) {
+                                        mSensorListeners.erase(sen_it);
+                                }
                                 continue;
                         }
                         if (!bi.IsAdded(cmd.hId)) continue;
@@ -346,6 +463,7 @@ struct PhysicsSystem::Impl {
                                 case DeferredCmd::MoveKinematic:
                                         bi.MoveKinematic(cmd.hId, ToJoltR(cmd.vParam), ToJolt(cmd.qParam),
                                                         oCfg.fixed_dt);
+                                        mKinematicMoved[cmd.hId] = step_counter;
                                         break;
                                 case DeferredCmd::Activate:
                                         bi.ActivateBody(cmd.hId);
@@ -359,26 +477,28 @@ struct PhysicsSystem::Impl {
         }
 
         // ---- snapshot current into prev before each fixed step --------------
+        // Simulated bodies only: statics (terrain tiles, level geometry) never
+        // move, so reading them twice per step was pure per-body mutex cost.
         void SnapshotCurrentState() {
                 auto& bi = pPhysics->GetBodyInterface();
-                for (auto& [idx, state] : mBodyStates) {
-                        state.vPrevPos = state.vCurrPos;
-                        state.qPrevRot = state.qCurrRot;
+                for (BodyState* pState : vSimStates) {
+                        pState->vPrevPos = pState->vCurrPos;
+                        pState->qPrevRot = pState->qCurrRot;
                         JPH::RVec3 pos; JPH::Quat rot;
-                        bi.GetPositionAndRotation(ToJoltID(state.hBody), pos, rot);
-                        state.vCurrPos = ToGlm(pos);
-                        state.qCurrRot = ToGlm(rot);
+                        bi.GetPositionAndRotation(ToJoltID(pState->hBody), pos, rot);
+                        pState->vCurrPos = ToGlm(pos);
+                        pState->qCurrRot = ToGlm(rot);
                 }
         }
 
         // ---- after fixed step: read back new body positions -----------------
         void UpdateCurrentState() {
                 auto& bi = pPhysics->GetBodyInterface();
-                for (auto& [idx, state] : mBodyStates) {
+                for (BodyState* pState : vSimStates) {
                         JPH::RVec3 pos; JPH::Quat rot;
-                        bi.GetPositionAndRotation(ToJoltID(state.hBody), pos, rot);
-                        state.vCurrPos = ToGlm(pos);
-                        state.qCurrRot = ToGlm(rot);
+                        bi.GetPositionAndRotation(ToJoltID(pState->hBody), pos, rot);
+                        pState->vCurrPos = ToGlm(pos);
+                        pState->qCurrRot = ToGlm(rot);
                 }
         }
 
@@ -388,26 +508,43 @@ struct PhysicsSystem::Impl {
                 if (contacts.empty()) return;
 
                 auto& em = GetSystem<EventManager>();
+                // Targeted delivery first: the owner gets its contact directly,
+                // then the raw event still broadcasts for external sinks (the
+                // EventManager early-outs when no one subscribed).
+                auto deliver = [this, &em](const BodyHandle hTrigger, const BodyHandle hOther,
+                                           const bool is_enter) {
+                        if (is_enter) {
+                                em.TriggerEvent(EPhysicsTriggerEnter{hTrigger, hOther});
+                        } else {
+                                em.TriggerEvent(EPhysicsTriggerExit{hTrigger, hOther});
+                        }
+                        const auto lit = mSensorListeners.find(hTrigger.index);
+                        if (lit != mSensorListeners.end()
+                            && lit->second.generation == hTrigger.generation
+                            && lit->second.fn) {
+                                lit->second.fn(is_enter, hOther);
+                        }
+                };
                 for (auto& c : contacts) {
                         BodyHandle ha = ToHandle(c.hA);
                         BodyHandle hb = ToHandle(c.hB);
                         if (c.is_enter) {
                                 if (c.a_trigger || c.b_trigger) {
-                                        BodyHandle hTrigger = c.a_trigger ? ha : hb;
-                                        BodyHandle hOther   = c.a_trigger ? hb : ha;
-                                        em.TriggerEvent(EPhysicsTriggerEnter{hTrigger, hOther});
+                                        deliver(c.a_trigger ? ha : hb, c.a_trigger ? hb : ha, true);
                                 } else {
                                         em.TriggerEvent(EPhysicsContactEnter{ha, hb, c.vNormal, c.vPoint});
                                 }
                         } else {
-                                auto itA = mBodyStates.find(c.hA.GetIndex());
-                                bool a_trig = (itA != mBodyStates.end()) && itA->second.is_trigger;
-                                auto itB = mBodyStates.find(c.hB.GetIndex());
-                                bool b_trig = (itB != mBodyStates.end()) && itB->second.is_trigger;
+                                auto itA = mBodyStates.find(ha.index);
+                                bool a_trig = (itA != mBodyStates.end())
+                                              && itA->second.generation == ha.generation
+                                              && itA->second.is_trigger;
+                                auto itB = mBodyStates.find(hb.index);
+                                bool b_trig = (itB != mBodyStates.end())
+                                              && itB->second.generation == hb.generation
+                                              && itB->second.is_trigger;
                                 if (a_trig || b_trig) {
-                                        BodyHandle hTrigger = a_trig ? ha : hb;
-                                        BodyHandle hOther   = a_trig ? hb : ha;
-                                        em.TriggerEvent(EPhysicsTriggerExit{hTrigger, hOther});
+                                        deliver(a_trig ? ha : hb, a_trig ? hb : ha, false);
                                 } else {
                                         em.TriggerEvent(EPhysicsContactExit{ha, hb});
                                 }
@@ -419,8 +556,9 @@ struct PhysicsSystem::Impl {
         void StepCharacters(float dt) {
                 if (mCharacters.empty()) return;
 
-                SECharBPFilter  oBPFilter;
-                SECharObjFilter oObjFilter;
+                SECharBPFilter       oBPFilter;
+                SECharObjFilter      oObjFilter;       // NPC flavor: ghosts followers
+                SEPlayerCharObjFilter oPlayerFilter;   // player flavor: sweeps followers
                 JPH::BodyFilter  oBodyFilter;
                 JPH::ShapeFilter oShapeFilter;
                 JPH::Vec3        vGravity = pPhysics->GetGravity();
@@ -428,12 +566,24 @@ struct PhysicsSystem::Impl {
                 JPH::CharacterVirtual::ExtendedUpdateSettings oExtSettings;
 
                 for (auto& [id, cs] : mCharacters) {
+                        // Character LOD: staggered step division, dt scaled so
+                        // average velocity and gravity are unchanged.
+                        if (cs.update_divider > 1
+                            && ((step_counter + cs.update_phase) % cs.update_divider) != 0u) {
+                                continue;
+                        }
+                        const float char_dt = dt * float(cs.update_divider);
+
                         oExtSettings.mWalkStairsStepUp    = JPH::Vec3(0.f, cs.step_height, 0.f);
                         oExtSettings.mStickToFloorStepDown = JPH::Vec3(0.f, -cs.step_height, 0.f);
 
                         cs.pChar->SetLinearVelocity(ToJolt(cs.vDesiredVelocity));
-                        cs.pChar->ExtendedUpdate(dt, vGravity, oExtSettings,
-                                        oBPFilter, oObjFilter, oBodyFilter, oShapeFilter,
+                        JPH::ObjectLayerFilter & oLayerFilter =
+                                        cs.bCollidesKinematic
+                                        ? static_cast<JPH::ObjectLayerFilter &>(oPlayerFilter)
+                                        : static_cast<JPH::ObjectLayerFilter &>(oObjFilter);
+                        cs.pChar->ExtendedUpdate(char_dt, vGravity, oExtSettings,
+                                        oBPFilter, oLayerFilter, oBodyFilter, oShapeFilter,
                                         *pTempAlloc);
                 }
         }
@@ -449,7 +599,26 @@ struct PhysicsSystem::Impl {
                         pTempAlloc.get(),
                         pJobSystem.get());
                 UpdateCurrentState();
+                ZeroStaleKinematicVelocities();
                 DrainContacts();
+        }
+
+        /** Kinematic followers are node-driven and only receive a fresh
+         *  (delta/dt) velocity when their node's transform changes — Jolt
+         *  would otherwise keep integrating a stale velocity after the node
+         *  comes to rest and the body flies away from it. */
+        void ZeroStaleKinematicVelocities() {
+
+                ++step_counter;
+
+                JPH::BodyInterface & bi = pPhysics->GetBodyInterface();
+                for (const JPH::BodyID & id : vKinematicBodies) {
+                        const auto it = mKinematicMoved.find(id);
+                        if (it != mKinematicMoved.end() && it->second == step_counter) { continue; }
+                        bi.SetLinearVelocity(id, JPH::Vec3::sZero());
+                        bi.SetAngularVelocity(id, JPH::Vec3::sZero());
+                }
+                mKinematicMoved.clear();
         }
 };
 
@@ -499,11 +668,29 @@ void PhysicsSystem::Shutdown() {
         if (!pImpl->initialized) return;
 
         pImpl->mBodyStates.clear();
+        // Dense sim references point into mBodyStates nodes — dead now.
+        pImpl->vSimStates.clear();
+        // Same recycle hazard as vPendingCmds below: every structure keyed by
+        // Jolt body index must die with the world, or the next Init resolves
+        // recycled indexes into dangling nodes / zeroes new bodies' velocities.
+        pImpl->mInnerBodyNodes.clear();
+        pImpl->vKinematicBodies.clear();
+        pImpl->mKinematicMoved.clear();
+        pImpl->mSensorListeners.clear();
+        pImpl->step_counter = 0;
         // Characters hold JPH::Ref<CharacterVirtual> bound to the dying Jolt
         // system — leaving them here would resurrect dangling objects on the
         // next Init (found by the physics functional suite).
         pImpl->mCharacters.clear();
         pImpl->next_char_id = 0;
+        // Deferred commands hold BodyIDs of the dying world; Jolt recycles
+        // those IDs in the next Init, so a stale Destroy here would silently
+        // kill a freshly created body (found by the crowd functional suite:
+        // level N+1's floor was destroyed by level N's teardown command).
+        {
+                std::lock_guard<std::mutex> lk(pImpl->oCmdMtx);
+                pImpl->vPendingCmds.clear();
+        }
         pImpl->pPhysics.reset();
         pImpl->pJobSystem.reset();
         pImpl->pTempAlloc.reset();
@@ -525,8 +712,10 @@ BodyHandle PhysicsSystem::CreateRigidBody(const RigidBodyDesc& desc) {
 
         JPH::Ref<JPH::Shape> shape = pImpl->MakeShape(desc.oCollider);
 
-        JPH::ObjectLayer layer = desc.is_static     ? PhysLayers::STATIC
+        JPH::ObjectLayer layer = desc.object_layer >= 0 ? JPH::ObjectLayer(desc.object_layer)
+                : desc.is_static     ? PhysLayers::STATIC
                 : desc.is_trigger    ? PhysLayers::TRIGGER
+                : desc.is_kinematic  ? PhysLayers::KINEMATIC
                 : PhysLayers::DYNAMIC;
 
         JPH::EMotionType motion_type = desc.is_static     ? JPH::EMotionType::Static
@@ -563,6 +752,10 @@ BodyHandle PhysicsSystem::CreateRigidBody(const RigidBodyDesc& desc) {
 
         bi.AddBody(body->GetID(), JPH::EActivation::Activate);
 
+        if (motion_type == JPH::EMotionType::Kinematic) {
+                pImpl->vKinematicBodies.push_back(body->GetID());
+        }
+
         BodyHandle h = ToHandle(body->GetID());
 
         BodyState state;
@@ -582,9 +775,61 @@ BodyHandle PhysicsSystem::CreateRigidBody(const RigidBodyDesc& desc) {
 
         //log_d("{}", state.Str());
 
-        pImpl->mBodyStates[body->GetID().GetIndex()] = state;
+        // Fresh index: the previous owner's map entry was erased on destroy.
+        BodyState & stored = pImpl->mBodyStates[body->GetID().GetIndex()];
+        stored             = state;
+        stored.generation = h.generation;
+
+        // Only bodies that can move join the per-step simulation sweeps.
+        if (!stored.is_static) {
+                stored.sim_slot = uint32_t(pImpl->vSimStates.size());
+                pImpl->vSimStates.push_back(&stored);
+        }
 
         return h;
+}
+
+BodyHandle PhysicsSystem::CreateStaticHeightField(const std::vector<float>& vSamples, const uint32_t count,
+                                                  const glm::vec3& vOffset, const glm::vec3& vScale,
+                                                  const float friction, const uint32_t collision_layer) {
+
+        assert(pImpl->initialized);
+        if (count < 2 || vSamples.size() < size_t(count) * count) {
+                log_e("PhysicsSystem: CreateStaticHeightField: need {}x{} samples (got {})",
+                      count, count, vSamples.size());
+                return BodyHandle{};
+        }
+
+        JPH::HeightFieldShapeSettings settings(vSamples.data(),
+                        JPH::RVec3(vOffset.x, vOffset.y, vOffset.z),
+                        JPH::Vec3(vScale.x, vScale.y, vScale.z), count);
+        // Full 16-bit height quantization: the physics surface must agree with
+        // TerrainSystem::TryGetHeight within the asset's own int16 quantization error.
+        settings.mBitsPerSample = 16;
+
+        auto result = settings.Create();
+        if (!result.IsValid()) {
+                log_e("PhysicsSystem: HeightFieldShape creation failed");
+                return BodyHandle{};
+        }
+
+        JPH::BodyCreationSettings bcs(result.Get(),
+                        JPH::RVec3(0.0, 0.0, 0.0),
+                        JPH::Quat::sIdentity(),
+                        JPH::EMotionType::Static,
+                        PhysLayers::STATIC);
+        bcs.mUserData = (static_cast<uint64_t>(0xFFFFFFFFu) << 32) | static_cast<uint64_t>(collision_layer);
+        bcs.mFriction = friction;
+
+        auto& bi = pImpl->pPhysics->GetBodyInterface();
+        JPH::Body* body = bi.CreateBody(bcs);
+        if (!body) {
+                log_e("PhysicsSystem: heightfield CreateBody failed (body limit reached)");
+                return BodyHandle{};
+        }
+
+        bi.AddBody(body->GetID(), JPH::EActivation::DontActivate);
+        return ToHandle(body->GetID());
 }
 
 void PhysicsSystem::DestroyBody(BodyHandle h) {
@@ -633,6 +878,12 @@ void PhysicsSystem::Teleport(BodyHandle h, glm::vec3 pos, glm::quat rot) {
 
 void PhysicsSystem::MoveKinematic(BodyHandle h, glm::vec3 pos, glm::quat rot) {
         if (!h.IsValid() || !pImpl->initialized) return;
+        // NaN-proof without isfinite (compiled out by -ffast-math): a garbage
+        // target would become a garbage velocity on the kinematic body.
+        if (pos.x != pos.x || pos.y != pos.y || pos.z != pos.z
+            || pos.x > 1e6f || pos.x < -1e6f || pos.y > 1e6f || pos.y < -1e6f || pos.z > 1e6f || pos.z < -1e6f) {
+                return;
+        }
 
         DeferredCmd cmd;
         cmd.type   = DeferredCmd::MoveKinematic;
@@ -667,7 +918,7 @@ void PhysicsSystem::RegisterNode(BodyHandle h, void* pNode) {
         if (!h.IsValid()) return;
 
         auto it = pImpl->mBodyStates.find(h.index);
-        if (it != pImpl->mBodyStates.end()) {
+        if (it != pImpl->mBodyStates.end() && it->second.generation == h.generation) {
                 it->second.pNode = pNode;
         }
 }
@@ -676,7 +927,7 @@ void PhysicsSystem::UnregisterNode(BodyHandle h) {
         if (!h.IsValid()) return;
 
         auto it = pImpl->mBodyStates.find(h.index);
-        if (it != pImpl->mBodyStates.end()) {
+        if (it != pImpl->mBodyStates.end() && it->second.generation == h.generation) {
                 it->second.pNode = nullptr;
         }
 }
@@ -685,8 +936,33 @@ void* PhysicsSystem::GetNode(BodyHandle h) const {
         if (!h.IsValid()) return nullptr;
 
         auto it = pImpl->mBodyStates.find(h.index);
-        if (it == pImpl->mBodyStates.end()) return nullptr;
-        return it->second.pNode;
+        if (it != pImpl->mBodyStates.end()) {
+                // Recycled index + stale generation: the handle belongs to a
+                // destroyed body, never to the body that now owns the slot.
+                if (it->second.generation != h.generation) { return nullptr; }
+                return it->second.pNode;
+        }
+
+        // character presence bodies: not regular bodies, mapped node-only
+        auto inner = pImpl->mInnerBodyNodes.find(h.index);
+        return (inner != pImpl->mInnerBodyNodes.end()
+                && inner->second.generation == h.generation)
+                ? inner->second.pNode : nullptr;
+}
+
+void PhysicsSystem::AttachSensorListener(BodyHandle hBody, SensorContactFn fn) {
+        if (!hBody.IsValid() || !fn) return;
+        pImpl->mSensorListeners[hBody.index] =
+                Impl::SensorEntry{ hBody.generation, std::move(fn) };
+}
+
+void PhysicsSystem::DetachSensorListener(BodyHandle hBody) {
+        if (!hBody.IsValid()) return;
+        auto it = pImpl->mSensorListeners.find(hBody.index);
+        if (it != pImpl->mSensorListeners.end()
+            && it->second.generation == hBody.generation) {
+                pImpl->mSensorListeners.erase(it);
+        }
 }
 
 std::string RigidBodyDesc::Str() const {
@@ -782,15 +1058,15 @@ void PhysicsSystem::Interpolate() {
         const float alpha = pImpl->interpolation_alpha;
         if (!pImpl->initialized) return;
 
-        for (auto& [idx, state] : pImpl->mBodyStates) {
-                if (!state.pNode || state.is_static || state.is_kinematic) continue;
+        // Simulated bodies only (statics never move and are not tracked);
+        // kinematic followers are node-driven — their node is never re-synced.
+        for (BodyState* pState : pImpl->vSimStates) {
+                if (!pState->pNode || pState->is_kinematic) continue;
 
-                glm::vec3 pos = glm::mix(state.vPrevPos, state.vCurrPos, alpha);
-                glm::quat rot = glm::slerp(state.qPrevRot, state.qCurrRot, alpha);
+                glm::vec3 pos = glm::mix(pState->vPrevPos, pState->vCurrPos, alpha);
+                glm::quat rot = glm::slerp(pState->qPrevRot, pState->qCurrRot, alpha);
 
-                //log_d("BodyState[{}]: {}", idx, state.Str());
-
-                auto* pNode = static_cast<TSceneTree::TSceneNodeExact*>(state.pNode);
+                auto* pNode = static_cast<TSceneTree::TSceneNodeExact*>(pState->pNode);
                 pNode->SetWorldPos(pos);
                 pNode->SetRotation(rot);
         }
@@ -866,12 +1142,23 @@ CharHandle PhysicsSystem::CreateCharacter(const CharacterDesc& desc) {
         settings.mShape               = shape_result.Get();
         settings.mMass                = desc.mass;
         settings.mMaxStrength         = desc.max_strength;
+        if (desc.inner_body_layer >= 0) {
+                // Presence body: the ctor adds it to the broadphase with
+                // mAllowSleeping off so sensor contacts reach the contact
+                // listener, and packs inUserData onto it — the same
+                // (mask<<32)|layer encoding regular bodies carry, so the
+                // listener's mask gating treats it like any body. The dtor
+                // removes/destroys it; no manual release needed.
+                settings.mInnerBodyShape = shape_result.Get();
+                settings.mInnerBodyLayer = JPH::ObjectLayer(desc.inner_body_layer);
+        }
 
         auto* pChar = new JPH::CharacterVirtual(
                 &settings,
                 ToJoltR(desc.vInitialPosition),
                 ToJolt(desc.qInitialRotation),
-                0,
+                (static_cast<uint64_t>(desc.collision_mask) << 32)
+                        | static_cast<uint64_t>(desc.collision_layer),
                 pImpl->pPhysics.get());
 
         CharHandle h{ pImpl->next_char_id++ };
@@ -879,6 +1166,12 @@ CharHandle PhysicsSystem::CreateCharacter(const CharacterDesc& desc) {
         Impl::CharState cs;
         cs.pChar       = pChar;
         cs.step_height = desc.step_height;
+        cs.bCollidesKinematic = desc.collides_kinematic;
+        cs.update_divider = std::max(1u, desc.update_divider);
+        // Phase from the monotonic id: sizing from the live-map count drifts
+        // its parity as despawns shrink it, clustering phases after churn.
+        cs.update_phase   = uint32_t(h.id) % cs.update_divider;
+        cs.inner_body_id  = pChar->GetInnerBodyID();
         pImpl->mCharacters.emplace(h.id, std::move(cs));
 
         return h;
@@ -886,19 +1179,33 @@ CharHandle PhysicsSystem::CreateCharacter(const CharacterDesc& desc) {
 
 void PhysicsSystem::DestroyCharacter(CharHandle h) {
         if (!h.IsValid()) return;
-        pImpl->mCharacters.erase(h.id);
+        auto it = pImpl->mCharacters.find(h.id);
+        if (it == pImpl->mCharacters.end()) return;
+        if (!it->second.inner_body_id.IsInvalid())
+                pImpl->mInnerBodyNodes.erase(it->second.inner_body_id.GetIndex());
+        pImpl->mCharacters.erase(it);
 }
 
 void PhysicsSystem::RegisterCharacterNode(CharHandle h, void* pNode) {
         auto it = pImpl->mCharacters.find(h.id);
-        if (it != pImpl->mCharacters.end())
-                it->second.pNode = pNode;
+        if (it == pImpl->mCharacters.end()) return;
+
+        it->second.pNode = pNode;
+
+        // presence body → node: sensors report the inner body as the event's
+        // hOther; bindings resolve the actor through it (bell noise_pos etc.)
+        if (!it->second.inner_body_id.IsInvalid())
+                pImpl->mInnerBodyNodes[it->second.inner_body_id.GetIndex()] =
+                        Impl::InnerBodyRef{ uint32_t(it->second.inner_body_id.GetSequenceNumber()), pNode };
 }
 
 void PhysicsSystem::UnregisterCharacterNode(CharHandle h) {
         auto it = pImpl->mCharacters.find(h.id);
-        if (it != pImpl->mCharacters.end())
-                it->second.pNode = nullptr;
+        if (it == pImpl->mCharacters.end()) return;
+
+        if (!it->second.inner_body_id.IsInvalid())
+                pImpl->mInnerBodyNodes.erase(it->second.inner_body_id.GetIndex());
+        it->second.pNode = nullptr;
 }
 
 void PhysicsSystem::SetCharacterVelocity(CharHandle h, glm::vec3 vel) {

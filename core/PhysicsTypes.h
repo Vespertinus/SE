@@ -37,6 +37,11 @@ namespace CollisionLayers {
     // Applications define their own bits: PLAYER = 1u<<1, ENEMY = 1u<<2, …
 }
 
+// SE-level mirror of the Jolt object layers (PhysicsSystem.tcc PhysLayers).
+namespace BodyLayers {
+        enum Type { Static = 0, Dynamic = 1, Trigger = 2, Player = 3, Kinematic = 4 };
+}
+
 struct RigidBodyDesc {
         ColliderDesc oCollider;
         glm::vec3    vInitialPosition  {0.0f, 0.0f, 0.0f};
@@ -44,6 +49,9 @@ struct RigidBodyDesc {
         bool         is_static         = false;
         bool         is_kinematic      = false;
         bool         is_trigger        = false;
+        // -1 = derive from is_static/is_trigger/is_kinematic; otherwise a
+        // BodyLayers::Type override (e.g. a probe body that must fire sensors).
+        int          object_layer      = -1;
         float        friction          = 0.5f;
         float        restitution       = 0.0f;
         float        linear_damping    = 0.05f;
@@ -73,6 +81,23 @@ struct CharacterDesc {
         float    max_strength    = 100.0f;
         uint32_t collision_layer = CollisionLayers::DEFAULT;
         uint32_t collision_mask  = 0xFFFFFFFFu;
+        // Inner presence body (Jolt CharacterVirtual mInnerBodyShape): gives
+        // the character contact presence — trigger sensors fire, rays hit it,
+        // dynamic props are pushed. BodyLayers::Player by default; -1 disables
+        // it (pure sweep character: no trigger events, ghosts through the
+        // player and other characters).
+        int      inner_body_layer = BodyLayers::Player;
+        // Sweep against KINEMATIC-layer followers (door leaves, NPC blocking
+        // capsules). True for player-class characters; NPC CharacterVirtuals
+        // opt OUT — sweeping their own follower capsule is a depenetration
+        // feedback loop that hurls the node to infinity.
+        bool     collides_kinematic = true;
+        // Character LOD: run this character's ExtendedUpdate every Nth fixed
+        // step (dt scaled by N, so average speed/gravity are unchanged). 1 =
+        // every step (player). NPCs profiled as the dominant CPU cost with
+        // ~15 characters alive (each step sweeps the terrain heightfield and
+        // static broadphase); 2 halves that at no visible cost.
+        uint32_t update_divider = 1;
         glm::vec3 vInitialPosition {0.f, 0.f, 0.f};
         glm::quat qInitialRotation {1.f, 0.f, 0.f, 0.f};
 };

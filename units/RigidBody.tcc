@@ -70,10 +70,15 @@ static RigidBodyDesc RigidBodyDescFromFB(
         // Position from node (already set by scene loader)
         desc.vInitialPosition = pNode->GetTransform().GetWorldPos();
 
-        // Rotation — Vec4 is [x,y,z,w] matching glm::quat layout
+        // Rotation — the node's world rotation carries the authored piece yaw
+        // (modular walls/doors are placed rotated); initial_rotation is a
+        // local offset on top of it. Without the world part, yawed pieces
+        // would spawn axis-aligned boxes. Vec4 is [x,y,z,w] matching glm::quat.
+        glm::quat qLocal {1.f, 0.f, 0.f, 0.f};
         if (pFB->initial_rotation()) {
-                desc.qInitialRotation = *reinterpret_cast<const glm::quat*>(pFB->initial_rotation());
+                qLocal = *reinterpret_cast<const glm::quat*>(pFB->initial_rotation());
         }
+        desc.qInitialRotation = std::get<1>(pNode->GetTransform().GetWorldDecomposedQuat()) * qLocal;
 
         return desc;
 }
@@ -87,7 +92,7 @@ RigidBody::RigidBody(TSceneTree::TSceneNodeExact* pNewNode, const RigidBodyDesc&
         , oCollider(desc.oCollider)
         , is_kinematic(desc.is_kinematic) {
 
-        hBody = GetSystem<PhysicsSystem>().CreateRigidBody(desc);
+                hBody = GetSystem<PhysicsSystem>().CreateRigidBody(desc);
         if (hBody.IsValid()) {
                 GetSystem<PhysicsSystem>().RegisterNode(hBody, pNode);
                 if (is_kinematic) {
@@ -122,6 +127,14 @@ void RigidBody::Disable() {
 void RigidBody::TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetNode) {
         if (!hBody.IsValid()) return;
         auto [vPos, qRot, vScale] = pTargetNode->GetTransform().GetWorldDecomposedQuat();
+        // Reject NaN / absurd targets without isfinite (compiled out by
+        // -ffast-math): a follower must never inject a garbage velocity.
+        const bool bBad = (vPos.x != vPos.x) || (vPos.y != vPos.y) || (vPos.z != vPos.z)
+                       || vPos.x > 1e6f || vPos.x < -1e6f
+                       || vPos.y > 1e6f || vPos.y < -1e6f
+                       || vPos.z > 1e6f || vPos.z < -1e6f;
+        if (bBad) { return; }
+
         GetSystem<PhysicsSystem>().MoveKinematic(hBody, vPos, qRot);
 }
 

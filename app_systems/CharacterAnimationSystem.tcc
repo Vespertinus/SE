@@ -34,6 +34,11 @@ void CharacterAnimationSystem::Register(TSceneTree::TSceneNodeWeak pCharNode,
                                         Animator* pAnimator) {
         auto pNode = pCharNode.lock();
         if (!pNode || !pCC || !pAnimator) return;
+
+        // Animation LOD follows the character step LOD: the graph evaluates at
+        // the same reduced rate the physics character steps at (player: 1).
+        pAnimator->SetUpdateDivider(pCC->GetUpdateDivider());
+
         Link oLink;
         oLink.pCharNode   = pCharNode;
         oLink.pVisualNode = pAnimator->GetNodeWeak();

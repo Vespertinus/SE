@@ -33,6 +33,13 @@ private:
         RootMotionDelta               last_root_delta;
         bool                          show_bind_pose = false;
         PoseSource                    pose_source    = PoseSource::GRAPH;
+        // Animation LOD (mirrors CharacterDesc::update_divider — see
+        // CharacterAnimationSystem): accumulate dt, evaluate every Nth frame
+        // with the accumulated dt (average playback speed unchanged). Phase
+        // staggered per animator so NPCs don't all skip the same frame.
+        uint32_t                      update_divider = 1;
+        uint32_t                      update_phase   = 0;
+        float                         update_accum   = 0.f;
 
         void ApplyPoseToJointNodes(const LocalPose& pose);
         void OnUpdate(const Event& oEvent);
@@ -59,6 +66,11 @@ public:
         void Disable();
 
         void Evaluate(float dt);
+
+        /** Animation LOD: 1 = every frame (player); N = evaluate every Nth
+         *  frame with accumulated dt. Phase derived from the node address. */
+        void     SetUpdateDivider(uint32_t divider);
+        uint32_t GetUpdateDivider() const { return update_divider; }
 
         // Parameter setters — delegates to graph instance
         void SetFloat(StrID name, float v)   { oGraphInstance.SetFloat(name, v); }

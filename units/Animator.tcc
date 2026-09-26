@@ -102,8 +102,31 @@ void Animator::Disable() {
         GetSystem<EventManager>().RemoveListener<EUpdate, &Animator::OnUpdate>(this);
 }
 
+void Animator::SetUpdateDivider(uint32_t divider) {
+        update_divider = std::max(1u, divider);
+        // phase from the node address: despawn/respawn churn cannot desync
+        // a map-size-derived parity (same reasoning as the character step LOD)
+        update_phase = uint32_t((uintptr_t(pNode) >> 4) % update_divider);
+        update_accum = 0.f;
+}
+
 void Animator::OnUpdate(const Event& oEvent) {
-        Evaluate(oEvent.Get<EUpdate>().last_frame_time);
+
+        const float dt = oEvent.Get<EUpdate>().last_frame_time;
+
+        if (update_divider > 1) {
+                // Animation LOD: accumulate dt, evaluate on this animator's
+                // phase frame with the accumulated dt — average playback speed
+                // is unchanged while the graph cost divides by the divider.
+                update_accum += dt;
+                const uint64_t frame = GetSystem<AppClock>().Frame();
+                if (((frame + update_phase) % update_divider) != 0u) { return; }
+                Evaluate(update_accum);
+                update_accum = 0.f;
+                return;
+        }
+
+        Evaluate(dt);
 }
 
 void Animator::Evaluate(float dt) {

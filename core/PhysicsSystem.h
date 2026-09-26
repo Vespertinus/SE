@@ -2,6 +2,7 @@
 #ifndef __PHYSICS_SYSTEM_H__
 #define __PHYSICS_SYSTEM_H__
 
+#include <functional>
 #include <memory>
 #include <PhysicsTypes.h>
 #include <PhysicsEvents.h>
@@ -17,6 +18,14 @@ public:
         void Shutdown();
 
         BodyHandle CreateRigidBody(const RigidBodyDesc& desc);
+        /// Static heightfield body (terrain tiles). vSamples is row-major
+        /// (z-row * count + x-col) of ABSOLUTE world heights; count = samples per side.
+        /// vOffset = tile min corner (x, 0, z); vScale = (step_x, 1.0, step_z). The body
+        /// is never registered with a scene node — terrain has none.
+        BodyHandle CreateStaticHeightField(const std::vector<float>& vSamples, uint32_t count,
+                                           const glm::vec3& vOffset, const glm::vec3& vScale,
+                                           float friction,
+                                           uint32_t collision_layer = CollisionLayers::DEFAULT);
         void       DestroyBody(BodyHandle h);
 
         void ApplyImpulse(BodyHandle h, glm::vec3 impulse);
@@ -34,6 +43,14 @@ public:
 
         // Returns the registered TSceneTree::TSceneNodeExact* as void* (cast at call site).
         void* GetNode(BodyHandle h) const;
+
+        // Targeted sensor contact delivery. Without it, every TriggerVolume
+        // subscribes to the raw EPhysicsTriggerEnter/Exit broadcasts and each
+        // contact anywhere costs O(#triggers) listener invocations. The raw
+        // events keep broadcasting for external sinks (tests, samples).
+        using SensorContactFn = std::function<void(bool bEnter, BodyHandle hOther)>;
+        void AttachSensorListener(BodyHandle hBody, SensorContactFn fn);
+        void DetachSensorListener(BodyHandle hBody);
 
         // Called from game loop
         void  Update(float game_dt);    // accumulator + fixed steps + drain events

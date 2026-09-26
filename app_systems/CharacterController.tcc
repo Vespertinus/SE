@@ -31,7 +31,11 @@ CharacterController::CharacterController(TSceneTree::TSceneNodeExact* pNewNode, 
         oPhysDesc.slope_angle     = desc.max_slope_angle;
         oPhysDesc.collision_layer = desc.collision_layer;
         oPhysDesc.collision_mask  = desc.collision_mask;
+        oPhysDesc.inner_body_layer = desc.inner_body_layer;
+        oPhysDesc.collides_kinematic = desc.collides_kinematic;
+        oPhysDesc.update_divider  = desc.update_divider;
         oPhysDesc.vInitialPosition = pNewNode->GetTransform().GetWorldPos();
+        update_divider            = desc.update_divider;
 
         hChar = GetSystem<PhysicsSystem>().CreateCharacter(oPhysDesc);
         if (hChar.IsValid()) {

@@ -41,6 +41,13 @@ public:
                 float    jump_buffer_time    = 0.10f;   // s a jump input is remembered
                 uint32_t collision_layer     = 0x1u;
                 uint32_t collision_mask      = 0xFFFFFFFFu;
+                // Inner presence body layer (BodyLayers::Player by default —
+                // sensors fire for this character). -1 = no presence body
+                // (pure sweep character: ghosts through the player, no
+                // trigger events). Use -1 for NPC crowds.
+                int      inner_body_layer    = BodyLayers::Player;
+                bool     collides_kinematic  = true;   // sweep KINEMATIC followers
+                uint32_t update_divider      = 1;      // character LOD: step every Nth fixed step
         };
 
         explicit CharacterController(TSceneTree::TSceneNodeExact* pNode);
@@ -76,6 +83,7 @@ public:
         float         GetCoyoteTimer()      const { return coyote_timer; }
         float         GetJumpBufferTimer()  const { return jump_buffer_timer; }
         CharHandle    GetHandle()           const { return hChar; }
+        uint32_t      GetUpdateDivider()    const { return update_divider; }
 
         // Enable/disable animation root-motion drive. When true, CharacterMovementSystem
         // skips input-based horizontal blending and uses v_root_motion_vel instead.
@@ -110,6 +118,8 @@ private:
         float    gravity_scale;
         float    coyote_time;
         float    jump_buffer_time;
+        // character LOD divider (mirrored from Desc; read by CharacterAnimationSystem)
+        uint32_t update_divider   = 1;
 
         // Runtime state (written by CharacterMovementSystem each frame)
         MovementMode  mode              = MovementMode::GROUNDED;

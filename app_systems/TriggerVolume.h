@@ -74,8 +74,12 @@ public:
 
         void TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetNode);
 
-        void OnTriggerEnter(const Event& e);
-        void OnTriggerExit(const Event& e);
+        // Sensor contacts arrive via PhysicsSystem's targeted callback (this
+        // volume only) — not via the raw EPhysicsTriggerEnter/Exit broadcasts,
+        // which stay for external sinks. Every volume subscribing to the raw
+        // events made each contact anywhere cost O(#triggers) dispatches.
+        void OnSensorEnter(BodyHandle hOther);
+        void OnSensorExit(BodyHandle hOther);
         void OnUpdate(const Event& e);
 
         void Enable();

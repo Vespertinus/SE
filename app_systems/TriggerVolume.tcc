@@ -27,12 +27,25 @@ static void InitTriggerVolume(TriggerVolume* self,
                 return;
         }
 
+        // body→node mapping: BlackboardSystem's binding dispatch resolves the
+        // fired trigger's node via GetNode(hTrigger) — without it every
+        // TriggerBinding in the game silently no-ops (the spawner matches by
+        // event name alone, which is why waves still armed).
+        GetSystem<PhysicsSystem>().RegisterNode(hBody, pNode);
+
         pNode->AddListener(self);
 
+        // Targeted sensor delivery: only this volume's contacts reach it (the
+        // raw EPhysicsTriggerEnter/Exit broadcasts remain for external sinks).
+        GetSystem<PhysicsSystem>().AttachSensorListener(
+                        hBody,
+                        [self](const bool bEnter, const BodyHandle hOther) {
+                                if (bEnter) { self->OnSensorEnter(hOther); }
+                                else        { self->OnSensorExit(hOther);  }
+                        });
+
         auto& em = GetSystem<EventManager>();
-        em.AddListener<EPhysicsTriggerEnter, &TriggerVolume::OnTriggerEnter>(self);
-        em.AddListener<EPhysicsTriggerExit,  &TriggerVolume::OnTriggerExit>(self);
-        em.AddListener<EUpdate,              &TriggerVolume::OnUpdate>(self);
+        em.AddListener<EUpdate, &TriggerVolume::OnUpdate>(self);
 }
 
 static ColliderDesc ColliderDescFromFB(const FlatBuffers::TriggerVolume* pFB) {
@@ -104,12 +117,14 @@ TriggerVolume::TriggerVolume(TSceneTree::TSceneNodeExact* pNewNode,
 TriggerVolume::~TriggerVolume() noexcept {
 
         auto& em = GetSystem<EventManager>();
-        em.RemoveListener<EUpdate,              &TriggerVolume::OnUpdate>(this);
-        em.RemoveListener<EPhysicsTriggerExit,  &TriggerVolume::OnTriggerExit>(this);
-        em.RemoveListener<EPhysicsTriggerEnter, &TriggerVolume::OnTriggerEnter>(this);
+        em.RemoveListener<EUpdate, &TriggerVolume::OnUpdate>(this);
 
         if (hBody.IsValid()) {
+                // Detach the callback BEFORE the body dies — the lambda captures
+                // this and contacts still drain until Shutdown.
+                GetSystem<PhysicsSystem>().DetachSensorListener(hBody);
                 pNode->RemoveListener(this);
+                GetSystem<PhysicsSystem>().UnregisterNode(hBody);
                 GetSystem<PhysicsSystem>().DestroyBody(hBody);
         }
 }
@@ -121,16 +136,15 @@ void TriggerVolume::TargetTransformChanged(TSceneTree::TSceneNodeExact* pTargetN
         GetSystem<PhysicsSystem>().MoveKinematic(hBody, vPos, qRot);
 }
 
-void TriggerVolume::OnTriggerEnter(const Event& e) {
+void TriggerVolume::OnSensorEnter(BodyHandle hOther) {
 
-        auto& ev = e.Get<EPhysicsTriggerEnter>();
-        if (ev.hTrigger != hBody || !enabled || (one_shot && fired)) return;
+        if (!enabled || (one_shot && fired)) return;
 
-        sActiveOverlaps.insert(ev.hOther);
+        sActiveOverlaps.insert(hOther);
         stay_timer = 0.0f;
 
         if (on_enter_id != StrID{})
-                GetSystem<EventManager>().QueueEvent(ETriggerFired{on_enter_id, hBody, ev.hOther});
+                GetSystem<EventManager>().QueueEvent(ETriggerFired{on_enter_id, hBody, hOther});
 
         if (one_shot) {
                 fired = true;
@@ -138,15 +152,12 @@ void TriggerVolume::OnTriggerEnter(const Event& e) {
         }
 }
 
-void TriggerVolume::OnTriggerExit(const Event& e) {
+void TriggerVolume::OnSensorExit(BodyHandle hOther) {
 
-        auto& ev = e.Get<EPhysicsTriggerExit>();
-        if (ev.hTrigger != hBody) return;
-
-        sActiveOverlaps.erase(ev.hOther);
+        sActiveOverlaps.erase(hOther);
 
         if (!one_shot && on_exit_id != StrID{})
-                GetSystem<EventManager>().QueueEvent(ETriggerFired{on_exit_id, hBody, ev.hOther});
+                GetSystem<EventManager>().QueueEvent(ETriggerFired{on_exit_id, hBody, hOther});
 }
 
 void TriggerVolume::Enable() {
