@@ -1,0 +1,8 @@
+{
+        "vertex" : {
+                "name" : "shader/terrain_geometry_vert.sesl"
+        },
+        "fragment" : {
+                "name" : "shader/terrain_geometry_frag.sesl"
+        }
+}

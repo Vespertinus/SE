@@ -1,0 +1,13 @@
+{
+    "id": "world_demo",
+    "output": "resource/terrain/world_demo",
+    "source": { "type": "png16", "path": "resource/terrain/world_demo_src.png",
+                "height_scale": 0.0009765625 },
+    "tile_size": 40.0,
+    "lod0_cells": 32,
+    "lod_count": 5,
+    "origin": [-320.0, 0.0, -320.0],
+    "material_path": "material/terrain.semt",
+    "uv_scale": 0.02,
+    "physics": { "friction": 0.8, "max_slope_deg": 50.0 }
+}

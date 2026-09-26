@@ -1,0 +1,11 @@
+{
+    "shader": { "path": "shader_program/terrain_geometry.sesp" },
+    "variables": [
+        { "name": "LowColor",  "vec4_val": [0.32, 0.45, 0.20, 1.0] },
+        { "name": "HighColor", "vec4_val": [0.42, 0.38, 0.33, 1.0] },
+        { "name": "SlopeStart", "float_val": 0.72 },
+        { "name": "SlopeEnd",   "float_val": 0.94 },
+        { "name": "CheckScale", "float_val": 1.0 },
+        { "name": "Roughness",  "float_val": 0.95 }
+    ]
+}

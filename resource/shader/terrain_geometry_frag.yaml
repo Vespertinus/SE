@@ -1,0 +1,55 @@
+type: FRAGMENT
+source:
+ - |
+        #version 420 core
+
+        // Terrain fragment stage — deferred G-buffer fill. First version keeps the
+        // material model deliberately small: a slope-blended two-tone surface with
+        // a subtle UV checker for scale, all uniform-driven 
+        // (no texture layers yet, splat materials are follow-up).
+
+        layout(location = 0) out vec4 gAlbedoRoughness;  // RT0: albedo.rgb + roughness.a
+        layout(location = 1) out vec4 gNormalMetallicAO; // RT1: oct-normal.rg + metallic.b + ao.a
+        layout(location = 2) out vec3 gEmissive;         // RT2: emissive.rgb
+
+        in vec3 v_WorldPos;
+        in vec3 v_Normal;
+        in vec2 TexCoord;
+
+        uniform vec4 LowColor;    // flat ground tint (grass)
+        uniform vec4 HighColor;   // steep slope tint (rock)
+        uniform float SlopeStart; // normal.y where the blend begins
+        uniform float SlopeEnd;   // normal.y where the blend ends
+        uniform float CheckScale; // checker cells per world unit
+        uniform float Roughness;
+
+        // Encode world-space normal to oct representation in [-1, 1]^2
+        vec2 EncodeNormal(vec3 n) {
+            n /= (abs(n.x) + abs(n.y) + abs(n.z));
+            vec2 e = n.y >= 0.0 ? n.xz : (1.0 - abs(n.zx)) * vec2(n.x >= 0.0 ? 1.0 : -1.0,
+                                                                  n.z >= 0.0 ? 1.0 : -1.0);
+            return e * 0.5 + 0.5;
+        }
+
+        void main() {
+            vec3 N = normalize(v_Normal);
+
+            // macro variation: two-octave checker on world-space UV — subtle
+            // luminance mottling for scale 
+            // (no texture layers yet; splat materials are follow-up)
+            vec2 cell = floor(TexCoord * CheckScale);
+            float checker = mod(cell.x + cell.y, 2.0);
+
+            vec2 cell2 = floor(TexCoord * CheckScale * 4.0);
+            float checker2 = mod(cell2.x + cell2.y, 2.0);
+
+            float flatness = smoothstep(SlopeStart, SlopeEnd, N.y);
+            vec3 albedo = mix(HighColor.rgb, LowColor.rgb, flatness);
+            albedo *= mix(0.97, 1.03, checker) * mix(0.96, 1.04, checker2);
+
+            vec2 octN = EncodeNormal(N);
+
+            gAlbedoRoughness = vec4(albedo, Roughness);
+            gNormalMetallicAO = vec4(octN.x, octN.y, 0.0, 1.0);
+            gEmissive = vec3(0.0);
+        }

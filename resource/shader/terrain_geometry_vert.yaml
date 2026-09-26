@@ -1,0 +1,29 @@
+type: VERTEX
+source:
+ - |
+        #version 330 core
+
+        // Terrain vertex stage. Positions are tile-local; the
+        // engine applies MVMatrix = tile origin transform (float precision at any
+        // world distance). No tangents — terrain uses per-vertex world normals.
+
+        in vec3 Position;
+        in vec3 Normal;
+        in vec2 TexCoord0;
+
+        uniform mat4 MVPMatrix;   // projection * view (clip space)
+        layout(std140) uniform Transform {   // per-draw model matrix, UBO-backed
+        mat4 MVMatrix;
+        };
+
+        out vec3 v_WorldPos;
+        out vec3 v_Normal;
+        out vec2 TexCoord;
+
+        void main() {
+            vec4 worldPos = MVMatrix * vec4(Position, 1.0);
+            v_WorldPos = worldPos.xyz;
+            v_Normal = normalize(mat3(MVMatrix) * Normal);
+            TexCoord = TexCoord0;
+            gl_Position = MVPMatrix * worldPos;
+        }

@@ -1,0 +1,22 @@
+{
+    "id": "demo",
+    "output": "resource/terrain/demo",
+    "source": {
+        "type": "procedural",
+        "size": 513,
+        "seed": 7,
+        "frequency": 4.0,
+        "octaves": 6,
+        "gain": 0.5,
+        "lacunarity": 2.0,
+        "base_height": 40.0,
+        "amplitude": 140.0
+    },
+    "tile_size": 512.0,
+    "lod0_cells": 128,
+    "lod_count": 5,
+    "origin": [0, 0, 0],
+    "material_path": "material/terrain.semt",
+    "uv_scale": 0.02,
+    "physics": { "friction": 0.8, "max_slope_deg": 50.0 }
+}
