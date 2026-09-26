@@ -11,6 +11,11 @@
 #include <Audio_generated.h>
 #include <AudioClip_generated.h>
 #include <StateMachine_generated.h>
+#include <Terrain_generated.h>
+#include <Spawner_generated.h>
+#include <NavMesh_generated.h>
+#include <Blackboard_generated.h>
+#include <BehaviorTree_generated.h>
 
 #include <functional>
 #include <memory>
@@ -28,12 +33,15 @@ using FieldApplier      = std::function<void(SE::FlatBuffers::ComponentT&,
 using ArrayFieldApplier = std::function<void(SE::FlatBuffers::ComponentT&,
                                              const std::vector<AssetRef>&,
                                              SceneComposer&)>;
+using ValueFieldApplier = std::function<void(SE::FlatBuffers::ComponentT&,
+                                             const nlohmann::json&)>;
 
 struct ComponentDef {
         SE::FlatBuffers::ComponentU                              type_tag;
         std::function<void(SE::FlatBuffers::ComponentUUnion&)>   make;
         std::unordered_map<std::string, FieldApplier>            fields;
         std::unordered_map<std::string, ArrayFieldApplier>       array_fields;
+        std::unordered_map<std::string, ValueFieldApplier>       value_fields;
 };
 
 class SceneComposer {

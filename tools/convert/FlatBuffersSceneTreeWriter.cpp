@@ -18,7 +18,7 @@ using SE::FlatBuffers::Component;
 static std::tuple<flatbuffers::Offset<Node>, ret_code_t> SerializeNode(
                 const NodeData & oNode,
                 flatbuffers::FlatBufferBuilder & oBuilder,
-                const ImportCtx & oCtx) {
+                ImportCtx & oCtx) {
 
         std::vector<flatbuffers::Offset<Node>> vChildren;
         std::vector<flatbuffers::Offset<Component>> vComponents;
@@ -79,7 +79,7 @@ static std::tuple<flatbuffers::Offset<Node>, ret_code_t> SerializeNode(
 }
 
 SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNode,
-                              const ImportCtx & oCtx) {
+                              ImportCtx & oCtx) {
 
         flatbuffers::FlatBufferBuilder oBuilder(1024);
 
@@ -88,7 +88,17 @@ SE::ret_code_t WriteSceneTree(const std::string sPath, const NodeData & oRootNod
                 return res;
         }
 
-        auto scene_fb = CreateSceneTree(oBuilder, root_fb);
+        // scene-level dependency table, collected during component serialization;
+        // offsets point at the same holder tables the components reference
+        std::vector<flatbuffers::Offset<SE::FlatBuffers::ResourceRef>> vRes;
+        vRes.reserve(oCtx.vSceneResources.size());
+        for (const auto & item : oCtx.vSceneResources)
+                vRes.push_back(SE::FlatBuffers::CreateResourceRef(oBuilder,
+                                static_cast<SE::FlatBuffers::ResourceU>(item.first),
+                                flatbuffers::Offset<void>(item.second)));
+        auto res_vec = vRes.empty() ? 0 : oBuilder.CreateVector(vRes);
+
+        auto scene_fb = CreateSceneTree(oBuilder, root_fb, res_vec);
 
         FinishSceneTreeBuffer(oBuilder, scene_fb);
 

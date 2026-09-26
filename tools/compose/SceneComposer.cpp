@@ -3,10 +3,12 @@
 
 #include <Logging.h>
 #include <flatbuffers/flatbuffers.h>
+#include <nlohmann/json.hpp>
 
 #include <fstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace SE::TOOLS {
 
@@ -77,6 +79,147 @@ ArrayFieldApplier SceneComposer::MakeArrayApplier(
                 (p->*member).clear();
                 for (const auto& r : refs) (p->*member).push_back(sc.template Resolve<THolder>(r));
         };
+}
+
+// ---------------------------------------------------------------------------
+// Value-field helper factories (scalar / vec / nested-object manifest data)
+// ---------------------------------------------------------------------------
+
+template<typename TComp>
+static ValueFieldApplier VFFloat(float TComp::* member) {
+        return [member](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                auto* p = GetTyped<TComp>(c.component);
+                p->*member = j.get<float>();
+        };
+}
+
+template<typename TComp>
+static ValueFieldApplier VFBool(bool TComp::* member) {
+        return [member](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                auto* p = GetTyped<TComp>(c.component);
+                p->*member = j.get<bool>();
+        };
+}
+
+template<typename TComp>
+static ValueFieldApplier VFU32(uint32_t TComp::* member) {
+        return [member](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                auto* p = GetTyped<TComp>(c.component);
+                p->*member = j.get<uint32_t>();
+        };
+}
+
+template<typename TComp>
+static ValueFieldApplier VFString(std::string TComp::* member) {
+        return [member](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                auto* p = GetTyped<TComp>(c.component);
+                p->*member = j.get<std::string>();
+        };
+}
+
+template<typename TComp>
+static ValueFieldApplier VFVec3(std::unique_ptr<SE::FlatBuffers::Vec3> TComp::* member) {
+        return [member](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                if (!j.is_array() || j.size() != 3)
+                        throw std::runtime_error("compose: expected [x,y,z] array");
+                auto* p = GetTyped<TComp>(c.component);
+                (p->*member) = std::make_unique<SE::FlatBuffers::Vec3>(
+                                j[0].get<float>(), j[1].get<float>(), j[2].get<float>());
+        };
+}
+
+// {"type":"box","half_extents":[x,y,z]} | {"type":"sphere","radius":r}
+// | {"type":"capsule","radius":r,"half_height":h}
+template<typename TComp>
+static ValueFieldApplier VFCollider(SE::FlatBuffers::ColliderUUnion TComp::* member) {
+        return [member](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                using namespace SE::FlatBuffers;
+                auto* p = GetTyped<TComp>(c.component);
+                const std::string type = j.at("type").get<std::string>();
+                if (type == "box") {
+                        BoxColliderT box;
+                        const auto& he = j.at("half_extents");
+                        box.half_extents = std::make_unique<Vec3>(
+                                        he[0].get<float>(), he[1].get<float>(), he[2].get<float>());
+                        (p->*member).Set(std::move(box));
+                } else if (type == "sphere") {
+                        SphereColliderT s;
+                        s.radius = j.value("radius", 0.5f);
+                        (p->*member).Set(std::move(s));
+                } else if (type == "capsule") {
+                        CapsuleColliderT cap;
+                        cap.radius      = j.value("radius", 0.5f);
+                        cap.half_height = j.value("half_height", 0.5f);
+                        (p->*member).Set(std::move(cap));
+                } else {
+                        throw std::runtime_error("compose: unknown collider type '" + type + "'");
+                }
+        };
+}
+
+// {"focus_near":{...}} | {"tag_near":{...}} | {"at_time":{...}} | {"world_flag":{...}}
+static std::unique_ptr<SE::FlatBuffers::SpawnConditionT>
+ParseSpawnCondition(const nlohmann::json& j) {
+        using namespace SE::FlatBuffers;
+        if (!j.is_object() || j.size() != 1)
+                throw std::runtime_error("compose: condition must be a single-key object");
+        auto p    = std::make_unique<SpawnConditionT>();
+        auto  it  = j.begin();
+        const std::string& kind = it.key();
+        const nlohmann::json& v = it.value();
+        if (kind == "focus_near") {
+                FocusNearT c; c.radius = v.value("radius", 0.0f);
+                p->type.Set(c); p->value.Set(std::move(c));
+        } else if (kind == "tag_near") {
+                TagNearT c; c.tag = v.at("tag").get<std::string>();
+                c.radius = v.value("radius", 0.0f);
+                p->type.Set(c); p->value.Set(std::move(c));
+        } else if (kind == "at_time") {
+                AtTimeT c; c.at_s = v.value("at_s", 0.0f);
+                p->type.Set(c); p->value.Set(std::move(c));
+        } else if (kind == "world_flag") {
+                WorldFlagT c; c.key = v.at("key").get<std::string>();
+                p->type.Set(c); p->value.Set(std::move(c));
+        } else {
+                throw std::runtime_error("compose: unknown spawn condition '" + kind + "'");
+        }
+        return p;
+}
+
+static std::unique_ptr<SE::FlatBuffers::SpawnMemberT>
+ParseSpawnMember(const nlohmann::json& j) {
+        using namespace SE::FlatBuffers;
+        auto m = std::make_unique<SpawnMemberT>();
+        m->template_id     = j.at("template_id").get<std::string>();
+        if (j.contains("weight"))          m->weight          = j["weight"].get<float>();
+        if (j.contains("count"))           m->count           = j["count"].get<uint32_t>();
+        if (j.contains("initial_delay_s")) m->initial_delay_s = j["initial_delay_s"].get<float>();
+        if (j.contains("respawn_limit"))   m->respawn_limit   = j["respawn_limit"].get<uint32_t>();
+        if (j.contains("geometry"))        m->geometry        = j["geometry"].get<std::string>();
+        return m;
+}
+
+// {"float":1.5} | {"bool":true} | {"int":3} | {"vec3":[x,y,z]}
+static void ParseBBValue(const nlohmann::json& j, SE::FlatBuffers::BBValueUUnion& u) {
+        using namespace SE::FlatBuffers;
+        if (j.contains("float"))      u.Set(Float{j["float"].get<float>()});
+        else if (j.contains("bool"))  u.Set(Bool{j["bool"].get<bool>()});
+        else if (j.contains("int"))   u.Set(Int{j["int"].get<int32_t>()});
+        else if (j.contains("vec3")) {
+                const auto& a = j.at("vec3");
+                u.Set(Vec3{a[0].get<float>(), a[1].get<float>(), a[2].get<float>()});
+        }
+        else throw std::runtime_error("compose: blackboard value needs float/bool/int/vec3");
+}
+
+static SE::FlatBuffers::SpawnSnap ParseSpawnSnap(const nlohmann::json& j) {
+        using namespace SE::FlatBuffers;
+        const std::string s = j.get<std::string>();
+        if (s == "none")            return SpawnSnap::None;
+        if (s == "terrain_height" || s == "terrain") return SpawnSnap::TerrainHeight;
+        if (s == "physics_ray" || s == "physics")    return SpawnSnap::PhysicsRay;
+        if (s == "navmesh" || s == "nav")            return SpawnSnap::NavMesh;
+        throw std::runtime_error("compose: unknown spawn snap '" + s + "'");
 }
 
 // ---------------------------------------------------------------------------
@@ -251,6 +394,32 @@ SceneComposer::Resolve(const AssetRef& ref) {
         throw std::runtime_error("compose: StateMachineHolder ref must be a path or @name");
 }
 
+template<>
+std::unique_ptr<SE::FlatBuffers::BlackboardHolderT>
+SceneComposer::Resolve(const AssetRef& ref) {
+        if (ref.IsNamed())
+                return Resolve<SE::FlatBuffers::BlackboardHolderT>(ResolveNamed(ref.named));
+        if (ref.IsPath()) {
+                auto h = std::make_unique<SE::FlatBuffers::BlackboardHolderT>();
+                h->path = ref.path;
+                return h;
+        }
+        throw std::runtime_error("compose: BlackboardHolder ref must be a path or @name");
+}
+
+template<>
+std::unique_ptr<SE::FlatBuffers::BehaviorTreeHolderT>
+SceneComposer::Resolve(const AssetRef& ref) {
+        if (ref.IsNamed())
+                return Resolve<SE::FlatBuffers::BehaviorTreeHolderT>(ResolveNamed(ref.named));
+        if (ref.IsPath()) {
+                auto h = std::make_unique<SE::FlatBuffers::BehaviorTreeHolderT>();
+                h->path = ref.path;
+                return h;
+        }
+        throw std::runtime_error("compose: BehaviorTreeHolder ref must be a path or @name");
+}
+
 // ---------------------------------------------------------------------------
 // Component registry
 // ---------------------------------------------------------------------------
@@ -300,6 +469,232 @@ const std::unordered_map<std::string, ComponentDef>& SceneComposer::GetRegistry(
                         d.type_tag = ComponentUUnionTraits<StateMachineT>::enum_value;
                         d.make = [](auto& u) { u.Set(StateMachineT{}); };
                         d.fields["hms"] = MakeApplier<StateMachineT, StateMachineHolderT>(&StateMachineT::hms);
+                        add(std::move(d)); }
+
+                // RigidBody (Stage 2): collider union + physics scalars
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<RigidBodyT>::enum_value;
+                        d.make = [](auto& u) { u.Set(RigidBodyT{}); };
+                        d.value_fields["collider"]        = VFCollider<RigidBodyT>(&RigidBodyT::collider);
+                        d.value_fields["is_static"]       = VFBool(&RigidBodyT::is_static);
+                        d.value_fields["is_kinematic"]    = VFBool(&RigidBodyT::is_kinematic);
+                        d.value_fields["is_trigger"]      = VFBool(&RigidBodyT::is_trigger);
+                        d.value_fields["friction"]        = VFFloat(&RigidBodyT::friction);
+                        d.value_fields["restitution"]     = VFFloat(&RigidBodyT::restitution);
+                        d.value_fields["linear_damping"]  = VFFloat(&RigidBodyT::linear_damping);
+                        d.value_fields["angular_damping"] = VFFloat(&RigidBodyT::angular_damping);
+                        d.value_fields["gravity_scale"]   = VFFloat(&RigidBodyT::gravity_scale);
+                        d.value_fields["mass"]            = VFFloat(&RigidBodyT::mass);
+                        d.value_fields["collision_layer"] = VFU32(&RigidBodyT::collision_layer);
+                        d.value_fields["collision_mask"]  = VFU32(&RigidBodyT::collision_mask);
+                        add(std::move(d)); }
+
+                // TriggerVolume (Stage 2): collider union + event wiring
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<TriggerVolumeT>::enum_value;
+                        d.make = [](auto& u) { u.Set(TriggerVolumeT{}); };
+                        d.value_fields["collider"]        = VFCollider<TriggerVolumeT>(&TriggerVolumeT::collider);
+                        d.value_fields["on_enter_event"]  = VFString(&TriggerVolumeT::on_enter_event);
+                        d.value_fields["on_exit_event"]   = VFString(&TriggerVolumeT::on_exit_event);
+                        d.value_fields["on_stay_event"]   = VFString(&TriggerVolumeT::on_stay_event);
+                        d.value_fields["stay_interval"]   = VFFloat(&TriggerVolumeT::stay_interval);
+                        d.value_fields["one_shot"]        = VFBool(&TriggerVolumeT::one_shot);
+                        d.value_fields["collision_layer"] = VFU32(&TriggerVolumeT::collision_layer);
+                        d.value_fields["collision_mask"]  = VFU32(&TriggerVolumeT::collision_mask);
+                        add(std::move(d)); }
+
+                // TerrainComponent (Stage 3 Step 3)
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<TerrainComponentT>::enum_value;
+                        d.make = [](auto& u) { u.Set(TerrainComponentT{}); };
+                        d.value_fields["manifest"]  = VFString(&TerrainComponentT::manifest);
+                        d.value_fields["grid_mode"] = VFBool(&TerrainComponentT::grid_mode);
+                        add(std::move(d)); }
+
+                // SpatialEntry (Stage 3 Step 4)
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<SpatialEntryT>::enum_value;
+                        d.make = [](auto& u) { u.Set(SpatialEntryT{}); };
+                        d.value_fields["tag"]        = VFString(&SpatialEntryT::tag);
+                        d.value_fields["radius"]     = VFFloat(&SpatialEntryT::radius);
+                        d.value_fields["track_node"] = VFBool(&SpatialEntryT::track_node);
+                        add(std::move(d)); }
+
+                // SpawnPoint (Stage 3 Step 5)
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<SpawnPointT>::enum_value;
+                        d.make = [](auto& u) { u.Set(SpawnPointT{}); };
+                        d.value_fields["template_id"]     = VFString(&SpawnPointT::template_id);
+                        d.value_fields["initial_delay_s"] = VFFloat(&SpawnPointT::initial_delay_s);
+                        d.value_fields["max_spawns"]      = VFU32(&SpawnPointT::max_spawns);
+                        d.value_fields["respawn_delay_s"] = VFFloat(&SpawnPointT::respawn_delay_s);
+                        d.value_fields["snap"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                GetTyped<SpawnPointT>(c.component)->snap = ParseSpawnSnap(j);
+                        };
+                        d.value_fields["condition"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                GetTyped<SpawnPointT>(c.component)->condition = ParseSpawnCondition(j);
+                        };
+                        add(std::move(d)); }
+
+                // SpawnVolume (Stage 3 Step 5)
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<SpawnVolumeT>::enum_value;
+                        d.make = [](auto& u) { u.Set(SpawnVolumeT{}); };
+                        d.value_fields["size"] = VFVec3<SpawnVolumeT>(&SpawnVolumeT::size);
+                        d.value_fields["distribution"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                const std::string s = j.get<std::string>();
+                                if (s == "uniform")        GetTyped<SpawnVolumeT>(c.component)->distribution = SE::FlatBuffers::SpawnDistribution::Uniform;
+                                else if (s == "best_candidate") GetTyped<SpawnVolumeT>(c.component)->distribution = SE::FlatBuffers::SpawnDistribution::BestCandidate;
+                                else throw std::runtime_error("compose: unknown distribution '" + s + "'");
+                        };
+                        d.value_fields["candidate_count"] = VFU32(&SpawnVolumeT::candidate_count);
+                        d.value_fields["capacity"]        = VFU32(&SpawnVolumeT::capacity);
+                        d.value_fields["seed_offset"]     = VFU32(&SpawnVolumeT::seed_offset);
+                        add(std::move(d)); }
+
+                // Population (Stage 3 Step 5)
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<PopulationT>::enum_value;
+                        d.make = [](auto& u) { u.Set(PopulationT{}); };
+                        d.value_fields["id"] = VFString(&PopulationT::id);
+                        d.value_fields["members"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                auto* p = GetTyped<PopulationT>(c.component);
+                                p->members.clear();
+                                for (const auto& m : j) p->members.push_back(ParseSpawnMember(m));
+                        };
+                        d.value_fields["waves"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                auto* p = GetTyped<PopulationT>(c.component);
+                                p->waves.clear();
+                                for (const auto& w : j) {
+                                        auto wave = std::make_unique<SE::FlatBuffers::WaveT>();
+                                        if (w.contains("at_time_s")) wave->at_time_s = w["at_time_s"].get<float>();
+                                        if (w.contains("on_event"))  wave->on_event  = w["on_event"].get<std::string>();
+                                        if (w.contains("members"))
+                                                for (const auto& m : w["members"])
+                                                        wave->members.push_back(ParseSpawnMember(m));
+                                        p->waves.push_back(std::move(wave));
+                                }
+                        };
+                        d.value_fields["max_active"]      = VFU32(&PopulationT::max_active);
+                        d.value_fields["respawn_delay_s"] = VFFloat(&PopulationT::respawn_delay_s);
+                        d.value_fields["tick_interval_s"] = VFFloat(&PopulationT::tick_interval_s);
+                        d.value_fields["despawn_radius"]  = VFFloat(&PopulationT::despawn_radius);
+                        d.value_fields["seed_offset"]     = VFU32(&PopulationT::seed_offset);
+                        d.value_fields["conditions"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                auto* p = GetTyped<PopulationT>(c.component);
+                                p->conditions.clear();
+                                for (const auto& cond : j) p->conditions.push_back(ParseSpawnCondition(cond));
+                        };
+                        d.value_fields["lifetime"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                const std::string s = j.get<std::string>();
+                                if (s == "sub_level" || s == "sublevel") GetTyped<PopulationT>(c.component)->lifetime = SE::FlatBuffers::SpawnLifetime::SubLevel;
+                                else if (s == "persistent")              GetTyped<PopulationT>(c.component)->lifetime = SE::FlatBuffers::SpawnLifetime::Persistent;
+                                else throw std::runtime_error("compose: unknown lifetime '" + s + "'");
+                        };
+                        d.value_fields["snap"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                GetTyped<PopulationT>(c.component)->snap = ParseSpawnSnap(j);
+                        };
+                        add(std::move(d)); }
+
+                // NavArea (Stage 3 Step 6): bake-time area marker volume
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<NavAreaT>::enum_value;
+                        d.make = [](auto& u) { u.Set(NavAreaT{}); };
+                        d.value_fields["size"] = VFVec3<NavAreaT>(&NavAreaT::size);
+                        d.value_fields["area"] = VFString(&NavAreaT::area);
+                        add(std::move(d)); }
+
+                // NavLink (Stage 3 Step 6): off-mesh connection
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<NavLinkT>::enum_value;
+                        d.make = [](auto& u) { u.Set(NavLinkT{}); };
+                        d.value_fields["end_node"]      = VFString(&NavLinkT::end_node);
+                        d.value_fields["end"]           = VFVec3<NavLinkT>(&NavLinkT::end);
+                        d.value_fields["radius"]        = VFFloat(&NavLinkT::radius);
+                        d.value_fields["area"]          = VFString(&NavLinkT::area);
+                        d.value_fields["bidirectional"] = VFBool(&NavLinkT::bidirectional);
+                        add(std::move(d)); }
+
+                // NavAgent (Stage 3 Step 7)
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<NavAgentT>::enum_value;
+                        d.make = [](auto& u) { u.Set(NavAgentT{}); };
+                        d.value_fields["agent_class"] = VFString(&NavAgentT::agent_class);
+                        d.value_fields["radius"]      = VFFloat(&NavAgentT::radius);
+                        d.value_fields["height"]      = VFFloat(&NavAgentT::height);
+                        d.value_fields["avoidance"]   = VFBool(&NavAgentT::avoidance);
+                        add(std::move(d)); }
+
+                // PathFollower (Stage 3 Step 8): movement intent consumed by CrowdSystem
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<PathFollowerT>::enum_value;
+                        d.make = [](auto& u) { u.Set(PathFollowerT{}); };
+                        d.value_fields["arrival_radius"]       = VFFloat(&PathFollowerT::arrival_radius);
+                        d.value_fields["slow_radius"]          = VFFloat(&PathFollowerT::slow_radius);
+                        d.value_fields["repath_interval"]      = VFFloat(&PathFollowerT::repath_interval);
+                        d.value_fields["accept_partial_paths"] = VFBool(&PathFollowerT::accept_partial_paths);
+                        add(std::move(d)); }
+
+                // TriggerBinding (Stage 3 Step 9): trigger events → blackboard writes
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<TriggerBindingT>::enum_value;
+                        d.make = [](auto& u) { u.Set(TriggerBindingT{}); };
+                        d.value_fields["bindings"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                using namespace SE::FlatBuffers;
+                                auto* p = GetTyped<TriggerBindingT>(c.component);
+                                p->bindings.clear();
+                                for (const auto& b : j) {
+                                        auto def = std::make_unique<TriggerBindingDefT>();
+                                        def->on_event = b.at("on_event").get<std::string>();
+                                        def->key      = b.at("key").get<std::string>();
+                                        if (b.contains("target")) {
+                                                const std::string t = b["target"].get<std::string>();
+                                                def->target = (t == "self") ? TriggerBBTarget::Self : TriggerBBTarget::Global;
+                                        }
+                                        if (b.contains("write_position"))
+                                                def->write_position = b["write_position"].get<bool>();
+                                        if (b.contains("float"))      ParseBBValue(b, def->value);
+                                        else if (b.contains("bool"))  ParseBBValue(b, def->value);
+                                        else if (b.contains("int"))   ParseBBValue(b, def->value);
+                                        else if (b.contains("vec3"))  ParseBBValue(b, def->value);
+                                        p->bindings.push_back(std::move(def));
+                                }
+                        };
+                        add(std::move(d)); }
+
+                // Blackboard (Stage 3 Step 9): schema asset + per-instance initial overrides
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<BlackboardT>::enum_value;
+                        d.make = [](auto& u) { u.Set(BlackboardT{}); };
+                        d.fields["bb"] = MakeApplier<BlackboardT, BlackboardHolderT>(&BlackboardT::bb);
+                        d.value_fields["initial"] = [](SE::FlatBuffers::ComponentT& c, const nlohmann::json& j) {
+                                using namespace SE::FlatBuffers;
+                                auto* p = GetTyped<BlackboardT>(c.component);
+                                p->initial.clear();
+                                for (const auto& entry : j) {
+                                        auto init = std::make_unique<BlackboardInitialT>();
+                                        init->key = entry.at("key").get<std::string>();
+                                        ParseBBValue(entry, init->value);
+                                        p->initial.push_back(std::move(init));
+                                }
+                        };
+                        add(std::move(d)); }
+
+                // BehaviorTree (Stage 3 Step 10): .sebt brain + tick interval
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<BehaviorTreeT>::enum_value;
+                        d.make = [](auto& u) { u.Set(BehaviorTreeT{}); };
+                        d.fields["tree"] = MakeApplier<BehaviorTreeT, BehaviorTreeHolderT>(&BehaviorTreeT::tree);
+                        d.value_fields["tick_interval"] = VFFloat(&BehaviorTreeT::tick_interval);
+                        add(std::move(d)); }
+
+                // Portal (Stage 3 Step 12): door/waypoint → Manual sub-level link
+                { ComponentDef d;
+                        d.type_tag = ComponentUUnionTraits<PortalT>::enum_value;
+                        d.make = [](auto& u) { u.Set(PortalT{}); };
+                        d.value_fields["level_path"]      = VFString(&PortalT::level_path);
+                        d.value_fields["activate_radius"] = VFFloat(&PortalT::activate_radius);
+                        d.value_fields["release_radius"]  = VFFloat(&PortalT::release_radius);
                         add(std::move(d)); }
 
                 return reg;
@@ -406,10 +801,14 @@ void SceneComposer::ApplyComponentSpec(SE::FlatBuffers::NodeT& node,
         auto* pComp = GetOrAdd(node, def);
         for (const auto& [field, ref] : spec.fields) {
                 auto fit = def.fields.find(field);
-                if (fit == def.fields.end())
+                if (fit != def.fields.end()) { fit->second(*pComp, ref, *this); continue; }
+                // plain-string values (event names, tags) that are not asset refs
+                auto vit = def.value_fields.find(field);
+                if (vit != def.value_fields.end())
+                        vit->second(*pComp, nlohmann::json(ref.path));
+                else
                         throw std::runtime_error("compose: unknown field '" + field +
                                         "' for component '" + comp_type + "'");
-                fit->second(*pComp, ref, *this);
         }
         for (const auto& [field, refs] : spec.array_fields) {
                 auto fit = def.array_fields.find(field);
@@ -417,6 +816,13 @@ void SceneComposer::ApplyComponentSpec(SE::FlatBuffers::NodeT& node,
                         throw std::runtime_error("compose: unknown array field '" + field +
                                         "' for component '" + comp_type + "'");
                 fit->second(*pComp, refs, *this);
+        }
+        for (const auto& [field, value] : spec.value_fields) {
+                auto fit = def.value_fields.find(field);
+                if (fit == def.value_fields.end())
+                        throw std::runtime_error("compose: unknown value field '" + field +
+                                        "' for component '" + comp_type + "'");
+                fit->second(*pComp, value);
         }
 }
 
@@ -496,12 +902,23 @@ struct HolderDeduplicator {
         std::unordered_map<std::string, flatbuffers::Offset<SE::FlatBuffers::AudioClipHolder>>      m_audio_clips;
         std::unordered_map<std::string, flatbuffers::Offset<SE::FlatBuffers::StateMachineHolder>>   m_state_machines;
 
+        /** scene-level dependency table: one entry per distinct holder offset (first-creation order) */
+        std::vector<std::pair<SE::FlatBuffers::ResourceU, flatbuffers::uoffset_t>> vResources;
+        std::unordered_set<flatbuffers::uoffset_t> mRecorded;
+
         explicit HolderDeduplicator(flatbuffers::FlatBufferBuilder& b) : fbb(b) {}
+
+        void Record(SE::FlatBuffers::ResourceU tag, flatbuffers::uoffset_t off) {
+                if (tag == SE::FlatBuffers::ResourceU::NONE) return;
+                if (!mRecorded.insert(off).second) return;
+                vResources.emplace_back(tag, off);
+        }
 
         template<typename THolder, typename TFbHolder>
                 flatbuffers::Offset<TFbHolder> Lookup(
                                 const THolder* ptr,
-                                std::unordered_map<std::string, flatbuffers::Offset<TFbHolder>>& cache)
+                                std::unordered_map<std::string, flatbuffers::Offset<TFbHolder>>& cache,
+                                SE::FlatBuffers::ResourceU tag)
                 {
                         if (!ptr) return 0;
                         if (!ptr->name.empty()) {
@@ -515,29 +932,32 @@ struct HolderDeduplicator {
                         auto off = TFbHolder::Pack(fbb, ptr);
                         if (!ptr->name.empty()) cache[ptr->name] = off;
                         if (!ptr->path.empty()) cache[ptr->path] = off;
+                        // only externally loadable holders become scene dependencies
+                        if (!ptr->path.empty() || !ptr->name.empty()) Record(tag, off.o);
                         return off;
                 }
 
         flatbuffers::Offset<SE::FlatBuffers::AnimationGraphHolder>
-                GetAnimGraph(const SE::FlatBuffers::AnimationGraphHolderT* p) { return Lookup(p, m_anim_graphs); }
+                GetAnimGraph(const SE::FlatBuffers::AnimationGraphHolderT* p) { return Lookup(p, m_anim_graphs, SE::FlatBuffers::ResourceU::AnimationGraphHolder); }
 
         flatbuffers::Offset<SE::FlatBuffers::MeshHolder>
-                GetMesh(const SE::FlatBuffers::MeshHolderT* p)                { return Lookup(p, m_meshes); }
+                GetMesh(const SE::FlatBuffers::MeshHolderT* p)                { return Lookup(p, m_meshes, SE::FlatBuffers::ResourceU::MeshHolder); }
 
         flatbuffers::Offset<SE::FlatBuffers::SkeletonHolder>
-                GetSkeleton(const SE::FlatBuffers::SkeletonHolderT* p)        { return Lookup(p, m_skeletons); }
+                GetSkeleton(const SE::FlatBuffers::SkeletonHolderT* p)        { return Lookup(p, m_skeletons, SE::FlatBuffers::ResourceU::SkeletonHolder); }
 
         flatbuffers::Offset<SE::FlatBuffers::MaterialHolder>
-                GetMaterial(const SE::FlatBuffers::MaterialHolderT* p)        { return Lookup(p, m_materials); }
+                GetMaterial(const SE::FlatBuffers::MaterialHolderT* p)        { return Lookup(p, m_materials, SE::FlatBuffers::ResourceU::MaterialHolder); }
 
+        // textures are embedded in materials/blendshapes, never scene-level resources
         flatbuffers::Offset<SE::FlatBuffers::TextureHolder>
-                GetTexture(const SE::FlatBuffers::TextureHolderT* p)          { return Lookup(p, m_textures); }
+                GetTexture(const SE::FlatBuffers::TextureHolderT* p)          { return Lookup(p, m_textures, SE::FlatBuffers::ResourceU::NONE); }
 
         flatbuffers::Offset<SE::FlatBuffers::AudioClipHolder>
-                GetAudioClip(const SE::FlatBuffers::AudioClipHolderT* p)      { return Lookup(p, m_audio_clips); }
+                GetAudioClip(const SE::FlatBuffers::AudioClipHolderT* p)      { return Lookup(p, m_audio_clips, SE::FlatBuffers::ResourceU::AudioClipHolder); }
 
         flatbuffers::Offset<SE::FlatBuffers::StateMachineHolder>
-                GetStateMachine(const SE::FlatBuffers::StateMachineHolderT* p){ return Lookup(p, m_state_machines); }
+                GetStateMachine(const SE::FlatBuffers::StateMachineHolderT* p){ return Lookup(p, m_state_machines, SE::FlatBuffers::ResourceU::StateMachineHolder); }
 };
 
 static flatbuffers::Offset<SE::FlatBuffers::Component>
@@ -667,7 +1087,14 @@ static flatbuffers::Offset<SE::FlatBuffers::SceneTree> PackSceneTree(
                         dedup.m_audio_clips.size(),
                         dedup.m_state_machines.size());
 
-        return SE::FlatBuffers::CreateSceneTree(fbb, root_off);
+        // scene-level dependency table: the same holder offsets the components reference
+        std::vector<flatbuffers::Offset<SE::FlatBuffers::ResourceRef>> vRes;
+        vRes.reserve(dedup.vResources.size());
+        for (const auto & [tag, off] : dedup.vResources)
+                vRes.push_back(SE::FlatBuffers::CreateResourceRef(fbb, tag, flatbuffers::Offset<void>(off)));
+        auto res_vec = vRes.empty() ? 0 : fbb.CreateVector(vRes);
+
+        return SE::FlatBuffers::CreateSceneTree(fbb, root_off, res_vec);
 }
 
 // ---------------------------------------------------------------------------

@@ -7,6 +7,7 @@
 #include <variant>
 #include <regex>
 #include <optional>
+#include <utility>
 
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
@@ -289,6 +290,17 @@ struct ImportCtx {
         std::vector<std::string> vAnimClipPaths;
         /** output: Skeleton* -> relative resource path (separate mode only) */
         std::unordered_map<Skeleton*, std::string> mSkeletonPaths;
+        /** output: scene-level resource dependency table, collected during component
+         *  serialization: (ResourceU tag, holder buffer offset). Written into
+         *  SceneTree.resources by WriteSceneTree; offsets are the same holder tables
+         *  the components reference, so nothing is duplicated in the file. */
+        std::vector<std::pair<uint8_t, uint32_t>> vSceneResources;
+
+        void RecordSceneResource(uint8_t eType, uint32_t holder_offset) {
+                for (const auto & item : vSceneResources)
+                        if (item.second == holder_offset) return;
+                vSceneResources.emplace_back(eType, holder_offset);
+        }
         /** stats */
         uint32_t                node_cnt;
         uint32_t                mesh_cnt;

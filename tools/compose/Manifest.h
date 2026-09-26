@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include <string>
 #include <vector>
 #include <optional>
@@ -32,6 +34,9 @@ struct AssetRef {
 struct ComponentSpec {
         std::unordered_map<std::string, AssetRef>              fields;
         std::unordered_map<std::string, std::vector<AssetRef>> array_fields;
+        // scalar / vec / nested-object component data (numbers, bools, number
+        // arrays, JSON objects); appliers interpret them per component type
+        std::unordered_map<std::string, nlohmann::json>        value_fields;
 };
 
 struct NodeSpec {

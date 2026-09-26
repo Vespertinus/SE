@@ -5,6 +5,7 @@
 #include <MPUtil.h>
 #include <Component_generated.h>
 #include <AnimationGraph_generated.h>
+#include <Resources_generated.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "FlatBuffersMeshWriterDetails.h"
@@ -19,12 +20,12 @@ using TComponentOffset = std::tuple<flatbuffers::Offset<SE::FlatBuffers::Compone
 TComponentOffset SerializeModel(
                 const ModelData                 & oModel,
                 flatbuffers::FlatBufferBuilder  & oBuilder,
-                const ImportCtx                 & oCtx);
+                ImportCtx                       & oCtx);
 
 TComponentOffset SerializeComponent(
                 const TComponent                & oComponent,
                 flatbuffers::FlatBufferBuilder  & oBuilder,
-                const ImportCtx                 & oCtx) {
+                ImportCtx                       & oCtx) {
 
          return MP::Visit(oComponent,
                         [&oBuilder, &oCtx](const ModelData & oModel) {
@@ -44,7 +45,7 @@ TComponentOffset SerializeComponent(
 TComponentOffset SerializeModel(
                 const ModelData                 & oModel,
                 flatbuffers::FlatBufferBuilder  & oBuilder,
-                const ImportCtx                 & oCtx) {
+                ImportCtx                       & oCtx) {
 
         using namespace SE::FlatBuffers;
 
@@ -185,19 +186,30 @@ TComponentOffset SerializeModel(
                         oBuilder.CreateString(pMat->sName));
 
                 pMat->serialized_fb = holder_fb.o;
+                oCtx.RecordSceneResource(uint8_t(SE::FlatBuffers::ResourceU::MaterialHolder), holder_fb.o);
                 return holder_fb;
         };
 
-        // For any animated model (blendshapes, bones, or both), remap pbr_geometry →
-        // pbr_geometry_animated BEFORE SerializeOneMaterial caches pMat->serialized_fb.
+        // For any animated model (blendshapes, bones, or both), remap the
+        // {opaque, masked} PBR programs onto their animated-vertex variants
+        // BEFORE SerializeOneMaterial caches pMat->serialized_fb.
         const bool isAnimated = (oModel.pBlendShape && !oModel.pBlendShape->vDefaultWeights.empty())
                              || (oModel.pSkin       && !oModel.pSkin->vJointIndexes.empty());
         if (isAnimated) {
-                static const std::string sPbr         = "shader_program/pbr_geometry.sesp";
-                static const std::string sPbrAnimated = "shader_program/pbr_geometry_animated.sesp";
+                const std::pair<const std::string, const std::string> aRemap[] = {
+                        {"shader_program/pbr_geometry.sesp",
+                         "shader_program/pbr_geometry_animated.sesp"},
+                        {"shader_program/pbr_geometry_masked.sesp",
+                         "shader_program/pbr_geometry_masked_animated.sesp"},
+                };
                 for (auto * pMat : oModel.vMaterials) {
-                        if (pMat && pMat->sShaderPath == sPbr)
-                                pMat->sShaderPath = sPbrAnimated;
+                        if (pMat == nullptr) continue;
+                        for (const auto & [sFrom, sTo] : aRemap) {
+                                if (pMat->sShaderPath == sFrom) {
+                                        pMat->sShaderPath = sTo;
+                                        break;
+                                }
+                        }
                 }
         }
 
@@ -219,6 +231,7 @@ TComponentOffset SerializeModel(
                                 );
 
                 oModel.pMesh->serialized_fb = mesh_holder_fb.o;
+                oCtx.RecordSceneResource(uint8_t(SE::FlatBuffers::ResourceU::MeshHolder), mesh_holder_fb.o);
         }
         else { //already serialized
                 mesh_holder_fb = oModel.pMesh->serialized_fb;
@@ -360,12 +373,14 @@ TComponentOffset SerializeModel(
                                         auto skel_data_fb = CreateSkeleton(oBuilder, 1, bones_fb);
                                         auto name_fb      = oBuilder.CreateString(oModel.pSkin->pSkeleton->sName);
                                         skeleton_holder_fb = CreateSkeletonHolder(oBuilder, skel_data_fb, 0, name_fb);
+                                        oCtx.RecordSceneResource(uint8_t(SE::FlatBuffers::ResourceU::SkeletonHolder), skeleton_holder_fb.o);
                                 } else {
                                         // Reference separate .sesk file
                                         auto it = oCtx.mSkeletonPaths.find(oModel.pSkin->pSkeleton);
                                         if (it != oCtx.mSkeletonPaths.end() && !it->second.empty()) {
                                                 auto path_fb = oBuilder.CreateString(it->second);
                                                 skeleton_holder_fb = CreateSkeletonHolder(oBuilder, 0, path_fb, 0);
+                                                oCtx.RecordSceneResource(uint8_t(SE::FlatBuffers::ResourceU::SkeletonHolder), skeleton_holder_fb.o);
                                         }
                                 }
                         }
@@ -401,7 +416,7 @@ TComponentOffset SerializeModel(
 
 flatbuffers::Offset<SE::FlatBuffers::Component> SerializeAnimatorComponent(
                 flatbuffers::FlatBufferBuilder  & oBuilder,
-                const ImportCtx                 & oCtx) {
+                ImportCtx                       & oCtx) {
 
         using namespace SE::FlatBuffers;
 

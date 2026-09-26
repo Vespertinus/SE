@@ -28,10 +28,26 @@ static ComponentSpec ParseComponentSpec(const TJson& j) {
         ComponentSpec spec;
         for (auto& [key, val] : j.items()) {
                 if (val.is_array()) {
-                        for (const auto& item : val)
-                                spec.array_fields[key].push_back(ParseAssetRef(item));
-                } else {
+                        // numeric arrays are vector values (e.g. Vec3 fields) and
+                        // object arrays are nested-table values (e.g. population
+                        // members); otherwise an array of asset references
+                        bool bNumeric = !val.empty();
+                        bool bHasObject = false;
+                        for (const auto& item : val) {
+                                if (!item.is_number()) bNumeric = false;
+                                if (item.is_object())  bHasObject = true;
+                        }
+                        if (bNumeric || bHasObject) {
+                                spec.value_fields[key] = val;
+                        } else {
+                                for (const auto& item : val)
+                                        spec.array_fields[key].push_back(ParseAssetRef(item));
+                        }
+                } else if (val.is_string()) {
                         spec.fields[key] = ParseAssetRef(val);
+                } else {
+                        // numbers, bools, nested objects
+                        spec.value_fields[key] = val;
                 }
         }
         return spec;
