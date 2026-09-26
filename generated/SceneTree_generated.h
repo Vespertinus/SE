@@ -16,6 +16,7 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
              "Non-compatible flatbuffers version included");
 
 #include "Component_generated.h"
+#include "Resources_generated.h"
 
 namespace SE {
 namespace FlatBuffers {
@@ -197,6 +198,7 @@ inline ::flatbuffers::Offset<Node> CreateNodeDirect(
 struct SceneTreeT : public ::flatbuffers::NativeTable {
   typedef SceneTree TableType;
   std::unique_ptr<SE::FlatBuffers::NodeT> root{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::ResourceRefT>> resources{};
   SceneTreeT() = default;
   SceneTreeT(const SceneTreeT &o);
   SceneTreeT(SceneTreeT&&) FLATBUFFERS_NOEXCEPT = default;
@@ -207,15 +209,22 @@ struct SceneTree FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SceneTreeT NativeTableType;
   typedef SceneTreeBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ROOT = 4
+    VT_ROOT = 4,
+    VT_RESOURCES = 6
   };
   const SE::FlatBuffers::Node *root() const {
     return GetPointer<const SE::FlatBuffers::Node *>(VT_ROOT);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ResourceRef>> *resources() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ResourceRef>> *>(VT_RESOURCES);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_ROOT) &&
            verifier.VerifyTable(root()) &&
+           VerifyOffset(verifier, VT_RESOURCES) &&
+           verifier.VerifyVector(resources()) &&
+           verifier.VerifyVectorOfTables(resources()) &&
            verifier.EndTable();
   }
   SceneTreeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -229,6 +238,9 @@ struct SceneTreeBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_root(::flatbuffers::Offset<SE::FlatBuffers::Node> root) {
     fbb_.AddOffset(SceneTree::VT_ROOT, root);
+  }
+  void add_resources(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ResourceRef>>> resources) {
+    fbb_.AddOffset(SceneTree::VT_RESOURCES, resources);
   }
   explicit SceneTreeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -244,10 +256,23 @@ struct SceneTreeBuilder {
 
 inline ::flatbuffers::Offset<SceneTree> CreateSceneTree(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<SE::FlatBuffers::Node> root = 0) {
+    ::flatbuffers::Offset<SE::FlatBuffers::Node> root = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::ResourceRef>>> resources = 0) {
   SceneTreeBuilder builder_(_fbb);
+  builder_.add_resources(resources);
   builder_.add_root(root);
   return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<SceneTree> CreateSceneTreeDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::Node> root = 0,
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::ResourceRef>> *resources = nullptr) {
+  auto resources__ = resources ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::ResourceRef>>(*resources) : 0;
+  return SE::FlatBuffers::CreateSceneTree(
+      _fbb,
+      root,
+      resources__);
 }
 
 ::flatbuffers::Offset<SceneTree> CreateSceneTree(::flatbuffers::FlatBufferBuilder &_fbb, const SceneTreeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -326,10 +351,13 @@ inline ::flatbuffers::Offset<Node> CreateNode(::flatbuffers::FlatBufferBuilder &
 
 inline SceneTreeT::SceneTreeT(const SceneTreeT &o)
       : root((o.root) ? new SE::FlatBuffers::NodeT(*o.root) : nullptr) {
+  resources.reserve(o.resources.size());
+  for (const auto &resources_ : o.resources) { resources.emplace_back((resources_) ? new SE::FlatBuffers::ResourceRefT(*resources_) : nullptr); }
 }
 
 inline SceneTreeT &SceneTreeT::operator=(SceneTreeT o) FLATBUFFERS_NOEXCEPT {
   std::swap(root, o.root);
+  std::swap(resources, o.resources);
   return *this;
 }
 
@@ -343,6 +371,7 @@ inline void SceneTree::UnPackTo(SceneTreeT *_o, const ::flatbuffers::resolver_fu
   (void)_o;
   (void)_resolver;
   { auto _e = root(); if (_e) { if(_o->root) { _e->UnPackTo(_o->root.get(), _resolver); } else { _o->root = std::unique_ptr<SE::FlatBuffers::NodeT>(_e->UnPack(_resolver)); } } else if (_o->root) { _o->root.reset(); } }
+  { auto _e = resources(); if (_e) { _o->resources.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->resources[_i]) { _e->Get(_i)->UnPackTo(_o->resources[_i].get(), _resolver); } else { _o->resources[_i] = std::unique_ptr<SE::FlatBuffers::ResourceRefT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->resources.resize(0); } }
 }
 
 inline ::flatbuffers::Offset<SceneTree> SceneTree::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SceneTreeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -354,9 +383,11 @@ inline ::flatbuffers::Offset<SceneTree> CreateSceneTree(::flatbuffers::FlatBuffe
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SceneTreeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _root = _o->root ? CreateNode(_fbb, _o->root.get(), _rehasher) : 0;
+  auto _resources = _o->resources.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::ResourceRef>> (_o->resources.size(), [](size_t i, _VectorArgs *__va) { return CreateResourceRef(*__va->__fbb, __va->__o->resources[i].get(), __va->__rehasher); }, &_va ) : 0;
   return SE::FlatBuffers::CreateSceneTree(
       _fbb,
-      _root);
+      _root,
+      _resources);
 }
 
 inline const SE::FlatBuffers::SceneTree *GetSceneTree(const void *buf) {

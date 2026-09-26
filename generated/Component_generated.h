@@ -18,10 +18,15 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
 #include "AnimationGraph_generated.h"
 #include "AnimationSkeleton_generated.h"
 #include "Audio_generated.h"
+#include "BehaviorTree_generated.h"
+#include "Blackboard_generated.h"
 #include "Material_generated.h"
 #include "Mesh_generated.h"
+#include "NavMesh_generated.h"
 #include "SoundEmitter_generated.h"
+#include "Spawner_generated.h"
 #include "StateMachine_generated.h"
+#include "Terrain_generated.h"
 
 namespace SE {
 namespace FlatBuffers {
@@ -77,6 +82,34 @@ struct TriggerVolumeT;
 struct StateMachine;
 struct StateMachineBuilder;
 struct StateMachineT;
+
+struct Blackboard;
+struct BlackboardBuilder;
+struct BlackboardT;
+
+struct TriggerBindingDef;
+struct TriggerBindingDefBuilder;
+struct TriggerBindingDefT;
+
+struct TriggerBinding;
+struct TriggerBindingBuilder;
+struct TriggerBindingT;
+
+struct BehaviorTree;
+struct BehaviorTreeBuilder;
+struct BehaviorTreeT;
+
+struct TerrainComponent;
+struct TerrainComponentBuilder;
+struct TerrainComponentT;
+
+struct SpatialEntry;
+struct SpatialEntryBuilder;
+struct SpatialEntryT;
+
+struct Portal;
+struct PortalBuilder;
+struct PortalT;
 
 struct Component;
 struct ComponentBuilder;
@@ -228,6 +261,36 @@ struct ColliderUUnion {
 bool VerifyColliderU(::flatbuffers::Verifier &verifier, const void *obj, ColliderU type);
 bool VerifyColliderUVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<ColliderU> *types);
 
+enum class TriggerBBTarget : int8_t {
+  Global = 0,
+  Self = 1,
+  MIN = Global,
+  MAX = Self
+};
+
+inline const TriggerBBTarget (&EnumValuesTriggerBBTarget())[2] {
+  static const TriggerBBTarget values[] = {
+    TriggerBBTarget::Global,
+    TriggerBBTarget::Self
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesTriggerBBTarget() {
+  static const char * const names[3] = {
+    "Global",
+    "Self",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameTriggerBBTarget(TriggerBBTarget e) {
+  if (::flatbuffers::IsOutRange(e, TriggerBBTarget::Global, TriggerBBTarget::Self)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesTriggerBBTarget()[index];
+}
+
 enum class ComponentU : uint8_t {
   NONE = 0,
   StaticModel = 1,
@@ -240,11 +303,24 @@ enum class ComponentU : uint8_t {
   Animator = 8,
   TriggerVolume = 9,
   StateMachine = 10,
+  TerrainComponent = 11,
+  SpatialEntry = 12,
+  SpawnPoint = 13,
+  SpawnVolume = 14,
+  Population = 15,
+  NavArea = 16,
+  NavLink = 17,
+  NavAgent = 18,
+  PathFollower = 19,
+  TriggerBinding = 20,
+  Blackboard = 21,
+  BehaviorTree = 22,
+  Portal = 23,
   MIN = NONE,
-  MAX = StateMachine
+  MAX = Portal
 };
 
-inline const ComponentU (&EnumValuesComponentU())[11] {
+inline const ComponentU (&EnumValuesComponentU())[24] {
   static const ComponentU values[] = {
     ComponentU::NONE,
     ComponentU::StaticModel,
@@ -256,13 +332,26 @@ inline const ComponentU (&EnumValuesComponentU())[11] {
     ComponentU::AppComponent,
     ComponentU::Animator,
     ComponentU::TriggerVolume,
-    ComponentU::StateMachine
+    ComponentU::StateMachine,
+    ComponentU::TerrainComponent,
+    ComponentU::SpatialEntry,
+    ComponentU::SpawnPoint,
+    ComponentU::SpawnVolume,
+    ComponentU::Population,
+    ComponentU::NavArea,
+    ComponentU::NavLink,
+    ComponentU::NavAgent,
+    ComponentU::PathFollower,
+    ComponentU::TriggerBinding,
+    ComponentU::Blackboard,
+    ComponentU::BehaviorTree,
+    ComponentU::Portal
   };
   return values;
 }
 
 inline const char * const *EnumNamesComponentU() {
-  static const char * const names[12] = {
+  static const char * const names[25] = {
     "NONE",
     "StaticModel",
     "AnimatedModel",
@@ -274,13 +363,26 @@ inline const char * const *EnumNamesComponentU() {
     "Animator",
     "TriggerVolume",
     "StateMachine",
+    "TerrainComponent",
+    "SpatialEntry",
+    "SpawnPoint",
+    "SpawnVolume",
+    "Population",
+    "NavArea",
+    "NavLink",
+    "NavAgent",
+    "PathFollower",
+    "TriggerBinding",
+    "Blackboard",
+    "BehaviorTree",
+    "Portal",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameComponentU(ComponentU e) {
-  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::StateMachine)) return "";
+  if (::flatbuffers::IsOutRange(e, ComponentU::NONE, ComponentU::Portal)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesComponentU()[index];
 }
@@ -329,6 +431,58 @@ template<> struct ComponentUTraits<SE::FlatBuffers::StateMachine> {
   static const ComponentU enum_value = ComponentU::StateMachine;
 };
 
+template<> struct ComponentUTraits<SE::FlatBuffers::TerrainComponent> {
+  static const ComponentU enum_value = ComponentU::TerrainComponent;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::SpatialEntry> {
+  static const ComponentU enum_value = ComponentU::SpatialEntry;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::SpawnPoint> {
+  static const ComponentU enum_value = ComponentU::SpawnPoint;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::SpawnVolume> {
+  static const ComponentU enum_value = ComponentU::SpawnVolume;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::Population> {
+  static const ComponentU enum_value = ComponentU::Population;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::NavArea> {
+  static const ComponentU enum_value = ComponentU::NavArea;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::NavLink> {
+  static const ComponentU enum_value = ComponentU::NavLink;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::NavAgent> {
+  static const ComponentU enum_value = ComponentU::NavAgent;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::PathFollower> {
+  static const ComponentU enum_value = ComponentU::PathFollower;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::TriggerBinding> {
+  static const ComponentU enum_value = ComponentU::TriggerBinding;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::Blackboard> {
+  static const ComponentU enum_value = ComponentU::Blackboard;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::BehaviorTree> {
+  static const ComponentU enum_value = ComponentU::BehaviorTree;
+};
+
+template<> struct ComponentUTraits<SE::FlatBuffers::Portal> {
+  static const ComponentU enum_value = ComponentU::Portal;
+};
+
 template<typename T> struct ComponentUUnionTraits {
   static const ComponentU enum_value = ComponentU::NONE;
 };
@@ -371,6 +525,58 @@ template<> struct ComponentUUnionTraits<SE::FlatBuffers::TriggerVolumeT> {
 
 template<> struct ComponentUUnionTraits<SE::FlatBuffers::StateMachineT> {
   static const ComponentU enum_value = ComponentU::StateMachine;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::TerrainComponentT> {
+  static const ComponentU enum_value = ComponentU::TerrainComponent;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::SpatialEntryT> {
+  static const ComponentU enum_value = ComponentU::SpatialEntry;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::SpawnPointT> {
+  static const ComponentU enum_value = ComponentU::SpawnPoint;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::SpawnVolumeT> {
+  static const ComponentU enum_value = ComponentU::SpawnVolume;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::PopulationT> {
+  static const ComponentU enum_value = ComponentU::Population;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::NavAreaT> {
+  static const ComponentU enum_value = ComponentU::NavArea;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::NavLinkT> {
+  static const ComponentU enum_value = ComponentU::NavLink;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::NavAgentT> {
+  static const ComponentU enum_value = ComponentU::NavAgent;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::PathFollowerT> {
+  static const ComponentU enum_value = ComponentU::PathFollower;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::TriggerBindingT> {
+  static const ComponentU enum_value = ComponentU::TriggerBinding;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::BlackboardT> {
+  static const ComponentU enum_value = ComponentU::Blackboard;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::BehaviorTreeT> {
+  static const ComponentU enum_value = ComponentU::BehaviorTree;
+};
+
+template<> struct ComponentUUnionTraits<SE::FlatBuffers::PortalT> {
+  static const ComponentU enum_value = ComponentU::Portal;
 };
 
 struct ComponentUUnion {
@@ -482,6 +688,110 @@ struct ComponentUUnion {
   const SE::FlatBuffers::StateMachineT *AsStateMachine() const {
     return type == ComponentU::StateMachine ?
       reinterpret_cast<const SE::FlatBuffers::StateMachineT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::TerrainComponentT *AsTerrainComponent() {
+    return type == ComponentU::TerrainComponent ?
+      reinterpret_cast<SE::FlatBuffers::TerrainComponentT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::TerrainComponentT *AsTerrainComponent() const {
+    return type == ComponentU::TerrainComponent ?
+      reinterpret_cast<const SE::FlatBuffers::TerrainComponentT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::SpatialEntryT *AsSpatialEntry() {
+    return type == ComponentU::SpatialEntry ?
+      reinterpret_cast<SE::FlatBuffers::SpatialEntryT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::SpatialEntryT *AsSpatialEntry() const {
+    return type == ComponentU::SpatialEntry ?
+      reinterpret_cast<const SE::FlatBuffers::SpatialEntryT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::SpawnPointT *AsSpawnPoint() {
+    return type == ComponentU::SpawnPoint ?
+      reinterpret_cast<SE::FlatBuffers::SpawnPointT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::SpawnPointT *AsSpawnPoint() const {
+    return type == ComponentU::SpawnPoint ?
+      reinterpret_cast<const SE::FlatBuffers::SpawnPointT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::SpawnVolumeT *AsSpawnVolume() {
+    return type == ComponentU::SpawnVolume ?
+      reinterpret_cast<SE::FlatBuffers::SpawnVolumeT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::SpawnVolumeT *AsSpawnVolume() const {
+    return type == ComponentU::SpawnVolume ?
+      reinterpret_cast<const SE::FlatBuffers::SpawnVolumeT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::PopulationT *AsPopulation() {
+    return type == ComponentU::Population ?
+      reinterpret_cast<SE::FlatBuffers::PopulationT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::PopulationT *AsPopulation() const {
+    return type == ComponentU::Population ?
+      reinterpret_cast<const SE::FlatBuffers::PopulationT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::NavAreaT *AsNavArea() {
+    return type == ComponentU::NavArea ?
+      reinterpret_cast<SE::FlatBuffers::NavAreaT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::NavAreaT *AsNavArea() const {
+    return type == ComponentU::NavArea ?
+      reinterpret_cast<const SE::FlatBuffers::NavAreaT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::NavLinkT *AsNavLink() {
+    return type == ComponentU::NavLink ?
+      reinterpret_cast<SE::FlatBuffers::NavLinkT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::NavLinkT *AsNavLink() const {
+    return type == ComponentU::NavLink ?
+      reinterpret_cast<const SE::FlatBuffers::NavLinkT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::NavAgentT *AsNavAgent() {
+    return type == ComponentU::NavAgent ?
+      reinterpret_cast<SE::FlatBuffers::NavAgentT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::NavAgentT *AsNavAgent() const {
+    return type == ComponentU::NavAgent ?
+      reinterpret_cast<const SE::FlatBuffers::NavAgentT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::PathFollowerT *AsPathFollower() {
+    return type == ComponentU::PathFollower ?
+      reinterpret_cast<SE::FlatBuffers::PathFollowerT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::PathFollowerT *AsPathFollower() const {
+    return type == ComponentU::PathFollower ?
+      reinterpret_cast<const SE::FlatBuffers::PathFollowerT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::TriggerBindingT *AsTriggerBinding() {
+    return type == ComponentU::TriggerBinding ?
+      reinterpret_cast<SE::FlatBuffers::TriggerBindingT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::TriggerBindingT *AsTriggerBinding() const {
+    return type == ComponentU::TriggerBinding ?
+      reinterpret_cast<const SE::FlatBuffers::TriggerBindingT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::BlackboardT *AsBlackboard() {
+    return type == ComponentU::Blackboard ?
+      reinterpret_cast<SE::FlatBuffers::BlackboardT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::BlackboardT *AsBlackboard() const {
+    return type == ComponentU::Blackboard ?
+      reinterpret_cast<const SE::FlatBuffers::BlackboardT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::BehaviorTreeT *AsBehaviorTree() {
+    return type == ComponentU::BehaviorTree ?
+      reinterpret_cast<SE::FlatBuffers::BehaviorTreeT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::BehaviorTreeT *AsBehaviorTree() const {
+    return type == ComponentU::BehaviorTree ?
+      reinterpret_cast<const SE::FlatBuffers::BehaviorTreeT *>(value) : nullptr;
+  }
+  SE::FlatBuffers::PortalT *AsPortal() {
+    return type == ComponentU::Portal ?
+      reinterpret_cast<SE::FlatBuffers::PortalT *>(value) : nullptr;
+  }
+  const SE::FlatBuffers::PortalT *AsPortal() const {
+    return type == ComponentU::Portal ?
+      reinterpret_cast<const SE::FlatBuffers::PortalT *>(value) : nullptr;
   }
 };
 
@@ -1782,6 +2092,639 @@ inline ::flatbuffers::Offset<StateMachine> CreateStateMachine(
 
 ::flatbuffers::Offset<StateMachine> CreateStateMachine(::flatbuffers::FlatBufferBuilder &_fbb, const StateMachineT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct BlackboardT : public ::flatbuffers::NativeTable {
+  typedef Blackboard TableType;
+  std::unique_ptr<SE::FlatBuffers::BlackboardHolderT> bb{};
+  std::vector<std::unique_ptr<SE::FlatBuffers::BlackboardInitialT>> initial{};
+  BlackboardT() = default;
+  BlackboardT(const BlackboardT &o);
+  BlackboardT(BlackboardT&&) FLATBUFFERS_NOEXCEPT = default;
+  BlackboardT &operator=(BlackboardT o) FLATBUFFERS_NOEXCEPT;
+};
+
+struct Blackboard FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BlackboardT NativeTableType;
+  typedef BlackboardBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_BB = 4,
+    VT_INITIAL = 6
+  };
+  const SE::FlatBuffers::BlackboardHolder *bb() const {
+    return GetPointer<const SE::FlatBuffers::BlackboardHolder *>(VT_BB);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BlackboardInitial>> *initial() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BlackboardInitial>> *>(VT_INITIAL);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_BB) &&
+           verifier.VerifyTable(bb()) &&
+           VerifyOffset(verifier, VT_INITIAL) &&
+           verifier.VerifyVector(initial()) &&
+           verifier.VerifyVectorOfTables(initial()) &&
+           verifier.EndTable();
+  }
+  BlackboardT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(BlackboardT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Blackboard> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BlackboardT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct BlackboardBuilder {
+  typedef Blackboard Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_bb(::flatbuffers::Offset<SE::FlatBuffers::BlackboardHolder> bb) {
+    fbb_.AddOffset(Blackboard::VT_BB, bb);
+  }
+  void add_initial(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BlackboardInitial>>> initial) {
+    fbb_.AddOffset(Blackboard::VT_INITIAL, initial);
+  }
+  explicit BlackboardBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Blackboard> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Blackboard>(end);
+    fbb_.Required(o, Blackboard::VT_BB);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Blackboard> CreateBlackboard(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::BlackboardHolder> bb = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::BlackboardInitial>>> initial = 0) {
+  BlackboardBuilder builder_(_fbb);
+  builder_.add_initial(initial);
+  builder_.add_bb(bb);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<Blackboard> CreateBlackboardDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::BlackboardHolder> bb = 0,
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::BlackboardInitial>> *initial = nullptr) {
+  auto initial__ = initial ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BlackboardInitial>>(*initial) : 0;
+  return SE::FlatBuffers::CreateBlackboard(
+      _fbb,
+      bb,
+      initial__);
+}
+
+::flatbuffers::Offset<Blackboard> CreateBlackboard(::flatbuffers::FlatBufferBuilder &_fbb, const BlackboardT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct TriggerBindingDefT : public ::flatbuffers::NativeTable {
+  typedef TriggerBindingDef TableType;
+  std::string on_event{};
+  SE::FlatBuffers::TriggerBBTarget target = SE::FlatBuffers::TriggerBBTarget::Global;
+  std::string key{};
+  SE::FlatBuffers::BBValueUUnion value{};
+  bool write_position = false;
+};
+
+struct TriggerBindingDef FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TriggerBindingDefT NativeTableType;
+  typedef TriggerBindingDefBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_ON_EVENT = 4,
+    VT_TARGET = 6,
+    VT_KEY = 8,
+    VT_VALUE_TYPE = 10,
+    VT_VALUE = 12,
+    VT_WRITE_POSITION = 14
+  };
+  const ::flatbuffers::String *on_event() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ON_EVENT);
+  }
+  SE::FlatBuffers::TriggerBBTarget target() const {
+    return static_cast<SE::FlatBuffers::TriggerBBTarget>(GetField<int8_t>(VT_TARGET, 0));
+  }
+  const ::flatbuffers::String *key() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_KEY);
+  }
+  SE::FlatBuffers::BBValueU value_type() const {
+    return static_cast<SE::FlatBuffers::BBValueU>(GetField<uint8_t>(VT_VALUE_TYPE, 0));
+  }
+  const void *value() const {
+    return GetPointer<const void *>(VT_VALUE);
+  }
+  template<typename T> const T *value_as() const;
+  const SE::FlatBuffers::Float *value_as_Float() const {
+    return value_type() == SE::FlatBuffers::BBValueU::Float ? static_cast<const SE::FlatBuffers::Float *>(value()) : nullptr;
+  }
+  const SE::FlatBuffers::Bool *value_as_Bool() const {
+    return value_type() == SE::FlatBuffers::BBValueU::Bool ? static_cast<const SE::FlatBuffers::Bool *>(value()) : nullptr;
+  }
+  const SE::FlatBuffers::Int *value_as_Int() const {
+    return value_type() == SE::FlatBuffers::BBValueU::Int ? static_cast<const SE::FlatBuffers::Int *>(value()) : nullptr;
+  }
+  const SE::FlatBuffers::Vec3 *value_as_Vec3() const {
+    return value_type() == SE::FlatBuffers::BBValueU::Vec3 ? static_cast<const SE::FlatBuffers::Vec3 *>(value()) : nullptr;
+  }
+  bool write_position() const {
+    return GetField<uint8_t>(VT_WRITE_POSITION, 0) != 0;
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_ON_EVENT) &&
+           verifier.VerifyString(on_event()) &&
+           VerifyField<int8_t>(verifier, VT_TARGET, 1) &&
+           VerifyOffsetRequired(verifier, VT_KEY) &&
+           verifier.VerifyString(key()) &&
+           VerifyField<uint8_t>(verifier, VT_VALUE_TYPE, 1) &&
+           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyBBValueU(verifier, value(), value_type()) &&
+           VerifyField<uint8_t>(verifier, VT_WRITE_POSITION, 1) &&
+           verifier.EndTable();
+  }
+  TriggerBindingDefT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(TriggerBindingDefT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<TriggerBindingDef> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingDefT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+template<> inline const SE::FlatBuffers::Float *TriggerBindingDef::value_as<SE::FlatBuffers::Float>() const {
+  return value_as_Float();
+}
+
+template<> inline const SE::FlatBuffers::Bool *TriggerBindingDef::value_as<SE::FlatBuffers::Bool>() const {
+  return value_as_Bool();
+}
+
+template<> inline const SE::FlatBuffers::Int *TriggerBindingDef::value_as<SE::FlatBuffers::Int>() const {
+  return value_as_Int();
+}
+
+template<> inline const SE::FlatBuffers::Vec3 *TriggerBindingDef::value_as<SE::FlatBuffers::Vec3>() const {
+  return value_as_Vec3();
+}
+
+struct TriggerBindingDefBuilder {
+  typedef TriggerBindingDef Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_on_event(::flatbuffers::Offset<::flatbuffers::String> on_event) {
+    fbb_.AddOffset(TriggerBindingDef::VT_ON_EVENT, on_event);
+  }
+  void add_target(SE::FlatBuffers::TriggerBBTarget target) {
+    fbb_.AddElement<int8_t>(TriggerBindingDef::VT_TARGET, static_cast<int8_t>(target), 0);
+  }
+  void add_key(::flatbuffers::Offset<::flatbuffers::String> key) {
+    fbb_.AddOffset(TriggerBindingDef::VT_KEY, key);
+  }
+  void add_value_type(SE::FlatBuffers::BBValueU value_type) {
+    fbb_.AddElement<uint8_t>(TriggerBindingDef::VT_VALUE_TYPE, static_cast<uint8_t>(value_type), 0);
+  }
+  void add_value(::flatbuffers::Offset<void> value) {
+    fbb_.AddOffset(TriggerBindingDef::VT_VALUE, value);
+  }
+  void add_write_position(bool write_position) {
+    fbb_.AddElement<uint8_t>(TriggerBindingDef::VT_WRITE_POSITION, static_cast<uint8_t>(write_position), 0);
+  }
+  explicit TriggerBindingDefBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<TriggerBindingDef> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<TriggerBindingDef>(end);
+    fbb_.Required(o, TriggerBindingDef::VT_ON_EVENT);
+    fbb_.Required(o, TriggerBindingDef::VT_KEY);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<TriggerBindingDef> CreateTriggerBindingDef(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> on_event = 0,
+    SE::FlatBuffers::TriggerBBTarget target = SE::FlatBuffers::TriggerBBTarget::Global,
+    ::flatbuffers::Offset<::flatbuffers::String> key = 0,
+    SE::FlatBuffers::BBValueU value_type = SE::FlatBuffers::BBValueU::NONE,
+    ::flatbuffers::Offset<void> value = 0,
+    bool write_position = false) {
+  TriggerBindingDefBuilder builder_(_fbb);
+  builder_.add_value(value);
+  builder_.add_key(key);
+  builder_.add_on_event(on_event);
+  builder_.add_write_position(write_position);
+  builder_.add_value_type(value_type);
+  builder_.add_target(target);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<TriggerBindingDef> CreateTriggerBindingDefDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *on_event = nullptr,
+    SE::FlatBuffers::TriggerBBTarget target = SE::FlatBuffers::TriggerBBTarget::Global,
+    const char *key = nullptr,
+    SE::FlatBuffers::BBValueU value_type = SE::FlatBuffers::BBValueU::NONE,
+    ::flatbuffers::Offset<void> value = 0,
+    bool write_position = false) {
+  auto on_event__ = on_event ? _fbb.CreateString(on_event) : 0;
+  auto key__ = key ? _fbb.CreateString(key) : 0;
+  return SE::FlatBuffers::CreateTriggerBindingDef(
+      _fbb,
+      on_event__,
+      target,
+      key__,
+      value_type,
+      value,
+      write_position);
+}
+
+::flatbuffers::Offset<TriggerBindingDef> CreateTriggerBindingDef(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingDefT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct TriggerBindingT : public ::flatbuffers::NativeTable {
+  typedef TriggerBinding TableType;
+  std::vector<std::unique_ptr<SE::FlatBuffers::TriggerBindingDefT>> bindings{};
+  TriggerBindingT() = default;
+  TriggerBindingT(const TriggerBindingT &o);
+  TriggerBindingT(TriggerBindingT&&) FLATBUFFERS_NOEXCEPT = default;
+  TriggerBindingT &operator=(TriggerBindingT o) FLATBUFFERS_NOEXCEPT;
+};
+
+struct TriggerBinding FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TriggerBindingT NativeTableType;
+  typedef TriggerBindingBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_BINDINGS = 4
+  };
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::TriggerBindingDef>> *bindings() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::TriggerBindingDef>> *>(VT_BINDINGS);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_BINDINGS) &&
+           verifier.VerifyVector(bindings()) &&
+           verifier.VerifyVectorOfTables(bindings()) &&
+           verifier.EndTable();
+  }
+  TriggerBindingT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(TriggerBindingT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<TriggerBinding> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct TriggerBindingBuilder {
+  typedef TriggerBinding Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_bindings(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::TriggerBindingDef>>> bindings) {
+    fbb_.AddOffset(TriggerBinding::VT_BINDINGS, bindings);
+  }
+  explicit TriggerBindingBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<TriggerBinding> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<TriggerBinding>(end);
+    fbb_.Required(o, TriggerBinding::VT_BINDINGS);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<TriggerBinding> CreateTriggerBinding(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SE::FlatBuffers::TriggerBindingDef>>> bindings = 0) {
+  TriggerBindingBuilder builder_(_fbb);
+  builder_.add_bindings(bindings);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<TriggerBinding> CreateTriggerBindingDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<SE::FlatBuffers::TriggerBindingDef>> *bindings = nullptr) {
+  auto bindings__ = bindings ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::TriggerBindingDef>>(*bindings) : 0;
+  return SE::FlatBuffers::CreateTriggerBinding(
+      _fbb,
+      bindings__);
+}
+
+::flatbuffers::Offset<TriggerBinding> CreateTriggerBinding(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct BehaviorTreeT : public ::flatbuffers::NativeTable {
+  typedef BehaviorTree TableType;
+  std::unique_ptr<SE::FlatBuffers::BehaviorTreeHolderT> tree{};
+  float tick_interval = 0.0f;
+  BehaviorTreeT() = default;
+  BehaviorTreeT(const BehaviorTreeT &o);
+  BehaviorTreeT(BehaviorTreeT&&) FLATBUFFERS_NOEXCEPT = default;
+  BehaviorTreeT &operator=(BehaviorTreeT o) FLATBUFFERS_NOEXCEPT;
+};
+
+struct BehaviorTree FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BehaviorTreeT NativeTableType;
+  typedef BehaviorTreeBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TREE = 4,
+    VT_TICK_INTERVAL = 6
+  };
+  const SE::FlatBuffers::BehaviorTreeHolder *tree() const {
+    return GetPointer<const SE::FlatBuffers::BehaviorTreeHolder *>(VT_TREE);
+  }
+  float tick_interval() const {
+    return GetField<float>(VT_TICK_INTERVAL, 0.0f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_TREE) &&
+           verifier.VerifyTable(tree()) &&
+           VerifyField<float>(verifier, VT_TICK_INTERVAL, 4) &&
+           verifier.EndTable();
+  }
+  BehaviorTreeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(BehaviorTreeT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<BehaviorTree> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BehaviorTreeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct BehaviorTreeBuilder {
+  typedef BehaviorTree Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_tree(::flatbuffers::Offset<SE::FlatBuffers::BehaviorTreeHolder> tree) {
+    fbb_.AddOffset(BehaviorTree::VT_TREE, tree);
+  }
+  void add_tick_interval(float tick_interval) {
+    fbb_.AddElement<float>(BehaviorTree::VT_TICK_INTERVAL, tick_interval, 0.0f);
+  }
+  explicit BehaviorTreeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<BehaviorTree> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<BehaviorTree>(end);
+    fbb_.Required(o, BehaviorTree::VT_TREE);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<BehaviorTree> CreateBehaviorTree(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<SE::FlatBuffers::BehaviorTreeHolder> tree = 0,
+    float tick_interval = 0.0f) {
+  BehaviorTreeBuilder builder_(_fbb);
+  builder_.add_tick_interval(tick_interval);
+  builder_.add_tree(tree);
+  return builder_.Finish();
+}
+
+::flatbuffers::Offset<BehaviorTree> CreateBehaviorTree(::flatbuffers::FlatBufferBuilder &_fbb, const BehaviorTreeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct TerrainComponentT : public ::flatbuffers::NativeTable {
+  typedef TerrainComponent TableType;
+  std::string manifest{};
+  bool grid_mode = false;
+};
+
+struct TerrainComponent FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TerrainComponentT NativeTableType;
+  typedef TerrainComponentBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_MANIFEST = 4,
+    VT_GRID_MODE = 6
+  };
+  const ::flatbuffers::String *manifest() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_MANIFEST);
+  }
+  bool grid_mode() const {
+    return GetField<uint8_t>(VT_GRID_MODE, 0) != 0;
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_MANIFEST) &&
+           verifier.VerifyString(manifest()) &&
+           VerifyField<uint8_t>(verifier, VT_GRID_MODE, 1) &&
+           verifier.EndTable();
+  }
+  TerrainComponentT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(TerrainComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<TerrainComponent> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TerrainComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct TerrainComponentBuilder {
+  typedef TerrainComponent Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_manifest(::flatbuffers::Offset<::flatbuffers::String> manifest) {
+    fbb_.AddOffset(TerrainComponent::VT_MANIFEST, manifest);
+  }
+  void add_grid_mode(bool grid_mode) {
+    fbb_.AddElement<uint8_t>(TerrainComponent::VT_GRID_MODE, static_cast<uint8_t>(grid_mode), 0);
+  }
+  explicit TerrainComponentBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<TerrainComponent> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<TerrainComponent>(end);
+    fbb_.Required(o, TerrainComponent::VT_MANIFEST);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<TerrainComponent> CreateTerrainComponent(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> manifest = 0,
+    bool grid_mode = false) {
+  TerrainComponentBuilder builder_(_fbb);
+  builder_.add_manifest(manifest);
+  builder_.add_grid_mode(grid_mode);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<TerrainComponent> CreateTerrainComponentDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *manifest = nullptr,
+    bool grid_mode = false) {
+  auto manifest__ = manifest ? _fbb.CreateString(manifest) : 0;
+  return SE::FlatBuffers::CreateTerrainComponent(
+      _fbb,
+      manifest__,
+      grid_mode);
+}
+
+::flatbuffers::Offset<TerrainComponent> CreateTerrainComponent(::flatbuffers::FlatBufferBuilder &_fbb, const TerrainComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct SpatialEntryT : public ::flatbuffers::NativeTable {
+  typedef SpatialEntry TableType;
+  std::string tag{};
+  float radius = 0.0f;
+  bool track_node = false;
+};
+
+struct SpatialEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SpatialEntryT NativeTableType;
+  typedef SpatialEntryBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TAG = 4,
+    VT_RADIUS = 6,
+    VT_TRACK_NODE = 8
+  };
+  const ::flatbuffers::String *tag() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_TAG);
+  }
+  float radius() const {
+    return GetField<float>(VT_RADIUS, 0.0f);
+  }
+  bool track_node() const {
+    return GetField<uint8_t>(VT_TRACK_NODE, 0) != 0;
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_TAG) &&
+           verifier.VerifyString(tag()) &&
+           VerifyField<float>(verifier, VT_RADIUS, 4) &&
+           VerifyField<uint8_t>(verifier, VT_TRACK_NODE, 1) &&
+           verifier.EndTable();
+  }
+  SpatialEntryT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(SpatialEntryT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<SpatialEntry> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SpatialEntryT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct SpatialEntryBuilder {
+  typedef SpatialEntry Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_tag(::flatbuffers::Offset<::flatbuffers::String> tag) {
+    fbb_.AddOffset(SpatialEntry::VT_TAG, tag);
+  }
+  void add_radius(float radius) {
+    fbb_.AddElement<float>(SpatialEntry::VT_RADIUS, radius, 0.0f);
+  }
+  void add_track_node(bool track_node) {
+    fbb_.AddElement<uint8_t>(SpatialEntry::VT_TRACK_NODE, static_cast<uint8_t>(track_node), 0);
+  }
+  explicit SpatialEntryBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<SpatialEntry> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<SpatialEntry>(end);
+    fbb_.Required(o, SpatialEntry::VT_TAG);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<SpatialEntry> CreateSpatialEntry(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> tag = 0,
+    float radius = 0.0f,
+    bool track_node = false) {
+  SpatialEntryBuilder builder_(_fbb);
+  builder_.add_radius(radius);
+  builder_.add_tag(tag);
+  builder_.add_track_node(track_node);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<SpatialEntry> CreateSpatialEntryDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *tag = nullptr,
+    float radius = 0.0f,
+    bool track_node = false) {
+  auto tag__ = tag ? _fbb.CreateString(tag) : 0;
+  return SE::FlatBuffers::CreateSpatialEntry(
+      _fbb,
+      tag__,
+      radius,
+      track_node);
+}
+
+::flatbuffers::Offset<SpatialEntry> CreateSpatialEntry(::flatbuffers::FlatBufferBuilder &_fbb, const SpatialEntryT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct PortalT : public ::flatbuffers::NativeTable {
+  typedef Portal TableType;
+  std::string level_path{};
+  float activate_radius = 22.0f;
+  float release_radius = 34.0f;
+};
+
+struct Portal FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PortalT NativeTableType;
+  typedef PortalBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_LEVEL_PATH = 4,
+    VT_ACTIVATE_RADIUS = 6,
+    VT_RELEASE_RADIUS = 8
+  };
+  const ::flatbuffers::String *level_path() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_LEVEL_PATH);
+  }
+  float activate_radius() const {
+    return GetField<float>(VT_ACTIVATE_RADIUS, 22.0f);
+  }
+  float release_radius() const {
+    return GetField<float>(VT_RELEASE_RADIUS, 34.0f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_LEVEL_PATH) &&
+           verifier.VerifyString(level_path()) &&
+           VerifyField<float>(verifier, VT_ACTIVATE_RADIUS, 4) &&
+           VerifyField<float>(verifier, VT_RELEASE_RADIUS, 4) &&
+           verifier.EndTable();
+  }
+  PortalT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(PortalT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<Portal> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const PortalT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct PortalBuilder {
+  typedef Portal Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_level_path(::flatbuffers::Offset<::flatbuffers::String> level_path) {
+    fbb_.AddOffset(Portal::VT_LEVEL_PATH, level_path);
+  }
+  void add_activate_radius(float activate_radius) {
+    fbb_.AddElement<float>(Portal::VT_ACTIVATE_RADIUS, activate_radius, 22.0f);
+  }
+  void add_release_radius(float release_radius) {
+    fbb_.AddElement<float>(Portal::VT_RELEASE_RADIUS, release_radius, 34.0f);
+  }
+  explicit PortalBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Portal> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Portal>(end);
+    fbb_.Required(o, Portal::VT_LEVEL_PATH);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Portal> CreatePortal(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> level_path = 0,
+    float activate_radius = 22.0f,
+    float release_radius = 34.0f) {
+  PortalBuilder builder_(_fbb);
+  builder_.add_release_radius(release_radius);
+  builder_.add_activate_radius(activate_radius);
+  builder_.add_level_path(level_path);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<Portal> CreatePortalDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *level_path = nullptr,
+    float activate_radius = 22.0f,
+    float release_radius = 34.0f) {
+  auto level_path__ = level_path ? _fbb.CreateString(level_path) : 0;
+  return SE::FlatBuffers::CreatePortal(
+      _fbb,
+      level_path__,
+      activate_radius,
+      release_radius);
+}
+
+::flatbuffers::Offset<Portal> CreatePortal(::flatbuffers::FlatBufferBuilder &_fbb, const PortalT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 struct ComponentT : public ::flatbuffers::NativeTable {
   typedef Component TableType;
   SE::FlatBuffers::ComponentUUnion component{};
@@ -1830,6 +2773,45 @@ struct Component FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   const SE::FlatBuffers::StateMachine *component_as_StateMachine() const {
     return component_type() == SE::FlatBuffers::ComponentU::StateMachine ? static_cast<const SE::FlatBuffers::StateMachine *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::TerrainComponent *component_as_TerrainComponent() const {
+    return component_type() == SE::FlatBuffers::ComponentU::TerrainComponent ? static_cast<const SE::FlatBuffers::TerrainComponent *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::SpatialEntry *component_as_SpatialEntry() const {
+    return component_type() == SE::FlatBuffers::ComponentU::SpatialEntry ? static_cast<const SE::FlatBuffers::SpatialEntry *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::SpawnPoint *component_as_SpawnPoint() const {
+    return component_type() == SE::FlatBuffers::ComponentU::SpawnPoint ? static_cast<const SE::FlatBuffers::SpawnPoint *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::SpawnVolume *component_as_SpawnVolume() const {
+    return component_type() == SE::FlatBuffers::ComponentU::SpawnVolume ? static_cast<const SE::FlatBuffers::SpawnVolume *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::Population *component_as_Population() const {
+    return component_type() == SE::FlatBuffers::ComponentU::Population ? static_cast<const SE::FlatBuffers::Population *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::NavArea *component_as_NavArea() const {
+    return component_type() == SE::FlatBuffers::ComponentU::NavArea ? static_cast<const SE::FlatBuffers::NavArea *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::NavLink *component_as_NavLink() const {
+    return component_type() == SE::FlatBuffers::ComponentU::NavLink ? static_cast<const SE::FlatBuffers::NavLink *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::NavAgent *component_as_NavAgent() const {
+    return component_type() == SE::FlatBuffers::ComponentU::NavAgent ? static_cast<const SE::FlatBuffers::NavAgent *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::PathFollower *component_as_PathFollower() const {
+    return component_type() == SE::FlatBuffers::ComponentU::PathFollower ? static_cast<const SE::FlatBuffers::PathFollower *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::TriggerBinding *component_as_TriggerBinding() const {
+    return component_type() == SE::FlatBuffers::ComponentU::TriggerBinding ? static_cast<const SE::FlatBuffers::TriggerBinding *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::Blackboard *component_as_Blackboard() const {
+    return component_type() == SE::FlatBuffers::ComponentU::Blackboard ? static_cast<const SE::FlatBuffers::Blackboard *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::BehaviorTree *component_as_BehaviorTree() const {
+    return component_type() == SE::FlatBuffers::ComponentU::BehaviorTree ? static_cast<const SE::FlatBuffers::BehaviorTree *>(component()) : nullptr;
+  }
+  const SE::FlatBuffers::Portal *component_as_Portal() const {
+    return component_type() == SE::FlatBuffers::ComponentU::Portal ? static_cast<const SE::FlatBuffers::Portal *>(component()) : nullptr;
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1881,6 +2863,58 @@ template<> inline const SE::FlatBuffers::TriggerVolume *Component::component_as<
 
 template<> inline const SE::FlatBuffers::StateMachine *Component::component_as<SE::FlatBuffers::StateMachine>() const {
   return component_as_StateMachine();
+}
+
+template<> inline const SE::FlatBuffers::TerrainComponent *Component::component_as<SE::FlatBuffers::TerrainComponent>() const {
+  return component_as_TerrainComponent();
+}
+
+template<> inline const SE::FlatBuffers::SpatialEntry *Component::component_as<SE::FlatBuffers::SpatialEntry>() const {
+  return component_as_SpatialEntry();
+}
+
+template<> inline const SE::FlatBuffers::SpawnPoint *Component::component_as<SE::FlatBuffers::SpawnPoint>() const {
+  return component_as_SpawnPoint();
+}
+
+template<> inline const SE::FlatBuffers::SpawnVolume *Component::component_as<SE::FlatBuffers::SpawnVolume>() const {
+  return component_as_SpawnVolume();
+}
+
+template<> inline const SE::FlatBuffers::Population *Component::component_as<SE::FlatBuffers::Population>() const {
+  return component_as_Population();
+}
+
+template<> inline const SE::FlatBuffers::NavArea *Component::component_as<SE::FlatBuffers::NavArea>() const {
+  return component_as_NavArea();
+}
+
+template<> inline const SE::FlatBuffers::NavLink *Component::component_as<SE::FlatBuffers::NavLink>() const {
+  return component_as_NavLink();
+}
+
+template<> inline const SE::FlatBuffers::NavAgent *Component::component_as<SE::FlatBuffers::NavAgent>() const {
+  return component_as_NavAgent();
+}
+
+template<> inline const SE::FlatBuffers::PathFollower *Component::component_as<SE::FlatBuffers::PathFollower>() const {
+  return component_as_PathFollower();
+}
+
+template<> inline const SE::FlatBuffers::TriggerBinding *Component::component_as<SE::FlatBuffers::TriggerBinding>() const {
+  return component_as_TriggerBinding();
+}
+
+template<> inline const SE::FlatBuffers::Blackboard *Component::component_as<SE::FlatBuffers::Blackboard>() const {
+  return component_as_Blackboard();
+}
+
+template<> inline const SE::FlatBuffers::BehaviorTree *Component::component_as<SE::FlatBuffers::BehaviorTree>() const {
+  return component_as_BehaviorTree();
+}
+
+template<> inline const SE::FlatBuffers::Portal *Component::component_as<SE::FlatBuffers::Portal>() const {
+  return component_as_Portal();
 }
 
 struct ComponentBuilder {
@@ -2477,6 +3511,257 @@ inline ::flatbuffers::Offset<StateMachine> CreateStateMachine(::flatbuffers::Fla
       _tick_interval);
 }
 
+inline BlackboardT::BlackboardT(const BlackboardT &o)
+      : bb((o.bb) ? new SE::FlatBuffers::BlackboardHolderT(*o.bb) : nullptr) {
+  initial.reserve(o.initial.size());
+  for (const auto &initial_ : o.initial) { initial.emplace_back((initial_) ? new SE::FlatBuffers::BlackboardInitialT(*initial_) : nullptr); }
+}
+
+inline BlackboardT &BlackboardT::operator=(BlackboardT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(bb, o.bb);
+  std::swap(initial, o.initial);
+  return *this;
+}
+
+inline BlackboardT *Blackboard::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<BlackboardT>(new BlackboardT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Blackboard::UnPackTo(BlackboardT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = bb(); if (_e) { if(_o->bb) { _e->UnPackTo(_o->bb.get(), _resolver); } else { _o->bb = std::unique_ptr<SE::FlatBuffers::BlackboardHolderT>(_e->UnPack(_resolver)); } } else if (_o->bb) { _o->bb.reset(); } }
+  { auto _e = initial(); if (_e) { _o->initial.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->initial[_i]) { _e->Get(_i)->UnPackTo(_o->initial[_i].get(), _resolver); } else { _o->initial[_i] = std::unique_ptr<SE::FlatBuffers::BlackboardInitialT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->initial.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<Blackboard> Blackboard::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BlackboardT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBlackboard(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Blackboard> CreateBlackboard(::flatbuffers::FlatBufferBuilder &_fbb, const BlackboardT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BlackboardT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _bb = _o->bb ? CreateBlackboardHolder(_fbb, _o->bb.get(), _rehasher) : 0;
+  auto _initial = _o->initial.size() ? _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::BlackboardInitial>> (_o->initial.size(), [](size_t i, _VectorArgs *__va) { return CreateBlackboardInitial(*__va->__fbb, __va->__o->initial[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return SE::FlatBuffers::CreateBlackboard(
+      _fbb,
+      _bb,
+      _initial);
+}
+
+inline TriggerBindingDefT *TriggerBindingDef::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<TriggerBindingDefT>(new TriggerBindingDefT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void TriggerBindingDef::UnPackTo(TriggerBindingDefT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = on_event(); if (_e) _o->on_event = _e->str(); }
+  { auto _e = target(); _o->target = _e; }
+  { auto _e = key(); if (_e) _o->key = _e->str(); }
+  { auto _e = value_type(); _o->value.type = _e; }
+  { auto _e = value(); if (_e) _o->value.value = SE::FlatBuffers::BBValueUUnion::UnPack(_e, value_type(), _resolver); }
+  { auto _e = write_position(); _o->write_position = _e; }
+}
+
+inline ::flatbuffers::Offset<TriggerBindingDef> TriggerBindingDef::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingDefT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateTriggerBindingDef(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<TriggerBindingDef> CreateTriggerBindingDef(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingDefT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const TriggerBindingDefT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _on_event = _fbb.CreateString(_o->on_event);
+  auto _target = _o->target;
+  auto _key = _fbb.CreateString(_o->key);
+  auto _value_type = _o->value.type;
+  auto _value = _o->value.Pack(_fbb);
+  auto _write_position = _o->write_position;
+  return SE::FlatBuffers::CreateTriggerBindingDef(
+      _fbb,
+      _on_event,
+      _target,
+      _key,
+      _value_type,
+      _value,
+      _write_position);
+}
+
+inline TriggerBindingT::TriggerBindingT(const TriggerBindingT &o) {
+  bindings.reserve(o.bindings.size());
+  for (const auto &bindings_ : o.bindings) { bindings.emplace_back((bindings_) ? new SE::FlatBuffers::TriggerBindingDefT(*bindings_) : nullptr); }
+}
+
+inline TriggerBindingT &TriggerBindingT::operator=(TriggerBindingT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(bindings, o.bindings);
+  return *this;
+}
+
+inline TriggerBindingT *TriggerBinding::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<TriggerBindingT>(new TriggerBindingT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void TriggerBinding::UnPackTo(TriggerBindingT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = bindings(); if (_e) { _o->bindings.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->bindings[_i]) { _e->Get(_i)->UnPackTo(_o->bindings[_i].get(), _resolver); } else { _o->bindings[_i] = std::unique_ptr<SE::FlatBuffers::TriggerBindingDefT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->bindings.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<TriggerBinding> TriggerBinding::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateTriggerBinding(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<TriggerBinding> CreateTriggerBinding(::flatbuffers::FlatBufferBuilder &_fbb, const TriggerBindingT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const TriggerBindingT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _bindings = _fbb.CreateVector<::flatbuffers::Offset<SE::FlatBuffers::TriggerBindingDef>> (_o->bindings.size(), [](size_t i, _VectorArgs *__va) { return CreateTriggerBindingDef(*__va->__fbb, __va->__o->bindings[i].get(), __va->__rehasher); }, &_va );
+  return SE::FlatBuffers::CreateTriggerBinding(
+      _fbb,
+      _bindings);
+}
+
+inline BehaviorTreeT::BehaviorTreeT(const BehaviorTreeT &o)
+      : tree((o.tree) ? new SE::FlatBuffers::BehaviorTreeHolderT(*o.tree) : nullptr),
+        tick_interval(o.tick_interval) {
+}
+
+inline BehaviorTreeT &BehaviorTreeT::operator=(BehaviorTreeT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(tree, o.tree);
+  std::swap(tick_interval, o.tick_interval);
+  return *this;
+}
+
+inline BehaviorTreeT *BehaviorTree::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<BehaviorTreeT>(new BehaviorTreeT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void BehaviorTree::UnPackTo(BehaviorTreeT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = tree(); if (_e) { if(_o->tree) { _e->UnPackTo(_o->tree.get(), _resolver); } else { _o->tree = std::unique_ptr<SE::FlatBuffers::BehaviorTreeHolderT>(_e->UnPack(_resolver)); } } else if (_o->tree) { _o->tree.reset(); } }
+  { auto _e = tick_interval(); _o->tick_interval = _e; }
+}
+
+inline ::flatbuffers::Offset<BehaviorTree> BehaviorTree::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const BehaviorTreeT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateBehaviorTree(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<BehaviorTree> CreateBehaviorTree(::flatbuffers::FlatBufferBuilder &_fbb, const BehaviorTreeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BehaviorTreeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _tree = _o->tree ? CreateBehaviorTreeHolder(_fbb, _o->tree.get(), _rehasher) : 0;
+  auto _tick_interval = _o->tick_interval;
+  return SE::FlatBuffers::CreateBehaviorTree(
+      _fbb,
+      _tree,
+      _tick_interval);
+}
+
+inline TerrainComponentT *TerrainComponent::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<TerrainComponentT>(new TerrainComponentT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void TerrainComponent::UnPackTo(TerrainComponentT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = manifest(); if (_e) _o->manifest = _e->str(); }
+  { auto _e = grid_mode(); _o->grid_mode = _e; }
+}
+
+inline ::flatbuffers::Offset<TerrainComponent> TerrainComponent::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TerrainComponentT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateTerrainComponent(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<TerrainComponent> CreateTerrainComponent(::flatbuffers::FlatBufferBuilder &_fbb, const TerrainComponentT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const TerrainComponentT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _manifest = _fbb.CreateString(_o->manifest);
+  auto _grid_mode = _o->grid_mode;
+  return SE::FlatBuffers::CreateTerrainComponent(
+      _fbb,
+      _manifest,
+      _grid_mode);
+}
+
+inline SpatialEntryT *SpatialEntry::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<SpatialEntryT>(new SpatialEntryT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void SpatialEntry::UnPackTo(SpatialEntryT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = tag(); if (_e) _o->tag = _e->str(); }
+  { auto _e = radius(); _o->radius = _e; }
+  { auto _e = track_node(); _o->track_node = _e; }
+}
+
+inline ::flatbuffers::Offset<SpatialEntry> SpatialEntry::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const SpatialEntryT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateSpatialEntry(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<SpatialEntry> CreateSpatialEntry(::flatbuffers::FlatBufferBuilder &_fbb, const SpatialEntryT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SpatialEntryT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _tag = _fbb.CreateString(_o->tag);
+  auto _radius = _o->radius;
+  auto _track_node = _o->track_node;
+  return SE::FlatBuffers::CreateSpatialEntry(
+      _fbb,
+      _tag,
+      _radius,
+      _track_node);
+}
+
+inline PortalT *Portal::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<PortalT>(new PortalT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void Portal::UnPackTo(PortalT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = level_path(); if (_e) _o->level_path = _e->str(); }
+  { auto _e = activate_radius(); _o->activate_radius = _e; }
+  { auto _e = release_radius(); _o->release_radius = _e; }
+}
+
+inline ::flatbuffers::Offset<Portal> Portal::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const PortalT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreatePortal(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<Portal> CreatePortal(::flatbuffers::FlatBufferBuilder &_fbb, const PortalT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const PortalT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _level_path = _fbb.CreateString(_o->level_path);
+  auto _activate_radius = _o->activate_radius;
+  auto _release_radius = _o->release_radius;
+  return SE::FlatBuffers::CreatePortal(
+      _fbb,
+      _level_path,
+      _activate_radius,
+      _release_radius);
+}
+
 inline ComponentT *Component::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<ComponentT>(new ComponentT());
   UnPackTo(_o.get(), _resolver);
@@ -2685,6 +3970,58 @@ inline bool VerifyComponentU(::flatbuffers::Verifier &verifier, const void *obj,
       auto ptr = reinterpret_cast<const SE::FlatBuffers::StateMachine *>(obj);
       return verifier.VerifyTable(ptr);
     }
+    case ComponentU::TerrainComponent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TerrainComponent *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::SpatialEntry: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpatialEntry *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::SpawnPoint: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpawnPoint *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::SpawnVolume: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpawnVolume *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::Population: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Population *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::NavArea: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavArea *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::NavLink: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavLink *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::NavAgent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavAgent *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::PathFollower: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::PathFollower *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::TriggerBinding: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerBinding *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::Blackboard: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Blackboard *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::BehaviorTree: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::BehaviorTree *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case ComponentU::Portal: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Portal *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
     default: return true;
   }
 }
@@ -2744,6 +4081,58 @@ inline void *ComponentUUnion::UnPack(const void *obj, ComponentU type, const ::f
       auto ptr = reinterpret_cast<const SE::FlatBuffers::StateMachine *>(obj);
       return ptr->UnPack(resolver);
     }
+    case ComponentU::TerrainComponent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TerrainComponent *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::SpatialEntry: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpatialEntry *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::SpawnPoint: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpawnPoint *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::SpawnVolume: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpawnVolume *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::Population: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Population *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::NavArea: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavArea *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::NavLink: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavLink *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::NavAgent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavAgent *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::PathFollower: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::PathFollower *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::TriggerBinding: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerBinding *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::Blackboard: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Blackboard *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::BehaviorTree: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::BehaviorTree *>(obj);
+      return ptr->UnPack(resolver);
+    }
+    case ComponentU::Portal: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::Portal *>(obj);
+      return ptr->UnPack(resolver);
+    }
     default: return nullptr;
   }
 }
@@ -2791,6 +4180,58 @@ inline ::flatbuffers::Offset<void> ComponentUUnion::Pack(::flatbuffers::FlatBuff
       auto ptr = reinterpret_cast<const SE::FlatBuffers::StateMachineT *>(value);
       return CreateStateMachine(_fbb, ptr, _rehasher).Union();
     }
+    case ComponentU::TerrainComponent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TerrainComponentT *>(value);
+      return CreateTerrainComponent(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::SpatialEntry: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpatialEntryT *>(value);
+      return CreateSpatialEntry(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::SpawnPoint: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpawnPointT *>(value);
+      return CreateSpawnPoint(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::SpawnVolume: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::SpawnVolumeT *>(value);
+      return CreateSpawnVolume(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::Population: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::PopulationT *>(value);
+      return CreatePopulation(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::NavArea: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavAreaT *>(value);
+      return CreateNavArea(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::NavLink: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavLinkT *>(value);
+      return CreateNavLink(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::NavAgent: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::NavAgentT *>(value);
+      return CreateNavAgent(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::PathFollower: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::PathFollowerT *>(value);
+      return CreatePathFollower(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::TriggerBinding: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::TriggerBindingT *>(value);
+      return CreateTriggerBinding(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::Blackboard: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::BlackboardT *>(value);
+      return CreateBlackboard(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::BehaviorTree: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::BehaviorTreeT *>(value);
+      return CreateBehaviorTree(_fbb, ptr, _rehasher).Union();
+    }
+    case ComponentU::Portal: {
+      auto ptr = reinterpret_cast<const SE::FlatBuffers::PortalT *>(value);
+      return CreatePortal(_fbb, ptr, _rehasher).Union();
+    }
     default: return 0;
   }
 }
@@ -2835,6 +4276,58 @@ inline ComponentUUnion::ComponentUUnion(const ComponentUUnion &u) : type(u.type)
     }
     case ComponentU::StateMachine: {
       value = new SE::FlatBuffers::StateMachineT(*reinterpret_cast<SE::FlatBuffers::StateMachineT *>(u.value));
+      break;
+    }
+    case ComponentU::TerrainComponent: {
+      value = new SE::FlatBuffers::TerrainComponentT(*reinterpret_cast<SE::FlatBuffers::TerrainComponentT *>(u.value));
+      break;
+    }
+    case ComponentU::SpatialEntry: {
+      value = new SE::FlatBuffers::SpatialEntryT(*reinterpret_cast<SE::FlatBuffers::SpatialEntryT *>(u.value));
+      break;
+    }
+    case ComponentU::SpawnPoint: {
+      value = new SE::FlatBuffers::SpawnPointT(*reinterpret_cast<SE::FlatBuffers::SpawnPointT *>(u.value));
+      break;
+    }
+    case ComponentU::SpawnVolume: {
+      value = new SE::FlatBuffers::SpawnVolumeT(*reinterpret_cast<SE::FlatBuffers::SpawnVolumeT *>(u.value));
+      break;
+    }
+    case ComponentU::Population: {
+      value = new SE::FlatBuffers::PopulationT(*reinterpret_cast<SE::FlatBuffers::PopulationT *>(u.value));
+      break;
+    }
+    case ComponentU::NavArea: {
+      value = new SE::FlatBuffers::NavAreaT(*reinterpret_cast<SE::FlatBuffers::NavAreaT *>(u.value));
+      break;
+    }
+    case ComponentU::NavLink: {
+      value = new SE::FlatBuffers::NavLinkT(*reinterpret_cast<SE::FlatBuffers::NavLinkT *>(u.value));
+      break;
+    }
+    case ComponentU::NavAgent: {
+      value = new SE::FlatBuffers::NavAgentT(*reinterpret_cast<SE::FlatBuffers::NavAgentT *>(u.value));
+      break;
+    }
+    case ComponentU::PathFollower: {
+      value = new SE::FlatBuffers::PathFollowerT(*reinterpret_cast<SE::FlatBuffers::PathFollowerT *>(u.value));
+      break;
+    }
+    case ComponentU::TriggerBinding: {
+      value = new SE::FlatBuffers::TriggerBindingT(*reinterpret_cast<SE::FlatBuffers::TriggerBindingT *>(u.value));
+      break;
+    }
+    case ComponentU::Blackboard: {
+      value = new SE::FlatBuffers::BlackboardT(*reinterpret_cast<SE::FlatBuffers::BlackboardT *>(u.value));
+      break;
+    }
+    case ComponentU::BehaviorTree: {
+      value = new SE::FlatBuffers::BehaviorTreeT(*reinterpret_cast<SE::FlatBuffers::BehaviorTreeT *>(u.value));
+      break;
+    }
+    case ComponentU::Portal: {
+      value = new SE::FlatBuffers::PortalT(*reinterpret_cast<SE::FlatBuffers::PortalT *>(u.value));
       break;
     }
     default:
@@ -2891,6 +4384,71 @@ inline void ComponentUUnion::Reset() {
     }
     case ComponentU::StateMachine: {
       auto ptr = reinterpret_cast<SE::FlatBuffers::StateMachineT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::TerrainComponent: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::TerrainComponentT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::SpatialEntry: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::SpatialEntryT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::SpawnPoint: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::SpawnPointT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::SpawnVolume: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::SpawnVolumeT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::Population: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::PopulationT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::NavArea: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::NavAreaT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::NavLink: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::NavLinkT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::NavAgent: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::NavAgentT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::PathFollower: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::PathFollowerT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::TriggerBinding: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::TriggerBindingT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::Blackboard: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::BlackboardT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::BehaviorTree: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::BehaviorTreeT *>(value);
+      delete ptr;
+      break;
+    }
+    case ComponentU::Portal: {
+      auto ptr = reinterpret_cast<SE::FlatBuffers::PortalT *>(value);
       delete ptr;
       break;
     }
