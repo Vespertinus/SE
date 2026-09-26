@@ -12,6 +12,8 @@ option(TESTS                    "build tests"                            OFF)
 option(PHYSICS                  "Enable Jolt Physics integration"        ON)
 option(AUDIO                    "Enable OpenAL Soft audio"               ON)
 option(UI                       "Enable RmlUi game UI"                   OFF)
+option(NAV                      "Enable Recast/Detour navigation"        ON)
+option(TERRAIN                  "Enable terrain system"                  ON)
 
 set(SE_RENDERER "DEFERRED" CACHE STRING "Renderer backend: DEFERRED or FORWARD")
 set_property(CACHE SE_RENDERER PROPERTY STRINGS DEFERRED FORWARD)
@@ -120,6 +122,22 @@ if(PHYSICS)
         message(STATUS "Physics: Jolt enabled from ${PHYSICS_REPO}")
 endif()
 
+if(NAV)
+        set(NAV_REPO            "${CMAKE_SOURCE_DIR}/third_party/recastnavigation")
+        # Recast/Detour build options — only the core libs are needed (offline bake, runtime queries)
+        set(RECASTNAVIGATION_DEMO       OFF CACHE BOOL "" FORCE)
+        set(RECASTNAVIGATION_TESTS      OFF CACHE BOOL "" FORCE)
+        set(RECASTNAVIGATION_EXAMPLES   OFF CACHE BOOL "" FORCE)
+
+        add_subdirectory("${NAV_REPO}" "recastnavigation_Build")
+        list(APPEND             THIRD_PARTY_INC_DIRS "${NAV_REPO}/Recast/Include" "${NAV_REPO}/Detour/Include")
+        list(APPEND             LIBRARIES_LIST Recast Detour)
+        list(APPEND             THIRD_PARTY_INC_DIRS "${NAV_REPO}/DetourCrowd/Include")
+        list(APPEND             LIBRARIES_LIST DetourCrowd)
+        add_definitions(-DSE_NAV_ENABLED)
+        message(STATUS "Navigation: Recast/Detour enabled from ${NAV_REPO}")
+endif()
+
 if(AUDIO)
         list(APPEND             THIRD_PARTY_INC_DIRS "third_party/dr_libs")
         find_path(STB_INCLUDE_DIR stb/stb_vorbis.h)
@@ -165,6 +183,17 @@ if(UI)
         list(APPEND             LIBRARIES_LIST rmlui_core)
         add_definitions(-DSE_UI_ENABLED)
         message(STATUS "UI: RmlUi enabled from ${RMLUI_REPO}")
+endif()
+
+if(TERRAIN)
+        # NOTE: not a global define — SE_TERRAIN_ENABLED activates the terrain
+        # RENDER path (renderable registration, camera queries), and headless
+        # test binaries must keep it off (Terrain runs renderer-free there).
+        # Targets with a renderer add it in their own CMakeLists, see
+        # samples/terrain_demo, samples/world_demo.
+        message(STATUS "Terrain: enabled")
+else()
+        message(STATUS "Terrain: disabled")
 endif()
 
 list(APPEND                     THIRD_PARTY_INC_DIRS "third_party/cpp_delegates")
