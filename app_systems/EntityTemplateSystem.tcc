@@ -6,6 +6,7 @@
 #endif
 #endif
 
+#include <algorithm>
 #include <fstream>
 #include <flatbuffers/flatbuffers.h>
 
@@ -78,12 +79,46 @@ template <class ... TComponents> void EntityTemplateSystem<TComponents...>::SetS
 }
 
 // ---------------------------------------------------------------------------
+// Buffer bookkeeping
+// ---------------------------------------------------------------------------
+
+template <class ... TComponents> size_t EntityTemplateSystem<TComponents...>::AllocateBuffer(
+                std::vector<uint8_t> vData,
+                size_t               raw_size) {
+
+        if (!vFreeBuffers.empty()) {
+                const size_t idx = vFreeBuffers.back();
+                vFreeBuffers.pop_back();
+                mBuffers[idx] = OwnedBuffer{ std::move(vData), raw_size, true };
+                return idx;
+        }
+        mBuffers.push_back({ std::move(vData), raw_size, true });
+        return mBuffers.size() - 1;
+}
+
+template <class ... TComponents> void EntityTemplateSystem<TComponents...>::RetireBuffer(size_t idx) {
+
+        if (idx >= mBuffers.size() || !mBuffers[idx].live) {
+                return;
+        }
+        mBuffers[idx] = OwnedBuffer{};   // free the payload; inner pointers into it are gone
+        mBuffers[idx].live = false;
+        vFreeBuffers.push_back(idx);
+}
+
+// ---------------------------------------------------------------------------
 // RegisterBuffer — internal; verifies, stores, handles variant merge
 // ---------------------------------------------------------------------------
 
 template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>::RegisterBuffer(
         std::vector<uint8_t>   vData,
         const std::string &    sDebugName) {
+
+        if (vData.size() > kMaxTemplateFileSize) {
+                log_e("EntityTemplateSystem: file '{}' ({} bytes) exceeds the {} MB limit",
+                                sDebugName, vData.size(), kMaxTemplateFileSize / (1024 * 1024));
+                return uWRONG_INPUT_DATA;
+        }
 
         flatbuffers::Verifier oVerifier(vData.data(), vData.size());
         if (!FlatBuffers::VerifyEntityTemplateBuffer(oVerifier)) {
@@ -98,18 +133,23 @@ template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>
         }
 
         const std::string sId = pTemplateFB->id()->str();
-        if (mTemplates.count(sId)) {
-                log_w("EntityTemplateSystem: template '{}' already registered, skipping '{}'",
-                                sId, sDebugName);
-                return uSUCCESS;
+
+        // Re-loading an id REPLACES it (hot-reload friendly). Merged variants hold
+        // their own buffers, so retiring the old buffer cannot dangle them; the 1:1
+        // buffer invariant means the old slot hosts nothing else.
+        auto oldIt = mTemplateBuffers.find(sId);
+        if (oldIt != mTemplateBuffers.end()) {
+                log_w("EntityTemplateSystem: template '{}' already registered — replacing", sId);
+                mTemplates.erase(sId);
+                RetireBuffer(oldIt->second);
         }
 
         // Store buffer and register pointer
-        size_t idx = mBuffers.size();
-        size_t buf_size = vData.size();
-        mBuffers.push_back({ std::move(vData), buf_size });
-        const auto * pFB = FlatBuffers::GetEntityTemplate(mBuffers.back().vData.data());
+        const size_t buf_size = vData.size();
+        const size_t idx = AllocateBuffer(std::move(vData), buf_size);
+        const auto * pFB = FlatBuffers::GetEntityTemplate(mBuffers[idx].vData.data());
         mTemplates.emplace(sId, pFB);
+        mTemplateBuffers[sId] = idx;
 
         // If this template has a base_id, perform the merge now
         if (pFB->base_id() && pFB->base_id()->size() > 0) {
@@ -120,33 +160,34 @@ template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>
                                         "load base templates before variants",
                                         sId, sBaseId);
                         mTemplates.erase(sId);
-                        mBuffers.resize(idx);
+                        mTemplateBuffers.erase(sId);
+                        RetireBuffer(idx);
                         return uWRONG_INPUT_DATA;
                 }
 
-                // Find the base buffer size to enforce the merge limit
-                size_t base_buf_size = 0;
-                for (const auto & buf : mBuffers) {
-                        const auto * pStart = reinterpret_cast<const uint8_t *>(buf.vData.data());
-                        const auto * pBaseRaw = reinterpret_cast<const uint8_t *>(baseIt->second);
-                        if (pBaseRaw >= pStart && pBaseRaw < pStart + buf.vData.size()) {
-                                base_buf_size = buf.raw_size;
-                                break;
-                        }
-                }
+                // Merge limit applies to the base buffer
+                auto baseBufIt = mTemplateBuffers.find(sBaseId);
+                const size_t base_buf_size = mBuffers[baseBufIt->second].raw_size;
                 if (base_buf_size > kMergeBufferMaxSize) {
                         log_e("EntityTemplateSystem: base '{}' buffer ({} bytes) exceeds {} MB limit",
                                         sBaseId, base_buf_size, kMergeBufferMaxSize / (1024 * 1024));
                         mTemplates.erase(sId);
-                        mBuffers.resize(idx);
+                        mTemplateBuffers.erase(sId);
+                        RetireBuffer(idx);
                         return uWRONG_INPUT_DATA;
                 }
 
                 if (auto res = MergeVariant(sId, pFB, baseIt->second); res != uSUCCESS) {
                         mTemplates.erase(sId);
-                        mBuffers.resize(idx);
+                        mTemplateBuffers.erase(sId);
+                        RetireBuffer(idx);
                         return res;
                 }
+
+                // Merge succeeded: the variant now lives in its own merged buffer and
+                // the pre-merge slot is unreferenced (MergeVariant repointed both maps).
+                // Note: pFB points into the retired buffer — do not dereference below.
+                RetireBuffer(idx);
         }
 
         log_d("EntityTemplateSystem: registered template '{}'", sId);
@@ -269,7 +310,6 @@ template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>
 
         // Build the EntityTemplate: use variant's id, tags; merged root
         auto oIdOffset = fbb.CreateString(sVariantId);
-        flatbuffers::Offset<flatbuffers::String> oTagsOffset;
         std::vector<flatbuffers::Offset<flatbuffers::String>> tag_offsets;
 
         if (pVariantFB->tags()) {
@@ -287,17 +327,16 @@ template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>
 
         FlatBuffers::FinishEntityTemplateBuffer(fbb, oTemplateOffset);
 
-        // Store merged buffer and update mTemplates[variantId]
+        // Store the merged buffer and repoint mTemplates[variantId] into it.
+        // The variant's original buffer (the slot RegisterBuffer allocated for it)
+        // becomes unreferenced and is retired by the caller after this returns.
         auto pBuf = fbb.GetBufferPointer();
-        size_t buf_size = fbb.GetSize();
-        std::vector<uint8_t> vMerged(pBuf, pBuf + buf_size);
+        const size_t merged_size = fbb.GetSize();
+        std::vector<uint8_t> vMerged(pBuf, pBuf + merged_size);
 
-        size_t merged_idx = mBuffers.size();
-        mBuffers.push_back({ std::move(vMerged), buf_size });
-        mMergeCache[sVariantId] = merged_idx;
-
-        // Replace the template pointer with one pointing into the merged buffer
-        mTemplates[sVariantId] = FlatBuffers::GetEntityTemplate(mBuffers.back().vData.data());
+        const size_t merged_idx = AllocateBuffer(std::move(vMerged), merged_size);
+        mTemplates[sVariantId] = FlatBuffers::GetEntityTemplate(mBuffers[merged_idx].vData.data());
+        mTemplateBuffers[sVariantId] = merged_idx;
 
         log_d("EntityTemplateSystem: merged variant '{}' from base '{}'",
                         sVariantId, pBaseFB->id() ? pBaseFB->id()->c_str() : "?");
@@ -318,6 +357,11 @@ template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>
         }
 
         const auto file_size = static_cast<size_t>(oInput.tellg());
+        if (file_size > kMaxTemplateFileSize) {
+                log_e("EntityTemplateSystem::Load: file '{}' ({} bytes) exceeds the {} MB limit",
+                                sPath, file_size, kMaxTemplateFileSize / (1024 * 1024));
+                return uWRONG_INPUT_DATA;
+        }
         oInput.seekg(0);
 
         std::vector<uint8_t> vData(file_size);
@@ -338,33 +382,90 @@ template <class ... TComponents> ret_code_t EntityTemplateSystem<TComponents...>
 }
 
 // ---------------------------------------------------------------------------
-// HasTemplate / UnloadAll
+// Queries: HasTemplate / TemplateCount / ForEachTemplateId / HasTag
 // ---------------------------------------------------------------------------
 
 template <class ... TComponents> bool EntityTemplateSystem<TComponents...>::HasTemplate(const std::string & sId) const {
         return mTemplates.count(sId) > 0;
 }
 
+template <class ... TComponents> size_t EntityTemplateSystem<TComponents...>::TemplateCount() const {
+        return mTemplates.size();
+}
+
+template <class ... TComponents> template <class TFn>
+        void EntityTemplateSystem<TComponents...>::ForEachTemplateId(TFn && fn) const {
+
+        // Sorted: deterministic order (the registry itself is a hash map).
+        std::vector<const std::string *> vIds;
+        vIds.reserve(mTemplates.size());
+        for (const auto & entry : mTemplates) {
+                vIds.push_back(&entry.first);
+        }
+        std::sort(vIds.begin(), vIds.end(),
+                        [](const std::string * a, const std::string * b) { return *a < *b; });
+
+        for (const auto * pId : vIds) {
+                fn(*pId);
+        }
+}
+
+template <class ... TComponents> bool EntityTemplateSystem<TComponents...>::HasTag(
+                const std::string & sId, const std::string & sTag) const {
+
+        auto it = mTemplates.find(sId);
+        if (it == mTemplates.end() || !it->second->tags()) {
+                return false;
+        }
+        for (flatbuffers::uoffset_t i = 0; i < it->second->tags()->size(); ++i) {
+                if (it->second->tags()->Get(i) && it->second->tags()->Get(i)->str() == sTag) {
+                        return true;
+                }
+        }
+        return false;
+}
+
+// ---------------------------------------------------------------------------
+// Unload / UnloadAll / Str
+// ---------------------------------------------------------------------------
+
+template <class ... TComponents> bool EntityTemplateSystem<TComponents...>::Unload(const std::string & sId) {
+
+        auto it = mTemplateBuffers.find(sId);
+        if (it == mTemplateBuffers.end()) {
+                return false;
+        }
+        mTemplates.erase(sId);
+        RetireBuffer(it->second);
+        mTemplateBuffers.erase(it);
+        log_d("EntityTemplateSystem: unloaded template '{}'", sId);
+        return true;
+}
+
 template <class ... TComponents> void EntityTemplateSystem<TComponents...>::UnloadAll() {
 
         mTemplates.clear();
-        mMergeCache.clear();
+        mTemplateBuffers.clear();
         mBuffers.clear();
+        vFreeBuffers.clear();
 }
 
 template <class ... TComponents> std::string EntityTemplateSystem<TComponents...>::Str() const {
 
         size_t total_bytes = 0;
+        size_t live = 0;
         for (const auto & buf : mBuffers) {
+                if (!buf.live) continue;
                 total_bytes += buf.vData.size();
+                ++live;
         }
 
         return fmt::format(
-                "EntityTemplateSystem: {} template(s), {} buffer(s) ({} bytes total), {} merged variant(s)",
+                "EntityTemplateSystem: {} template(s), {} live buffer(s) ({} bytes total), {} retired slot(s)",
                 mTemplates.size(),
-                mBuffers.size(),
+                live,
                 total_bytes,
-                mMergeCache.size());
+                vFreeBuffers.size());
 }
 
 // ---------------------------------------------------------------------------
@@ -378,7 +479,8 @@ template <class ... TComponents> typename EntityTemplateSystem<TComponents...>::
                 const glm::vec3 *                 pvOverrideTranslation,
                 const glm::vec3 *                 pvOverrideRotation,
                 const glm::vec3 *                 pvOverrideScale,
-                TPostLoadVec &                    vPostLoad) {
+                TPostLoadVec &                    vPostLoad,
+                std::vector<TSceneNode> &         vCreated) {
 
         se_assert(pNodeFB);
         se_assert(pSceneTree);
@@ -389,11 +491,16 @@ template <class ... TComponents> typename EntityTemplateSystem<TComponents...>::
         }
         std::string_view sName = pNodeFB->name()->c_str();
 
-        TSceneNode pNode = pSceneTree->Create(pParent, sName, override_enabled);
+        // Uniquify against the live tree: repeated instantiation of the same template
+        // under the same parent must succeed (a raw name would make Create fail).
+        std::string sUniqueName = pSceneTree->MakeUniqueName(pParent, sName);
+
+        TSceneNode pNode = pSceneTree->Create(pParent, sUniqueName, override_enabled);
         if (!pNode) {
                 log_e("EntityTemplateSystem::InstantiateNode: failed to create node '{}'", sName);
                 return nullptr;
         }
+        vCreated.push_back(pNode);
 
         // Apply transform — caller overrides apply to root node only (nullptr = use authored)
         auto ReadVec3 = [](const FlatBuffers::Vec3 * p) -> glm::vec3 {
@@ -443,7 +550,7 @@ template <class ... TComponents> typename EntityTemplateSystem<TComponents...>::
                         const auto * pChildFB = pChildrenFB->Get(i);
                         bool child_enabled = pChildFB->enabled();
                         if (!InstantiateNode(pChildFB, pNode, child_enabled,
-                                                nullptr, nullptr, nullptr, vPostLoad)) {
+                                                nullptr, nullptr, nullptr, vPostLoad, vCreated)) {
                                 return nullptr;
                         }
                 }
@@ -487,12 +594,24 @@ template <class ... TComponents> typename EntityTemplateSystem<TComponents...>::
         if (!pParent) pParent = pSceneTree->GetRoot();
 
         TPostLoadVec vPostLoad;
+        std::vector<TSceneNode> vCreated;
 
         TSceneNode pRootNode = InstantiateNode(
-                        pRootFB, pParent, enabled, &vTranslation, &vRotation, &vScale, vPostLoad);
+                        pRootFB, pParent, enabled, &vTranslation, &vRotation, &vScale,
+                        vPostLoad, vCreated);
 
         if (!pRootNode) {
-                log_e("EntityTemplateSystem::Instantiate: InstantiateNode failed for '{}'", sTemplateId);
+                // Roll back the partial hierarchy: unlink deepest-first so every node
+                // still has a parent when it unlinks (Unlink cleans the tree's name
+                // maps via HandleNodeUnlink; the shared_ptrs in vCreated keep the
+                // detached nodes alive until they leave scope).
+                for (auto it = vCreated.rbegin(); it != vCreated.rend(); ++it) {
+                        if (auto p = *it) {
+                                p->Unlink();
+                        }
+                }
+                log_e("EntityTemplateSystem::Instantiate: rolled back partial hierarchy for '{}'",
+                                sTemplateId);
                 return {};
         }
 

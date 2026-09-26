@@ -16,7 +16,7 @@ Scene::Scene(const Settings & oSettings) :
         GetSystem<EntityManager>().SetSceneTree(pSceneTree);
         GetSystem<EntityManager>().SetTemplateInstantiator(
                 [&oETS](const SpawnIntent & oIntent) -> TSceneTree::TSceneNodeWeak {
-                        return oETS.Instantiate(oIntent.prefab_id, {},
+                        return oETS.Instantiate(oIntent.prefab_id, oIntent.pParent,
                                 oIntent.vTranslation, oIntent.vRotation,
                                 oIntent.vScale, oIntent.enabled);
                 });
