@@ -16,3 +16,10 @@ flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/AnimationGraph.fb
 flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/EntityTemplate.fbs
 flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/SoundEmitter.fbs
 flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/StateMachine.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/Resources.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/Terrain.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/World.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/Spawner.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/NavMesh.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/Blackboard.fbs
+flatc --cpp --scoped-enums --gen-object-api -o generated/ misc/BehaviorTree.fbs
