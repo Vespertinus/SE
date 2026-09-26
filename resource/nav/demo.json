@@ -1,0 +1,8 @@
+{
+    "sesc": ["resource/nav/demo_sub.sesc"],
+    "tile_dim": 8.0,
+    "cell_size": 0.0,
+    "voxel_size": 0.2,
+    "voxel_height": 0.2,
+    "output": "resource/nav/demo"
+}

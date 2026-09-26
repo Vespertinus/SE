@@ -1,0 +1,17 @@
+{
+  "world": "resource/world/world_demo.seworld",
+  "classes": [
+    {
+      "name": "default",
+      "radius": 0.4,
+      "height": 1.8,
+      "max_slope_deg": 50.0,
+      "step_height": 0.4
+    }
+  ],
+  "tile_dim": 20.0,
+  "cell_size": 40.0,
+  "voxel_size": 0.2,
+  "voxel_height": 0.2,
+  "output": "resource/nav/world_demo"
+}
