@@ -61,6 +61,30 @@ template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode
         }
         return nullptr;
 }
+
+template <class ... TComponents > std::string SceneTree<TComponents ...>::
+        MakeUniqueName(TSceneNode pParent, const std::string_view sBase) const {
+
+        if (sBase.empty() || !pParent) {
+                return std::string(sBase);
+        }
+
+        // Parent path built once; candidates append to it.
+        const std::string sPrefix = pParent->GetFullName() + "|";
+
+        if (!FindFullName(StrID(sPrefix + std::string(sBase)))) {
+                return std::string(sBase);
+        }
+
+        // Colliding: first free N. N grows with the number of live same-named siblings;
+        // suffixes recycle once nodes are destroyed (no persistent serial).
+        for (uint32_t n = 1; ; ++n) {
+                std::string sCandidate = std::string(sBase) + "_" + std::to_string(n);
+                if (!FindFullName(StrID(sPrefix + sCandidate))) {
+                        return sCandidate;
+                }
+        }
+}
 template <class ... TComponents > const std::vector<std::shared_ptr<SceneNode<TComponents ...>>> * SceneTree<TComponents ...>::
         FindLocalName(const StrID sid) const {
 
@@ -84,29 +108,36 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
                 return;
         }
 
-        if (pNode->GetName().empty()) { return; }
+        // Unregister pNode and its whole subtree: a subtree teardown must not leave
+        // named descendants in the name maps (they hold shared_ptrs, so stale entries
+        // pin the destroyed nodes forever and collide with later re-created names).
 
-        mNamedNodes.erase(pNode->GetFullName());
+        pNode->DepthFirstWalk([this](auto & oWalkNode) {
 
-        auto it = mLocalNamedNodes.find(pNode->GetName());
-        if (it != mLocalNamedNodes.end()) {
-                auto & vNames = it->second;
+                if (oWalkNode.GetScene() != this) { return false; }
+                if (oWalkNode.GetName().empty())  { return true; }
 
-                log_d("CHECK: before size: {}", vNames.size());
+                mNamedNodes.erase(oWalkNode.GetFullName());
 
-                vNames.erase(std::remove_if(
-                                        vNames.begin(),
-                                        vNames.end(),
-                                        [pNode](const auto & pCheckNode) {
+                auto it = mLocalNamedNodes.find(oWalkNode.GetName());
+                if (it != mLocalNamedNodes.end()) {
+                        auto & vNames = it->second;
 
-                                                return pCheckNode.get() == pNode;
-                                        }),
-                              vNames.end());
-                log_d("CHECK: after size: {}", vNames.size());
-                if (vNames.size() == 0) {
-                        mLocalNamedNodes.erase(it);
+                        vNames.erase(std::remove_if(
+                                                        vNames.begin(),
+                                                        vNames.end(),
+                                                        [&oWalkNode](const auto & pCheckNode) {
+
+                                                                return pCheckNode.get() == &oWalkNode;
+                                                        }),
+                                      vNames.end());
+                        if (vNames.size() == 0) {
+                                mLocalNamedNodes.erase(it);
+                        }
                 }
-        }
+
+                return true;
+        });
 }
 
 template <class ... TComponents > void SceneTree<TComponents ...>::
@@ -166,11 +197,26 @@ template <class ... TComponents > void SceneTree<TComponents ...>::
 template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
         Instantiate(const std::string & sFilePath, TSceneNode pParent) {
 
+        // Single read: verify here, instantiate from the verified bytes below.
+        std::vector<char> vBuffer = ReadSceneFile(sFilePath);
+        return InstantiateFromBuffer(vBuffer, pParent, /*bPreVerified=*/true);
+}
+
+template <class ... TComponents > typename SceneTree<TComponents...>::TSceneNode SceneTree<TComponents ...>::
+        InstantiateFromBuffer(const std::vector<char> & vBuffer, TSceneNode pParent, const bool bPreVerified) {
+
         // No parent → instantiate under the scene root (still a child, not a root replace).
         if (!pParent) { pParent = pRoot; }
 
-        std::vector<char> vBuffer = ReadSceneFile(sFilePath);
-        auto * pSceneFB = SE::FlatBuffers::GetSceneTree(&vBuffer[0]);
+        if (!bPreVerified) {
+                flatbuffers::Verifier oVerifier(reinterpret_cast<const uint8_t *>(vBuffer.data()),
+                                                vBuffer.size());
+                if (SE::FlatBuffers::VerifySceneTreeBuffer(oVerifier) != true) {
+                        throw(std::runtime_error("failed to verify scene buffer"));
+                }
+        }
+
+        auto * pSceneFB = SE::FlatBuffers::GetSceneTree(vBuffer.data());
 
         return LoadFB(pSceneFB->root(), pParent);
 }

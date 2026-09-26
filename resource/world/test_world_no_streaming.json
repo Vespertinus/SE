@@ -1,0 +1,22 @@
+{
+    "id": "test_world_no_streaming",
+    "version": 1,
+    "streaming": {
+        "enabled": false
+    },
+    "sub_levels": [
+        {
+            "path": "resource/world/sublevels/sub_room.sesc",
+            "bounds_min": { "x": -8.0, "y": 0.0, "z": -8.0 },
+            "bounds_max": { "x": 8.0, "y": 4.0, "z": 8.0 }
+        },
+        {
+            "path": "resource/world/sublevels/sub_forest.sesc",
+            "translation": { "x": 20.0, "y": 0.0, "z": 0.0 },
+            "bounds_min": { "x": 24.0, "y": 0.0, "z": -16.0 },
+            "bounds_max": { "x": 40.0, "y": 6.0, "z": 16.0 },
+            "flags": 2
+        }
+    ],
+    "seed": 42
+}

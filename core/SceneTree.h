@@ -31,9 +31,6 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
                         >                       mLocalNamedNodes;
 
         void Load();
-        // Reads + verifies a scene file, returning its bytes. The returned FlatBuffer
-        // pointers are valid only while the buffer is alive. Throws on error.
-        std::vector<char> ReadSceneFile(const std::string & sFilePath);
         // Builds the component loaders, loads the FB hierarchy under pParent
         // (nullptr → replace this tree's root), runs the PostLoad pass, and returns
         // the instance-root node that was created/updated.
@@ -50,6 +47,11 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
         SceneTree(const std::string & sName, const rid_t new_rid, bool empty = false, std::string sFilePath = {});
         ~SceneTree() noexcept;
 
+        // Reads + verifies a scene file, returning its bytes. The returned FlatBuffer
+        // pointers are valid only while the buffer is alive. Throws on error.
+        // Public so systems can pre-parse a scene (dependency tables) before Instantiate.
+        std::vector<char> ReadSceneFile(const std::string & sFilePath);
+
         TSceneNode      Create(const std::string_view sNewName = "", const bool enabled = true);
         TSceneNode      Create(TSceneNode pParent, const std::string_view sNewName = "", const bool enabled = true);
 
@@ -57,8 +59,18 @@ template <class ... TComponents > class SceneTree : public ResourceHolder {
         // as a child of pParent (nullptr → scene root). Returns the created instance-root
         // node, or nullptr on failure. No separate TSceneTree resource is created.
         TSceneNode      Instantiate(const std::string & sFilePath, TSceneNode pParent = nullptr);
+        // Memory-entry seam (streaming): same, but from an in-memory verified-scene buffer
+        // (e.g. staged by a loader thread). bPreVerified skips re-verification when the
+        // caller already ran VerifySceneTreeBuffer on these exact bytes.
+        TSceneNode      InstantiateFromBuffer(const std::vector<char> & vBuffer,
+                                              TSceneNode pParent = nullptr,
+                                              bool bPreVerified = false);
         //TSceneNode * CloneNode(TSceneNode * pNode);
         TSceneNode      FindFullName(const StrID sid) const;
+        // Returns sBase unchanged if no node with that full name (pParent|sBase) exists;
+        // otherwise sBase_N with the smallest free N >= 1. Empty base stays empty.
+        // Main-thread only (like every other name operation).
+        std::string     MakeUniqueName(TSceneNode pParent, const std::string_view sBase) const;
         const std::vector <TSceneNode> *
                         FindLocalName(const StrID sid) const;
         TSceneNode      GetRoot();

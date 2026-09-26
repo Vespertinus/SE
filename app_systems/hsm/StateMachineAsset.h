@@ -9,6 +9,7 @@
 #include <StrID.h>
 #include <hsm/ParameterStore.h>
 #include <StateMachine_generated.h>
+#include <world/ResourcePinCore.h>
 
 namespace SE {
 
@@ -69,6 +70,25 @@ private:
         std::vector<ParamDefault> vDefaults;
 
         void Build(const FlatBuffers::StateMachineDefinition* pDef);
+};
+
+// Declared-dependency pin (lives here, next to the resource: an explicit
+// specialization compiles in every TU that includes this header).
+template <> struct TResourcePin<StateMachineAsset> {
+        using THolder    = FlatBuffers::StateMachineHolder;
+        using TKeyHolder = FlatBuffers::StateMachineHolderT;
+
+        static H<StateMachineAsset> Create(const THolder * pH) {
+                if (pH->path() && pH->path()->size() > 0) {
+                        return CreateResource<StateMachineAsset>(pH->path()->str());
+                }
+                if (pH->name() && pH->state_machine()) {
+                        return CreateResource<StateMachineAsset>(pH->name()->str(), pH->state_machine());
+                }
+
+                log_w("ResourcePin<StateMachineAsset>: anonymous inline state machine cannot be pinned");
+                return H<StateMachineAsset>::Null();
+        }
 };
 
 } // namespace SE

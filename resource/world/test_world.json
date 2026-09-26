@@ -1,0 +1,46 @@
+{
+    "id": "test_world",
+    "version": 1,
+    "streaming": {
+        "enabled": true,
+        "cell_size": 32.0,
+        "load_radius": 40.0,
+        "unload_radius": 64.0,
+        "max_activations_per_frame": 1,
+        "main_budget_ms": 2.0,
+        "unload_frame_delay": 60
+    },
+    "sub_levels": [
+        {
+            "path": "resource/world/sublevels/sub_room.sesc",
+            "bounds_min": { "x": -8.0, "y": 0.0, "z": -8.0 },
+            "bounds_max": { "x": 8.0, "y": 4.0, "z": 8.0 },
+            "flags": 1,
+            "layer": "core"
+        },
+        {
+            "path": "resource/world/sublevels/sub_forest.sesc",
+            "bounds_min": { "x": 32.0, "y": 0.0, "z": -16.0 },
+            "bounds_max": { "x": 48.0, "y": 6.0, "z": 16.0 },
+            "layer": "wilderness"
+        },
+        {
+            "path": "resource/world/sublevels/sub_forest.sesc",
+            "translation": { "x": 40.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 90.0, "z": 0.0 },
+            "bounds_min": { "x": 72.0, "y": 0.0, "z": -16.0 },
+            "bounds_max": { "x": 88.0, "y": 6.0, "z": 16.0 },
+            "layer": "wilderness"
+        },
+        {
+            "path": "resource/world/sublevels/sub_room.sesc",
+            "translation": { "x": -40.0, "y": 0.0, "z": 0.0 },
+            "bounds_min": { "x": -48.0, "y": 0.0, "z": -8.0 },
+            "bounds_max": { "x": -32.0, "y": 4.0, "z": 8.0 },
+            "flags": 2,
+            "layer": "interior"
+        }
+    ],
+    "initial_focus": { "x": 0.0, "y": 2.0, "z": 0.0 },
+    "seed": 12345
+}
