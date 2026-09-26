@@ -1,4 +1,6 @@
 
+#include <algorithm>
+
 namespace SE {
 
 template <class TVisibilityManager>
@@ -16,21 +18,47 @@ template <class TVisibilityManager>
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::PrepareVisible() {
 
+        if (pCamera) { pManager->UpdateCameraView(pCamera->GetWorldMVP()); }
+
         auto result = pManager->GetVisible();
 
         if (!result.changed) { return; }
 
-        vRenderCommands.clear();
-        // Opaque first, then transparent (already back-to-front sorted by visibility system)
-        vRenderCommands.reserve(result.opaque.size() + result.transparent.size());
+        // Opaque first, state-grouped, front-to-back; transparent back-to-front.
+        const glm::vec3 vCamPos = pCamera ? pCamera->GetWorldPos() : glm::vec3(0.f);
+
+        vSortScratch.clear();
+        vSortScratch.reserve(result.opaque.size());
         for (const auto * pCmd : result.opaque) {
-                vRenderCommands.emplace_back(pCmd);
+                const glm::vec3 d = pCmd->GetTransform().GetWorldPos() - vCamPos;
+                vSortScratch.push_back({ pCmd, glm::dot(d, d) });
         }
-        for (const auto * pCmd : result.transparent) {
-                vRenderCommands.emplace_back(pCmd);
+        std::sort(vSortScratch.begin(), vSortScratch.end(),
+                        [](const SortItem & a, const SortItem & b) {
+                                if (a.pCmd->GetSortKey() != b.pCmd->GetSortKey()) {
+                                        return a.pCmd->GetSortKey() < b.pCmd->GetSortKey();
+                                }
+                                return a.depth < b.depth;
+                        });
+        vRenderCommands.clear();
+        vRenderCommands.reserve(vSortScratch.size());
+        for (const auto & item : vSortScratch) {
+                vRenderCommands.emplace_back(item.pCmd);
         }
 
-        //TODO sort vRenderCommands
+        vSortScratch.clear();
+        vSortScratch.reserve(result.transparent.size());
+        for (const auto * pCmd : result.transparent) {
+                const glm::vec3 d = pCmd->GetTransform().GetWorldPos() - vCamPos;
+                vSortScratch.push_back({ pCmd, glm::dot(d, d) });
+        }
+        std::sort(vSortScratch.begin(), vSortScratch.end(),
+                        [](const SortItem & a, const SortItem & b) { return a.depth > b.depth; });
+        vTransparentCommands.clear();
+        vTransparentCommands.reserve(vSortScratch.size());
+        for (const auto & item : vSortScratch) {
+                vTransparentCommands.emplace_back(item.pCmd);
+        }
 }
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::Render() {
@@ -47,6 +75,12 @@ template <class TVisibilityManager> void Renderer<TVisibilityManager>::Render() 
         GetSystem<GraphicsState>().SetViewProjection(pCamera->GetWorldMVP());
 
         for (auto * pRenderCommand : vRenderCommands) {
+                pRenderCommand->Draw();
+        }
+
+        for (auto * pRenderCommand : vTransparentCommands) {
+                // No dedicated transparent pass in the simple renderer — full
+                // state apply (blend mode comes from the command state).
                 pRenderCommand->Draw();
         }
 
@@ -71,6 +105,11 @@ template <class TVisibilityManager>
                 void Renderer<TVisibilityManager>::RemoveRenderable(TRenderable * pComponent) {
 
         pManager->RemoveRenderable(pComponent);
+}
+
+template <class TVisibilityManager> void Renderer<TVisibilityManager>::MarkVisibleDirty() {
+
+        pManager->MarkDirty();
 }
 
 template <class TVisibilityManager> void Renderer<TVisibilityManager>::SetScreenSize(const glm::uvec2 new_screen_size) {

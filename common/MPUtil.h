@@ -179,6 +179,11 @@ template < class THolder, class ... rest> struct Type2IntDict<THolder, rest ...>
 
 template <class... T> struct TypelistWrapper {};
 
+template <class TList, class T> struct TypelistContains;
+
+template <class ... Ts, class T> struct TypelistContains<TypelistWrapper<Ts...>, T>
+                : std::bool_constant<(std::is_same_v<Ts, T> || ...)> {};
+
 template<template <class ...> class TContainer, class ... T> struct Typelist2TmplPack;
 
 template<template <class ...> class TContainer, class ... T> struct Typelist2TmplPack<TContainer, TypelistWrapper<T...> > {

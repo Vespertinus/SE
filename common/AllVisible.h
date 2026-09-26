@@ -2,6 +2,7 @@
 #define __ALL_VISIBLE_H__ 1
 
 #include <algorithm>
+#include <glm/glm.hpp>
 #include <RenderCommand.h>
 
 namespace SE {
@@ -27,13 +28,26 @@ template <class ... TRenderableComponents > class AllVisible {
         std::vector<RenderCommand const *>              vTransparentCommands;
         bool                                            changed{true};
 
+        // camera view-projection tracking (see UpdateCameraView)
+        glm::mat4                                       mLastViewProjection{1.0f};
+        bool                                            view_valid{false};
+        float                                           view_epsilon{1e-3f};
+
         public:
 
         AllVisible();
         template <class TRenderable > void AddRenderable(TRenderable * pComponent);
         template <class TRenderable > void RemoveRenderable(TRenderable * pComponent);
-        /** Rebuilds the command lists only when the renderable set changed — camera
-         *  movement does not affect their contents (no camera-dependent data today). */
+        /** Track the active camera view-projection — the renderers call this every
+         *  frame. Any change beyond epsilon — position, orientation, fov, viewport —
+         *  invalidates the cached command lists so that view-dependent renderables
+         *  (terrain LOD selection, frustum culling) rebuild. A standing camera
+         *  reproduces the same matrix bit-for-bit, so static scenes never rebuild. */
+        void UpdateCameraView(const glm::mat4 & mViewProjection);
+        /** Force a rebuild on the next GetVisible (rare: world-level content swaps). */
+        void MarkDirty() { changed = true; }
+        /** Rebuilds the command lists when the renderable set changed — or the camera
+         *  moved beyond epsilon. */
         VisibilityResult GetVisible();
 };
 

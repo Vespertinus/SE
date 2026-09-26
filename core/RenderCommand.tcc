@@ -16,7 +16,7 @@ RenderCommand::RenderCommand(
         pGeom(pNewGeom),
         pMaterial(pNewMaterial),
         oState(pMaterial),
-        oTransform(oNewTransform)  {
+        oTransform(oNewTransform) {
 
 
         //TEMP, FIXME
@@ -31,18 +31,42 @@ RenderCommand::RenderCommand(
                 auto res = oState.SetBlock(UniformUnitInfo::Type::MATERIAL, pBlock);
                 if (res != uSUCCESS) {
                         throw(std::runtime_error(fmt::format(
-                                                "failed to set material block from '{}'",
-                                                pMaterial->Name())));
+                                        "failed to set material block from '{}'",
+                                        pMaterial->Name())));
                 }
         }
 
         if (auto res = oState.SetTextures(UniformUnitInfo::Type::MATERIAL, pMaterial->GetTextures()); res != uSUCCESS) {
                 throw(std::runtime_error(fmt::format(
-                                                "failed to set textures for material block from '{}'",
-                                                pMaterial->Name())));
+                                "failed to set textures for material block from '{}'",
+                                pMaterial->Name())));
         }
 
-        //UpdateKey
+        UpdateKey();
+}
+
+/** 64-bit state-group key: [63:48] shader, [47:24] material, [23:0] geometry.
+ *  Pointer-derived (heap pointers share address bits) and folded to keep the
+ *  slices from aliasing; stable within a session, which is all sorting needs. */
+void RenderCommand::UpdateKey() {
+
+        const auto oFold16 = [](const void * p) -> uint64_t {
+                const uint64_t v = reinterpret_cast<uintptr_t>(p);
+                return (v >> 4) ^ (v >> 20) ^ (v >> 36) ^ (v >> 52);
+        };
+
+        sort_key = (oFold16(pMaterial->GetShader()) << 48)
+                 | ((oFold16(pMaterial) & 0xFFFFFFull) << 24)
+                 |  (oFold16(pGeom)       & 0xFFFFFFull);
+}
+
+void RenderCommand::SetMaterial(const Material * pNewMaterial) {
+
+        if (!pNewMaterial || pNewMaterial == pMaterial) { return; }
+
+        pMaterial = pNewMaterial;
+        oState    = ShaderProgramState(pMaterial);
+        UpdateKey();
 }
 
 void RenderCommand::Draw() const {
@@ -55,8 +79,11 @@ void RenderCommand::Draw() const {
 void RenderCommand::DrawDepth() const {
 
         // Skinned models keep their animated pose in the shadow map: bind the
-        // ANIMATION block (skin matrices) — the depth shader applies the same
-        // skinning as the geometry pass. Static models own no such block: no-op.
+        // ANIMATION block (skin matrices) — the skinned depth shader applies
+        // the same skinning as the geometry pass. Static models run the
+        // block-free depth variant selected in ShadowPass (IsSkinned()); their
+        // stale-binding hazard is gone because that program has no Animation
+        // uniform at all.
         oState.ApplyBlock(UniformUnitInfo::Type::ANIMATION);
 
         GetSystem<GraphicsState>().SetTransform(oTransform.GetWorld());
@@ -70,8 +97,8 @@ void RenderCommand::DrawTransparent() const {
         pGeom->Draw();
 }
 
-uint64_t RenderCommand::GetSortKey() const {
-        return 0; //TEMP,FIXME
+uint32_t RenderCommand::GetGeomIndexCount() const {
+        return pGeom ? pGeom->GetIndicesCnt() : 0;
 }
 
 const Transform & RenderCommand::GetTransform() const {

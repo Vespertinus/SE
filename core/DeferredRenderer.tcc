@@ -1,4 +1,6 @@
 
+#include <algorithm>
+#include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace SE {
@@ -22,6 +24,7 @@ DeferredRenderer<TVisibilityManager>::DeferredRenderer() :
         hSSAOBlurShader        = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/ssao_blur.sesp");
         hToneMapShader         = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/tonemapping.sesp");
         hShadowShader          = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/shadow_depth.sesp");
+        hShadowStaticShader    = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/shadow_depth_static.sesp");
         hBloomBrightShader     = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/bloom_bright.sesp");
         hBloomDownShader       = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/bloom_downsample.sesp");
         hBloomUpShader         = CreateResource<SE::ShaderProgram>(cfg.sResourceDir + "shader_program/bloom_upsample.sesp");
@@ -57,11 +60,11 @@ DeferredRenderer<TVisibilityManager>::~DeferredRenderer() noexcept {
         DestroyLdrBuffer();
 
         if (hIrradianceTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hIrradianceTex);
+                GetSystem<TResourceManager>().Destroy(hIrradianceTex);
                 hIrradianceTex = H<TTexture>::Null();
         }
         if (hPrefilteredEnvTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hPrefilteredEnvTex);
+                GetSystem<TResourceManager>().Destroy(hPrefilteredEnvTex);
                 hPrefilteredEnvTex = H<TTexture>::Null();
         }
 
@@ -103,7 +106,7 @@ void DeferredRenderer<TVisibilityManager>::DestroyHdrBuffer() noexcept {
 
         oHdrFBO.Destroy();
         if (hHdrTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hHdrTex);
+                GetSystem<TResourceManager>().Destroy(hHdrTex);
                 hHdrTex = H<TTexture>::Null();
         }
 }
@@ -126,7 +129,7 @@ void DeferredRenderer<TVisibilityManager>::DestroyLdrBuffer() noexcept {
 
         oLdrFBO.Destroy();
         if (hLdrTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hLdrTex);
+                GetSystem<TResourceManager>().Destroy(hLdrTex);
                 hLdrTex = H<TTexture>::Null();
         }
 }
@@ -157,11 +160,11 @@ void DeferredRenderer<TVisibilityManager>::DestroyOitBuffer() noexcept {
 
         oOitFBO.Destroy();
         if (hOitAccumTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hOitAccumTex);
+                GetSystem<TResourceManager>().Destroy(hOitAccumTex);
                 hOitAccumTex = H<TTexture>::Null();
         }
         if (hOitRevealTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hOitRevealTex);
+                GetSystem<TResourceManager>().Destroy(hOitRevealTex);
                 hOitRevealTex = H<TTexture>::Null();
         }
 }
@@ -204,20 +207,56 @@ void DeferredRenderer<TVisibilityManager>::CreateQuad() {
 template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::PrepareVisible() {
 
+        if (pCamera) { pManager->UpdateCameraView(pCamera->GetWorldMVP()); }
+
         auto result = pManager->GetVisible();
 
         if (!result.changed) { return; }
 
-        vRenderCommands.clear();
-        vRenderCommands.reserve(result.opaque.size());
+        // Depth per command (squared distance from the camera to the transform
+        // origin) — computed once here, the sort below just reads it.
+        const glm::vec3 vCamPos = pCamera ? pCamera->GetWorldPos() : glm::vec3(0.f);
+
+        vSortScratch.clear();
+        vSortScratch.reserve(result.opaque.size());
         for (const auto * pCmd : result.opaque) {
-                vRenderCommands.emplace_back(pCmd);
+                const float dx = pCmd->GetTransform().GetWorldPos().x - vCamPos.x;
+                const float dy = pCmd->GetTransform().GetWorldPos().y - vCamPos.y;
+                const float dz = pCmd->GetTransform().GetWorldPos().z - vCamPos.z;
+                vSortScratch.push_back({ pCmd, dx * dx + dy * dy + dz * dz });
         }
 
+        // Opaque: state-group key first (shader|material|geometry — minimizes
+        // program/texture/UBO switches), then front-to-back inside the group
+        // (early-z for the big depth writers, e.g. terrain tiles).
+        std::sort(vSortScratch.begin(), vSortScratch.end(),
+                        [](const SortItem & a, const SortItem & b) {
+                                if (a.pCmd->GetSortKey() != b.pCmd->GetSortKey()) {
+                                        return a.pCmd->GetSortKey() < b.pCmd->GetSortKey();
+                                }
+                                return a.depth < b.depth;
+                        });
+
+        vRenderCommands.clear();
+        vRenderCommands.reserve(vSortScratch.size());
+        for (const auto & item : vSortScratch) {
+                vRenderCommands.push_back(item.pCmd);
+        }
+
+        // Transparent: back-to-front regardless of state grouping.
         vTransparentCommands.clear();
         vTransparentCommands.reserve(result.transparent.size());
+        vSortScratch.clear();
         for (const auto * pCmd : result.transparent) {
-                vTransparentCommands.emplace_back(pCmd);
+                const float dx = pCmd->GetTransform().GetWorldPos().x - vCamPos.x;
+                const float dy = pCmd->GetTransform().GetWorldPos().y - vCamPos.y;
+                const float dz = pCmd->GetTransform().GetWorldPos().z - vCamPos.z;
+                vSortScratch.push_back({ pCmd, dx * dx + dy * dy + dz * dz });
+        }
+        std::sort(vSortScratch.begin(), vSortScratch.end(),
+                        [](const SortItem & a, const SortItem & b) { return a.depth > b.depth; });
+        for (const auto & item : vSortScratch) {
+                vTransparentCommands.push_back(item.pCmd);
         }
 }
 
@@ -234,11 +273,14 @@ void DeferredRenderer<TVisibilityManager>::GeometryPass() {
 
         gs.SetViewProjection(pCamera->GetWorldMVP());
 
+        last_frame_tris = 0;
         for (auto * pCmd : vRenderCommands) {
                 pCmd->Draw();
+                last_frame_tris += pCmd->GetGeomIndexCount() / 3;
         }
         for (auto * pCmd : vRenderInstantCommands) {
                 pCmd->Draw();
+                last_frame_tris += pCmd->GetGeomIndexCount() / 3;
         }
         vRenderInstantCommands.clear();
 
@@ -331,11 +373,22 @@ void DeferredRenderer<TVisibilityManager>::ShadowPass() {
                                   ? glm::vec3(1.f, 0.f, 0.f)
                                   : glm::vec3(0.f, 1.f, 0.f);
         const float     halfExt   = oDirLight.shadow_ortho;
-        const glm::vec3 lightPos  = -lightDir * oDirLight.shadow_far * 0.5f;
+        // Anchor the frustum on shadow_center (follow-camera), snapped to the
+        // shadow-map texel grid in light space: an un-snapped anchor makes the
+        // whole shadow map crawl sub-texel as it moves and every edge shimmers.
+        const float     texel     = (2.f * halfExt) / static_cast<float>(ShadowBuffer::Size());
+        const glm::vec3 lightX    = glm::normalize(glm::cross(up, lightDir));
+        const glm::vec3 lightY    = glm::cross(lightDir, lightX);
+        const float     anchorX   = std::round(glm::dot(oDirLight.shadow_center, lightX) / texel) * texel;
+        const float     anchorY   = std::round(glm::dot(oDirLight.shadow_center, lightY) / texel) * texel;
+        const glm::vec3 anchor    = lightX * anchorX + lightY * anchorY
+                                  + lightDir * glm::dot(oDirLight.shadow_center, lightDir);
+        const glm::vec3 lightPos  = anchor - lightDir * oDirLight.shadow_far * 0.5f;
         const glm::mat4 lightView = glm::lookAt(lightPos, lightPos + lightDir, up);
         const glm::mat4 lightProj = glm::ortho(-halfExt, halfExt, -halfExt, halfExt,
                                                 oDirLight.shadow_near, oDirLight.shadow_far);
         oLightVP = lightProj * lightView;
+        light_vp_valid = true;
 
         oShadowBuffer.Bind();
 
@@ -349,7 +402,46 @@ void DeferredRenderer<TVisibilityManager>::ShadowPass() {
         gs.SetShaderProgram(GetResource(hShadowShader));
         gs.SetViewProjection(oLightVP);
 
-        for (auto * pCmd : vRenderCommands) {
+        // Two depth variants: skinned meshes carry the ANIMATION block and are
+        // skinned in the shadow map; static meshes MUST NOT share that program
+        // — the block binding persists across commands, so a static drawn under
+        // the skinned shader reads the last character's skin matrices and
+        // collapses into a degenerate joint (no static shadows at all).
+        // Bucket ONCE per frame (statics first, then skinned) instead of
+        // ping-ponging programs over an interleaved list, and skip commands
+        // whose cull sphere is outside the light ortho (terrain tiles carry a
+        // radius; models without bounds are always submitted).
+        {
+                vShadowStatic.clear();
+                vShadowSkinned.clear();
+                const float r_xy = halfExt;                 // ortho half-extent in world units
+                const float r_z  = (oDirLight.shadow_far - oDirLight.shadow_near) * 0.5f;
+                for (auto * pCmd : vRenderCommands) {
+                        const float radius = pCmd->GetCullRadius();
+                        if (radius > 0.f) {
+                                // oLightVP is WORLD-space; the transform's LOCAL
+                                // translation would mis-cull anything parented
+                                const glm::vec4 lp = oLightVP
+                                        * glm::vec4(pCmd->GetTransform().GetWorldPos(), 1.f);
+                                const float rx = radius / r_xy;
+                                const float rz = radius / r_z;
+                                if (std::abs(lp.x) - rx > 1.f || std::abs(lp.y) - rx > 1.f
+                                    || std::abs(lp.z) - rz > 1.f) {
+                                        continue;   // cannot touch the shadow ortho
+                                }
+                        }
+                        if (pCmd->IsSkinned()) { vShadowSkinned.push_back(pCmd); }
+                        else                   { vShadowStatic.push_back(pCmd); }
+                }
+        }
+
+        ShaderProgram * pCurrent = GetResource(hShadowStaticShader);
+        gs.SetShaderProgram(pCurrent);
+        for (auto * pCmd : vShadowStatic) {
+                pCmd->DrawDepth();
+        }
+        gs.SetShaderProgram(GetResource(hShadowShader));
+        for (auto * pCmd : vShadowSkinned) {
                 pCmd->DrawDepth();
         }
 
@@ -359,6 +451,12 @@ void DeferredRenderer<TVisibilityManager>::ShadowPass() {
 
 template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::ClusterBuildPass() {
+
+        // The cluster assignment depends on the light list + cluster grid only:
+        // skip the upload, dispatch and (CPU/GPU-syncing) error checks entirely
+        // on steady-state frames. First frame and light/grid changes rebuild.
+        if (!light_data_dirty) { return; }
+        light_data_dirty = false;
 
         if (vPointLights.empty()) { return; }
 
@@ -393,7 +491,8 @@ void DeferredRenderer<TVisibilityManager>::ClusterBuildPass() {
         uint32_t totalClusters = oClusterConfig.totalClusters;
         glDispatchCompute((totalClusters + 15) / 16, 1, 1);
 
-        // Check for GL errors after dispatch
+        // Check for GL errors after dispatch — syncs the pipeline, so it lives
+        // only inside this (rare) dirty branch, never per frame.
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
                 log_e("ClusterBuildPass: GL error after dispatch: {:x}", err);
@@ -724,6 +823,8 @@ template <class TVisibilityManager>
 template <class TRenderable>
 void DeferredRenderer<TVisibilityManager>::AddRenderable(TRenderable * pComponent) {
 
+        // Headless compositions include the renderer type but never Init() it.
+        if (!pManager) { return; }
         pManager->AddRenderable(pComponent);
 }
 
@@ -731,7 +832,14 @@ template <class TVisibilityManager>
 template <class TRenderable>
 void DeferredRenderer<TVisibilityManager>::RemoveRenderable(TRenderable * pComponent) {
 
+        if (!pManager) { return; }
         pManager->RemoveRenderable(pComponent);
+}
+
+template <class TVisibilityManager>
+void DeferredRenderer<TVisibilityManager>::MarkVisibleDirty() {
+
+        pManager->MarkDirty();
 }
 
 template <class TVisibilityManager>
@@ -792,6 +900,9 @@ void DeferredRenderer<TVisibilityManager>::RebuildClusterConfig() {
         if (oClusterConfig.totalClusters != oldTotal) {
                 oClusterSSBO.Init(oClusterConfig, maxLightCapacity);
         }
+        // Any grid geometry change (even at equal cluster count) shifts the
+        // cluster assignment — the next ClusterBuildPass must re-run.
+        light_data_dirty = true;
 
         const glm::mat4 projMat = pCamera
                 ? pCamera->GetProjectionMatrix()
@@ -821,6 +932,7 @@ template <class TVisibilityManager>
 size_t DeferredRenderer<TVisibilityManager>::AddPointLight(const PointLight & light) {
 
         vPointLights.push_back(light);
+        light_data_dirty = true;
         return vPointLights.size() - 1;
 }
 
@@ -829,6 +941,7 @@ void DeferredRenderer<TVisibilityManager>::RemovePointLight(size_t idx) {
 
         if (idx < vPointLights.size()) {
                 vPointLights.erase(vPointLights.begin() + static_cast<ptrdiff_t>(idx));
+                light_data_dirty = true;
         }
 }
 
@@ -879,6 +992,27 @@ void DeferredRenderer<TVisibilityManager>::SetIBLRotation(float yaw_deg) {
 template <class TVisibilityManager>
 void DeferredRenderer<TVisibilityManager>::WriteDebug() {
         debug_next_frame = true;
+}
+
+template <class TVisibilityManager>
+bool DeferredRenderer<TVisibilityManager>::IsRenderableHot(
+                const void * pComponent, const glm::vec3 & vCenter, float fRadius) const {
+
+        // Headless compositions construct nothing — never skip.
+        if (!pManager) { return true; }
+        if (pManager->WasRenderableVisible(pComponent)) { return true; }
+        if (fRadius <= 0.f || !light_vp_valid) { return true; }
+
+        // Sphere vs the last shadow ortho (NDC: x/y in [-1,1], z in [-1,1]).
+        const float half_xy = oDirLight.shadow_ortho;
+        const float half_z  = (oDirLight.shadow_far - oDirLight.shadow_near) * 0.5f;
+        if (half_xy <= 0.f || half_z <= 0.f) { return true; }
+        const glm::vec4 lp = oLightVP * glm::vec4(vCenter, 1.f);
+        const float rx = fRadius / half_xy;
+        const float rz = fRadius / half_z;
+        return !(std::abs(lp.x) - rx > 1.f
+                 || std::abs(lp.y) - rx > 1.f
+                 || std::abs(lp.z) - rz > 1.f);
 }
 
 template <class TVisibilityManager>

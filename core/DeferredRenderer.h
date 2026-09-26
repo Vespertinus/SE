@@ -27,6 +27,19 @@ template <class TVisibilityManager> class DeferredRenderer {
         std::vector<RenderCommand const *>   vRenderInstantCommands;
         std::vector<RenderCommand const *>   vTransparentCommands;          // transparent/alpha commands (pre-sorted)
 
+        uint64_t                             last_frame_tris { 0 };
+
+        /** State-group + front-to-back sort scratch (opaque), built per gather. */
+        struct SortItem {
+                RenderCommand const * pCmd;
+                float                 depth;    // squared distance to camera
+        };
+        std::vector<SortItem>                vSortScratch;
+        /** Shadow-pass buckets: statics drawn first, then skinned — one
+         *  program swap per frame instead of per command ping-pong. */
+        std::vector<RenderCommand const *>   vShadowStatic;
+        std::vector<RenderCommand const *>   vShadowSkinned;
+
         // G-buffer
         GBuffer  oGBuffer;
 
@@ -49,8 +62,10 @@ template <class TVisibilityManager> class DeferredRenderer {
 
         // Shadow map
         ShadowBuffer     oShadowBuffer;
-        H<ShaderProgram> hShadowShader;
+        H<ShaderProgram> hShadowShader;         // skinned variant (ANIMATION block)
+        H<ShaderProgram> hShadowStaticShader;   // block-free variant for static meshes
         glm::mat4        oLightVP;
+        bool             light_vp_valid { false };  // set after the first ShadowPass
 
         // Fullscreen quad
         uint32_t quad_vao { 0 };
@@ -92,6 +107,9 @@ template <class TVisibilityManager> class DeferredRenderer {
         // Light state
         std::vector<PointLight> vPointLights;
         DirLight                oDirLight;
+        /** Cluster build runs only when the point-light set changes (the grid
+         *  itself rebuilds via RebuildClusterConfig on camera/screen changes). */
+        bool                    light_data_dirty { true };
 
         // Debug: per-pass image capture
         bool                    debug_next_frame   { false };
@@ -141,6 +159,10 @@ template <class TVisibilityManager> class DeferredRenderer {
         void Render();
         template <class TRenderable> void AddRenderable   (TRenderable *);
         template <class TRenderable> void RemoveRenderable(TRenderable *);
+        /** Invalidate the cached command lists for the next frame — for renderable
+         *  state that changes outside the camera (e.g. streamed-in terrain tiles
+         *  gaining GPU buffers). */
+        void     MarkVisibleDirty();
         void     AddRenderCmd  (RenderCommand const *);
         void     SetScreenSize (glm::uvec2 new_size);
         void     SetCamera     (Camera *);
@@ -149,6 +171,17 @@ template <class TVisibilityManager> class DeferredRenderer {
 
         // --- debug ---
         void     WriteDebug    ();
+        /** Total triangles submitted by the last GeometryPass (all renderables,
+         *  camera frustum) — the debug overlay's scene-wide triangle budget. */
+        uint64_t GetLastFrameTriangleCount() const { return last_frame_tris; }
+
+        /** CPU-side animation gate (UE-style animation budgeting): true when
+         *  the renderable contributed visible commands in the last camera
+         *  build OR its cull sphere may overlap the last shadow ortho (a
+         *  shadow-only contributor still needs a current pose). Uninited
+         *  renderer or unknown bounds → true (never skips). */
+        bool     IsRenderableHot(const void * pComponent,
+                                 const glm::vec3 & vCenter, float fRadius) const;
 
         // --- light management ---
         size_t AddPointLight   (const PointLight &);  // returns index

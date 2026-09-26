@@ -25,6 +25,14 @@ template <class TVisibilityManager> class Renderer {
         Camera                                * pCamera{nullptr};
         std::vector<RenderCommand const *>      vRenderCommands;
         std::vector<RenderCommand const *>      vRenderInstantCommands;
+        std::vector<RenderCommand const *>      vTransparentCommands;
+
+        /** sort scratch: {command, squared depth} — reused across gathers */
+        struct SortItem {
+                RenderCommand const * pCmd;
+                float                 depth;
+        };
+        std::vector<SortItem>                   vSortScratch;
 
         void PrepareVisible();
 
@@ -34,11 +42,20 @@ template <class TVisibilityManager> class Renderer {
         void Render();
         template <class TRenderable > void AddRenderable(TRenderable * pComponent);
         template <class TRenderable > void RemoveRenderable(TRenderable * pComponent);
+        /** Invalidate the cached command lists for the next frame — for renderable
+         *  state that changes outside the camera (e.g. streamed-in terrain tiles
+         *  gaining GPU buffers). */
+        void                               MarkVisibleDirty();
         void                               AddRenderCmd(RenderCommand const * pCmd);
         void                               SetScreenSize(const glm::uvec2 new_screen_size);
         void                               SetCamera(Camera * pCurCamera);
         Camera *                           GetCamera() const;
         void                               Print(const size_t indent = 0);
+        /** Animation gate (visible-set only — no shadow pass here). */
+        bool                               IsRenderableHot(const void * pComponent,
+                                                           const glm::vec3 &, float) const {
+                                                   return !pManager || pManager->WasRenderableVisible(pComponent);
+                                           }
 
         /**
                 - set of all TRenderable

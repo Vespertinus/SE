@@ -5,6 +5,9 @@
 // C include
 #include <string.h>
 
+// C++ include
+#include <type_traits>
+
 // Loki include
 #include <loki/Singleton.h>
 #include <loki/Typelist.h>
@@ -107,6 +110,7 @@ typedef Mesh                                                            TMesh;
 #include <DebugRenderer.h>
 //TEMP
 #include <AllVisible.h>
+#include <VisibilityManager.h>
 
 //forward components
 #define FORWARD_CORE_COMPONENTS
@@ -125,8 +129,22 @@ namespace SE {
 
 //renderable components list
 
+class Terrain;   // app_systems/terrain — complete type via the app's App.h include sections
+
 //engine subsytem types
-using TVisibilityManager = AllVisible<StaticModel, AnimatedModel>;
+// Terrain (app_systems/terrain) joins the visibility list only when the app's
+// composition carries the component (world/terrain-style apps): the manager's
+// std::visit needs the renderable complete and its symbols linked, which only
+// those apps provide. Terrain is the engine's first camera-dependent
+// renderable: the manager tracks the camera view-projection and rebuilds when
+// it changes (see VisibilityManager::UpdateCameraView).
+// VisibilityManager is the production manager: per-renderable frustum culling
+// (GetCullSphere opt-in) + a visible-set record for CPU-side gating. AllVisible
+// (no culling, everything gathered) is kept as the debug/ground-truth manager.
+using TVisibilityManager = std::conditional_t<
+        MP::TypelistContains<TCustomComponents, Terrain>::value,
+        VisibilityManager<StaticModel, AnimatedModel, Terrain>,
+        VisibilityManager<StaticModel, AnimatedModel>>;
 #if SE_DEFERRED_RENDERER
 using TRenderer = DeferredRenderer<TVisibilityManager>;
 #else
@@ -156,13 +174,6 @@ using TCoreSystems = decltype(MP::TypelistConcatenate(
                 MP::TypelistConcatenate(TCoreSystemsBase{}, TCoreSystemsPhysics{}),
                 TCoreSystemsAudio{}),
         TCoreSystemsUI{}));
-
-using TEngine =
-        typename Loki::SingletonHolder<
-        typename MP::Typelist2TmplPack<
-        Engine,
-        decltype(MP::TypelistConcatenate(TCoreSystems{}, TCustomSystems{}))
-                >::Type>;
 
 
 }
@@ -232,19 +243,34 @@ using TCoreResources = decltype(MP::TypelistConcatenate(TCoreResourcesBase{}, TC
 
 using TResourceList  = decltype(MP::TypelistConcatenate(TCoreResources{}, TCustomResources{}));
 
-using TResourceManagerImpl = typename MP::Typelist2TmplPack<ResourceManager, TResourceList>::Type;
-typedef Loki::SingletonHolder<TResourceManagerImpl> TResourceManager;
+// The resource manager is the FIRST system of the Engine: the blanket Init()
+// constructs it before every other system and ~Engine destroys the tuple in
+// reverse, so it dies last — system destructors that still release resources
+// (~UISystem → ~UIRenderInterface texture unlocks, ~DeferredRenderer,
+// ~ShadowBuffer) always see a live manager. Do not move it in the list.
+using TResourceManager = typename MP::Typelist2TmplPack<ResourceManager, TResourceList>::Type;
+
+using TEngineSystems = decltype(MP::TypelistConcatenate(
+        MP::TypelistWrapper<TResourceManager>{},
+        MP::TypelistConcatenate(TCoreSystems{}, TCustomSystems{})));
+
+using TEngine =
+        typename Loki::SingletonHolder<
+        typename MP::Typelist2TmplPack<
+        Engine,
+        TEngineSystems
+                >::Type>;
 
 
 
 template <class Resource, class ... TConcreateSettings> H<Resource> CreateResource (const std::string & sPath, const TConcreateSettings & ... oSettings) {
 
-        return TResourceManager::Instance().Create<Resource>(sPath, oSettings...);
+        return GetSystem<TResourceManager>().Create<Resource>(sPath, oSettings...);
 }
 
 template <class Resource> Resource * GetResource(H<Resource> h) {
 
-        return TResourceManager::Instance().Get<Resource>(h);
+        return GetSystem<TResourceManager>().Get<Resource>(h);
 }
 
 template <class Resource, class ... TConcreateSettings>
@@ -254,28 +280,28 @@ Resource * CreateRawResource(const std::string & sPath, const TConcreateSettings
 
 template <class Resource> void DestroyResource(H<Resource> h) {
 
-        TResourceManager::Instance().Destroy<Resource>(h);
+        GetSystem<TResourceManager>().Destroy<Resource>(h);
 }
 
 template <class Resource> bool LockResource(H<Resource> h) {
-        return TResourceManager::Instance().Lock<Resource>(h);
+        return GetSystem<TResourceManager>().Lock<Resource>(h);
 }
 
 template <class Resource> void UnlockResource(H<Resource> h) {
-        TResourceManager::Instance().Unlock<Resource>(h);
+        GetSystem<TResourceManager>().Unlock<Resource>(h);
 }
 
 template <class Resource> void RetainResource(H<Resource> h) {
-        TResourceManager::Instance().Retain<Resource>(h);
+        GetSystem<TResourceManager>().Retain<Resource>(h);
 }
 template <class Resource> void UnretainResource(H<Resource> h) {
-        TResourceManager::Instance().Unretain<Resource>(h);
+        GetSystem<TResourceManager>().Unretain<Resource>(h);
 }
 inline void DestroyUnretainedResources() {
-        TResourceManager::Instance().DestroyUnretained();
+        GetSystem<TResourceManager>().DestroyUnretained();
 }
 inline void ClearAllRetainedResources() {
-        TResourceManager::Instance().ClearAllRetains();
+        GetSystem<TResourceManager>().ClearAllRetains();
 }
 
 template <class TSystem> TSystem & GetSystem() {

@@ -74,12 +74,12 @@ StaticModel::~StaticModel() noexcept {
 
 void StaticModel::Enable() {
 
-        TEngine::Instance().Get<TRenderer>().AddRenderable(this);
+        GetSystem<TRenderer>().AddRenderable(this);
 }
 
 void StaticModel::Disable() {
 
-        TEngine::Instance().Get<TRenderer>().RemoveRenderable(this);
+        GetSystem<TRenderer>().RemoveRenderable(this);
 }
 
 
@@ -141,6 +141,14 @@ void StaticModel::FillRenderCommands() {
                 }
                 vRenderCommands.emplace_back(&oSubMesh, pMat, pNode->GetTransform());
         }
+
+        // Conservative culling sphere: farthest bbox corner from the ORIGIN
+        // (rotation-invariant, pivot-safe — a half-diagonal around the node
+        // position under-covers pivot-at-corner meshes). Node world scale is
+        // applied at query time in GetCullSphere.
+        const BoundingBox & oBBox = GetResource(hMesh)->GetBBox();
+        const glm::vec3 vAbsMax = glm::max(glm::abs(oBBox.Max()), glm::abs(oBBox.Min()));
+        cull_radius = glm::length(vAbsMax);
 
         //TODO if already enabled -> invalidate render commands list!
         //need to disable \ enable
