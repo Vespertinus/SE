@@ -17,7 +17,7 @@ template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const S
                         oSettings.width,
                         oSettings.height,
                         oSettings.vRenderBuffer } ),
-        oLoop(oLoopSettings) {
+        oLoop(std::make_unique<TLoop>(oLoopSettings)) {
 
         ResizeViewport(oSettings.width, oSettings.height);
 
@@ -32,6 +32,15 @@ template <class TLoop> OffScreenApplication<TLoop>::OffScreenApplication(const S
 
 template <class TLoop> OffScreenApplication<TLoop>::~OffScreenApplication() noexcept {
 
+        // See Application::~Application: release the app logic and any remaining
+        // resources before ~Engine destroys the systems.
+        oLoop.reset();
+
+        GetSystem<TResourceManager>().ProcessDeferred();
+
+        GetSystem<TResourceManager>().DestroyUnretained();
+        GetSystem<TResourceManager>().ClearAllRetains();
+        GetSystem<TResourceManager>().ProcessDeferred();
 }
 
 
@@ -58,7 +67,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
         oEventManager.TriggerEvent(EUpdate{0.0f});
 
         oEventManager.Process();
-        oLoop.Process();
+        oLoop->Process();
 
         oEventManager.TriggerEvent(EPostUpdate{0.0f});
 
@@ -70,7 +79,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
         oEventManager.TriggerEvent(EPostRenderUpdate{0.0f});
 
-        TResourceManager::Instance().ProcessDeferred();
+        GetSystem<TResourceManager>().ProcessDeferred();
 
         glFinish();
 
@@ -79,7 +88,7 @@ template <class TLoop> void OffScreenApplication<TLoop>::Run() {
 
 template <class TLoop> TLoop & OffScreenApplication<TLoop>::GetAppLogic() {
 
-        return oLoop;
+        return *oLoop;
 }
 
 template <class TLoop> void OffScreenApplication<TLoop>::ResizeViewport(const int32_t new_width, const int32_t new_height) {

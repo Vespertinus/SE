@@ -52,7 +52,7 @@ void SSAOBuffer::Destroy() noexcept {
         oFboSSAO.Destroy();
         oFboBlur.Destroy();
 
-        auto & rm = TResourceManager::Instance();
+        auto & rm = GetSystem<TResourceManager>();
         if (hSSAOTex.IsValid()) { rm.Destroy(hSSAOTex); hSSAOTex = H<TTexture>::Null(); }
         if (hBlurTex.IsValid()) { rm.Destroy(hBlurTex); hBlurTex = H<TTexture>::Null(); }
 }
@@ -61,7 +61,7 @@ SSAOBuffer::~SSAOBuffer() noexcept {
 
         Destroy();
         if (hNoiseTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hNoiseTex);
+                GetSystem<TResourceManager>().Destroy(hNoiseTex);
                 hNoiseTex = H<TTexture>::Null();
         }
 }

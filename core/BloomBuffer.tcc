@@ -38,7 +38,7 @@ void BloomBuffer::Create() {
 
 void BloomBuffer::Destroy() noexcept {
 
-        auto & rm = TResourceManager::Instance();
+        auto & rm = GetSystem<TResourceManager>();
 
         for (int i = 0; i < kMipLevels; ++i) {
                 oFboDown[i].Destroy();

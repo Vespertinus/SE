@@ -7,6 +7,7 @@
 
 // C++ include
 #include <map>
+#include <memory>
 
 
 // Internal include
@@ -51,7 +52,9 @@ template <class TLoop > class OffScreenApplication {
         SysSettings_t   oSettings;
         OSMesa          oRenderingCtx;
         PreInit         oPreInit;
-        TLoop		oLoop;
+        // Same explicit-lifetime rule as Application: destroyed in ~OffScreenApplication
+        // while every system is still alive.
+        std::unique_ptr<TLoop> oLoop;
 
         void Init();
 

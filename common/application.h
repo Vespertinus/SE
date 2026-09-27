@@ -7,6 +7,7 @@
 
 // C++ include
 #include <map>
+#include <memory>
 
 // Internal include
 #include <SDLWindow.h>
@@ -48,7 +49,6 @@ template <class TLoop > class Application {
                 PreInit(const SysSettings_t & oSettings, const uint32_t window_id);
         };
 
-
         SysSettings_t		oSettings;
         int                     window_id;
 
@@ -57,7 +57,10 @@ template <class TLoop > class Application {
 
         TWindow                 oMainWindow;
         PreInit                 oPreInit;
-        TLoop			oLoop;
+        // Explicit lifetime: destroyed at the top of ~Application, while every
+        // system is still alive — the loop's destructors (scene nodes, entities)
+        // call back into renderer/EventManager via Disable()/RemoveListener().
+        std::unique_ptr<TLoop>  oLoop;
 
         public:
         Application(const SysSettings_t & oNewSettings, const typename TLoop::Settings & oLoopSettings);

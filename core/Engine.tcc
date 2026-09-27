@@ -1,13 +1,19 @@
 
 #include <MPUtil.h>
+#include <stdexcept>
 
 namespace SE {
 
 
 template <class ... TSystems> Engine<TSystems...>::~Engine() noexcept {
 
-        MP::TupleForEachRev(oSystems, [](auto * pSystem) {
+        // reverse order is load-bearing: later systems' destructors remove
+        // their listeners from EventManager and release resources, so the
+        // first tuple entries (Config, EventManager, TRenderer, ...) must
+        // outlive every system appended after them
+        MP::TupleForEachRev(oSystems, [](auto * & pSystem) {
                 delete pSystem;
+                pSystem = nullptr;
         });
 }
 
@@ -51,10 +57,15 @@ template <class TSystem, class ... TArgs>
 }
 
 template <class ... TSystems>
-        template <class TSystem>
-        TSystem &  Engine<TSystems...>::Get() {
+template <class TSystem>
+TSystem &  Engine<TSystems...>::Get() {
 
-        return *std::get<TSystem *>(oSystems);
+        TSystem * pSystem = std::get<TSystem *>(oSystems);
+        if (pSystem == nullptr) {
+                log_e("system: '{}' is not inited or already destroyed", typeid(TSystem).name());
+                throw std::runtime_error("engine: system is not inited or already destroyed");
+        }
+        return *pSystem;
 }
 
 }

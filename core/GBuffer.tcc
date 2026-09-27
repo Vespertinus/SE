@@ -44,7 +44,7 @@ void GBuffer::Destroy() noexcept {
 
         oFBO.Destroy();
 
-        auto & rm = TResourceManager::Instance();
+        auto & rm = GetSystem<TResourceManager>();
         if (hRT0.IsValid())   { rm.Destroy(hRT0);   hRT0   = H<TTexture>::Null(); }
         if (hRT1.IsValid())   { rm.Destroy(hRT1);   hRT1   = H<TTexture>::Null(); }
         if (hRT2.IsValid())   { rm.Destroy(hRT2);   hRT2   = H<TTexture>::Null(); }

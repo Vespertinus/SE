@@ -76,6 +76,11 @@ Scene::Scene(const Settings & oNewSettings) :
 Scene::~Scene() noexcept {
 
         GetSystem<EventManager>().RemoveListener<EMouseButtonUp, &Scene::OnMouseButtonUp>(this);
+
+        // The scene owns its tree: release it while the systems are alive
+        // (destroy is deferred; ~Application flushes it) — not from the
+        // manager's dtor inside ~Engine.
+        SE::DestroyResource(hSceneTree);
 }
 
 
@@ -195,11 +200,11 @@ void Scene::ShowGUI() {
         ImGui::Text("Frame min time: %.2f, max time: %.2f", oFpsTracker.MinFrameMs(), oFpsTracker.MaxFrameMs());
 
         ImGui::Separator();
-        ImGui::Text("Texture cnt: %zu", TResourceManager::Instance().Size<TTexture>());
-        ImGui::Text("Mesh cnt: %zu", TResourceManager::Instance().Size<TMesh>());
-        ImGui::Text("Materials cnt: %zu", TResourceManager::Instance().Size<Material>());
-        ImGui::Text("Shader component cnt: %zu", TResourceManager::Instance().Size<ShaderComponent>());
-        ImGui::Text("Shader program cnt: %zu", TResourceManager::Instance().Size<ShaderProgram>());
+        ImGui::Text("Texture cnt: %zu", GetSystem<TResourceManager>().Size<TTexture>());
+        ImGui::Text("Mesh cnt: %zu", GetSystem<TResourceManager>().Size<TMesh>());
+        ImGui::Text("Materials cnt: %zu", GetSystem<TResourceManager>().Size<Material>());
+        ImGui::Text("Shader component cnt: %zu", GetSystem<TResourceManager>().Size<ShaderComponent>());
+        ImGui::Text("Shader program cnt: %zu", GetSystem<TResourceManager>().Size<ShaderProgram>());
         ImGui::Separator();
         ImGui::Text("Scene tree: '%s'", oSettings.sScenePath.c_str());
         ImGui::Separator();

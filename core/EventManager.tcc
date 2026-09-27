@@ -75,7 +75,7 @@ template <class TEventData, auto TMethod, class TListener> bool
 
         if (auto it = mListeners.find(oKey); it != mListeners.end()) {
                 auto & vListeners = it->second;
-                se_assert (!vListeners.empty()); //THINK
+                if (vListeners.empty()) { return false; }   // stale empty bucket (kept by design)
                 auto it2 = std::find(vListeners.begin(), vListeners.end(), oDelegate);
                 if (it2 != vListeners.end()) {
                         if (*it2 != vListeners.back()) {
@@ -83,9 +83,11 @@ template <class TEventData, auto TMethod, class TListener> bool
                         }
                         vListeners.pop_back();
 
-                        if (vListeners.size() == 0) {
-                                mListeners.erase(it);
-                        }
+                        // NOTE: empty buckets are intentionally left in the map.
+                        // Dispatch holds a reference to the bucket while handlers
+                        // run (see TriggerEvent) — erasing it here would dangle
+                        // that reference whenever a handler removes the last
+                        // listener of the event currently being dispatched.
                         return true;
                 }
         }
@@ -94,16 +96,25 @@ template <class TEventData, auto TMethod, class TListener> bool
 
 template <class TEventData> void EventManager::TriggerEvent(const TEventData & oEventData) {
 
-        TListenersMap::iterator it;
-
-        if (it = mListeners.find(typeid(TEventData)); it == mListeners.end()) {
+        auto it = mListeners.find(typeid(TEventData));
+        if (it == mListeners.end()) {
                 return;
         }
 
         Event oEvent(oEventData);
 
-        for (auto & oListener : it->second) {
-                oListener(oEvent);
+        // Handlers may add/remove listeners (a component created inside a
+        // handler — e.g. an NPC spawn — subscribes to EUpdate from its
+        // Enable()), so the bucket vector can reallocate or shrink while we
+        // are iterating it; a fixed range-for here read freed memory (SEGV).
+        // Iterate by index against the live vector: the bucket object itself
+        // lives in the map node and never moves (buckets are never erased,
+        // see RemoveListener), only its buffer reallocates. Listeners added
+        // mid-dispatch fire within this pass; a listener removing itself drops
+        // out (its swap-with-last neighbour may be skipped once).
+        auto & vBucket = it->second;
+        for (size_t i = 0; i < vBucket.size(); ++i) {
+                vBucket[i](oEvent);
         }
 
 }
@@ -120,7 +131,15 @@ template <class TEventData> void EventManager::QueueEvent(const TEventData & oEv
         }
 
         auto & vQueueBuffer = vEventBuffers[cur_buf];
-        vQueueBuffer.reserve(vQueueBuffer.size() + SE_EVENT_HEADER_SIZE + sizeof(TEventData) );
+        // Geometric growth: an exact-size reserve makes any frame whose event
+        // volume exceeds the previous peak realloc+copy the whole byte buffer
+        // once per queued event (O(k²)) — exactly when bursts happen (trigger
+        // stay events, blackboard key storms, BT node enter/exit floods).
+        const size_t needed = vQueueBuffer.size() + SE_EVENT_HEADER_SIZE + sizeof(TEventData);
+        if (vQueueBuffer.capacity() < needed) {
+                const size_t doubled = vQueueBuffer.capacity() * 2;
+                vQueueBuffer.reserve(needed > doubled ? needed : doubled);
+        }
 
         Append(&oKey,       sizeof(oKey));
         Append(&len,        sizeof(len));
@@ -195,8 +214,10 @@ void EventManager::Process() {
 
                 Event oEvent(*pKey, *pLen, pData);
 
-                for (auto & oListener : it->second) {
-                        oListener(oEvent);
+                // same re-entrant dispatch contract as TriggerEvent above
+                auto & vBucket = it->second;
+                for (size_t i = 0; i < vBucket.size(); ++i) {
+                        vBucket[i](oEvent);
                 }
         }
         vProcBuffer.clear();

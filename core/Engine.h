@@ -6,7 +6,7 @@ namespace SE {
 
 template <class ... TSystems> class Engine {
 
-        std::tuple<TSystems * ...>      oSystems{};
+        std::tuple<TSystems * ...> oSystems{};
 
         public:
         ~Engine() noexcept;
@@ -31,6 +31,5 @@ template <class ... TSystems> class Engine {
 #include <Engine.tcc>
 
 #endif
-
 
 

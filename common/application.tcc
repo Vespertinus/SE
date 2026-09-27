@@ -24,7 +24,7 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
         oResizeFunctor(*this, &Application<TLoop>::ResizeViewport),
         oMainWindow(oResizeFunctor, oRunFunctor, oSettings.oWindowSettings),
         oPreInit(oSettings, oMainWindow.GetWindowID()),
-        oLoop(oLoopSettings) {
+        oLoop(std::make_unique<TLoop>(oLoopSettings)) {
 
         /*TODO
          init all members as uniq pointers in specified order and destroy in reverse order
@@ -52,6 +52,19 @@ template <class TLoop> Application<TLoop>::Application(const SysSettings_t & oNe
 template <class TLoop> Application<TLoop>::~Application() noexcept {
 
         GetSystem<EventManager>().RemoveListener<EQuit, &Application<TLoop>::OnQuit>(this);
+
+        // Explicit lifetime: the app logic dies first, while every system is
+        // still alive. Node/component destructors call back into the renderer
+        // and EventManager (Disable(), listener removal), so ~Engine must never
+        // run with live resources left in the manager.
+        oLoop.reset();
+
+        GetSystem<TResourceManager>().ProcessDeferred();
+
+        // Safety net for resources that did not define their own lifetime.
+        GetSystem<TResourceManager>().DestroyUnretained();
+        GetSystem<TResourceManager>().ClearAllRetains();
+        GetSystem<TResourceManager>().ProcessDeferred();
 }
 
 
@@ -121,7 +134,7 @@ template <class TLoop> void Application<TLoop>::Run() {
 #endif
 
         oEventManager.Process();
-        oLoop.Process();
+        oLoop->Process();
         oEventManager.Process();
 
         oEventManager.TriggerEvent(EPostUpdate{last_frame_time});
@@ -139,7 +152,7 @@ template <class TLoop> void Application<TLoop>::Run() {
 
         oEventManager.TriggerEvent(EPostRenderUpdate{last_frame_time});
 
-        TResourceManager::Instance().ProcessDeferred();
+        GetSystem<TResourceManager>().ProcessDeferred();
 
         GetSystem<InputManager>().Capture();
 
@@ -149,7 +162,7 @@ template <class TLoop> void Application<TLoop>::Run() {
 
 template <class TLoop> TLoop & Application<TLoop>::GetAppLogic() {
 
-        return oLoop;
+        return *oLoop;
 }
 
 

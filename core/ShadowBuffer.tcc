@@ -28,7 +28,7 @@ void ShadowBuffer::Destroy() noexcept {
 
         oFbo.Destroy();
         if (hDepthTex.IsValid()) {
-                TResourceManager::Instance().Destroy(hDepthTex);
+                GetSystem<TResourceManager>().Destroy(hDepthTex);
                 hDepthTex = H<TTexture>::Null();
         }
 }
