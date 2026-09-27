@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <thread>
+
 #define SE_IMPL
 #include <Logging.h>
 #include <Global.h>
@@ -178,4 +180,182 @@ TEST_F(EntityManagerTest, StaleHandleAfterDestroyFlush) {
         SE::GetSystem<SE::EventManager>().TriggerEvent(SE::EPostUpdate{0.016f});
 
         EXPECT_EQ(pHandle.lock(), nullptr);
+}
+
+// -------------------------------------------------------------------------
+// 6. Deferred spawn intent carrying a parent lands under it (not at root).
+// -------------------------------------------------------------------------
+
+TEST_F(EntityManagerTest, DeferredSpawnLandsUnderParent) {
+
+        auto & oEM = SE::GetSystem<SE::EntityManager>();
+        auto pParent = pScene->Create("spawn_parent");
+        ASSERT_NE(pParent, nullptr);
+
+        SE::SpawnIntent oIntent;
+        oIntent.name    = "child_entity";
+        oIntent.pParent = pParent;
+
+        oEM.RequestSpawn(oIntent);
+        SE::GetSystem<SE::EventManager>().TriggerEvent(SE::EPostUpdate{0.016f});
+
+        EXPECT_NE(pParent->FindChild(SE::StrID("child_entity")), nullptr);
+        EXPECT_EQ(pScene->GetRoot()->FindChild(SE::StrID("child_entity")), nullptr);
+}
+
+// -------------------------------------------------------------------------
+// 7. SpawnTemplate routes through the instantiator and returns a usable handle.
+// -------------------------------------------------------------------------
+
+TEST_F(EntityManagerTest, SpawnTemplateRoutesAndReturnsHandle) {
+
+        auto & oEM = SE::GetSystem<SE::EntityManager>();
+        EXPECT_TRUE(oEM.SpawnTemplate({}).expired());  // no instantiator: expired, no crash
+
+        bool called = false;
+        oEM.SetTemplateInstantiator([&oEM, &called](const SE::SpawnIntent & oIntent)
+                        -> SE::TSceneTree::TSceneNodeWeak {
+                called = true;
+                SE::SpawnRequest oReq;
+                oReq.name    = oIntent.name;
+                oReq.pParent = oIntent.pParent;
+                return oEM.Spawn(oReq);
+        });
+
+        SE::SpawnIntent oIntent;
+        oIntent.prefab_id = "some_template";
+        oIntent.name      = "from_template";
+        auto pHandle = oEM.SpawnTemplate(oIntent);
+
+        EXPECT_TRUE(called);
+        ASSERT_NE(pHandle.lock(), nullptr);
+        EXPECT_EQ(pHandle.lock()->GetName(), "from_template");
+        EXPECT_EQ(oEM.GetStats().spawned_template, 1u);
+}
+
+// -------------------------------------------------------------------------
+// 8. Double destroy of the same node is collapsed to one queued request.
+// -------------------------------------------------------------------------
+
+TEST_F(EntityManagerTest, DoubleDestroyIsDeduplicated) {
+
+        auto & oEM = SE::GetSystem<SE::EntityManager>();
+
+        SE::SpawnRequest oReq;
+        oReq.name = "dedup_target";
+        auto pHandle = oEM.Spawn(oReq);
+        ASSERT_NE(pHandle.lock(), nullptr);
+
+        oEM.Destroy(pHandle);
+        oEM.Destroy(pHandle);
+        EXPECT_EQ(oEM.GetStats().destroy_dedups, 1u);
+        EXPECT_EQ(oEM.DestroyQueueDepth(), 1u);
+
+        SE::GetSystem<SE::EventManager>().TriggerEvent(SE::EPostUpdate{0.016f});
+        EXPECT_EQ(oEM.GetStats().destroyed, 1u);
+        EXPECT_TRUE(pHandle.expired());
+}
+
+// -------------------------------------------------------------------------
+// 9. Two producer threads: every intent is delivered exactly once (MPSC push).
+// -------------------------------------------------------------------------
+
+TEST_F(EntityManagerTest, TwoProducerThreadsAllIntentsDelivered) {
+
+        auto & oEM = SE::GetSystem<SE::EntityManager>();
+        constexpr uint32_t kPerThread = 50;
+
+        auto worker = [&](uint32_t base) {
+                for (uint32_t i = 0; i < kPerThread; ++i) {
+                        SE::SpawnIntent oIntent;
+                        oIntent.name = "t" + std::to_string(base) + "_" + std::to_string(i);
+                        oEM.RequestSpawn(oIntent);
+                }
+        };
+        std::thread oT1(worker, 0), oT2(worker, 1);
+        oT1.join();
+        oT2.join();
+
+        EXPECT_EQ(oEM.SpawnQueueDepth(), kPerThread * 2);
+        EXPECT_EQ(oEM.GetStats().spawn_drops, 0u);
+
+        SE::GetSystem<SE::EventManager>().TriggerEvent(SE::EPostUpdate{0.016f});
+
+        uint32_t found = 0;
+        for (uint32_t base = 0; base < 2; ++base) {
+                for (uint32_t i = 0; i < kPerThread; ++i) {
+                        const std::string sName = "t" + std::to_string(base) + "_" + std::to_string(i);
+                        if (pScene->GetRoot()->FindChild(SE::StrID(sName)) != nullptr) {
+                                ++found;
+                        }
+                }
+        }
+        EXPECT_EQ(found, kPerThread * 2);
+}
+
+// -------------------------------------------------------------------------
+// 10. Queue-full drops are counted (no silent loss).
+// -------------------------------------------------------------------------
+
+TEST_F(EntityManagerTest, QueueFullDropsCounted) {
+
+        auto & oEM = SE::GetSystem<SE::EntityManager>();
+
+        SE::SpawnIntent oIntent;
+        oIntent.name = "overflow";
+        for (uint32_t i = 0; i < SE::EntityManager::kQueueCapacity - 1; ++i) {
+                oEM.RequestSpawn(oIntent);
+        }
+        EXPECT_EQ(oEM.GetStats().spawn_drops, 0u);
+
+        oEM.RequestSpawn(oIntent);  // over capacity
+        EXPECT_EQ(oEM.GetStats().spawn_drops, 1u);
+}
+
+// -------------------------------------------------------------------------
+// 11. Flush contract: an instantiator that queues a destroy mid-flush has it
+//     processed in the same flush (drain-until-empty).
+// -------------------------------------------------------------------------
+
+TEST_F(EntityManagerTest, ReentrantDestroyProcessedSameFlush) {
+
+        auto & oEM = SE::GetSystem<SE::EntityManager>();
+        oEM.SetTemplateInstantiator([&oEM](const SE::SpawnIntent & oIntent)
+                        -> SE::TSceneTree::TSceneNodeWeak {
+                SE::SpawnRequest oReq;
+                oReq.name = oIntent.name;
+                auto pHandle = oEM.Spawn(oReq);
+                oEM.Destroy(pHandle);  // re-entrant queue push during FlushQueues
+                return pHandle;
+        });
+
+        SE::SpawnIntent oIntent;
+        oIntent.prefab_id = "self_destructing";
+        oIntent.name      = "ephemeral";
+        oEM.RequestSpawn(oIntent);
+
+        SE::GetSystem<SE::EventManager>().TriggerEvent(SE::EPostUpdate{0.016f});
+
+        EXPECT_TRUE(oEM.SpawnQueueDepth() == 0u);
+        EXPECT_EQ(oEM.DestroyQueueDepth(), 0u);
+        EXPECT_EQ(pScene->GetRoot()->FindChild(SE::StrID("ephemeral")), nullptr);
+}
+
+// -------------------------------------------------------------------------
+// 12. Scene switch drains requests referencing the previous scene.
+// -------------------------------------------------------------------------
+
+TEST_F(EntityManagerTest, SceneSwitchDrainsQueues) {
+
+        auto & oEM = SE::GetSystem<SE::EntityManager>();
+
+        SE::SpawnIntent oIntent;
+        oIntent.name = "stale_intent";
+        oEM.RequestSpawn(oIntent);
+        EXPECT_EQ(oEM.SpawnQueueDepth(), 1u);
+
+        auto pOther = std::make_unique<SE::TSceneTree>("other_scene", 0, /*empty=*/true);
+        oEM.SetSceneTree(pOther.get());
+        EXPECT_EQ(oEM.SpawnQueueDepth(), 0u);
+        EXPECT_EQ(oEM.DestroyQueueDepth(), 0u);
 }

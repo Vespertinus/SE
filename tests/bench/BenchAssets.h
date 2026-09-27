@@ -39,6 +39,7 @@ using ClipPtr = std::unique_ptr<FbClip>;
 inline void EnsureEngine() {
         static bool initialized = []() {
                 auto& oEngine = SE::TEngine::Instance();
+                oEngine.Init<SE::TResourceManager>();
                 oEngine.Init<SE::Config>();
                 oEngine.Init<SE::EventManager>();
                 oEngine.Init<SE::FrameAllocator>();

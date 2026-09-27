@@ -2,8 +2,9 @@
 // ---------------------------------------------------------------------------
 // PhysicsCharacterTest — Tier C. The CharacterVirtual API: capsule controller
 // grounded state, user-owned velocity, walking, walls, stairs, slope limits,
-// teleports, ground velocity on moving platforms, and the sensor-pass-through
-// rule. Characters are stepped before the rigid simulation each fixed step
+// teleports, ground velocity on moving platforms, and the inner presence body
+// (sensors fire, movement stays ghosted). Characters are stepped before the
+// rigid simulation each fixed step
 // (PhysicsSystem::Impl::RunFixedStep → StepCharacters).
 // ---------------------------------------------------------------------------
 
@@ -91,6 +92,35 @@ TEST_F(PhysTestBase, Character_WalksHorizontallyWithUserVelocity) {
         EXPECT_NEAR(CharPos(ch).x, 2.0f, 0.2f);
         EXPECT_TRUE(phys.IsCharacterGrounded(ch.handle));
         EXPECT_NEAR(CharY(ch), 0.0f, 0.05f);
+}
+
+TEST_F(PhysTestBase, Character_UpdateDivider_MatchesFullRateTrajectory) {
+        MakeBody(FloorDesc(0.0f));
+
+        // NPC LOD: ExtendedUpdate every 2nd step at doubled dt must reproduce
+        // the full-rate trajectory (average speed and gravity unchanged).
+        SE::CharacterDesc d;
+        d.vInitialPosition = {0.0f, kOnFloor, 0.0f};
+        d.update_divider   = 2;
+        auto ch = MakeCharacterDesc(d);
+        ASSERT_TRUE(ch.handle.IsValid());
+
+        phys.SetCharacterVelocity(ch.handle, {2.0f, 0.0f, 0.0f});
+        StepExact(60);
+        EXPECT_NEAR(CharPos(ch).x, 2.0f, 0.2f);
+        EXPECT_TRUE(phys.IsCharacterGrounded(ch.handle));
+        EXPECT_NEAR(CharY(ch), 0.0f, 0.05f);
+
+        // Phase staggering: a second divider-2 character skips the other
+        // steps, so both together cover every step.
+        SE::CharacterDesc d2;
+        d2.vInitialPosition = {0.0f, kOnFloor, 0.0f};
+        d2.update_divider   = 2;
+        auto ch2 = MakeCharacterDesc(d2);
+        ASSERT_TRUE(ch2.handle.IsValid());
+        phys.SetCharacterVelocity(ch2.handle, {2.0f, 0.0f, 0.0f});
+        StepExact(4);
+        EXPECT_GT(CharPos(ch2).x, 0.0f);
 }
 
 TEST_F(PhysTestBase, Character_BlockedByWall) {
@@ -220,9 +250,10 @@ TEST_F(PhysTestBase, Character_GroundVelocityAndCarriageOnKinematicPlatform) {
         EXPECT_LT(CharPos(ch).x, 0.5f);
 }
 
-// CHARACTERIZATION: characters deliberately skip the TRIGGER object layer
-// (SECharObjFilter) — sensors neither report nor block the capsule.
-TEST_F(PhysTestBase, Character_PassesThroughTriggerVolumes) {
+// The inner presence body (default BodyLayers::Player) gives the character
+// contact presence: the sensor fires — while the sweep itself ignores PLAYER
+// bodies, so the capsule still walks straight through unimpeded.
+TEST_F(PhysTestBase, Character_FiresTriggerVolumes) {
         MakeBody(FloorDesc(0.0f));
         auto sensor = MakeBody(SensorBox({2.0f, 1.2f, 0.0f}));
 
@@ -232,8 +263,34 @@ TEST_F(PhysTestBase, Character_PassesThroughTriggerVolumes) {
         EventSink<EPhysicsTriggerEnter> enters;
         StepExact(120);
 
-        EXPECT_EQ(enters.Size(), 0u);                    // no trigger fired
-        EXPECT_GT(CharPos(ch).x, 2.5f);                  // walked straight through
+        EXPECT_GE(enters.Size(), 1u);                    // presence body fired it
+        for (const auto& e : enters.hits) {
+                EXPECT_EQ(e.hTrigger, sensor.handle);    // the sensor is the trigger…
+                EXPECT_TRUE(e.hOther.IsValid());         // …and hOther is its presence body
+                EXPECT_NE(e.hOther, sensor.handle);
+        }
+        EXPECT_GT(CharPos(ch).x, 2.5f);                  // …and it walked straight through
+        EXPECT_TRUE(phys.IsCharacterGrounded(ch.handle));
+}
+
+// A sweep-only character (inner_body_layer = -1) has no contact presence:
+// the same sensor stays silent while the capsule passes through.
+TEST_F(PhysTestBase, Character_WithoutPresenceBodySkipsTriggers) {
+        MakeBody(FloorDesc(0.0f));
+        MakeBody(SensorBox({2.0f, 1.2f, 0.0f}));
+
+        SE::CharacterDesc d;
+        d.vInitialPosition = {0.0f, kOnFloor, 0.0f};
+        d.inner_body_layer = -1;
+        auto ch = MakeCharacterDesc(d);
+
+        phys.SetCharacterVelocity(ch.handle, {2.0f, 0.0f, 0.0f});
+
+        EventSink<EPhysicsTriggerEnter> enters;
+        StepExact(120);
+
+        EXPECT_EQ(enters.Size(), 0u);                    // no presence → no sensor contacts
+        EXPECT_GT(CharPos(ch).x, 2.5f);
         EXPECT_TRUE(phys.IsCharacterGrounded(ch.handle));
 }
 

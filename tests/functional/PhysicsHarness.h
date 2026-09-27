@@ -190,7 +190,10 @@ protected:
                 d.half_height      = half_height;
                 d.step_height      = step_height;
                 d.slope_angle      = slope_deg;
+                return MakeCharacterDesc(d);
+        }
 
+        CharRef MakeCharacterDesc(const SE::CharacterDesc& d) {
                 CharRef ref;
                 ref.handle = phys.CreateCharacter(d);
                 if (ref.handle.IsValid()) {
@@ -268,6 +271,10 @@ protected:
         }
 
         void StepFrame(float game_dt) {
+                // Phase order mirrors common/application.tcc: EInputUpdate (input
+                // bridges + the Stage 3 crowd driver write InputState here)
+                // fires before EUpdate (CharacterMovementSystem reads it).
+                Events().TriggerEvent(SE::EInputUpdate{game_dt});
                 Events().TriggerEvent(SE::EUpdate{game_dt});
                 SE::GetSystem<SE::PhysicsSystem>().Update(game_dt);
                 Events().Process();

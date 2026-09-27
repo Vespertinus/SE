@@ -34,6 +34,14 @@ RigidBodyDesc DynamicSphere(glm::vec3 pos, float radius = 0.5f) {
         return d;
 }
 
+// Trigger probes ride on the PLAYER object layer: sensors pair only with
+// the player presence layer, so a DYNAMIC ball would never fire them.
+RigidBodyDesc TriggerBall(glm::vec3 pos, float radius = 0.5f) {
+        RigidBodyDesc d = DynamicSphere(pos, radius);
+        d.object_layer  = SE::BodyLayers::Player;
+        return d;
+}
+
 RigidBodyDesc SensorBox(glm::vec3 pos, glm::vec3 half = {0.75f, 0.75f, 0.75f}) {
         RigidBodyDesc d;
         d.oCollider.type         = ColliderDesc::Box;
@@ -82,7 +90,7 @@ TEST_F(PhysTestBase, ContactPersist_DoesNotRefireEnter) {
         MakeBody(FloorDesc(0.0f));
         RigidBodyDesc d = DynamicSphere({0.0f, 0.7f, 0.0f});
         d.restitution   = 0.0f;
-        auto ball       = MakeBody(d);
+        MakeBody(d);
 
         EventSink<EPhysicsContactEnter> enters;
         StepExact(1);    // spawn overlaps the floor → contact this step
@@ -138,7 +146,7 @@ TEST_F(PhysTestBase, DestroyTriggerPartner_ReportsContactExit) {
 
 TEST_F(PhysTestBase, TriggerEnterExit_FireAsBallPassesThrough) {
         auto sensor = MakeBody(SensorBox({0.0f, 4.0f, 0.0f}));
-        auto ball   = MakeSphere({0.0f, 12.0f, 0.0f});
+        auto ball   = MakeBody(TriggerBall({0.0f, 12.0f, 0.0f}));
 
         EventSink<EPhysicsTriggerEnter> enters;
         EventSink<EPhysicsTriggerExit>  exits;
@@ -161,8 +169,8 @@ TEST_F(PhysTestBase, TriggerEnterExit_FireAsBallPassesThrough) {
 
 TEST_F(PhysTestBase, Trigger_TwoBallsProducePairwiseEvents) {
         auto sensor = MakeBody(SensorBox({0.0f, 4.0f, 0.0f}));
-        auto a      = MakeSphere({0.0f, 12.0f, 0.0f});
-        auto b      = MakeSphere({0.2f, 14.0f, 0.0f});
+        auto a      = MakeBody(TriggerBall({0.0f, 12.0f, 0.0f}));
+        auto b      = MakeBody(TriggerBall({0.2f, 14.0f, 0.0f}));
 
         EventSink<EPhysicsTriggerEnter> enters;
         EventSink<EPhysicsTriggerExit>  exits;
@@ -198,7 +206,7 @@ TEST_F(PhysTestBase, BodyFilter_BidirectionalOrDetectsOneSidedInterest) {
         RigidBodyDesc db = FloorDesc(0.0f);
         db.collision_layer = 1u << 1;
         db.collision_mask  = 1u << 0;   // interested in A
-        auto b = MakeBody(db);
+        MakeBody(db);
 
         EventSink<EPhysicsContactEnter> enters;
         StepExact(120);
@@ -217,7 +225,7 @@ TEST_F(PhysTestBase, BodyFilter_MutualBlindnessPassesThrough) {
         RigidBodyDesc db = FloorDesc(0.0f);
         db.collision_layer = 1u << 1;
         db.collision_mask  = 0;
-        auto b = MakeBody(db);
+        MakeBody(db);
 
         EventSink<EPhysicsContactEnter> enters;
         StepExact(180);
@@ -231,12 +239,12 @@ TEST_F(PhysTestBase, TriggerFilter_Unidirectional_MaskIgnoredOnOtherBody) {
         RigidBodyDesc dt = SensorBox({0.0f, 4.0f, 0.0f});
         dt.collision_layer = 1u << 5;
         dt.collision_mask  = 1u << 0;    // interested in balls
-        auto sensor = MakeBody(dt);
+        MakeBody(dt);
 
-        RigidBodyDesc da = DynamicSphere({0.0f, 12.0f, 0.0f});
+        RigidBodyDesc da = TriggerBall({0.0f, 12.0f, 0.0f});
         da.collision_layer = 1u << 0;
         da.collision_mask  = 0;          // ball ignores triggers
-        auto ball = MakeBody(da);
+        MakeBody(da);
 
         EventSink<EPhysicsTriggerEnter> enters;
         StepExact(240);
@@ -247,9 +255,9 @@ TEST_F(PhysTestBase, TriggerFilter_TriggerMaskRejectsLayer) {
         RigidBodyDesc dt = SensorBox({0.0f, 4.0f, 0.0f});
         dt.collision_layer = 1u << 5;
         dt.collision_mask  = 1u << 2;    // NOT interested in balls (layer 1<<0)
-        auto sensor = MakeBody(dt);
+        MakeBody(dt);
 
-        RigidBodyDesc da = DynamicSphere({0.0f, 12.0f, 0.0f});
+        RigidBodyDesc da = TriggerBall({0.0f, 12.0f, 0.0f});
         da.collision_layer = 1u << 0;
         da.collision_mask  = 0xFFFFFFFFu; // ball would love to see the trigger
         auto ball = MakeBody(da);

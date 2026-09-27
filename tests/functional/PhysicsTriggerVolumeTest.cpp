@@ -30,12 +30,15 @@ namespace {
 constexpr float kDt = 1.0f / 60.0f;
 
 // Ball body that ignores every layer — trigger pairing is gated by the
-// TRIGGER's mask alone (bidirectional interest is not required).
+// TRIGGER's mask alone (bidirectional interest is not required). It rides on
+// the PLAYER object layer because sensors pair only with the player's
+// presence layer (NPC/prop bodies can't ring triggers).
 RigidBodyDesc PassthroughBall(glm::vec3 pos, float radius = 0.25f) {
         RigidBodyDesc d;
         d.oCollider.type   = ColliderDesc::Sphere;
         d.oCollider.radius = radius;
         d.vInitialPosition = pos;
+        d.object_layer     = SE::BodyLayers::Player;
         d.collision_layer  = 1u << 4;
         d.collision_mask   = 0;
         d.restitution      = 0.0f;
@@ -184,6 +187,31 @@ TEST_F(EnginePhysTestBase, TriggerVolume_MaskGatesPairing) {
 
         EventSink<ETriggerFired> fired;
         RunSeconds(2.0f);
+        EXPECT_EQ(fired.Size(), 0u);
+}
+
+// Sensors pair only with the PLAYER object layer — static geometry resting
+// inside a sensor must never fire it.
+TEST_F(EnginePhysTestBase, TriggerVolume_StaticBodiesDoNotFire) {
+        SE::GetSystem<SE::PhysicsSystem>().CreateRigidBody(FloorDesc(0.0f));
+
+        auto vol_node = scene->Create("BuriedVolume");
+        vol_node->SetPos({0.0f, 0.5f, 0.0f});   // a static box sits inside it
+        vol_node->CreateComponent<SE::TriggerVolume>(VolDesc("tv.enter", "tv.exit"));
+
+        auto rock = scene->Create("Rock");
+        rock->SetPos({0.0f, 0.5f, 0.0f});
+        RigidBodyDesc rd;
+        rd.oCollider.type         = ColliderDesc::Box;
+        rd.oCollider.vHalfExtents = {0.5f, 0.5f, 0.5f};
+        rd.vInitialPosition       = {0.0f, 0.5f, 0.0f};
+        rd.is_static              = true;
+        rock->CreateComponent<SE::RigidBody>(rd);
+
+        EventSink<EPhysicsTriggerEnter> raw_enters;
+        EventSink<ETriggerFired> fired;
+        RunSeconds(2.0f);
+        EXPECT_EQ(raw_enters.Size(), 0u);
         EXPECT_EQ(fired.Size(), 0u);
 }
 

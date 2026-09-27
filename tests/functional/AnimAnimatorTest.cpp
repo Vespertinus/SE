@@ -96,7 +96,7 @@ TEST_F(FuncTestBase, AnimatorTest_MissingAnimatedModelThrows) {
         // without one it must throw (soft-degradation would hide rig bugs).
         auto pSkelNative = MakeChainSkeleton(1);
         flatbuffers::FlatBufferBuilder oSkelBuilder;
-        auto hSkel = SE::CreateResource<SE::Skeleton>(
+        SE::CreateResource<SE::Skeleton>(
                         "animator_bare_skel",
                         SerializeSkeleton(oSkelBuilder, *pSkelNative));
 

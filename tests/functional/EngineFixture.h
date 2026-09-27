@@ -13,8 +13,8 @@
 // Systems are initialized SELECTIVELY, never via the blanket Engine::Init():
 // AudioSystem's default ctor spawns an OpenAL thread, and renderer/input
 // systems are meaningless without a device. Animation needs only
-// Config + EventManager + FrameAllocator; TResourceManager is its own
-// process-wide singleton that self-constructs on the first CreateResource.
+// TResourceManager (the first Engine system — it no longer self-constructs,
+// it must be initialized explicitly) + Config + EventManager + FrameAllocator.
 //
 // Isolation between tests: inline clip/graph data referenced by name is cached
 // by TResourceManager for the process lifetime, so Tier B fixtures clear the
@@ -46,6 +46,7 @@ namespace se_test {
 inline void EnsureEngine() {
         static bool initialized = []() {
                 auto& oEngine = SE::TEngine::Instance();
+                oEngine.Init<SE::TResourceManager>();
                 oEngine.Init<SE::Config>();
                 oEngine.Init<SE::EventManager>();
                 oEngine.Init<SE::FrameAllocator>();
@@ -66,9 +67,9 @@ protected:
         void TearDown() override {
                 // Drop cached animation resources so tests stay isolated from
                 // each other despite the process-wide resource manager.
-                SE::TResourceManager::Instance().Clear<SE::AnimClip>();
-                SE::TResourceManager::Instance().Clear<SE::Skeleton>();
-                SE::TResourceManager::Instance().Clear<SE::AnimGraph>();
+                SE::GetSystem<SE::TResourceManager>().Clear<SE::AnimClip>();
+                SE::GetSystem<SE::TResourceManager>().Clear<SE::Skeleton>();
+                SE::GetSystem<SE::TResourceManager>().Clear<SE::AnimGraph>();
         }
 
         static SE::FrameAllocator& Alloc()  { return SE::GetSystem<SE::FrameAllocator>(); }

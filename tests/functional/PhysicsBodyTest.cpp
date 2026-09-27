@@ -386,7 +386,6 @@ TEST_F(PhysTestBase, DestroyBody_IsDeferredUntilNextStep) {
 TEST_F(PhysTestBase, StaleHandle_IsInertAfterIndexReuse) {
         auto first = MakeSphere({0.0f, 2.0f, 0.0f});
         ASSERT_TRUE(first.handle.IsValid());
-        const auto first_index = first.handle.index;
 
         phys.DestroyBody(first.handle);
         StepExact();

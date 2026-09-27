@@ -435,13 +435,13 @@ static void BM_ResourceLoad_RealSeak(benchmark::State& oState) {
                 // measured iteration covers open + verify + decode + insert.
                 oState.PauseTiming();
                 SE::DestroyResource(h);
-                SE::TResourceManager::Instance().ProcessDeferred();
+                SE::GetSystem<SE::TResourceManager>().ProcessDeferred();
                 oState.ResumeTiming();
                 h = SE::CreateResource<SE::AnimClip>(sPath);
                 benchmark::DoNotOptimize(h);
         }
         SE::DestroyResource(h);
-        SE::TResourceManager::Instance().ProcessDeferred();
+        SE::GetSystem<SE::TResourceManager>().ProcessDeferred();
 }
 BENCHMARK(BM_ResourceLoad_RealSeak);
 

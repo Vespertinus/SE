@@ -377,3 +377,259 @@ TEST_F(EntityTemplateTest, UnloadAllClearsTemplates) {
         auto pHandle = oETS.Instantiate("temp_id");
         EXPECT_TRUE(pHandle.expired());
 }
+
+// ===========================================================================
+// Step 5 additions: test plugin for ApplyField dispatch coverage.
+// MergeVariant runs at LOAD time — these statics capture the applied values.
+// ===========================================================================
+
+namespace SE {
+template <>
+struct EntityTemplatePlugin<StaticModelMock> {
+        static float       sLastFloat;
+        static std::string sLastPath;
+
+        static void ApplyField(FlatBuffers::StaticModelT & /*obj*/,
+                        std::string_view path,
+                        const FlatBuffers::FieldOverride & fo) {
+                sLastPath = std::string(path);
+                if (fo.value_type() == FlatBuffers::FieldValueU::Float && fo.value_as_Float()) {
+                        sLastFloat = fo.value_as_Float()->value();
+                }
+        }
+};
+float       EntityTemplatePlugin<StaticModelMock>::sLastFloat = 0.f;
+std::string EntityTemplatePlugin<StaticModelMock>::sLastPath;
+} // namespace SE
+
+// Builder: template whose root carries a StaticModel component (for field overrides).
+static std::vector<uint8_t> BuildTemplateWithStaticModel(
+                const std::string & sId, const std::string & sRootName) {
+
+        flatbuffers::FlatBufferBuilder fbb;
+
+        SE::FlatBuffers::EntityTemplateT oTmpl;
+        oTmpl.id   = sId;
+        oTmpl.root = std::make_unique<SE::FlatBuffers::NodeTemplateT>();
+        oTmpl.root->name    = sRootName;
+        oTmpl.root->enabled = true;
+
+        auto pComp = std::make_unique<SE::FlatBuffers::ComponentT>();
+        auto pSM   = std::make_unique<SE::FlatBuffers::StaticModelT>();
+        pSM->mesh  = std::make_unique<SE::FlatBuffers::MeshHolderT>();
+        pSM->mesh->path = "test_mesh";
+        pComp->component.Set(std::move(*pSM));
+        oTmpl.root->components.push_back(std::move(pComp));
+
+        auto oOffset = SE::FlatBuffers::EntityTemplate::Pack(fbb, &oTmpl);
+        SE::FlatBuffers::FinishEntityTemplateBuffer(fbb, oOffset);
+
+        auto * pBuf = fbb.GetBufferPointer();
+        return std::vector<uint8_t>(pBuf, pBuf + fbb.GetSize());
+}
+
+// Builder: root + child carrying a RigidBody component — RigidBody is NOT in this
+// binary's component pack, so instantiation fails mid-hierarchy (rollback case).
+static std::vector<uint8_t> BuildTemplateWithUnknownComponent(
+                const std::string & sId,
+                const std::string & sRootName,
+                const std::string & sChildName) {
+
+        flatbuffers::FlatBufferBuilder fbb;
+
+        SE::FlatBuffers::EntityTemplateT oTmpl;
+        oTmpl.id   = sId;
+        oTmpl.root = std::make_unique<SE::FlatBuffers::NodeTemplateT>();
+        oTmpl.root->name    = sRootName;
+        oTmpl.root->enabled = true;
+
+        auto pChild = std::make_unique<SE::FlatBuffers::NodeTemplateT>();
+        pChild->name    = sChildName;
+        pChild->enabled = true;
+        auto pComp = std::make_unique<SE::FlatBuffers::ComponentT>();
+        auto pRB   = std::make_unique<SE::FlatBuffers::RigidBodyT>();
+        auto pSphere = std::make_unique<SE::FlatBuffers::SphereColliderT>();
+        pRB->collider.Set(std::move(*pSphere));
+        pComp->component.Set(std::move(*pRB));
+        pChild->components.push_back(std::move(pComp));
+        oTmpl.root->children.push_back(std::move(pChild));
+
+        auto oOffset = SE::FlatBuffers::EntityTemplate::Pack(fbb, &oTmpl);
+        SE::FlatBuffers::FinishEntityTemplateBuffer(fbb, oOffset);
+
+        auto * pBuf = fbb.GetBufferPointer();
+        return std::vector<uint8_t>(pBuf, pBuf + fbb.GetSize());
+}
+
+// Builder: template with authoring tags.
+static std::vector<uint8_t> BuildTaggedTemplate(
+                const std::string & sId, const std::string & sRootName,
+                const std::vector<std::string> & vTags) {
+
+        flatbuffers::FlatBufferBuilder fbb;
+
+        SE::FlatBuffers::EntityTemplateT oTmpl;
+        oTmpl.id   = sId;
+        oTmpl.root = std::make_unique<SE::FlatBuffers::NodeTemplateT>();
+        oTmpl.root->name    = sRootName;
+        oTmpl.root->enabled = true;
+        oTmpl.tags.insert(oTmpl.tags.end(), vTags.begin(), vTags.end());
+
+        auto oOffset = SE::FlatBuffers::EntityTemplate::Pack(fbb, &oTmpl);
+        SE::FlatBuffers::FinishEntityTemplateBuffer(fbb, oOffset);
+
+        auto * pBuf = fbb.GetBufferPointer();
+        return std::vector<uint8_t>(pBuf, pBuf + fbb.GetSize());
+}
+
+// ===========================================================================
+// 13. Instantiating the same template twice under one parent uniquifies names
+//     (pre-Step-5 this FAILED: Create rejects duplicate full names).
+// ===========================================================================
+
+TEST_F(EntityTemplateTest, DoubleInstantiateSameParentUniquifies) {
+        auto vBuf = BuildMinimalTemplate("dup_tmpl", "Warrior");
+        ASSERT_EQ(oETS.LoadFromMemory(vBuf.data(), vBuf.size()), SE::uSUCCESS);
+
+        auto h1 = oETS.Instantiate("dup_tmpl", pScene->GetRoot());
+        auto h2 = oETS.Instantiate("dup_tmpl", pScene->GetRoot());
+        ASSERT_FALSE(h1.expired());
+        ASSERT_FALSE(h2.expired());
+
+        const std::string s1 = h1.lock()->GetName();
+        const std::string s2 = h2.lock()->GetName();
+        EXPECT_NE(s1, s2);
+        EXPECT_NE(pScene->GetRoot()->FindChild(SE::StrID(s2)), nullptr);
+        EXPECT_NE(pScene->GetRoot()->FindChild(SE::StrID(s1)), nullptr);
+}
+
+// ===========================================================================
+// 14. A failure mid-hierarchy rolls back — no orphan subtrees, no stale names.
+// ===========================================================================
+
+TEST_F(EntityTemplateTest, FailedInstantiateRollsBackPartialHierarchy) {
+        auto vBuf = BuildTemplateWithUnknownComponent("bad_tmpl", "Base", "Gear");
+        ASSERT_EQ(oETS.LoadFromMemory(vBuf.data(), vBuf.size()), SE::uSUCCESS);
+
+        auto pHandle = oETS.Instantiate("bad_tmpl", pScene->GetRoot());
+        EXPECT_TRUE(pHandle.expired());
+
+        // Neither the root nor the (failed) child may remain attached or findable.
+        EXPECT_EQ(pScene->GetRoot()->FindChild(SE::StrID("Base")), nullptr);
+        EXPECT_EQ(pScene->GetRoot()->FindChild(SE::StrID("Gear")), nullptr);
+        EXPECT_EQ(pScene->FindFullName(SE::StrID("root|Base")), nullptr);
+
+        // And the parent is otherwise unaffected: a good template still instantiates.
+        auto vGood = BuildMinimalTemplate("good_tmpl", "Ok");
+        ASSERT_EQ(oETS.LoadFromMemory(vGood.data(), vGood.size()), SE::uSUCCESS);
+        EXPECT_FALSE(oETS.Instantiate("good_tmpl", pScene->GetRoot()).expired());
+}
+
+// ===========================================================================
+// 15. Re-loading an id REPLACES the template.
+// ===========================================================================
+
+TEST_F(EntityTemplateTest, DuplicateIdReplaces) {
+        auto v1 = BuildMinimalTemplate("replace_me", "Version1", 1.f, 0.f, 0.f);
+        auto v2 = BuildMinimalTemplate("replace_me", "Version2", 2.f, 0.f, 0.f);
+        ASSERT_EQ(oETS.LoadFromMemory(v1.data(), v1.size()), SE::uSUCCESS);
+        ASSERT_EQ(oETS.LoadFromMemory(v2.data(), v2.size()), SE::uSUCCESS);
+
+        EXPECT_EQ(oETS.TemplateCount(), 1u);
+
+        auto pHandle = oETS.Instantiate("replace_me", pScene->GetRoot());
+        ASSERT_FALSE(pHandle.expired());
+        EXPECT_EQ(pHandle.lock()->GetName(), "Version2");
+}
+
+// ===========================================================================
+// 16. Per-template unload; already-merged variants keep working.
+// ===========================================================================
+
+TEST_F(EntityTemplateTest, UnloadSingleTemplate) {
+        auto vBase = BuildTemplateWithChild("unload_base", "Base", "Wing");
+        auto vVar  = BuildVariantWithNodeOverride("unload_var", "unload_base", "Wing", 9.f, 9.f, 9.f);
+        ASSERT_EQ(oETS.LoadFromMemory(vBase.data(), vBase.size()), SE::uSUCCESS);
+        ASSERT_EQ(oETS.LoadFromMemory(vVar.data(), vVar.size()), SE::uSUCCESS);
+        ASSERT_TRUE(oETS.HasTemplate("unload_var"));
+
+        EXPECT_TRUE(oETS.Unload("unload_base"));
+        EXPECT_FALSE(oETS.Unload("unload_base"));   // second unload: nothing to do
+        EXPECT_FALSE(oETS.HasTemplate("unload_base"));
+        EXPECT_TRUE(oETS.HasTemplate("unload_var"));
+
+        // The merged variant instantiates fine without its base; the override
+        // targets the child "Wing" (a caller transform override only stomps the root).
+        auto pHandle = oETS.Instantiate("unload_var", pScene->GetRoot());
+        ASSERT_FALSE(pHandle.expired());
+        auto pWing = pHandle.lock()->FindChild(SE::StrID("Wing"));
+        ASSERT_NE(pWing, nullptr);
+        EXPECT_FLOAT_EQ(pWing->GetTransform().GetPos().x, 9.f);
+
+        // Reloading the unloaded id starts fresh.
+        ASSERT_EQ(oETS.LoadFromMemory(vBase.data(), vBase.size()), SE::uSUCCESS);
+        EXPECT_TRUE(oETS.HasTemplate("unload_base"));
+}
+
+// ===========================================================================
+// 17. Tags query + deterministic enumeration.
+// ===========================================================================
+
+TEST_F(EntityTemplateTest, HasTagAndSortedEnumeration) {
+        auto vA = BuildTaggedTemplate("tag_c", "RootC", {"enemy", "ground"});
+        auto vB = BuildTaggedTemplate("tag_a", "RootA", {});
+        auto vD = BuildTaggedTemplate("tag_b", "RootB", {"enemy"});
+        ASSERT_EQ(oETS.LoadFromMemory(vA.data(), vA.size()), SE::uSUCCESS);
+        ASSERT_EQ(oETS.LoadFromMemory(vB.data(), vB.size()), SE::uSUCCESS);
+        ASSERT_EQ(oETS.LoadFromMemory(vD.data(), vD.size()), SE::uSUCCESS);
+
+        EXPECT_TRUE(oETS.HasTag("tag_c", "enemy"));
+        EXPECT_TRUE(oETS.HasTag("tag_c", "ground"));
+        EXPECT_FALSE(oETS.HasTag("tag_c", "water"));
+        EXPECT_FALSE(oETS.HasTag("tag_a", "enemy"));
+        EXPECT_FALSE(oETS.HasTag("missing", "enemy"));
+
+        std::vector<std::string> vIds;
+        oETS.ForEachTemplateId([&vIds](const std::string & sId) { vIds.push_back(sId); });
+        ASSERT_EQ(vIds.size(), 3u);
+        EXPECT_EQ(vIds[0], "tag_a");
+        EXPECT_EQ(vIds[1], "tag_b");
+        EXPECT_EQ(vIds[2], "tag_c");
+}
+
+// ===========================================================================
+// 18. Field overrides dispatch to a component plugin (ApplyField).
+// ===========================================================================
+
+TEST_F(EntityTemplateTest, FieldOverrideDispatchesToPlugin) {
+        // Base: root with a StaticModel component.
+        auto vBase = BuildTemplateWithStaticModel("field_base", "FieldRoot");
+        ASSERT_EQ(oETS.LoadFromMemory(vBase.data(), vBase.size()), SE::uSUCCESS);
+
+        // Variant overriding a field via the plugin path.
+        flatbuffers::FlatBufferBuilder fbb;
+        SE::FlatBuffers::EntityTemplateT oTmpl;
+        oTmpl.id      = "field_var";
+        oTmpl.base_id = "field_base";
+        oTmpl.root    = std::make_unique<SE::FlatBuffers::NodeTemplateT>();
+        oTmpl.root->name = "field_var_root";
+
+        auto pOvr = std::make_unique<SE::FlatBuffers::NodeOverrideT>();
+        pOvr->node_name = "FieldRoot";
+        auto pFO = std::make_unique<SE::FlatBuffers::FieldOverrideT>();
+        pFO->path = "StaticModel.any_field";
+        pFO->value.Set(SE::FlatBuffers::Float(42.5f));
+        pOvr->field_overrides.push_back(std::move(pFO));
+        oTmpl.overrides.push_back(std::move(pOvr));
+
+        auto oOffset = SE::FlatBuffers::EntityTemplate::Pack(fbb, &oTmpl);
+        SE::FlatBuffers::FinishEntityTemplateBuffer(fbb, oOffset);
+        auto * pBuf = fbb.GetBufferPointer();
+        ASSERT_EQ(oETS.LoadFromMemory(pBuf, fbb.GetSize()), SE::uSUCCESS);
+
+        // Merge happens at load: the plugin saw the path and value.
+        EXPECT_EQ(SE::EntityTemplatePlugin<SE::StaticModelMock>::sLastPath, "any_field");
+        EXPECT_FLOAT_EQ(SE::EntityTemplatePlugin<SE::StaticModelMock>::sLastFloat, 42.5f);
+
+        EXPECT_FALSE(oETS.Instantiate("field_var", pScene->GetRoot()).expired());
+}
