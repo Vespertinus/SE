@@ -1,0 +1,174 @@
+{
+    "id": "camp_guard",
+    "root": {
+        "name": "GuardBrain",
+        "type_type": "BTComposite",
+        "type": { "kind": "Selector", "children": [] },
+        "value_type": "BTComposite",
+        "value": {
+            "kind": "Selector",
+            "children": [
+                {
+                    "name": "Chase",
+                    "type_type": "BTDecorator",
+                    "type": { "kind": "BlackboardCondition" },
+                    "value_type": "BTDecorator",
+                    "value": {
+                        "kind": "BlackboardCondition",
+                        "abort": "LowerPriority",
+                        "key": "alarm_raised",
+                        "op": "IsTrue",
+                        "child": {
+                            "name": "ChaseSeq",
+                            "type_type": "BTComposite",
+                            "type": { "kind": "Sequence", "children": [] },
+                            "value_type": "BTComposite",
+                            "value": {
+                                "kind": "Sequence",
+                                "children": [
+                                    {
+                                        "name": "ChaseLoop",
+                                        "type_type": "BTDecorator",
+                                        "type": { "kind": "Loop" },
+                                        "value_type": "BTDecorator",
+                                        "value": {
+                                            "kind": "Loop",
+                                            "count": 30,
+                                            "child": {
+                                                "name": "PursueLeg",
+                                                "type_type": "BTComposite",
+                                                "type": { "kind": "Sequence", "children": [] },
+                                                "value_type": "BTComposite",
+                                                "value": {
+                                                    "kind": "Sequence",
+                                                    "children": [
+                                                        {
+                                                            "name": "RetryGoToPlayer",
+                                                            "type_type": "BTDecorator",
+                                                            "type": { "kind": "ForceStatus" },
+                                                            "value_type": "BTDecorator",
+                                                            "value": {
+                                                                "kind": "ForceStatus",
+                                                                "force_to": "Success",
+                                                                "child": {
+                                                                    "name": "GoToPlayer",
+                                                                    "type_type": "BTTask",
+                                                                    "type": { "task_id": "" },
+                                                                    "value_type": "BTTask",
+                                                                    "value": {
+                                                                        "task_id": "MoveTo",
+                                                                        "params": [
+                                                                            { "key": "target", "value_type": "BTParamString", "value": { "value": "player_pos" } }
+                                                                        ]
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "Recenter",
+                                                            "type_type": "BTTask",
+                                                            "type": { "task_id": "" },
+                                                            "value_type": "BTTask",
+                                                            "value": {
+                                                                "task_id": "Wait",
+                                                                "params": [
+                                                                    { "key": "duration", "value_type": "Float", "value": { "value": 0.6 } }
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GiveUp",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "SetBlackboard",
+                                            "params": [
+                                                { "key": "key", "value_type": "BTParamString", "value": { "value": "alarm_raised" } },
+                                                { "key": "value", "value_type": "Bool", "value": { "value": false } }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Patrol",
+                    "type_type": "BTDecorator",
+                    "type": { "kind": "Loop" },
+                    "value_type": "BTDecorator",
+                    "value": {
+                        "kind": "Loop",
+                        "count": 0,
+                        "child": {
+                            "name": "PatrolSeq",
+                            "type_type": "BTComposite",
+                            "type": { "kind": "Sequence", "children": [] },
+                            "value_type": "BTComposite",
+                            "value": {
+                                "kind": "Sequence",
+                                "children": [
+                                    {
+                                        "name": "GoToPostA",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "MoveTo",
+                                            "params": [
+                                                { "key": "target", "value_type": "BTParamString", "value": { "value": "post_a" } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "WatchA",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "Wait",
+                                            "params": [
+                                                { "key": "duration", "value_type": "Float", "value": { "value": 1.5 } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "GoToPostB",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "MoveTo",
+                                            "params": [
+                                                { "key": "target", "value_type": "BTParamString", "value": { "value": "post_b" } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "WatchB",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "Wait",
+                                            "params": [
+                                                { "key": "duration", "value_type": "Float", "value": { "value": 1.5 } }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

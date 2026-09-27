@@ -1,0 +1,17 @@
+{
+    "id": "villager_bb",
+    "keys": [
+        {
+            "name": "wp_a",
+            "type": "Vec3",
+            "default_value_type": "Vec3",
+            "default_value": { "x": 0.0, "y": 0.0, "z": 0.0 }
+        },
+        {
+            "name": "wp_b",
+            "type": "Vec3",
+            "default_value_type": "Vec3",
+            "default_value": { "x": 0.0, "y": 0.0, "z": 0.0 }
+        }
+    ]
+}

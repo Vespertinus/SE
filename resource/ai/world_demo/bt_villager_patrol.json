@@ -1,0 +1,143 @@
+{
+    "id": "villager_patrol",
+    "root": {
+        "name": "VillagerBrain",
+        "type_type": "BTComposite",
+        "type": { "kind": "Selector", "children": [] },
+        "value_type": "BTComposite",
+        "value": {
+            "kind": "Selector",
+            "children": [
+                {
+                    "name": "Investigate",
+                    "type_type": "BTDecorator",
+                    "type": { "kind": "BlackboardCondition" },
+                    "value_type": "BTDecorator",
+                    "value": {
+                        "kind": "BlackboardCondition",
+                        "abort": "LowerPriority",
+                        "key": "alert",
+                        "op": "IsTrue",
+                        "child": {
+                            "name": "InvestigateSeq",
+                            "type_type": "BTComposite",
+                            "type": { "kind": "Sequence", "children": [] },
+                            "value_type": "BTComposite",
+                            "value": {
+                                "kind": "Sequence",
+                                "children": [
+                                    {
+                                        "name": "GoToNoise",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "MoveTo",
+                                            "params": [
+                                                { "key": "target", "value_type": "BTParamString", "value": { "value": "noise_pos" } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "LookAround",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "Wait",
+                                            "params": [
+                                                { "key": "duration", "value_type": "Float", "value": { "value": 5.0 } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "CalmDown",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "SetBlackboard",
+                                            "params": [
+                                                { "key": "key", "value_type": "BTParamString", "value": { "value": "alert" } },
+                                                { "key": "value", "value_type": "Bool", "value": { "value": false } }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Patrol",
+                    "type_type": "BTDecorator",
+                    "type": { "kind": "Loop" },
+                    "value_type": "BTDecorator",
+                    "value": {
+                        "kind": "Loop",
+                        "count": 0,
+                        "child": {
+                            "name": "PatrolSeq",
+                            "type_type": "BTComposite",
+                            "type": { "kind": "Sequence", "children": [] },
+                            "value_type": "BTComposite",
+                            "value": {
+                                "kind": "Sequence",
+                                "children": [
+                                    {
+                                        "name": "GoToA",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "MoveTo",
+                                            "params": [
+                                                { "key": "target", "value_type": "BTParamString", "value": { "value": "wp_a" } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "RestA",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "Wait",
+                                            "params": [
+                                                { "key": "duration", "value_type": "Float", "value": { "value": 2.0 } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "GoToB",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "MoveTo",
+                                            "params": [
+                                                { "key": "target", "value_type": "BTParamString", "value": { "value": "wp_b" } }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "RestB",
+                                        "type_type": "BTTask",
+                                        "type": { "task_id": "" },
+                                        "value_type": "BTTask",
+                                        "value": {
+                                            "task_id": "Wait",
+                                            "params": [
+                                                { "key": "duration", "value_type": "Float", "value": { "value": 2.0 } }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

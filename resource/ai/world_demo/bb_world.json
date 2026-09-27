@@ -1,0 +1,29 @@
+{
+    "id": "world_bb",
+    "keys": [
+        {
+            "name": "noise_pos",
+            "type": "Vec3",
+            "default_value_type": "Vec3",
+            "default_value": { "x": 0.0, "y": 0.0, "z": 0.0 }
+        },
+        {
+            "name": "alert",
+            "type": "Bool",
+            "default_value_type": "Bool",
+            "default_value": { "value": false }
+        },
+        {
+            "name": "alarm_raised",
+            "type": "Bool",
+            "default_value_type": "Bool",
+            "default_value": { "value": false }
+        },
+        {
+            "name": "player_pos",
+            "type": "Vec3",
+            "default_value_type": "Vec3",
+            "default_value": { "x": 0.0, "y": 0.0, "z": 0.0 }
+        }
+    ]
+}
