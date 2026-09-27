@@ -56,6 +56,11 @@ class UniformBlock {
         ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::uvec4 & val);
         ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::mat3 & val);
         ret_code_t              SetArrayElement(const StrID name, const uint16_t index, const glm::mat4 & val);
+        /** Bulk array write: one lookup + one contiguous store of `count`
+         * elements. `elem_size` must match the array's stride exactly —
+         * the point of the parameter is to catch layout mistakes at the
+         * call site (hot path: joint matrices, sizeof(mat4)). */
+        ret_code_t              SetArrayData(const StrID name, const void * pData, const uint16_t count, const size_t elem_size);
 
         ret_code_t              GetVariable(const StrID name, const float *& pValue) const;
         ret_code_t              GetVariable(const StrID name, const glm::vec2 *& pValue) const;
@@ -106,6 +111,11 @@ class ShaderProgramState {
         void                    SetBlendMode(BlendMode mode);
         BlendMode               GetBlendMode() const;
         //GetBlock ?
+        /** True when the command owns a block on this unit (e.g. ANIMATION
+         *  — only skinned models attach one). */
+        bool                    HasBlock(const UniformUnitInfo::Type unit_id) const {
+                                        return mShaderBlocks.count(unit_id) != 0;
+                                }
         ret_code_t              Validate() const;
         void                    Apply() const;
         void                    ApplyMaterialStateOnly() const;  // textures, blocks, blend — no shader change

@@ -339,6 +339,28 @@ void AnimatedModel::BindSkeleton(H<Skeleton> hSkel) {
                 }
         }
 
+        // Skeleton-instance eligibility (see PostUpdate): sections whose node
+        // transform is identity live in the same skin space as the armature —
+        // they join the character's shared instance and their matrices are
+        // computed once per frame. Key by the skeleton root joint node.
+        const glm::vec3 & vPos   = pNode->GetTransform().GetPos();
+        const glm::vec3 & vScale = pNode->GetTransform().GetScale();
+        const glm::quat & qRot   = pNode->GetTransform().GetRotation();
+        if (vJointNodes.empty() || oSkeletonMeta.vJointsIndexes.empty()) {
+                pSkeletonInstance.reset();
+        } else if (glm::dot(vPos, vPos) != 0.f
+                   || glm::dot(vScale - glm::vec3(1.f), vScale - glm::vec3(1.f)) != 0.f
+                   || glm::dot(qRot, qRot) != 1.f || qRot.w < 0.f) {
+                pSkeletonInstance.reset();
+        } else {
+                pSkeletonInstance = SkeletonInstance::Acquire(vJointNodes[0].get());
+                if (pSkeletonInstance->vJointNodes.empty()) {
+                        // first binder of this character owns the node set
+                        pSkeletonInstance->vJointNodes = vJointNodes;
+                }
+                pSkeletonInstance->hSkeleton = oSkeletonMeta.hSkeleton;
+        }
+
         // Joint nodes already have their world transforms set from scene loading.
         // Since listeners weren't attached before BindSkeleton, TargetTransformChanged
         // never fired → skinning_dirty stayed false → matrices would stay zero.
@@ -356,12 +378,48 @@ void AnimatedModel::MarkSkinningDirty() {
         skinning_dirty = true;
 }
 
+namespace {
+
+// reused by sections that cannot join a shared skeleton instance (main
+// thread only — PostUpdate runs on EPreRenderUpdate)
+std::vector<glm::mat4> sSkinScratch;
+
+} // namespace
+
 void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
 
         if (!skinning_dirty) { return; }
         if (oSkeletonMeta.vJointsIndexes.empty()) { return; }
 
         if (vJointNodes.empty()) { return; }
+
+        // Animation visibility gate (UE-style animation budgeting): a model
+        // that was neither rendered last frame nor can overlap the shadow
+        // ortho doesn't need skin matrices. skinning_dirty stays SET, so the
+        // pose is computed the moment the model matters again.
+        {
+                const glm::vec3 vPos = pNode->GetTransform().GetWorldPos();
+                if (!GetSystem<TRenderer>().IsRenderableHot(this, vPos, GetCullRadius())) { return; }
+        }
+
+        const size_t joint_cnt = oSkeletonMeta.vJointsIndexes.size();
+
+        SkeletonInstance * pInstance = pSkeletonInstance.get();
+        if (pInstance) {
+                const uint64_t now = GetSystem<AppClock>().Frame();
+                if (pInstance->frame == now
+                    && pInstance->vJointIndexes == oSkeletonMeta.vJointsIndexes) {
+                        // a sibling section skinned this exact joint set already
+                        pBlock->SetArrayData(JOINTS_MATRICES, pInstance->vMatrices.data(),
+                                             static_cast<uint16_t>(joint_cnt),
+                                             sizeof(glm::mat4));
+                        skinning_dirty = false;
+                        return;
+                }
+                pInstance->vMatrices.resize(joint_cnt);
+        }
+        std::vector<glm::mat4> & vOut = pInstance ? pInstance->vMatrices : sSkinScratch;
+        vOut.resize(joint_cnt);
 
         //log_d("update skinning: node: '{}'", pNode->GetName());
 
@@ -371,34 +429,42 @@ void AnimatedModel::PostUpdate(const Event & oEvent [[maybe_unused]]) {
         // movement, facing rotation) is applied twice to skinned vertices.
         const glm::mat4 mModelWorldInv = glm::inverse(pNode->GetTransform().GetWorld());
 
-        for (size_t i = 0; i < oSkeletonMeta.vJointsIndexes.size(); ++i) {
+        const std::vector<TSceneTree::TSceneNode> & vJointSet = JointNodes();
+
+        for (size_t i = 0; i < joint_cnt; ++i) {
 
                 const uint16_t joint_idx = oSkeletonMeta.vJointsIndexes[i];
-                if (joint_idx >= vJointNodes.size()) {
+                if (joint_idx >= vJointSet.size()) {
                         log_e("joint index {} out of range ({}), node: '{}'",
-                                joint_idx, vJointNodes.size(), pNode->GetFullName());
+                                joint_idx, vJointSet.size(), pNode->GetFullName());
+                        vOut[i] = glm::mat4(1.0f);
                         continue;
                 }
 
-                if (const auto* pJointNode = vJointNodes[joint_idx].get()) {
+                if (const auto* pJointNode = vJointSet[joint_idx].get()) {
 
                         auto & mJointInvBindPose = oSkeletonMeta.vJointsInvBindPose[i];
 
                         // Model-relative linear blend skinning:
                         // skinMatrix = inverse(modelWorld) * jointWorld * invBind
                         // invBind = inverse(bindPose) was precomputed at import.
-                        glm::mat4 mResTransform =
-                                mModelWorldInv
+                        vOut[i] = mModelWorldInv
                                 * pJointNode->GetTransform().GetWorld()
                                 * mJointInvBindPose;
-
-                        pBlock->SetArrayElement(JOINTS_MATRICES, i, mResTransform );
                 }
                 else {
                         // Unbound joint: identity keeps affected vertices at their
                         // bind pose position in model space.
-                        pBlock->SetArrayElement(JOINTS_MATRICES, i, glm::mat4(1.0f));
+                        vOut[i] = glm::mat4(1.0f);
                 }
+        }
+
+        pBlock->SetArrayData(JOINTS_MATRICES, vOut.data(),
+                             static_cast<uint16_t>(joint_cnt), sizeof(glm::mat4));
+
+        if (pInstance) {
+                pInstance->frame         = GetSystem<AppClock>().Frame();
+                pInstance->vJointIndexes = oSkeletonMeta.vJointsIndexes;
         }
 
         skinning_dirty = false;

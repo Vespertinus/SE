@@ -163,6 +163,38 @@ ret_code_t UniformBlock::SetArrayElement(const StrID name, const uint16_t index,
         return SetArrayElementInternal(name, index, val);
 }
 
+ret_code_t UniformBlock::SetArrayData(const StrID name, const void * pData, const uint16_t count, const size_t elem_size) {
+
+        auto it = pDesc->mVariables.find(name);
+
+        if (it == pDesc->mVariables.end()) {
+                log_e("uniform block '{}' does not contain variable: '{}'",
+                                GetSystem<GraphicsState>().GetUniformUnitInfo(unit_id).sName,
+                                name);
+                return uWRONG_INPUT_DATA;
+        }
+        if (count > it->second.array_cnt) {
+                log_e("wrong count {}, variable '{}' array len: {}",
+                                count,
+                                it->second.sName,
+                                it->second.array_cnt);
+                return uWRONG_INPUT_DATA;
+        }
+        if (elem_size != static_cast<size_t>(it->second.array_stride)) {
+                log_e("wrong element size {}, variable '{}' array stride is {}",
+                                elem_size,
+                                it->second.sName,
+                                it->second.array_stride);
+                return uWRONG_INPUT_DATA;
+        }
+
+        return pBuffer->SetValue(
+                        block_id,
+                        it->second.location,
+                        pData,
+                        static_cast<size_t>(count) * static_cast<size_t>(it->second.array_stride));
+}
+
 ret_code_t UniformBlock::SetArrayElement(const StrID name, const uint16_t index, const glm::vec2 & val) {
         return SetArrayElementInternal(name, index, val);
 }
@@ -394,7 +426,9 @@ void ShaderProgramState::Apply() const {
 
         oGraphicsState.SetShaderProgram(pShader);
 
-        pMaterial->Apply();
+        // Sorted draws repeat the same (material, shader) pair dozens of times;
+        // the apply-cache uploads variables once per pair / per version bump.
+        oGraphicsState.ApplyMaterialOnce(pMaterial, pShader);
 
         // Apply blend mode from this state (may be overridden by material's own blend mode via pMaterial->Apply)
         oGraphicsState.SetBlendMode(blendMode);
@@ -418,7 +452,7 @@ void ShaderProgramState::ApplyMaterialStateOnly() const {
         auto & oGraphicsState = GetSystem<GraphicsState>();
 
         // Apply material shader variables (no shader change, no blend — pass owns blend state)
-        pMaterial->Apply();
+        oGraphicsState.ApplyMaterialOnce(pMaterial, pShader);
 
         // Apply textures
         for (auto oTexMapItem : mTextures) {

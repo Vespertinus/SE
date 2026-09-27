@@ -27,6 +27,9 @@ class Material : public ResourceHolder {
         //std::array<H<TTexture>, max texture units> vTextures; ..
         std::unordered_map<TextureUnit, H<TTexture>>     mTextures;
         BlendMode                                        blendMode{BlendMode::Opaque};
+        // Bumped by every runtime Set* — GraphicsState's apply-cache compares
+        // it to skip redundant material variable uploads between draws.
+        uint32_t                                         version = 1;
 
         void Load(const SE::FlatBuffers::Material * pMaterial);
 
@@ -44,6 +47,8 @@ class Material : public ResourceHolder {
         ret_code_t                      SetTexture(const StrID name, H<TTexture> hTex);
         ret_code_t                      SetTexture(const TextureUnit unit_index, H<TTexture> hTex);
         template <class T> ret_code_t   SetVariable(const StrID name, const T & val);
+        /** Version bumps on every runtime Set* — see GraphicsState::ApplyMaterialOnce. */
+        uint32_t                        Version() const { return version; }
         void                            Apply() const;
         TTexture *                      GetTexture(const TextureUnit unit_index) const;
         ShaderProgram *                 GetShader() const;
@@ -63,6 +68,7 @@ template <class T> ret_code_t Material::SetVariable(const StrID name, const T & 
         //TODO check variable type
         if (pShader->OwnVariable(name)) {
                 mShaderVariables.insert_or_assign(name, val);
+                ++version;
                 return uSUCCESS;
         }
 
@@ -71,6 +77,7 @@ template <class T> ret_code_t Material::SetVariable(const StrID name, const T & 
                 log_w("shader '{}' does not have variable: '{}'", pShader->Name(), name);
                 return res;
         }
+        ++version;
         return uSUCCESS;
 }
 

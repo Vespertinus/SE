@@ -74,13 +74,13 @@ std::string Material::Str() const {
 void Material::Apply() const {
 
         // Apply render state: blend mode, depth, culling, etc.
-        auto & gs = GetSystem<GraphicsState>();
-        gs.SetBlendMode(blendMode);
+        auto & oGS = GetSystem<GraphicsState>();
+        oGS.SetBlendMode(blendMode);
 
         for (auto & oShaderVar : mShaderVariables) {
 
-                std::visit([&oShaderVar](auto & var) {
-                                GetSystem<GraphicsState>().SetVariable(oShaderVar.first, var);
+                std::visit([&oShaderVar, &oGS](auto & var) {
+                                oGS.SetVariable(oShaderVar.first, var);
                                 },
                                 oShaderVar.second);
         }
@@ -257,6 +257,7 @@ ret_code_t Material::SetTexture(const StrID name, H<TTexture> hTex) {
         }
 
         mTextures.insert_or_assign(oTexInfo->get().unit_index, hTex);
+        ++version;
 
         return uSUCCESS;
 }
@@ -273,6 +274,7 @@ ret_code_t Material::SetTexture(const TextureUnit unit_index, H<TTexture> hTex) 
         }
 
         mTextures.insert_or_assign(unit_index, hTex);
+        ++version;
         return uSUCCESS;
 }
 
@@ -417,7 +419,9 @@ BlendMode Material::GetBlendMode() const {
 }
 
 void Material::SetBlendMode(BlendMode mode) {
+        if (blendMode == mode) { return; }
         blendMode = mode;
+        ++version;
 }
 
 std::string Material::StrDump(const size_t indent) const {

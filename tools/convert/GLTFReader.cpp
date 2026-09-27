@@ -282,7 +282,14 @@ static ret_code_t ImportGLTFMaterial(
         pMaterial->mVariables["AO"]        = 1.0f;
 
         if      (mat.alphaMode == "BLEND") pMaterial->oBlendMode = BlendMode::Translucent;
-        else if (mat.alphaMode == "MASK")  pMaterial->oBlendMode = BlendMode::Masked;
+        else if (mat.alphaMode == "MASK")  {
+                pMaterial->oBlendMode = BlendMode::Masked;
+                // Cutout variant of the PBR program + the cutoff as a material
+                // variable (glTF default 0.5 when alphaCutoff is unspecified).
+                pMaterial->sShaderPath = "shader_program/pbr_geometry_masked.sesp";
+                pMaterial->mVariables["AlphaCutoff"] =
+                                mat.alphaCutoff > 0.0 ? static_cast<float>(mat.alphaCutoff) : 0.5f;
+        }
         else                               pMaterial->oBlendMode = BlendMode::Opaque;
 
         // KHR_materials_transmission: transmissionFactor > 0 means the surface lets light

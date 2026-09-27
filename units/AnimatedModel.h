@@ -4,10 +4,14 @@
 #include <Component_generated.h>
 #include <ResourceHandle.h>
 #include <StrID.h>
+#include <SkeletonInstance.h>
+
+#include <memory>
 
 namespace SE {
 
 class Skeleton;
+class SkeletonInstance;
 
 class AnimatedModel : public StaticModel {
 
@@ -43,6 +47,13 @@ class AnimatedModel : public StaticModel {
         /** supported max 4 */ //THINK inside Mesh
         uint8_t                         joints_per_vertex{};
         bool                            skinning_dirty{false};
+        // The resolved skeleton instance: owns the joint node set and the
+        // per-frame skin result shared by every mesh section of the character
+        // (body, hood, head grafts compute once, the rest bulk-copy). Null
+        // when the section's node transform is non-identity (its skin space
+        // would differ) or the bind is incomplete — such sections skin into
+        // their own block on their own.
+        std::shared_ptr<SkeletonInstance> pSkeletonInstance;
 
         void FillRenderCommands();
 
@@ -78,7 +89,10 @@ class AnimatedModel : public StaticModel {
         const std::string & GetSkeletonRootNode() const;
         const std::vector<uint16_t> & GetJointIndexes() const;
         std::vector<uint16_t> & GetJointIndexes();
-        const std::vector<TSceneTree::TSceneNode>& JointNodes() const { return vJointNodes; }
+        // the instance's canonical joint set when shared, the local bind otherwise
+        const std::vector<TSceneTree::TSceneNode>& JointNodes() const {
+                return pSkeletonInstance ? pSkeletonInstance->vJointNodes : vJointNodes;
+        }
         H<Skeleton> GetSkeletonHandle() const { return oSkeletonMeta.hSkeleton; }
 };
 

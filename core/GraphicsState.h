@@ -7,6 +7,7 @@
 namespace SE {
 
 class UniformBuffer;
+class Material;
 
 /*
  basic stub for render state managing
@@ -35,6 +36,23 @@ class GraphicsState {
         bool                    cull_enabled{false};
         CullFace                cull_face{CullFace::BACK};
         glm::ivec4              viewport{0, 0, 800, 600};
+
+        // Material apply-cache: sorted draws repeat the same material dozens of
+        // times; re-uploading every shader variable per draw (hash find +
+        // glUniform each) was pure driver overhead. Invalidated by Material's
+        // version counter whenever its variables change at runtime.
+        const Material        * pLastMaterial   = nullptr;
+        ShaderProgram         * pMaterialShader = nullptr;
+        uint32_t                material_version = 0;
+
+        // Transform UBO: programs declaring the layout(std140) Transform block
+        // receive MVMatrix through a small pre-allocated ring of pool slots
+        // (one write + one range bind per draw) instead of glUniformMatrix4fv.
+        std::shared_ptr<UniformBuffer>  pTransformBuffer;
+        std::array<uint16_t, 8>         transform_ring {};
+        uint8_t                         transform_cursor = 0;
+
+        void                            WriteTransformBlock(const glm::mat4 & oMat);
 
         //TODO initialize from GL limit, store in global graphics config
         std::array<TTexture *, 16> vTextureUnits{};
@@ -72,6 +90,10 @@ class GraphicsState {
         void                            SetTransform(const glm::mat4 & oMat);
         void                            SetViewProjection(const glm::mat4 & oMat);
         void                            SetShaderProgram(ShaderProgram * pNewShader);
+        /** Material variables: uploads them only when the (material, shader)
+         *  pair differs from what was applied last, or the material's version
+         *  bumped (SetVariable at runtime). */
+        void                            ApplyMaterialOnce(const Material * pMaterial, ShaderProgram * pShader);
         void                            SetScreenSize(const uint32_t width, const uint32_t height);
         void                            SetScreenSize(const glm::uvec2 new_screen_size);
         void                            SetVao(const uint32_t vao_id);

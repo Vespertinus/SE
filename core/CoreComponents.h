@@ -73,6 +73,7 @@ using TCoreComponents = decltype(MP::TypelistConcatenate(
 #define INC_CORE_COMPONENTS_IMPL_GUARD
 
 #include <StaticModel.tcc>
+#include <SkeletonInstance.tcc>
 #include <AnimatedModel.tcc>
 #include <Animator.tcc>
 #include <Camera.tcc>

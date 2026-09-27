@@ -1,4 +1,7 @@
 
+
+#include <GraphicsConfig.h>
+
 namespace SE {
 
 static StrID    oScreenSizeID("ScreenSize");
@@ -137,10 +140,38 @@ void GraphicsState::SetViewProjection(const glm::mat4 & oMat) {
         }
 }
 
+void GraphicsState::WriteTransformBlock(const glm::mat4 & oMat) {
+
+        if (!pTransformBuffer) {
+                // pool slots must respect the GPU's buffer offset alignment
+                // (256 on most HW — sizeof(mat4)=64 is only enough on some
+                // software rasterizers), same rounding as FillUniformBlocks
+                const uint32_t alignment =
+                                GetSystem<GraphicsConfig>().GetValue(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
+                const uint16_t slot_size = uint16_t(
+                                (sizeof(glm::mat4) + (alignment - 1)) & ~(alignment - 1));
+                pTransformBuffer = GetUniformBuffer(UniformUnitInfo::Type::TRANSFORM, slot_size);
+                for (auto & id : transform_ring) { id = pTransformBuffer->AllocateBlock(); }
+        }
+        transform_cursor = uint8_t((transform_cursor + 1) % transform_ring.size());
+        pTransformBuffer->SetValue(transform_ring[transform_cursor], 0,
+                        glm::value_ptr(oMat), sizeof(glm::mat4));
+        pTransformBuffer->Apply(transform_ring[transform_cursor],
+                        UniformUnitInfo::Type::TRANSFORM);
+}
+
 void GraphicsState::SetTransform(const glm::mat4 & oMat) {
 
         pTransformMat = &oMat;
-        if (pShader && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix)) {
+        if (!pShader) { return; }
+
+        // the UBO path takes precedence: block members are stored with offset
+        // pseudo-locations and must not go through SetVariable
+        if (pShader->GetBlockDescriptor(UniformUnitInfo::Type::TRANSFORM)) {
+                WriteTransformBlock(oMat);
+                return;
+        }
+        if (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix) {
                 pShader->SetVariable(oMVMatrixID, oMat);
         }
 }
@@ -153,8 +184,13 @@ void GraphicsState::SetShaderProgram(ShaderProgram * pNewShader) {
         pShader = pNewShader;
         pShader->Use();
 
-        if (pTransformMat && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix)) {
-                pShader->SetVariable(oMVMatrixID, *pTransformMat);
+        if (pTransformMat) {
+                if (pShader->GetBlockDescriptor(UniformUnitInfo::Type::TRANSFORM)) {
+                        WriteTransformBlock(*pTransformMat);
+                }
+                else if (pShader->UsedSystemVariables() & ShaderSystemVariables::MVMatrix) {
+                        pShader->SetVariable(oMVMatrixID, *pTransformMat);
+                }
         }
         if (pModelViewProjection && (pShader->UsedSystemVariables() & ShaderSystemVariables::MVPMatrix)) {
 
@@ -165,6 +201,19 @@ void GraphicsState::SetShaderProgram(ShaderProgram * pNewShader) {
         }
 }
 
+void GraphicsState::ApplyMaterialOnce(const Material * pMaterial, ShaderProgram * pShaderOf) {
+
+        if (pLastMaterial == pMaterial
+            && pMaterialShader == pShaderOf
+            && material_version == pMaterial->Version()) {
+                return;
+        }
+        pMaterial->Apply();
+        pLastMaterial    = pMaterial;
+        pMaterialShader  = pShaderOf;
+        material_version = pMaterial->Version();
+}
+
 void GraphicsState::FrameStart() {
 
         pModelViewProjection = nullptr;
@@ -172,6 +221,8 @@ void GraphicsState::FrameStart() {
         pShader              = nullptr;
         cur_vao              = 0;
         active_ubo           = 0;
+        pLastMaterial        = nullptr;
+        pMaterialShader      = nullptr;
         glUseProgram(0);
         glBindVertexArray(0);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
