@@ -8,7 +8,9 @@ source:
         uniform samplerBuffer CustomTex;
 
         uniform mat4    MVPMatrix;
-        uniform mat4    MVMatrix;
+        layout(std140) uniform Transform {   // per-draw model matrix, UBO-backed
+        mat4 MVMatrix;
+        };
 
         //out vec2        TexCoord;
         out vec4        DiffuseColor;

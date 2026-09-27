@@ -10,7 +10,9 @@ source:
 
         uniform samplerBuffer BufferTex;
         uniform mat4 MVPMatrix;
-        uniform mat4 MVMatrix;
+        layout(std140) uniform Transform {   // per-draw model matrix, UBO-backed
+        mat4 MVMatrix;
+        };
 
         // std140 — explicit layout keeps the packing identical across every
         // program sharing the ANIMATION uniform buffer (shadow_depth_vert does).

@@ -1,0 +1,33 @@
+type: FRAGMENT
+include:
+  - shader/pbr_geometry_common.sesl
+header:
+ - |
+        #version 420 core
+source:
+ - |
+        // Alpha-cutout variant of pbr_geometry_frag for BlendMode::Masked
+        // materials (glTF alphaMode MASK): below-cutoff texels of foliage-style
+        // atlases are discarded before any G-buffer write. The cutoff comes
+        // from the material variable the importer writes (glTF alphaCutoff).
+        uniform float AlphaCutoff;
+
+        void main() {
+            vec4 base = texture(DiffuseTex, TexCoord);
+            if (base.a < AlphaCutoff) { discard; }
+
+            vec3 albedo = base.rgb * BaseColor.rgb;
+
+            vec2 specRM = texture(SpecularTex, TexCoord).gb;
+            float rough = specRM.r * Roughness;
+            float metal = specRM.g * Metallic;
+
+            vec3 tsNormal = texture(NormalTex, TexCoord).rgb * 2.0 - 1.0;
+            vec3 N = normalize(v_TBN * tsNormal);
+
+            vec2 octN = EncodeNormal(N);
+
+            gAlbedoRoughness = vec4(albedo, clamp(rough, 0.04, 1.0));
+            gNormalMetallicAO = vec4(octN.x, octN.y, metal, AO);
+            gEmissive = texture(EmissiveTex, TexCoord).rgb * Emissive;
+        }

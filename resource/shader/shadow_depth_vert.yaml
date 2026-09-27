@@ -8,7 +8,9 @@ source:
         in uvec4 JointIndices;
 
         uniform mat4 MVPMatrix;   // light VP (set via gs.SetViewProjection)
-        uniform mat4 MVMatrix;    // model matrix (set via gs.SetTransform)
+        layout(std140) uniform Transform {   // per-draw model matrix, UBO-backed
+        mat4 MVMatrix;
+        };
 
         // Same block layout as pbr_geometry_animated_vert (std140 keeps the
         // packing identical across programs sharing the ANIMATION UBO).

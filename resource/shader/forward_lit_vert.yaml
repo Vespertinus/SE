@@ -11,7 +11,9 @@ source:
 
         // Engine-provided system uniforms
         uniform mat4 MVPMatrix;   // projection * view * model (clip-space)
-        uniform mat4 MVMatrix;    // model matrix (world-space transform)
+        layout(std140) uniform Transform {   // per-draw model matrix, UBO-backed
+        mat4 MVMatrix;
+        };
 
         out vec3 v_WorldPos;
         out vec3 v_Normal;
