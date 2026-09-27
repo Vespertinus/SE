@@ -181,6 +181,10 @@ void InputMappingContext::OnInputUpdate(const Event& /*e*/) {
         pInput->move_axis = {glm::clamp(move_x, -1.f, 1.f), glm::clamp(move_y, -1.f, 1.f)};
         pInput->look_axis = {look_x, look_y};
 
+        // device-space → application-space conversion (e.g. rotate move_axis
+        // by the camera yaw) runs right here, after the flush it belongs to
+        if (post_process != nullptr) { post_process(*pInput); }
+
         // Reset per-frame state
         mouse_delta_acc         = {0, 0};
         sPressedKeys.clear();

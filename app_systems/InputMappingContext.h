@@ -4,6 +4,7 @@
 
 #include <InputState.h>
 #include <InputEvents.h>
+#include <Delegate.h>
 #include <glm/vec2.hpp>
 #include <array>
 #include <unordered_set>
@@ -66,14 +67,20 @@ struct InputBinding {
 // Subscribes to EKeyDown/Up, EMouseMove, EGamepadAxis, EGamepadButtonDown/Up
 // as events arrive, then flushes to InputState in OnInputUpdate (EInputUpdate).
 //
-// Rotating move_axis by camera yaw should be done here (in the application's
-// OnInputUpdate override or via a dedicated binding post-process hook).
+// The flush writes RAW (device-space) axes; rotating move_axis by camera yaw
+// belongs in the post_process hook below — it runs inside the context's own
+// EInputUpdate listener, immediately after the flush, and so cannot be
+// reordered relative to it by listener registration order.
 class InputMappingContext {
 public:
         explicit InputMappingContext(TSceneTree::TSceneNodeExact* pOwner);
         ~InputMappingContext() noexcept;
 
         std::vector<InputBinding> vBindings;
+
+        /** optional post-flush hook (camera-space conversion, gating, ...);
+            assign with SA::delegate<void (InputState &)>::create<T, &T::M>(p) */
+        SA::delegate<void (InputState &)> post_process;
 
         void Enable()  {}
         void Disable() {}
